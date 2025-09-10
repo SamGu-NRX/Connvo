@@ -17,7 +17,7 @@ graph TB
         MOBILE[Mobile Apps - Future]
     end
 
-    subgraph "cation Layer"
+    subgraph "Authentication Layer"
         WORKOS[WorkOS Auth Kit]
         JWT[JWT Validation]
     end
