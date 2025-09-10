@@ -2,16 +2,16 @@
 
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ClerkProvider } from "@clerk/nextjs";
+import { ConvexClientProvider } from "@/providers/ConvexClientProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ConvexClientProvider>
       <ThemeProvider
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange
+        // disableTransitionOnChange
       >
         <div className="bg-background min-h-screen">
           <main
@@ -23,6 +23,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Toaster className="dark:hidden" />
         <Toaster theme="dark" className="hidden dark:block" />
       </ThemeProvider>
-    </ClerkProvider>
+    </ConvexClientProvider>
   );
 }

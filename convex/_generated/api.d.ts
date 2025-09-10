@@ -13,7 +13,9 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as audit_logging from "../audit/logging.js";
 import type * as auth_guards from "../auth/guards.js";
+import type * as auth_permissions from "../auth/permissions.js";
 import type * as environments_local from "../environments/local.js";
 import type * as environments_production from "../environments/production.js";
 import type * as environments_staging from "../environments/staging.js";
@@ -22,7 +24,9 @@ import type * as lib_errors from "../lib/errors.js";
 import type * as lib_idempotency from "../lib/idempotency.js";
 import type * as lib_observability from "../lib/observability.js";
 import type * as meetings_lifecycle from "../meetings/lifecycle.js";
+import type * as meetings_mutations from "../meetings/mutations.js";
 import type * as meetings_queries from "../meetings/queries.js";
+import type * as realtime_subscriptions from "../realtime/subscriptions.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
 
@@ -35,7 +39,9 @@ import type * as users_queries from "../users/queries.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "audit/logging": typeof audit_logging;
   "auth/guards": typeof auth_guards;
+  "auth/permissions": typeof auth_permissions;
   "environments/local": typeof environments_local;
   "environments/production": typeof environments_production;
   "environments/staging": typeof environments_staging;
@@ -44,7 +50,9 @@ declare const fullApi: ApiFromModules<{
   "lib/idempotency": typeof lib_idempotency;
   "lib/observability": typeof lib_observability;
   "meetings/lifecycle": typeof meetings_lifecycle;
+  "meetings/mutations": typeof meetings_mutations;
   "meetings/queries": typeof meetings_queries;
+  "realtime/subscriptions": typeof realtime_subscriptions;
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
 }>;

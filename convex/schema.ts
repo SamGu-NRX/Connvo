@@ -1,7 +1,18 @@
+/**
+ * Convex Database Schema
+ *
+ * This schema defines all collections for the LinkedUp application migration
+ * from Drizzle ORM + PostgreSQL/Supabase to Convex.
+ *
+ * Requirements: 3.1, 3.2, 3.3
+ * Compliance: steering/convex_rules.mdc - Uses proper Convex schema patterns
+ */
+
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // User Management
   users: defineTable({
     workosUserId: v.string(),
     email: v.string(),
@@ -50,6 +61,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_interest", ["interestKey"]),
 
+  // Meeting System
   meetings: defineTable({
     organizerId: v.id("users"),
     title: v.string(),
@@ -107,6 +119,7 @@ export default defineSchema({
     .index("by_meeting", ["meetingId"])
     .index("by_active", ["active"]),
 
+  // Collaborative Notes
   meetingNotes: defineTable({
     meetingId: v.id("meetings"),
     content: v.string(),
@@ -135,6 +148,7 @@ export default defineSchema({
     .index("by_meeting_sequence", ["meetingId", "sequence"])
     .index("by_meeting_timestamp", ["meetingId", "timestamp"]),
 
+  // Transcription System
   transcripts: defineTable({
     meetingId: v.id("meetings"),
     // Sharding key: time bucket (5-minute windows) to prevent hot partitions
@@ -168,6 +182,7 @@ export default defineSchema({
     .index("by_meeting", ["meetingId"])
     .index("by_meeting_time", ["meetingId", "startMs"]),
 
+  // AI Prompts and Insights
   prompts: defineTable({
     meetingId: v.id("meetings"),
     type: v.union(v.literal("precall"), v.literal("incall")),
@@ -208,6 +223,7 @@ export default defineSchema({
     .index("by_meeting", ["meetingId"])
     .index("by_user_meeting", ["userId", "meetingId"]),
 
+  // Matching System
   matchingQueue: defineTable({
     userId: v.id("users"),
     availableFrom: v.number(),
@@ -253,6 +269,7 @@ export default defineSchema({
     .index("by_match", ["matchId"])
     .index("by_outcome", ["outcome"]),
 
+  // Vector Embeddings
   embeddings: defineTable({
     sourceType: v.union(
       v.literal("user"),
@@ -288,6 +305,7 @@ export default defineSchema({
     .index("by_provider", ["provider"])
     .index("by_status", ["status"]),
 
+  // Messages and Chat
   messages: defineTable({
     meetingId: v.id("meetings"),
     userId: v.optional(v.id("users")),
@@ -298,20 +316,7 @@ export default defineSchema({
     .index("by_meeting", ["meetingId"])
     .index("by_meeting_time", ["meetingId", "timestamp"]),
 
-  connections: defineTable({
-    user1Id: v.id("users"),
-    user2Id: v.id("users"),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("accepted"),
-      v.literal("declined"),
-    ),
-    createdAt: v.number(),
-  })
-    .index("by_user1", ["user1Id"])
-    .index("by_user2", ["user2Id"])
-    .index("by_users", ["user1Id", "user2Id"]),
-
+  // System Collections
   idempotencyKeys: defineTable({
     key: v.string(),
     scope: v.string(),
@@ -354,4 +359,20 @@ export default defineSchema({
     .index("by_key", ["key"])
     .index("by_environment", ["environment"])
     .index("by_key_env", ["key", "environment"]),
+
+  // Legacy Support (for migration)
+  connections: defineTable({
+    requesterId: v.id("users"),
+    addresseeId: v.id("users"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("declined"),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_requester", ["requesterId"])
+    .index("by_addressee", ["addresseeId"])
+    .index("by_status", ["status"]),
 });

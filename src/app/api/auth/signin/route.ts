@@ -1,15 +1,14 @@
-import { redirect } from "next/navigation";
-import { WorkOS } from "@workos-inc/node";
+/**
+ * WorkOS AuthKit Sign-In Route
+ *
+ * This API route initiates the sign-in flow with WorkOS AuthKit.
+ * It redirects users to the appropriate authentication provider.
+ *
+ * Requirements: 2.1, 2.2
+ * Compliance: steering/convex_rules.mdc - Uses Next.js API route patterns
+ */
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY!);
+import { NextRequest } from "next/server";
+import { handleAuth } from "@workos-inc/authkit-nextjs";
 
-export async function GET() {
-  const authorizationUrl = workos.userManagement.getAuthorizationUrl({
-    // Redirect to WorkOS AuthKit
-    provider: "authkit",
-    clientId: process.env.WORKOS_CLIENT_ID!,
-    redirectUri: process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI!,
-  });
-
-  redirect(authorizationUrl);
-}
+export const GET = handleAuth();

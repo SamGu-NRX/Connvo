@@ -11,7 +11,7 @@ export const createMeeting = mutation({
   },
   returns: v.id("meetings"),
   handler: async (ctx, args) => {
-    const { userId } = requireIdentity(ctx);
+    const { userId } = await requireIdentity(ctx);
 
     // Get the user to use as organizer
     const user = await ctx.db

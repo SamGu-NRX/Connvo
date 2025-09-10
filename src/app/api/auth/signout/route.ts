@@ -1,12 +1,14 @@
-import { redirect } from "next/navigation";
-import { WorkOS } from "@workos-inc/node";
+/**
+ * WorkOS AuthKit Sign-Out Route
+ *
+ * This API route handles user sign-out and session termination.
+ * It clears the authentication session and redirects appropriately.
+ *
+ * Requirements: 2.1, 2.2
+ * Compliance: steering/convex_rules.mdc - Uses Next.js API route patterns
+ */
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY!);
+import { NextRequest } from "next/server";
+import { handleAuth } from "@workos-inc/authkit-nextjs";
 
-export async function GET() {
-  const logoutUrl = workos.userManagement.getLogoutUrl({
-    sessionId: "", // Will be handled by WorkOS AuthKit
-  });
-
-  redirect(logoutUrl);
-}
+export const GET = handleAuth();
