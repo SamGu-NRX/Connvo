@@ -1,12 +1,12 @@
-import type React from "react"
-import { TransitionLink } from "@/utils/TransitionLink"
-import { Home, BarChart2, User, Settings } from "lucide-react"
-import { utils } from "@/styles/utils"
+import type React from "react";
+import { TransitionLink } from "@/utils/TransitionLink";
+import { Home, BarChart2, User, Settings } from "lucide-react";
+import { utils } from "@/styles/utils";
 
 const Navigation: React.FC = () => {
   return (
     <nav
-      className={`${utils.cardBg} fixed bottom-0 left-0 right-0 flex justify-around py-4 md:py-6`}
+      className={`${utils.cardBg} fixed right-0 bottom-0 left-0 flex justify-around py-4 md:py-6`}
     >
       <TransitionLink
         href="/app/home"
@@ -38,7 +38,6 @@ const Navigation: React.FC = () => {
       </TransitionLink>
     </nav>
   );
-}
+};
 
-export default Navigation
-
+export default Navigation;

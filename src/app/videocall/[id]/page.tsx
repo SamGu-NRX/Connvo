@@ -39,7 +39,6 @@ import { TimeManager } from "@/components/video-meeting/time-manager";
 import { SettingsDialog } from "@/components/video-meeting/settings-dialog";
 import { ToastContainer } from "@/components/video-meeting/toast";
 
-
 // FIGURE OUT HOW TO BUILD REAL-TIME
 
 const userInterests = {

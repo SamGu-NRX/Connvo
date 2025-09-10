@@ -1,11 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { UserCard } from "@/components/app/user-card"
-import { mockUsers } from "@/data/mock-users"
+import { useState } from "react";
+import { UserCard } from "@/components/app/user-card";
+import { mockUsers } from "@/data/mock-users";
 
 export default function UserCardDemo() {
-  const [activeView, setActiveView] = useState<"default" | "meeting" | "chat">("default")
+  const [activeView, setActiveView] = useState<"default" | "meeting" | "chat">(
+    "default",
+  );
 
   return (
     <>
@@ -40,13 +42,17 @@ export default function UserCardDemo() {
             user={user}
             inMeeting={activeView === "meeting"}
             inChat={activeView === "chat"}
-            onMessage={(message) => console.log(`Message to ${user.name}: ${message}`)}
+            onMessage={(message) =>
+              console.log(`Message to ${user.name}: ${message}`)
+            }
             onSchedule={(date, duration, topic) =>
-              console.log(`Meeting with ${user.name}: ${topic} on ${date.toLocaleString()} for ${duration} minutes`)
+              console.log(
+                `Meeting with ${user.name}: ${topic} on ${date.toLocaleString()} for ${duration} minutes`,
+              )
             }
           />
         </div>
       ))}
     </>
-  )
+  );
 }

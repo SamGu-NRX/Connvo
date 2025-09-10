@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Settings, PanelLeftClose, PanelLeftOpen } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import type { User } from "@/types/meeting"
-import { TimeDisplay } from "./time-display"
+import { motion } from "framer-motion";
+import { Settings, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { User } from "@/types/meeting";
+import { TimeDisplay } from "./time-display";
 
 interface TopBarProps {
-  partner: User
-  timeElapsed: number
-  timeRemaining: number
-  showTimeLeft: boolean
-  isAlmostOutOfTime: boolean
-  isSidebarOpen: boolean
-  onToggleTimeDisplay: () => void
-  onToggleSidebar: () => void
-  onOpenSettings: () => void
+  partner: User;
+  timeElapsed: number;
+  timeRemaining: number;
+  showTimeLeft: boolean;
+  isAlmostOutOfTime: boolean;
+  isSidebarOpen: boolean;
+  onToggleTimeDisplay: () => void;
+  onToggleSidebar: () => void;
+  onOpenSettings: () => void;
 }
 
 export function TopBar({
@@ -30,7 +30,7 @@ export function TopBar({
   onOpenSettings,
 }: TopBarProps) {
   return (
-    <motion.div className="h-16 bg-zinc-900/80 backdrop-blur-lg border-b border-zinc-800 flex items-center justify-between px-6 z-10">
+    <motion.div className="z-10 flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-900/80 px-6 backdrop-blur-lg">
       <div className="flex items-center space-x-4">
         <Button
           variant="ghost"
@@ -45,8 +45,10 @@ export function TopBar({
           )}
         </Button>
         <div>
-          <h3 className="text-zinc-200 text-sm font-medium">Meeting with {partner.name}</h3>
-          <p className="text-zinc-400 text-xs">1-on-1 discussion</p>
+          <h3 className="text-sm font-medium text-zinc-200">
+            Meeting with {partner.name}
+          </h3>
+          <p className="text-xs text-zinc-400">1-on-1 discussion</p>
         </div>
       </div>
 
@@ -68,6 +70,5 @@ export function TopBar({
         </Button>
       </div>
     </motion.div>
-  )
+  );
 }
-

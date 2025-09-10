@@ -1,15 +1,19 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+import { motion } from "framer-motion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-export type ConnectionStatus = "excellent" | "good" | "poor" | "offline"
+export type ConnectionStatus = "excellent" | "good" | "poor" | "offline";
 
 interface ConnectionStatusIndicatorProps {
-  status: ConnectionStatus
-  isSpeaking?: boolean
-  className?: string
+  status: ConnectionStatus;
+  isSpeaking?: boolean;
+  className?: string;
 }
 
 // Pulse animation for the speaking indicator
@@ -27,9 +31,13 @@ const speakingPulse = {
       ease: "easeInOut",
     },
   },
-}
+};
 
-export function ConnectionStatusIndicator({ status, isSpeaking = false, className }: ConnectionStatusIndicatorProps) {
+export function ConnectionStatusIndicator({
+  status,
+  isSpeaking = false,
+  className,
+}: ConnectionStatusIndicatorProps) {
   const statusColor =
     status === "excellent"
       ? "bg-green-500"
@@ -37,14 +45,16 @@ export function ConnectionStatusIndicator({ status, isSpeaking = false, classNam
         ? "bg-blue-500"
         : status === "poor"
           ? "bg-amber-500"
-          : "bg-red-500"
+          : "bg-red-500";
 
   return (
     <div className={cn("relative", className)}>
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="relative">
-            <span className={cn("block h-2.5 w-2.5 rounded-full", statusColor)} />
+            <span
+              className={cn("block h-2.5 w-2.5 rounded-full", statusColor)}
+            />
             {isSpeaking && (
               <motion.span
                 className={cn("absolute -inset-1 rounded-full", statusColor)}
@@ -61,6 +71,5 @@ export function ConnectionStatusIndicator({ status, isSpeaking = false, classNam
         </TooltipContent>
       </Tooltip>
     </div>
-  )
+  );
 }
-

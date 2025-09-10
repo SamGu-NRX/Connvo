@@ -13,5 +13,4 @@ export const colors = {
     warning: "#ff9800",
     error: "#f44336",
   },
-}
-
+};

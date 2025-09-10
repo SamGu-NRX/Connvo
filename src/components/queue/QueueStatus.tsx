@@ -22,10 +22,10 @@ export default function QueueStatus({
         }}
         className="mb-4 inline-block"
       >
-        <Loader2 className="h-12 w-12 text-primary" />
+        <Loader2 className="text-primary h-12 w-12" />
       </motion.div>
       <h2 className="mb-2 text-2xl font-bold">In Queue</h2>
-      <p className="mb-2 text-muted-foreground">
+      <p className="text-muted-foreground mb-2">
         Searching for a {queueType === "formal" ? "professional" : "casual"}{" "}
         match
       </p>

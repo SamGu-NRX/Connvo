@@ -1,21 +1,31 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ChevronDown, GraduationCap, Award, ExternalLink, MessageCircle, Calendar } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { type ConnectionType, connectionTypeInfo } from "@/components/app/user-card/connection-badge"
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronDown,
+  GraduationCap,
+  Award,
+  ExternalLink,
+  MessageCircle,
+  Calendar,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  type ConnectionType,
+  connectionTypeInfo,
+} from "@/components/app/user-card/connection-badge";
 
 interface UserCardDetailsProps {
-  bio: string
-  school: string
-  connectionType: ConnectionType
-  inChat?: boolean
-  onMessage: () => void
-  onSchedule: () => void
-  className?: string
-  forceOpen?: boolean
+  bio: string;
+  school: string;
+  connectionType: ConnectionType;
+  inChat?: boolean;
+  onMessage: () => void;
+  onSchedule: () => void;
+  className?: string;
+  forceOpen?: boolean;
 }
 
 export function UserCardDetails({
@@ -28,11 +38,11 @@ export function UserCardDetails({
   className,
   forceOpen,
 }: UserCardDetailsProps) {
-  const [detailsVisible, setDetailsVisible] = useState(forceOpen ?? false)
+  const [detailsVisible, setDetailsVisible] = useState(forceOpen ?? false);
 
   const toggleDetails = () => {
-    setDetailsVisible((prev) => !prev)
-  }
+    setDetailsVisible((prev) => !prev);
+  };
 
   const detailsVariants = {
     hidden: {
@@ -66,7 +76,7 @@ export function UserCardDetails({
         },
       },
     },
-  }
+  };
 
   return (
     <div className={cn("px-5 pb-5", inChat && "px-4 pb-4", className)}>
@@ -83,25 +93,29 @@ export function UserCardDetails({
               {/* Education info */}
               <div>
                 <h4 className="mb-1.5 flex items-center text-sm font-medium">
-                  <GraduationCap className="mr-1.5 h-4 w-4 text-primary" />
+                  <GraduationCap className="text-primary mr-1.5 h-4 w-4" />
                   Education
                 </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{school}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {school}
+                </p>
               </div>
 
               {/* Bio info */}
               <div>
                 <h4 className="mb-1.5 flex items-center text-sm font-medium">
-                  <Award className="mr-1.5 h-4 w-4 text-primary" />
+                  <Award className="text-primary mr-1.5 h-4 w-4" />
                   About
                 </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{bio}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {bio}
+                </p>
               </div>
 
               {/* Connection purpose */}
               <div>
                 <h4 className="mb-1.5 flex items-center text-sm font-medium">
-                  <ExternalLink className="mr-1.5 h-4 w-4 text-primary" />
+                  <ExternalLink className="text-primary mr-1.5 h-4 w-4" />
                   Seeking
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -111,7 +125,12 @@ export function UserCardDetails({
 
               {/* Contact buttons */}
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={onMessage}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={onMessage}
+                >
                   <MessageCircle className="mr-1.5 h-4 w-4" />
                   Message
                 </Button>
@@ -138,12 +157,17 @@ export function UserCardDetails({
             detailsVisible && "bg-gray-100 dark:bg-gray-800",
           )}
         >
-          <span className="flex-1 text-sm">{detailsVisible ? "Hide Details" : "View Details"}</span>
-          <motion.div animate={{ rotate: detailsVisible ? 180 : 0 }} transition={{ duration: 0.3 }}>
+          <span className="flex-1 text-sm">
+            {detailsVisible ? "Hide Details" : "View Details"}
+          </span>
+          <motion.div
+            animate={{ rotate: detailsVisible ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <ChevronDown className="h-4 w-4 opacity-70" />
           </motion.div>
         </Button>
       </motion.div>
     </div>
-  )
+  );
 }

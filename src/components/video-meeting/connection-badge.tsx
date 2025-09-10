@@ -12,7 +12,11 @@ export interface ConnectionBadgeProps {
   name: string;
 }
 
-export function ConnectionBadge({ status, latency, name }: ConnectionBadgeProps) {
+export function ConnectionBadge({
+  status,
+  latency,
+  name,
+}: ConnectionBadgeProps) {
   const config = CONNECTION_STATUS_CONFIG[status];
 
   return (
@@ -20,8 +24,8 @@ export function ConnectionBadge({ status, latency, name }: ConnectionBadgeProps)
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${config.color}`} />
-            <span className="text-white text-sm truncate">{name}</span>
+            <div className={`h-2 w-2 rounded-full ${config.color}`} />
+            <span className="truncate text-sm text-white">{name}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent side="top">
@@ -33,4 +37,3 @@ export function ConnectionBadge({ status, latency, name }: ConnectionBadgeProps)
     </TooltipProvider>
   );
 }
-

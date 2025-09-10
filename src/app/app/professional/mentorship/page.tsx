@@ -1,32 +1,32 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import ProfessionalQueue from "@/components/queue/ProfessionalQueue"
+import React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import ProfessionalQueue from "@/components/queue/ProfessionalQueue";
 
 export default function MentorshipPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const purpose = searchParams.get("purpose") || ""
-  const description = searchParams.get("description") || ""
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const purpose = searchParams.get("purpose") || "";
+  const description = searchParams.get("description") || "";
 
   const handleLeaveQueue = () => {
-    router.push("/app")
-  }
+    router.push("/app");
+  };
 
   const handleAcceptMatch = (matchId: string) => {
-    console.log(`Accepted mentorship match with ID: ${matchId}`)
-    router.push(`/app/call/${matchId}?type=mentorship`)
-  }
+    console.log(`Accepted mentorship match with ID: ${matchId}`);
+    router.push(`/app/call/${matchId}?type=mentorship`);
+  };
 
   const handleDeclineMatch = (matchId: string) => {
-    console.log(`Declined mentorship match with ID: ${matchId}`)
-  }
+    console.log(`Declined mentorship match with ID: ${matchId}`);
+  };
 
   const handleScheduleCall = (userId: string) => {
-    console.log(`Scheduling mentorship call with user ID: ${userId}`)
-    router.push(`/app/schedule/${userId}?type=mentorship`)
-  }
+    console.log(`Scheduling mentorship call with user ID: ${userId}`);
+    router.push(`/app/schedule/${userId}?type=mentorship`);
+  };
 
   return (
     <ProfessionalQueue
@@ -39,6 +39,5 @@ export default function MentorshipPage() {
       onDeclineMatch={handleDeclineMatch}
       onScheduleCall={handleScheduleCall}
     />
-  )
+  );
 }
-

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "format": "prettier --write .",
     "db:pull": "npx drizzle-kit pull:pg",
     "db:generate": "npx drizzle-kit generate:pg",
     "db:seed": "npx drizzle-kit seed:pg",

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Settings, MessageCircle, Calendar, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Settings, MessageCircle, Calendar, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,16 +9,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 // import { ActionButton } from "@/components/app/user-card/action-button"
 
 interface UserCardActionsProps {
-  onOpenMessage: () => void
-  onOpenSchedule: () => void
-  className?: string
-  buttonSize?: "default" | "sm" | "lg" | "icon"
-  buttonVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  onOpenMessage: () => void;
+  onOpenSchedule: () => void;
+  className?: string;
+  buttonSize?: "default" | "sm" | "lg" | "icon";
+  buttonVariant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
 }
 
 export function UserCardActions({
@@ -31,7 +37,11 @@ export function UserCardActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={buttonVariant} size={buttonSize} className={cn("h-8 w-8 rounded-full", className)}>
+        <Button
+          variant={buttonVariant}
+          size={buttonSize}
+          className={cn("h-8 w-8 rounded-full", className)}
+        >
           <Settings className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -53,5 +63,5 @@ export function UserCardActions({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

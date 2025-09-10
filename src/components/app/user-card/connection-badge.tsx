@@ -1,13 +1,17 @@
-import { Briefcase, GraduationCap, Users, ExternalLink } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { Briefcase, GraduationCap, Users, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-export type ConnectionType = "b2b" | "collaboration" | "mentorship" | "investment"
+export type ConnectionType =
+  | "b2b"
+  | "collaboration"
+  | "mentorship"
+  | "investment";
 
 interface ConnectionBadgeProps {
-  type: ConnectionType
-  className?: string
-  showLabel?: boolean
+  type: ConnectionType;
+  className?: string;
+  showLabel?: boolean;
 }
 
 export const connectionTypeInfo = {
@@ -15,7 +19,8 @@ export const connectionTypeInfo = {
     label: "Business",
     icon: <Briefcase className="h-3 w-3" />,
     description: "Seeking B2B opportunities and professional connections",
-    color: "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800/60",
+    color:
+      "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-800/60",
     hoverColor: "hover:bg-sky-100 dark:hover:bg-sky-950/50",
   },
   collaboration: {
@@ -42,10 +47,14 @@ export const connectionTypeInfo = {
       "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800/60",
     hoverColor: "hover:bg-purple-100 dark:hover:bg-purple-950/50",
   },
-}
+};
 
-export function ConnectionBadge({ type, className, showLabel = true }: ConnectionBadgeProps) {
-  const info = connectionTypeInfo[type]
+export function ConnectionBadge({
+  type,
+  className,
+  showLabel = true,
+}: ConnectionBadgeProps) {
+  const info = connectionTypeInfo[type];
 
   return (
     <Badge
@@ -59,6 +68,5 @@ export function ConnectionBadge({ type, className, showLabel = true }: Connectio
       <span className="mr-1">{info.icon}</span>
       {showLabel && info.label}
     </Badge>
-  )
+  );
 }
-

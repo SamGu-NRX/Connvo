@@ -16,7 +16,7 @@ function sleep(ms: number): Promise<void> {
 export const handleTransition = async (
   e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   href: string,
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
 ) => {
   e.preventDefault();
   const body = document.querySelector("body");

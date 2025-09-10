@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { motion, AnimatePresence } from "framer-motion"
-import { Clock, AlarmClock } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { TimeManager } from "./time-manager"
+import { motion, AnimatePresence } from "framer-motion";
+import { Clock, AlarmClock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { TimeManager } from "./time-manager";
 
 interface TimeDisplayProps {
-  showTimeLeft: boolean
-  timeElapsed: number
-  timeRemaining: number
-  isAlmostOutOfTime: boolean
-  onToggleTimeDisplay: () => void
+  showTimeLeft: boolean;
+  timeElapsed: number;
+  timeRemaining: number;
+  isAlmostOutOfTime: boolean;
+  onToggleTimeDisplay: () => void;
 }
 
 export function TimeDisplay({
@@ -24,7 +24,10 @@ export function TimeDisplay({
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
-        <Label htmlFor="time-toggle" className="text-zinc-400 text-xs select-none cursor-pointer">
+        <Label
+          htmlFor="time-toggle"
+          className="cursor-pointer text-xs text-zinc-400 select-none"
+        >
           Show time left
         </Label>
         <Switch
@@ -41,8 +44,10 @@ export function TimeDisplay({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
           transition={{ duration: 0.2 }}
-          className={`flex items-center space-x-2 px-3 py-1.5 rounded-full ${
-            isAlmostOutOfTime && showTimeLeft ? "bg-red-500/20" : "bg-zinc-800/70"
+          className={`flex items-center space-x-2 rounded-full px-3 py-1.5 ${
+            isAlmostOutOfTime && showTimeLeft
+              ? "bg-red-500/20"
+              : "bg-zinc-800/70"
           }`}
         >
           <motion.div
@@ -59,17 +64,20 @@ export function TimeDisplay({
             }
           >
             {isAlmostOutOfTime && showTimeLeft ? (
-              <AlarmClock className="w-4 h-4 text-red-400" />
+              <AlarmClock className="h-4 w-4 text-red-400" />
             ) : (
-              <Clock className="w-4 h-4 text-blue-400" />
+              <Clock className="h-4 w-4 text-blue-400" />
             )}
           </motion.div>
-          <span className={`font-mono text-sm ${isAlmostOutOfTime && showTimeLeft ? "text-red-400" : "text-blue-400"}`}>
-            {showTimeLeft ? TimeManager.formatTime(timeRemaining) : TimeManager.formatTime(timeElapsed)}
+          <span
+            className={`font-mono text-sm ${isAlmostOutOfTime && showTimeLeft ? "text-red-400" : "text-blue-400"}`}
+          >
+            {showTimeLeft
+              ? TimeManager.formatTime(timeRemaining)
+              : TimeManager.formatTime(timeElapsed)}
           </span>
         </motion.div>
       </AnimatePresence>
     </div>
-  )
+  );
 }
-

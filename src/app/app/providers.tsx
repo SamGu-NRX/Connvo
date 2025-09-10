@@ -1,7 +1,7 @@
 "use client";
 
 import { Toaster } from "sonner";
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from "@/components/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import StreamVideoProvider from "@/providers/StreamClientProvider";
 
@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <div className="min-h-screen bg-background">
+          <div className="bg-background min-h-screen">
             <main
             // className="container mx-auto px-4 py-6"
             >

@@ -1,16 +1,16 @@
-import { Volume2 } from "lucide-react"
-import { motion } from "framer-motion"
+import { Volume2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function VolumeIndicator() {
   return (
     <motion.div
-      className="absolute top-4 right-4 bg-gray-800/50 backdrop-blur-md p-2 rounded-full flex items-center space-x-2"
+      className="absolute top-4 right-4 flex items-center space-x-2 rounded-full bg-gray-800/50 p-2 backdrop-blur-md"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1 }}
     >
-      <Volume2 className="w-4 h-4 text-gray-300" />
-      <div className="w-16 h-1 bg-gray-600 rounded-full overflow-hidden">
+      <Volume2 className="h-4 w-4 text-gray-300" />
+      <div className="h-1 w-16 overflow-hidden rounded-full bg-gray-600">
         <motion.div
           className="h-full bg-green-500"
           initial={{ width: 0 }}
@@ -19,6 +19,5 @@ export default function VolumeIndicator() {
         />
       </div>
     </motion.div>
-  )
+  );
 }
-

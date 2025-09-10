@@ -41,12 +41,8 @@
           "name": "connections_user1_id_users_id_fk",
           "tableFrom": "connections",
           "tableTo": "users",
-          "columnsFrom": [
-            "user1_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user1_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -54,12 +50,8 @@
           "name": "connections_user2_id_users_id_fk",
           "tableFrom": "connections",
           "tableTo": "users",
-          "columnsFrom": [
-            "user2_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user2_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -112,12 +104,8 @@
           "name": "interests_user_id_users_id_fk",
           "tableFrom": "interests",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -171,12 +159,8 @@
           "name": "messages_connection_id_connections_id_fk",
           "tableFrom": "messages",
           "tableTo": "connections",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -184,12 +168,8 @@
           "name": "messages_sender_id_users_id_fk",
           "tableFrom": "messages",
           "tableTo": "users",
-          "columnsFrom": [
-            "sender_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["sender_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -331,16 +311,12 @@
         "users_clerk_id_unique": {
           "name": "users_clerk_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "clerk_id"
-          ]
+          "columns": ["clerk_id"]
         },
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -352,32 +328,17 @@
     "public.connection_status": {
       "name": "connection_status",
       "schema": "public",
-      "values": [
-        "online",
-        "away",
-        "offline"
-      ]
+      "values": ["online", "away", "offline"]
     },
     "public.connection_type": {
       "name": "connection_type",
       "schema": "public",
-      "values": [
-        "b2b",
-        "collaboration",
-        "mentorship",
-        "investment",
-        "general"
-      ]
+      "values": ["b2b", "collaboration", "mentorship", "investment", "general"]
     },
     "public.interest_category": {
       "name": "interest_category",
       "schema": "public",
-      "values": [
-        "academic",
-        "industry",
-        "skill",
-        "personal"
-      ]
+      "values": ["academic", "industry", "skill", "personal"]
     }
   },
   "schemas": {},

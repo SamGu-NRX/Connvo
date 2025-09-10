@@ -1,4 +1,4 @@
-# Technology Stack & Build System
+# **CURRENT** Technology Stack & Build System (WIP)
 
 ## Frontend Stack
 

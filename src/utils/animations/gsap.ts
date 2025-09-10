@@ -13,7 +13,7 @@ interface FadeUpOptions extends gsap.TweenVars {
 export const fadeUp = (
   targets: gsap.TweenTarget,
   trigger: gsap.DOMTarget,
-  options?: FadeUpOptions
+  options?: FadeUpOptions,
 ) => {
   const { start = "top 92%", ease = "power3.out", ...rest } = options || {};
 
@@ -32,6 +32,6 @@ export const fadeUp = (
         toggleActions: "play reset restart reverse",
       },
       ...rest,
-    }
+    },
   );
 };

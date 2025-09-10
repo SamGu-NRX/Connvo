@@ -1,29 +1,35 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfessionalConnectionPage() {
-  const router = useRouter()
-  const [purpose, setPurpose] = useState("")
-  const [description, setDescription] = useState("")
+  const router = useRouter();
+  const [purpose, setPurpose] = useState("");
+  const [description, setDescription] = useState("");
 
   const handleStartQueue = (type: string) => {
     router.push(
       `/professional/${type}?purpose=${encodeURIComponent(purpose)}&description=${encodeURIComponent(description)}`,
-    )
-  }
+    );
+  };
 
   return (
     <div className="container mx-auto p-4 md:p-8">
       <motion.h1
-        className="text-3xl font-bold mb-8"
+        className="mb-8 text-3xl font-bold"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -57,14 +63,21 @@ export default function ProfessionalConnectionPage() {
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Button onClick={() => handleStartQueue("b2b")}>B2B Networking</Button>
-            <Button onClick={() => handleStartQueue("collaboration")}>Find Collaborators</Button>
-            <Button onClick={() => handleStartQueue("mentorship")}>Seek Mentorship</Button>
-            <Button onClick={() => handleStartQueue("investment")}>Pitch to Investors</Button>
+            <Button onClick={() => handleStartQueue("b2b")}>
+              B2B Networking
+            </Button>
+            <Button onClick={() => handleStartQueue("collaboration")}>
+              Find Collaborators
+            </Button>
+            <Button onClick={() => handleStartQueue("mentorship")}>
+              Seek Mentorship
+            </Button>
+            <Button onClick={() => handleStartQueue("investment")}>
+              Pitch to Investors
+            </Button>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

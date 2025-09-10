@@ -16,10 +16,7 @@ import ProfileSummary from "@/components/onboarding/ProfileSummary";
 import BasicInfo from "@/components/onboarding/BasicInfo";
 import Congratulations from "@/components/onboarding/Congratulations";
 import { saveUserOnboardingData } from "./_actions";
-import {
-  onboardingSchema,
-  OnboardingFormData,
-} from "@/schemas/onboarding";
+import { onboardingSchema, OnboardingFormData } from "@/schemas/onboarding";
 import {
   Briefcase,
   MessageSquare,
@@ -109,7 +106,10 @@ export default function OnboardingPage() {
     <div className="from-background to-secondary/20 min-h-screen bg-linear-to-b">
       <AnimatePresence mode="wait">
         {showCongrats ? (
-          <Congratulations key="congrats" onComplete={() => router.push("/app")} />
+          <Congratulations
+            key="congrats"
+            onComplete={() => router.push("/app")}
+          />
         ) : (
           <FormProvider {...methods}>
             <motion.div
@@ -161,9 +161,7 @@ export default function OnboardingPage() {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    {currentStep === 1 && (
-                      <BasicInfo onNext={handleNext} />
-                    )}
+                    {currentStep === 1 && <BasicInfo onNext={handleNext} />}
                     {currentStep === 2 && (
                       <ProfessionalInfo
                         onNext={handleNext}
@@ -171,10 +169,7 @@ export default function OnboardingPage() {
                       />
                     )}
                     {currentStep === 3 && (
-                      <BioSection
-                        onNext={handleNext}
-                        onBack={handleBack}
-                      />
+                      <BioSection onNext={handleNext} onBack={handleBack} />
                     )}
                     {currentStep === 4 && (
                       <InterestsSection

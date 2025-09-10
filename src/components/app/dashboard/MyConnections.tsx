@@ -141,7 +141,11 @@ const ProfileList: React.FC<ProfileListProps> = ({
                         className={`h-9 w-9 ${profile.avatar ? "" : `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to}`}`}
                       >
                         {profile.avatar ? (
-                          <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
+                          <img
+                            src={profile.avatar}
+                            alt={profile.name}
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
                           <AvatarFallback
                             className={`bg-transparent ${avatarColors.text} font-semibold`}
@@ -152,7 +156,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
                       </Avatar>
                       <div
                         className={`absolute right-0 bottom-0 h-3 w-3 rounded-full ${getStatusColor(
-                          profile.connectionStatus || "good"
+                          profile.connectionStatus || "good",
                         )} border-2 border-white dark:border-zinc-900`}
                       />
                     </div>
@@ -253,7 +257,11 @@ const ChatArea: React.FC<ChatAppProps> = ({
               className={`h-9 w-9 ${shouldShowGradient ? `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to}` : ""}`}
             >
               {!shouldShowGradient && activeProfile.avatar ? (
-                <img src={activeProfile.avatar} alt={activeProfile.name} className="h-full w-full object-cover" />
+                <img
+                  src={activeProfile.avatar}
+                  alt={activeProfile.name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <AvatarFallback
                   className={`bg-transparent ${avatarColors.text} font-semibold`}
@@ -268,7 +276,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
               <h3 className="font-medium">{activeProfile.name}</h3>
               <div
                 className={`h-2 w-2 rounded-full ${getStatusColor(
-                  activeProfile.connectionStatus || "good"
+                  activeProfile.connectionStatus || "good",
                 )}`}
               />
             </div>
@@ -354,7 +362,8 @@ const ChatArea: React.FC<ChatAppProps> = ({
                 }
               : generateAvatarColor(activeProfile.name);
 
-            const shouldShowGradient = !activeProfile.avatar || activeProfile.isBot;
+            const shouldShowGradient =
+              !activeProfile.avatar || activeProfile.isBot;
 
             return (
               <motion.div
@@ -376,7 +385,11 @@ const ChatArea: React.FC<ChatAppProps> = ({
                       className={`h-9 w-9 ${shouldShowGradient ? `bg-gradient-to-br ${messageAvatarColors.from} ${messageAvatarColors.to}` : ""}`}
                     >
                       {!shouldShowGradient && activeProfile.avatar ? (
-                        <img src={activeProfile.avatar} alt={activeProfile.name} className="h-full w-full object-cover" />
+                        <img
+                          src={activeProfile.avatar}
+                          alt={activeProfile.name}
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <AvatarFallback
                           className={`bg-transparent ${messageAvatarColors.text} font-semibold`}
@@ -443,7 +456,8 @@ const ChatArea: React.FC<ChatAppProps> = ({
 
 const ModernChatApp: React.FC = () => {
   // Update state to use UserInfo instead of Profile
-  const [activeProfile, setActiveProfile] = useState<UserInfo>(/* import your profiles data */);
+  const [activeProfile, setActiveProfile] =
+    useState<UserInfo>(/* import your profiles data */);
   const [messages, setMessages] =
     useState<Record<string, Message[]>>(/* import your initial messages */);
   const [newMessage, setNewMessage] = useState("");

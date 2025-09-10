@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
-import React from "react"
-import MatchQueueLobby from "@/components/queue/MatchQueueLobby"
-import { useRouter } from "next/navigation"
+import React from "react";
+import MatchQueueLobby from "@/components/queue/MatchQueueLobby";
+import { useRouter } from "next/navigation";
 
 export default function MatchQueuePage() {
-  const router = useRouter()
+  const router = useRouter();
 
   const handleLeaveQueue = () => {
-    router.push("/app")
-  }
+    router.push("/app");
+  };
 
   const handleAcceptMatch = (matchId: string) => {
     // In a real application, you would initiate the call here
-    console.log(`Accepted match with ID: ${matchId}`)
-    router.push(`/app/call/${matchId}`)
-  }
+    console.log(`Accepted match with ID: ${matchId}`);
+    router.push(`/app/call/${matchId}`);
+  };
 
   const handleDeclineMatch = (matchId: string) => {
     // In a real application, you would decline the match and continue searching
-    console.log(`Declined match with ID: ${matchId}`)
-  }
+    console.log(`Declined match with ID: ${matchId}`);
+  };
 
   return (
     <MatchQueueLobby
@@ -30,6 +30,5 @@ export default function MatchQueuePage() {
       onAcceptMatch={handleAcceptMatch}
       onDeclineMatch={handleDeclineMatch}
     />
-  )
+  );
 }
-

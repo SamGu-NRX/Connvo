@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { GraduationCap, Briefcase, Award } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { motion } from "framer-motion";
+import { GraduationCap, Briefcase, Award } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-export type InterestType = "academic" | "industry" | "skill"
+export type InterestType = "academic" | "industry" | "skill";
 
 export interface Interest {
-  type: InterestType
-  name: string
+  type: InterestType;
+  name: string;
 }
 
 interface InterestBadgeProps {
-  interest: Interest | string
-  animated?: boolean
-  className?: string
+  interest: Interest | string;
+  animated?: boolean;
+  className?: string;
 }
 
 // Badge variants for different interest types
@@ -41,16 +41,20 @@ const badgeVariants = {
     hover: "hover:bg-violet-100 dark:hover:bg-violet-950/50",
     icon: <Award className="mr-1 h-3 w-3 opacity-70" />,
   },
-}
+};
 
-export function InterestBadge({ interest, animated = true, className }: InterestBadgeProps) {
-  const BadgeWrapper = animated ? motion.div : "div"
+export function InterestBadge({
+  interest,
+  animated = true,
+  className,
+}: InterestBadgeProps) {
+  const BadgeWrapper = animated ? motion.div : "div";
   const animationProps = animated
     ? {
         whileHover: { scale: 1.05 },
         whileTap: { scale: 0.98 },
       }
-    : {}
+    : {};
 
   // Handle both typed interests and plain strings
   if (typeof interest === "string") {
@@ -66,10 +70,10 @@ export function InterestBadge({ interest, animated = true, className }: Interest
           {interest}
         </Badge>
       </BadgeWrapper>
-    )
+    );
   }
 
-  const variant = badgeVariants[interest.type]
+  const variant = badgeVariants[interest.type];
 
   return (
     <BadgeWrapper {...animationProps}>
@@ -87,6 +91,5 @@ export function InterestBadge({ interest, animated = true, className }: Interest
         {interest.name}
       </Badge>
     </BadgeWrapper>
-  )
+  );
 }
-

@@ -1,5 +1,4 @@
-import type { UserInfo } from "@/types/user"
-
+import type { UserInfo } from "@/types/user";
 
 export const mockUsers: UserInfo[] = [
   {
@@ -23,7 +22,12 @@ export const mockUsers: UserInfo[] = [
       totalMinutes: 420,
       averageRating: 4.8,
     },
-    interests: ["Design Systems", "User Research", "Prototyping", "Accessibility"],
+    interests: [
+      "Design Systems",
+      "User Research",
+      "Prototyping",
+      "Accessibility",
+    ],
     connectionStatus: "excellent",
     isSpeaking: true,
   },
@@ -48,7 +52,12 @@ export const mockUsers: UserInfo[] = [
       totalMinutes: 360,
       averageRating: 4.5,
     },
-    interests: ["JavaScript", "Cloud Computing", "System Design", "Open Source"],
+    interests: [
+      "JavaScript",
+      "Cloud Computing",
+      "System Design",
+      "Open Source",
+    ],
     connectionStatus: "good",
     isSpeaking: false,
   },
@@ -77,5 +86,4 @@ export const mockUsers: UserInfo[] = [
     connectionStatus: "excellent",
     isSpeaking: false,
   },
-]
-
+];

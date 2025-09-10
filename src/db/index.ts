@@ -3,9 +3,9 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
-import { config } from 'dotenv';
+import { config } from "dotenv";
 
-config({ path: '.env' }); // or .env.local
+config({ path: ".env" }); // or .env.local
 
 const connectionString = process.env.DATABASE_URL! as string;
 

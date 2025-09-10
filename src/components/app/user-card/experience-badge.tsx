@@ -1,9 +1,9 @@
-import { Clock } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ExperienceBadgeProps {
-  years: number
-  className?: string
+  years: number;
+  className?: string;
 }
 
 export function ExperienceBadge({ years, className }: ExperienceBadgeProps) {
@@ -17,6 +17,5 @@ export function ExperienceBadge({ years, className }: ExperienceBadgeProps) {
       <Clock className="mr-1 h-3 w-3 opacity-70" />
       {years} years experience
     </span>
-  )
+  );
 }
-
