@@ -34,7 +34,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/components/page.jsx"
+    "src/components/page.jsx",
+    "convex/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "convex/_generated"]
 }

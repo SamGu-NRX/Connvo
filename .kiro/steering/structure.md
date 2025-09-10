@@ -1,4 +1,4 @@
-# Project Structure & Organization
+# **CURRENT** Project Structure & Organization (WIP, subject to change)
 
 ## Root Directory Layout
 
