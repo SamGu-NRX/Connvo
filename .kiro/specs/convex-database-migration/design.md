@@ -120,6 +120,107 @@ WorkOS Integration
 - Convex client must propagate auth so server functions get ctx.auth.getUserIdentity().
 - Do not manually parse tokens in queries/mutations; rely on Convex’s auth context per steering/convex_rules.mdc.
 
+**Proper WorkOS Configuration (Following Convex Documentation):**
+
+Authentication Configuration:
+
+```ts
+// convex/auth.config.ts
+const clientId = process.env.WORKOS_CLIENT_ID;
+
+const authConfig = {
+  providers: [
+    {
+      type: "customJwt",
+      issuer: `https://api.workos.com/`,
+      algorithm: "RS256",
+      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
+      applicationID: clientId,
+    },
+    {
+      type: "customJwt",
+      issuer: `https://api.workos.com/user_management/${clientId}`,
+      algorithm: "RS256",
+      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
+      applicationID: clientId,
+    },
+  ],
+};
+
+export default authConfig;
+```
+
+Client-Side Setup:
+
+```tsx
+// app/ConvexClientProvider.tsx
+"use client";
+
+import { ReactNode, useCallback, useRef } from "react";
+import { ConvexReactClient } from "convex/react";
+import { ConvexProviderWithAuth } from "convex/react";
+import {
+  AuthKitProvider,
+  useAuth,
+  useAccessToken,
+} from "@workos-inc/authkit-nextjs/components";
+
+const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  return (
+    <AuthKitProvider>
+      <ConvexProviderWithAuth client={convex} useAuth={useAuthFromAuthKit}>
+        {children}
+      </ConvexProviderWithAuth>
+    </AuthKitProvider>
+  );
+}
+
+function useAuthFromAuthKit() {
+  const { user, loading: isLoading } = useAuth();
+  const {
+    accessToken,
+    loading: tokenLoading,
+    error: tokenError,
+  } = useAccessToken();
+  const loading = (isLoading ?? false) || (tokenLoading ?? false);
+  const authenticated = !!user && !!accessToken && !loading;
+
+  const stableAccessToken = useRef<string | null>(null);
+  if (accessToken && !tokenError) {
+    stableAccessToken.current = accessToken;
+  }
+
+  const fetchAccessToken = useCallback(async () => {
+    if (stableAccessToken.current && !tokenError) {
+      return stableAccessToken.current;
+    }
+    return null;
+  }, [tokenError]);
+
+  return {
+    isLoading: loading,
+    isAuthenticated: authenticated,
+    fetchAccessToken,
+  };
+}
+```
+
+Environment Variables:
+
+```env
+# WorkOS AuthKit Configuration
+WORKOS_CLIENT_ID=client_your_client_id_here
+WORKOS_API_KEY=sk_test_your_api_key_here
+WORKOS_COOKIE_PASSWORD=your_secure_password_here_must_be_at_least_32_characters_long
+NEXT_PUBLIC_WORKOS_REDIRECT_URI=http://localhost:3000/callback
+
+# Convex Configuration
+CONVEX_DEPLOY_KEY=your_convex_deploy_key_here
+NEXT_PUBLIC_CONVEX_URL=https://your-convex-url.convex.cloud
+```
+
 Access Control Helpers
 
 - Centralize guards and ACL checks. Meeting-level isolation is enforced everywhere.
@@ -350,18 +451,23 @@ export default defineSchema({
 
   transcripts: defineTable({
     meetingId: v.id("meetings"),
-    bucketMs: v.number(),
+    // Sharding key: time bucket (5-minute windows) to prevent hot partitions
+    bucketMs: v.number(), // Math.floor(timestamp / 300000) * 300000
     sequence: v.number(),
     speakerId: v.optional(v.string()),
     text: v.string(),
     confidence: v.number(),
     startMs: v.number(),
     endMs: v.number(),
+    // Denormalized for performance
+    wordCount: v.number(),
+    language: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_meeting_bucket", ["meetingId", "bucketMs"])
     .index("by_meeting_bucket_seq", ["meetingId", "bucketMs", "sequence"])
-    .index("by_meeting_time", ["meetingId", "startMs"]),
+    .index("by_meeting_time_range", ["meetingId", "startMs"])
+    .index("by_bucket_global", ["bucketMs"]), // For cleanup jobs
 
   transcriptSegments: defineTable({
     meetingId: v.id("meetings"),
@@ -642,10 +748,81 @@ export const subscribeTranscriptStream = query({
 });
 ```
 
-Backpressure and Coalescing
+Backpressure and Coalescing (Enhanced Implementation)
 
-- Apply client-side and server-side coalescing windows (50–250ms) for hot streams (transcripts, noteOps).
-- Cap per-subscription bandwidth; favor frequent small diffs over large payloads.
+**Server-Side Batching:**
+
+```ts
+// convex/lib/batching.ts
+export class BatchProcessor<T> {
+  private batch: T[] = [];
+  private timer: NodeJS.Timeout | null = null;
+  private readonly maxBatchSize: number;
+  private readonly maxWaitMs: number;
+  private readonly processor: (items: T[]) => Promise<void>;
+
+  constructor(
+    maxBatchSize: number,
+    maxWaitMs: number,
+    processor: (items: T[]) => Promise<void>,
+  ) {
+    this.maxBatchSize = maxBatchSize;
+    this.maxWaitMs = maxWaitMs;
+    this.processor = processor;
+  }
+
+  async add(item: T): Promise<void> {
+    this.batch.push(item);
+
+    if (this.batch.length >= this.maxBatchSize) {
+      await this.flush();
+    } else if (!this.timer) {
+      this.timer = setTimeout(() => this.flush(), this.maxWaitMs);
+    }
+  }
+
+  private async flush(): Promise<void> {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+
+    if (this.batch.length === 0) return;
+
+    const items = [...this.batch];
+    this.batch = [];
+
+    try {
+      await this.processor(items);
+    } catch (error) {
+      console.error("Batch processing failed:", error);
+      // Re-queue items for retry
+      this.batch.unshift(...items);
+    }
+  }
+}
+```
+
+**Coalescing Strategies:**
+
+- Transcripts: 100ms window, max 20 chunks per batch
+- Note operations: 250ms window, max 10 ops per batch
+- Meeting state: 500ms window, single state per batch
+- Presence updates: 1000ms window, latest state wins
+
+**Client-Side Optimization:**
+
+- Debounce rapid user inputs (typing, cursor movement)
+- Batch multiple operations before sending to server
+- Use optimistic updates with rollback on conflict
+- Implement exponential backoff for failed operations
+
+**Bandwidth Management:**
+
+- Cap per-subscription to 10 updates/second
+- Prioritize critical updates (auth changes, meeting end)
+- Use delta compression for large payloads
+- Implement circuit breakers for overloaded clients
 
 6. Meeting Lifecycle and GetStream Integration
 
@@ -796,22 +973,138 @@ export const aggregateTranscriptSegments = action({
 });
 ```
 
-8. Collaborative Notes with OT
+8. Collaborative Notes with OT (Enhanced Implementation)
 
 - meetingNotes: materialized current content and version.
 - noteOps: append-only operations with sequence numbers.
-- Minimal OT now; can upgrade to richer CRDT later.
+- Concrete OT implementation with proper conflict resolution.
+- Optimized for real-time collaboration with batching and coalescing.
 
 ```ts
 // convex/lib/ot.ts
-export function transformAgainst(clientOp: any, serverOps: any[]) {
-  // Placeholder associative transform; refine during implementation
-  return { transformed: clientOp };
+export interface Operation {
+  type: "insert" | "delete" | "retain";
+  position: number;
+  content?: string;
+  length?: number;
+  authorId: string;
+  timestamp: number;
 }
 
-export function applyToDoc(doc: string, op: any): string {
-  // Apply simple insert/delete/retain to text
-  return doc;
+export function transformAgainst(
+  clientOp: Operation,
+  serverOps: Operation[],
+): Operation {
+  let transformedOp = { ...clientOp };
+
+  for (const serverOp of serverOps) {
+    if (serverOp.authorId === clientOp.authorId) continue; // Skip own ops
+
+    transformedOp = transformOperationPair(transformedOp, serverOp);
+  }
+
+  return transformedOp;
+}
+
+function transformOperationPair(op1: Operation, op2: Operation): Operation {
+  // Implement operational transformation rules
+  if (op1.type === "insert" && op2.type === "insert") {
+    if (op2.position <= op1.position) {
+      return { ...op1, position: op1.position + (op2.content?.length || 0) };
+    }
+  } else if (op1.type === "insert" && op2.type === "delete") {
+    if (op2.position < op1.position) {
+      return {
+        ...op1,
+        position: Math.max(op2.position, op1.position - (op2.length || 0)),
+      };
+    }
+  } else if (op1.type === "delete" && op2.type === "insert") {
+    if (op2.position <= op1.position) {
+      return { ...op1, position: op1.position + (op2.content?.length || 0) };
+    }
+  } else if (op1.type === "delete" && op2.type === "delete") {
+    if (op2.position < op1.position) {
+      return {
+        ...op1,
+        position: Math.max(op2.position, op1.position - (op2.length || 0)),
+      };
+    } else if (op2.position < op1.position + (op1.length || 0)) {
+      // Overlapping deletes - adjust length
+      const overlap = Math.min(
+        op1.length || 0,
+        op2.position + (op2.length || 0) - op1.position,
+      );
+      return { ...op1, length: (op1.length || 0) - overlap };
+    }
+  }
+
+  return op1;
+}
+
+export function applyToDoc(doc: string, op: Operation): string {
+  switch (op.type) {
+    case "insert":
+      return (
+        doc.slice(0, op.position) + (op.content || "") + doc.slice(op.position)
+      );
+    case "delete":
+      return (
+        doc.slice(0, op.position) + doc.slice(op.position + (op.length || 0))
+      );
+    case "retain":
+      return doc; // No change
+    default:
+      throw new Error(`Unknown operation type: ${(op as any).type}`);
+  }
+}
+
+export function composeOperations(ops: Operation[]): Operation[] {
+  // Compose consecutive operations for efficiency
+  const composed: Operation[] = [];
+  let current: Operation | null = null;
+
+  for (const op of ops) {
+    if (!current) {
+      current = { ...op };
+      continue;
+    }
+
+    // Try to compose with current operation
+    if (canCompose(current, op)) {
+      current = compose(current, op);
+    } else {
+      composed.push(current);
+      current = { ...op };
+    }
+  }
+
+  if (current) composed.push(current);
+  return composed;
+}
+
+function canCompose(op1: Operation, op2: Operation): boolean {
+  return (
+    op1.authorId === op2.authorId &&
+    op1.type === op2.type &&
+    Math.abs(op1.timestamp - op2.timestamp) < 1000
+  ); // Within 1 second
+}
+
+function compose(op1: Operation, op2: Operation): Operation {
+  if (
+    op1.type === "insert" &&
+    op2.type === "insert" &&
+    op1.position + (op1.content?.length || 0) === op2.position
+  ) {
+    return {
+      ...op1,
+      content: (op1.content || "") + (op2.content || ""),
+      timestamp: Math.max(op1.timestamp, op2.timestamp),
+    };
+  }
+
+  return op2; // Default to later operation
 }
 ```
 
@@ -1302,18 +1595,191 @@ export async function withTrace<T>(
     - rateLimit.ts
     - utils.ts
 
-18. Migration and Cutover Plan
+18. Migration and Cutover Plan (Detailed Implementation)
 
-- Step 1: Schema mapping document from Supabase/Drizzle → Convex (IDs, relationships).
-- Step 2: Backfill users, profiles, interests, connections, meetings history (where available).
-- Step 3: Dual-write for critical entities (optional, if legacy still active) with comparison jobs.
-- Step 4: Switch reads behind feature flags per module; monitor for discrepancies.
-- Step 5: Cutover; set legacy to read-only; decommission after verification.
+**Phase 1: Schema Mapping and Preparation**
 
-Validation
+Drizzle → Convex Schema Mapping:
 
-- Parity tests sampling counts and random records.
-- Backfill embeddings incrementally post-cutover.
+```typescript
+// Migration mapping configuration
+const SCHEMA_MAPPING = {
+  // Drizzle users → Convex users
+  users: {
+    source: "users",
+    target: "users",
+    fieldMapping: {
+      id: "_id", // UUID → Convex ID
+      clerkId: "workosUserId", // Clerk → WorkOS migration
+      email: "email",
+      name: "displayName",
+      createdAt: "createdAt", // timestamp → number
+      updatedAt: "updatedAt",
+      // New fields
+      isActive: () => true,
+      orgId: () => null,
+      orgRole: () => null,
+    },
+    transforms: {
+      createdAt: (ts: Date) => ts.getTime(),
+      updatedAt: (ts: Date) => ts.getTime(),
+    },
+  },
+
+  // Drizzle interests → Convex interests + userInterests
+  interests: {
+    source: "interests",
+    target: ["interests", "userInterests"],
+    fieldMapping: {
+      id: "_id",
+      userId: "userId",
+      name: "key", // Normalize to canonical keys
+      category: "category",
+    },
+    postProcess: "createCanonicalInterests",
+  },
+
+  // Drizzle meetings → Convex meetings + meetingParticipants
+  meetings: {
+    source: "meetings",
+    target: ["meetings", "meetingParticipants"],
+    fieldMapping: {
+      id: "_id",
+      user1Id: "organizerId", // First user becomes organizer
+      user2Id: null, // Handle in postProcess
+      scheduledAt: "scheduledAt",
+      createdAt: "createdAt",
+    },
+    postProcess: "createMeetingParticipants",
+  },
+
+  // Drizzle connections → Convex connections (bidirectional)
+  connections: {
+    source: "connections",
+    target: "connections",
+    fieldMapping: {
+      id: "_id",
+      user1Id: "user1Id",
+      user2Id: "user2Id",
+      createdAt: "createdAt",
+    },
+  },
+
+  // Drizzle messages → Convex messages
+  messages: {
+    source: "messages",
+    target: "messages",
+    fieldMapping: {
+      id: "_id",
+      connectionId: "connectionId", // Will need lookup
+      senderId: "userId",
+      content: "content",
+      createdAt: "timestamp",
+    },
+  },
+};
+```
+
+**Phase 2: Migration Execution Steps**
+
+Step 1: Environment Setup
+
+- Deploy Convex schema to staging environment
+- Configure WorkOS authentication (replace Clerk)
+- Set up dual-database connections
+
+Step 2: Data Migration
+
+```typescript
+// Migration script structure
+async function migrateTable(tableName: string, batchSize = 1000) {
+  const mapping = SCHEMA_MAPPING[tableName];
+  const sourceCount = await drizzle.select().from(mapping.source).count();
+
+  for (let offset = 0; offset < sourceCount; offset += batchSize) {
+    const batch = await drizzle
+      .select()
+      .from(mapping.source)
+      .limit(batchSize)
+      .offset(offset);
+
+    const transformedBatch = batch.map((row) => transformRow(row, mapping));
+    await convex.mutation(api.migration.insertBatch, {
+      table: mapping.target,
+      data: transformedBatch,
+    });
+
+    console.log(
+      `Migrated ${offset + batch.length}/${sourceCount} ${tableName}`,
+    );
+  }
+}
+```
+
+Step 3: Dual-Write Implementation
+
+```typescript
+// Dual-write wrapper for critical operations
+export const dualWriteUser = mutation({
+  args: { userData: v.object({...}) },
+  returns: v.id("users"),
+  handler: async (ctx, { userData }) => {
+    // Write to Convex (primary)
+    const convexId = await ctx.db.insert("users", userData);
+
+    // Write to legacy (secondary) - via action
+    await ctx.scheduler.runAfter(0, internal.migration.writeLegacyUser, {
+      convexId,
+      userData
+    });
+
+    return convexId;
+  }
+});
+```
+
+Step 4: Feature Flag Controlled Cutover
+
+```typescript
+// Feature flag controlled reads
+export const getUser = query({
+  args: { userId: v.id("users") },
+  returns: v.union(v.object({...}), v.null()),
+  handler: async (ctx, { userId }) => {
+    const useConvex = await ctx.db
+      .query("featureFlags")
+      .withIndex("by_key", q => q.eq("key", "use_convex_users"))
+      .unique();
+
+    if (useConvex?.value) {
+      return await ctx.db.get(userId);
+    } else {
+      // Fallback to legacy via action
+      return await ctx.runAction(internal.legacy.getUser, { userId });
+    }
+  }
+});
+```
+
+Step 5: Validation and Monitoring
+
+- Real-time data consistency checks
+- Performance monitoring and alerting
+- Rollback procedures
+
+**Phase 3: Post-Migration Cleanup**
+
+- Backfill embeddings for existing content
+- Generate missing relationships (interests, connections)
+- Archive legacy database
+- Update documentation and runbooks
+
+Validation Strategy:
+
+- Automated count comparisons per table
+- Random sampling validation (1% of records)
+- Critical path integration tests
+- Performance benchmarking
 
 19. Testing and Quality Gates
 
@@ -1360,16 +1826,53 @@ Threats & Mitigations
 - Provider outages: retries with backoff; circuit-breaker thresholds; fallbacks.
 - Data exfiltration: audit logs and strict access checks.
 
-21. Performance and Cost Targets
+21. Performance and Cost Targets (Enhanced for Scale)
 
-- p95 query latency < 120ms; WebSocket delivery p95 < 150ms.
-- Sustain ≥ 10 transcription updates/sec/meeting without hot-shard alerts.
-- Coalescing windows 50–250ms; batches ≤ 50 entries.
-- Avoid unbounded query scans; every hot query must use a relevant index.
-- Optimize price-performance:
-  - Materialize computed views to shift CPU from reads to async actions.
-  - Debounce AI calls; cache generation results via idempotency.
-  - Shard matching cycles; avoid O(N^2) scans.
+**Core Performance SLOs:**
+
+- p95 query latency < 120ms; WebSocket delivery p95 < 150ms
+- p99 query latency < 250ms; WebSocket delivery p99 < 300ms
+- Sustain ≥ 10 transcription updates/sec/meeting without hot-shard alerts
+- Support 1000+ concurrent meetings with linear scaling
+- Auth overhead ≤ 5ms median per request
+
+**Scalability Optimizations:**
+
+Write Performance:
+
+- Coalescing windows: 50–250ms for transcripts, 100–500ms for notes
+- Batch sizes: ≤ 50 entries per batch, ≤ 1MB per batch
+- Time-based sharding: 5-minute buckets for transcripts to prevent hot partitions
+- Async aggregation: Move heavy computations to background actions
+
+Read Performance:
+
+- Index-only queries: Every hot path must use compound indexes
+- Materialized views: Pre-compute meeting summaries, user stats
+- Denormalization: Store frequently accessed data redundantly
+- Pagination: All list queries bounded to ≤ 100 items
+
+**Cost Optimization Strategies:**
+
+- Debounce AI calls: Max 1 call per 30 seconds per meeting
+- Cache generation results: 24-hour TTL for prompt generation
+- Shard matching cycles: Process queues in parallel shards
+- Lazy loading: Load embeddings only when needed
+- Retention policies: Auto-cleanup old transcripts and ops
+
+**Monitoring and Alerting:**
+
+- Real-time metrics: Query latency, write throughput, error rates
+- Capacity alerts: >80% of performance targets trigger warnings
+- Cost tracking: Daily spend monitoring with budget alerts
+- Health checks: Synthetic transactions every 60 seconds
+
+**Load Testing Targets:**
+
+- 1000 concurrent meetings with 5 participants each
+- 50 transcription updates/second globally
+- 100 note operations/second globally
+- 10 AI prompt generations/second globally
 
 22. Feature Flags and Ops
 
@@ -1396,11 +1899,742 @@ Threats & Mitigations
 - Idempotency gaps: Ensure every external integration uses keys; add golden tests.
 - Cost spikes from chatty streams: Enforce coalescing and rate limits; observe and tune.
 
-Appendix A — Expanded Schema (Full Listing)
+Appendix A — Complete Enhanced Schema (Production-Ready)
 
-- Provided earlier in Section 4. Ensure any changes remain compliant with steering/convex_rules.mdc.
+**Full Convex Schema with Performance Optimizations:**
 
-Appendix B — Public API Examples
+```ts
+// convex/schema.ts
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  // Core user management
+  users: defineTable({
+    workosUserId: v.string(),
+    email: v.string(),
+    orgId: v.optional(v.string()),
+    orgRole: v.optional(v.string()),
+    // Denormalized for performance
+    displayName: v.optional(v.string()),
+    avatarUrl: v.optional(v.string()),
+    isActive: v.boolean(),
+    lastSeenAt: v.optional(v.number()),
+    // Preferences
+    timezone: v.optional(v.string()),
+    language: v.optional(v.string()),
+    notificationSettings: v.optional(v.object({
+      email: v.boolean(),
+      push: v.boolean(),
+      meeting: v.boolean(),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_workos_id", ["workosUserId"])
+    .index("by_org_and_active", ["orgId", "isActive"])
+    .index("by_email", ["email"])
+    .index("by_last_seen", ["lastSeenAt"])
+    .index("by_active_users", ["isActive", "lastSeenAt"]),
+
+  // Extended user profiles
+  profiles: defineTable({
+    userId: v.id("users"),
+    displayName: v.string(),
+    bio: v.optional(v.string()),
+    goals: v.optional(v.string()),
+    languages: v.array(v.string()),
+    experience: v.optional(v.string()),
+    // Professional info
+    jobTitle: v.optional(v.string()),
+    company: v.optional(v.string()),
+    industry: v.optional(v.string()),
+    skills: v.array(v.string()),
+    // Social links
+    linkedinUrl: v.optional(v.string()),
+    twitterUrl: v.optional(v.string()),
+    websiteUrl: v.optional(v.string()),
+    // Matching preferences
+    availableForMentoring: v.boolean(),
+    seekingMentorship: v.boolean(),
+    openToCollaboration: v.boolean(),
+    // Stats (denormalized)
+    meetingCount: v.number(),
+    connectionCount: v.number(),
+    averageRating: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_updated", ["updatedAt"])
+    .index("by_mentoring", ["availableForMentoring"])
+    .index("by_collaboration", ["openToCollaboration"])
+    .index("by_industry", ["industry"])
+    .index("by_experience", ["experience"]),
+
+  // Canonical interests taxonomy
+  interests: defineTable({
+    key: v.string(), // Unique identifier
+    label: v.string(), // Display name
+    category: v.string(),
+    description: v.optional(v.string()),
+    parentKey: v.optional(v.string()), // For hierarchical interests
+    isActive: v.boolean(),
+    usageCount: v.number(), // Denormalized popularity
+    createdAt: v.number(),
+  })
+    .index("by_key", ["key"])
+    .index("by_category", ["category"])
+    .index("by_parent", ["parentKey"])
+    .index("by_popularity", ["category", "usageCount"])
+    .index("by_active", ["isActive"]),
+
+  // User-interest relationships
+  userInterests: defineTable({
+    userId: v.id("users"),
+    interestKey: v.string(),
+    proficiencyLevel: v.optional(v.union(
+      v.literal("beginner"),
+      v.literal("intermediate"),
+      v.literal("advanced"),
+      v.literal("expert")
+    )),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_interest", ["interestKey"])
+    .index("by_user_interest", ["userId", "interestKey"])
+    .index("by_proficiency", ["interestKey", "proficiencyLevel"]),
+
+  // Meeting management
+  meetings: defineTable({
+    organizerId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(
+      v.literal("scheduled"),
+      v.literal("instant"),
+      v.literal("recurring")
+    ),
+    scheduledAt: v.optional(v.number()),
+    duration: v.optional(v.number()),
+    maxParticipants: v.number(),
+    // Stream integration
+    streamRoomId: v.optional(v.string()),
+    streamCallId: v.optional(v.string()),
+    // Meeting state
+    state: v.union(
+      v.literal("scheduled"),
+      v.literal("active"),
+      v.literal("concluded"),
+      v.literal("cancelled")
+    ),
+    // Settings
+    recordingEnabled: v.boolean(),
+    transcriptionEnabled: v.boolean(),
+    aiAssistantEnabled: v.boolean(),
+    // Metadata
+    tags: v.array(v.string()),
+    isPublic: v.boolean(),
+    requiresApproval: v.boolean(),
+    // Stats (denormalized)
+    participantCount: v.number(),
+    actualDuration: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_organizer", ["organizerId"])
+    .index("by_state", ["state"])
+    .index("by_scheduled", ["scheduledAt"])
+    .index("by_type_and_state", ["type", "state"])
+    .index("by_public_meetings", ["isPublic", "state"])
+    .index("by_tags", ["tags"]),
+
+  // Meeting participants with roles and presence
+  meetingParticipants: defineTable({
+    meetingId: v.id("meetings"),
+    userId: v.id("users"),
+    role: v.union(
+      v.literal("host"),
+      v.literal("co-host"),
+      v.literal("participant"),
+      v.literal("observer")
+    ),
+    status: v.union(
+      v.literal("invited"),
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("joined"),
+      v.literal("left")
+    ),
+    // Timing
+    invitedAt: v.number(),
+    joinedAt: v.optional(v.number()),
+    leftAt: v.optional(v.number()),
+    // Permissions
+    canShare: v.boolean(),
+    canRecord: v.boolean(),
+    canInvite: v.boolean(),
+    // Stats
+    speakingTime: v.optional(v.number()),
+geCount: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_user", ["userId"])
+    .index("by_meeting_and_user", ["meetingId", "userId"])
+    .index("by_meeting_and_role", ["meetingId", "role"])
+    .index("by_meeting_and_status", ["meetingId", "status"])
+    .index("by_user_and_status", ["userId", "status"]),
+
+  // Real-time meeting state
+  meetingState: defineTable({
+    meetingId: v.id("meetings"),
+    // Status
+    isActive: v.boolean(),
+    startedAt: v.optional(v.number()),
+    endedAt: v.optional(v.number()),
+    lastActivity: v.number(),
+    // Participants
+    activeParticipants: v.array(v.id("users")),
+    speakerQueue: v.array(v.id("users")),
+    // Features
+    recordingStatus: v.union(
+      v.literal("inactive"),
+      v.literal("recording"),
+      v.literal("paused")
+    ),
+    transcriptionStatus: v.union(
+      v.literal("inactive"),
+      v.literal("active"),
+      v.literal("paused")
+    ),
+    // AI state
+    lullDetected: v.boolean(),
+    lastLullAt: v.optional(v.number()),
+    currentTopics: v.array(v.string()),
+    // Stats
+    speakingStats: v.optional(v.object({
+      totalSpeakingTime: v.number(),
+      participantStats: v.record(v.id("users"), v.number()),
+    })),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_active", ["isActive"])
+    .index("by_last_activity", ["lastActivity"]),
+
+  // Collaborative notes (materialized state)
+  meetingNotes: defineTable({
+    meetingId: v.id("meetings"),
+    content: v.string(),
+    version: v.number(),
+    lastRebasedAt: v.number(),
+    // Metadata
+    wordCount: v.number(),
+    lastEditedBy: v.optional(v.id("users")),
+    // Permissions
+    isLocked: v.boolean(),
+    lockedBy: v.optional(v.id("users")),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_version", ["meetingId", "version"]),
+
+  // Note operations log (append-only)
+noteOps: defineTable({
+    meetingId: v.id("meetings"),
+    sequence: v.number(),
+    authorId: v.id("users"),
+ v.object({
+      type: v.union(
+v.literal("insert"),
+        v.literal("delete"),
+  v.literal("retain")
+      ),
+ition: v.number(),
+tent: v.optional(v.string()),
+length: v.optional(v.number()),
+    }),
+    // Metadata
+   clientId: v.string(),
+    timestamp: v.number(),
+    applied: v.boolean(),
+    transformedFrom: v.optional(v.number()),l sequenceif transformed
+  })
+    .index("by_meeting_sequence",ngId",nce"])
+    .index("by_meeting_timestamp",meetingId", "timestamp"])
+dex("by_author", ["authorId", "timestamp"]),
+
+  // Transcription chunks (time-sharded)
+  transcripts: defineTable({
+    meetingId: v.id("meetings"),
+ng key: 5-minute bucketsvent hotpartitions
+    bucketMs: v.number(), //Math.floor(timestamp / 300000) * 300000
+sequence: v.number(),
+    // Content
+    speakerId: v.optional(v.string()),
+    text: v.string(),
+    confidence: v.number(),
+    startMs: v.number(),
+    endMs: v.number(),
+    // Metadata
+    wordCount: v.number(),
+    language: v.optional(v.string()),
+    isInterim: v.boolean(), // Partial vs final transcript
+    // Processing
+    processed: v.boolean(),
+    processingError: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_meeting_bucket", ["meetingId", "bucketMs"])
+    .index("by_meeting_bucket_seq", ["meetingId", "bucketMs", "sequence"])
+    .index("by_meeting_time_range", ["meetingId", "startMs"])
+    .index("by_bucket_global", ["bucketMs"]) // For cleanup jobs
+    .index("by_processing", ["processed", "createdAt"]),
+
+  // Aggregated transcript segments
+  transcriptSegments: defineTable({
+    meetingId: v.id("meetings"),
+    startMs: v.number(),
+    endMs: v.number(),
+    // Content
+    speakers: v.array(v.string()),
+    text: v.string(),
+    wordCount: v.number(),
+    // Analysis
+    topics: v.array(v.string()),
+    sentiment: v.optional(v.number()),
+    keyPhrases: v.array(v.string()),
+    // Metadata
+    confidence: v.number(),
+    language: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_meeting_time", ["meetingId", "startMs"])
+    .index("by_topics", ["topics"])
+    .searchIndex("search_content", {
+      searchField: "text",
+      filterFields: ["meetingId", "speakers"]
+    }),
+
+  // AI-generated prompts and suggestions
+  prompts: defineTable({
+    meetingId: v.id("meetings"),
+    type: v.union(
+      v.literal("precall"),
+      v.literal("incall"),
+      v.literal("lull"),
+      v.literal("topic-shift")
+    ),
+    content: v.string(),
+    // Context
+    context: v.optional(v.object({
+      participants: v.array(v.id("users")),
+      topics: v.array(v.string()),
+      triggerEvent: v.optional(v.string()),
+    })),
+    // Metadata
+    tags: v.array(v.string()),
+    relevance: v.number(),
+    priority: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high")
+    ),
+    // Usage tracking
+    usedAt: v.optional(v.number()),
+    usedBy: v.optional(v.id("users")),
+    feedback: v.optional(v.union(
+      v.literal("used"),
+      v.literal("dismissed"),
+      v.literal("upvoted"),
+      v.literal("downvoted")
+    )),
+    // AI metadata
+    model: v.string(),
+    generationTime: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_meeting_type", ["meetingId", "type"])
+    .index("by_meeting_relevance", ["meetingId", "relevance"])
+    .index("by_meeting_priority", ["meetingId", "priority"])
+    .index("by_usage", ["usedAt"])
+    .index("by_feedback", ["feedback", "createdAt"]),
+
+  // Post-meeting insights per user
+  insights: defineTable({
+    userId: v.id("users"),
+    meetingId: v.id("meetings"),
+    // Content
+    summary: v.string(),
+    actionItems: v.array(v.string()),
+    keyTakeaways: v.array(v.string()),
+    // Recommendations
+    recommendations: v.array(v.object({
+      type: v.string(),
+      content: v.string(),
+      confidence: v.number(),
+      priority: v.union(
+        v.literal("low"),
+        v.literal("medium"),
+        v.literal("high")
+      ),
+    })),
+    // Connections and follow-ups
+    suggestedConnections: v.array(v.object({
+      userId: v.id("users"),
+      reason: v.string(),
+      confidence: v.number(),
+    })),
+    followUpTasks: v.array(v.object({
+      task: v.string(),
+      dueDate: v.optional(v.number()),
+      priority: v.string(),
+    })),
+    // Links and resources
+    links: v.array(v.object({
+      type: v.string(),
+      url: v.string(),
+      title: v.string(),
+      description: v.optional(v.string()),
+    })),
+    // Metadata
+    generatedBy: v.string(), // AI model/version
+    generationTime: v.number(),
+    isRead: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_meeting", ["meetingId"])
+    .index("by_user_meeting", ["userId", "meetingId"])
+    .index("by_user_unread", ["userId", "isRead"])
+    .index("by_created", ["createdAt"]),
+
+  // Real-time chat messages
+  messages: defineTable({
+    meetingId: v.id("meetings"),
+    userId: v.optional(v.id("users")), // null for system messages
+    // Content
+    content: v.string(),
+    messageType: v.union(
+      v.literal("text"),
+      v.literal("system"),
+      v.literal("file"),
+      v.literal("reaction")
+    ),
+    // Attachments
+    attachments: v.optional(v.array(v.object({
+      type: v.string(),
+      url: v.string(),
+      name: v.string(),
+      size: v.optional(v.number()),
+    }))),
+    // Threading
+    replyToId: v.optional(v.id("messages")),
+    threadId: v.optional(v.string()),
+    // Reactions
+    reactions: v.optional(v.record(v.string(), v.array(v.id("users")))),
+    // Metadata
+    isEdited: v.boolean(),
+    editedAt: v.optional(v.number()),
+    isDeleted: v.boolean(),
+    timestamp: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_meeting_time", ["meetingId", "timestamp"])
+    .index("by_user", ["userId", "timestamp"])
+    .index("by_thread", ["threadId", "timestamp"])
+    .index("by_reply", ["replyToId"]),
+
+  // Intelligent matching queue
+  matchingQueue: defineTable({
+    userId: v.id("users"),
+    // Availability
+    availableFrom: v.number(),
+    availableTo: v.number(),
+    timezone: v.string(),
+    // Preferences
+    constraints: v.object({
+      interests: v.array(v.string()),
+      roles: v.array(v.string()),
+      experienceLevels: v.array(v.string()),
+      industries: v.array(v.string()),
+      orgConstraints: v.optional(v.string()),
+      languagePreferences: v.array(v.string()),
+    }),
+    // Matching settings
+    matchingType: v.union(
+      v.literal("mentorship"),
+      v.literal("collaboration"),
+      v.literal("networking"),
+      v.literal("learning")
+    ),
+    maxMatches: v.number(),
+    // Status
+    status: v.union(
+      v.literal("waiting"),
+      v.literal("matched"),
+      v.literal("expired"),
+      v.literal("cancelled")
+    ),
+    matchedWith: v.optional(v.id("users")),
+    matchScore: v.optional(v.number()),
+    // Metadata
+    priority: v.number(), // For queue ordering
+    retryCount: v.number(),
+    lastMatchAttempt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_availability", ["availableFrom", "availableTo"])
+    .index("by_matching_type", ["matchingType", "status"])
+    .index("by_priority", ["status", "priority"])
+    .index("by_retry", ["retryCount", "lastMatchAttempt"]),
+
+  // Matching analytics and feedback
+  matchingAnalytics: defineTable({
+    userId: v.id("users"),
+    matchId: v.string(), // Unique match identifier
+    partnerId: v.id("users"),
+    // Outcome tracking
+    outcome: v.union(
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("no-show")
+    ),
+    // Feedback
+    feedback: v.optional(v.object({
+      rating: v.number(), // 1-5 scale
+      comments: v.optional(v.string()),
+      wouldMeetAgain: v.boolean(),
+      categories: v.array(v.string()), // What went well/poorly
+    })),
+    // Matching features (for ML)
+    features: v.object({
+      interestOverlap: v.number(),
+      experienceGap: v.number(),
+      industryMatch: v.boolean(),
+      timezoneCompatibility: v.number(),
+      languageMatch: v.boolean(),
+      previousInteractions: v.number(),
+    }),
+    // Model metadata
+    modelVersion: v.string(),
+    matchScore: v.number(),
+    weights: v.record(v.string(), v.number()),
+    // Timing
+    matchedAt: v.number(),
+    meetingScheduledAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_match", ["matchId"])
+    .index("by_outcome", ["outcome"])
+    .index("by_partner", ["partnerId"])
+    .index("by_rating", ["feedback.rating"])
+    .index("by_model", ["modelVersion", "createdAt"]),
+
+  // Vector embeddings (provider-agnostic)
+  embeddings: defineTable({
+    sourceType: v.union(
+      v.literal("user"),
+      v.literal("profile"),
+      v.literal("meeting"),
+      v.literal("note"),
+      v.literal("transcriptSegment"),
+      v.literal("interest")
+    ),
+    sourceId: v.string(),
+    // Vector data
+    vector: v.array(v.number()),
+    model: v.string(),
+    dimensions: v.number(),
+    version: v.string(),
+    // Metadata
+    metadata: v.object({
+      textLength: v.optional(v.number()),
+      language: v.optional(v.string()),
+      processingTime: v.optional(v.number()),
+      confidence: v.optional(v.number()),
+    }),
+    // Lifecycle
+    isActive: v.boolean(),
+    lastUsed: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_source", ["sourceType", "sourceId"])
+    .index("by_model", ["model"])
+    .index("by_created", ["createdAt"])
+    .index("by_active", ["isActive", "lastUsed"])
+    .vectorIndex("by_embedding", {
+      vectorField: "vector",
+      dimensions: 1536, // OpenAI embedding size
+      filterFields: ["sourceType", "model", "isActive"]
+    }),
+
+  // Vector index metadata
+  vectorIndexMeta: defineTable({
+    provider: v.string(),
+    indexName: v.string(),
+    config: v.object({
+      dimensions: v.number(),
+      metric: v.string(),
+      replicas: v.optional(v.number()),
+      shards: v.optional(v.number()),
+    }),
+    status: v.union(
+      v.literal("active"),
+      v.literal("inactive"),
+      v.literal("migrating"),
+      v.literal("error")
+    ),
+    // Stats
+    documentCount: v.number(),
+    lastSync: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_provider", ["provider"])
+    .index("by_status", ["status"])
+    .index("by_name", ["indexName"]),
+
+  // User connections and relationships
+  connections: defineTable({
+    user1Id: v.id("users"),
+    user2Id: v.id("users"),
+    // Relationship type
+    type: v.union(
+      v.literal("connection"),
+      v.literal("follow"),
+      v.literal("mentor"),
+      v.literal("mentee"),
+      v.literal("collaborator")
+    ),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("declined"),
+      v.literal("blocked")
+    ),
+    // Metadata
+    initiatedBy: v.id("users"),
+    message: v.optional(v.string()),
+    // Interaction stats
+    meetingCount: v.number(),
+    lastInteraction: v.optional(v.number()),
+    // Timestamps
+    requestedAt: v.number(),
+    respondedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_user1", ["user1Id"])
+    .index("by_user2", ["user2Id"])
+    .index("by_users", ["user1Id", "user2Id"])
+    .index("by_status", ["status"])
+    .index("by_type", ["type", "status"])
+    .index("by_last_interaction", ["lastInteraction"]),
+
+  // System tables for operations
+  idempotencyKeys: defineTable({
+    key: v.string(),
+    scope: v.string(),
+    result: v.optional(v.any()), // Cached result
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_key_scope", ["key", "scope"])
+    .index("by_expires", ["expiresAt"]),
+
+  rateLimits: defineTable({
+    userId: v.id("users"),
+    action: v.string(),
+    windowStartMs: v.number(),
+    count: v.number(),
+    limit: v.number(),
+    resetAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_action_window", ["userId", "action", "windowStartMs"])
+    .index("by_reset", ["resetAt"]),
+
+  auditLogs: defineTable({
+    // Actor information
+    actorUserId: v.optional(v.id("users")),
+    actorType: v.union(
+      v.literal("user"),
+      v.literal("system"),
+      v.literal("admin")
+    ),
+    // Resource information
+    resourceType: v.string(),
+    resourceId: v.string(),
+    action: v.string(),
+    // Context
+    metadata: v.object({
+      userAgent: v.optional(v.string()),
+      ipAddress: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
+      requestId: v.optional(v.string()),
+      changes: v.optional(v.any()),
+    }),
+    // Result
+    success: v.boolean(),
+    errorMessage: v.optional(v.string()),
+    // Timing
+    timestamp: v.number(),
+    duration: v.optional(v.number()),
+  })
+    .index("by_actor", ["actorUserId"])
+    .index("by_resource", ["resourceType", "resourceId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_action", ["action"])
+    .index("by_success", ["success", "timestamp"]),
+
+  featureFlags: defineTable({
+    key: v.string(),
+    value: v.any(),
+    environment: v.string(),
+    // Rollout configuration
+    rolloutPercentage: v.number(),
+    rolloutRules: v.optional(v.array(v.object({
+      condition: v.string(),
+      value: v.any(),
+    }))),
+    // Metadata
+    description: v.optional(v.string()),
+    tags: v.array(v.string()),
+    // Lifecycle
+    isActive: v.boolean(),
+    updatedBy: v.id("users"),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_key", ["key"])
+    .index("by_environment", ["environment"])
+    .index("by_key_env", ["key", "environment"])
+    .index("by_active", ["isActive"])
+    .index("by_tags", ["tags"]),
+});
+```
+
+**Key Performance Features:**
+
+- Time-based sharding for high-frequency writes
+- Denormalized counters and stats for fast reads
+- Compound indexes optimized for query patterns
+- Vector search with filtering capabilities
+- Proper audit logging and rate limiting
+- Feature flags for controlled rollouts
+  Appendix B — Public API Examples
 
 Participants Query
 
