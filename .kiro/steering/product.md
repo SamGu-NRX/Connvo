@@ -1,4 +1,4 @@
-# LinkedUp Product Overview
+# **CURRENT** LinkedUp Product Overview (WIP, subject to change)
 
 LinkedUp is a professional networking platform designed as the antithesis of LinkedIn. It focuses on authentic, real-time connections through:
 
