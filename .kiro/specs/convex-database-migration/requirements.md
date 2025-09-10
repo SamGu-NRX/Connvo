@@ -1,17 +1,8 @@
-# LinkedUp Backend Migration to Convex — Requirements Specification (Stage 1: Requirements)
+# Requirements Document
 
-Version: 1.0
-Owner: Platform/Backend
-Date: 2025-09-10
-Essential Compliance: Always comply with `steering/convex_rules.mdc` and use the `context7 MCP` tool for up-to-date Convex documentation and best practices.
-
-## 1. Executive Summary
+## Introduction
 
 LinkedUp’s backend must migrate from Drizzle ORM + PostgreSQL/Supabase to Convex to enable enterprise-grade, real-time experiences: pre-call idea generation, in-call prompts, collaborative notes, live transcription, and post-call insights. Current matching and video call features are incomplete and not wired to robust data flows. This spec defines a rigorous, TypeScript-first, reactive foundation in Convex, with secure, isolated, per-meeting data streams; scalable schemas and indexes; WorkOS-authenticated access; and clear performance/observability standards. Some advanced features will be stubbed/mocked initially with plug-and-play architecture for future expansion (e.g., “knowledge bank”).
-
-### 1a. Supporting Information
-
-### Introduction
 
 This feature involves migrating LinkedUp's current database architecture from Drizzle ORM with PostgreSQL/Supabase to Convex, a modern reactive backend-as-a-service platform. LinkedUp is a professional networking application that currently features basic matching and video calling, but requires significant enhancement with advanced real-time capabilities:
 
@@ -32,7 +23,9 @@ This feature involves migrating LinkedUp's current database architecture from Dr
 
 The migration aims to achieve enterprise-grade robustness, consistency, scalability, and performance while implementing these advanced real-time features using Convex's reactive architecture, WebSocket-based live updates, and TypeScript-first development practices.
 
-## 2. Goals
+Essential Compliance (!!!): Always comply with `steering/convex_rules.mdc` and use the `context7 MCP` tool for up-to-date Convex documentation and best practices.
+
+## Goals
 
 - Deliver a production-ready Convex foundation: schemas, indexes, access control, and reactive patterns for real-time features.
 - Replace Supabase/Drizzle reads/writes with Convex queries/mutations/actions; provide a clean migration path and cutover.
@@ -42,7 +35,7 @@ The migration aims to achieve enterprise-grade robustness, consistency, scalabil
 - Ensure enterprise-grade performance, scalability, observability, and testability.
 - Make the system future-proof for a knowledge bank and additional ML-driven personalization features.
 
-## 3. Non-Goals (for this phase)
+## Non-Goals
 
 - Building full ML models or productionizing AI pipelines beyond stubs/interfaces/actions.
 - Implementing full production live transcription (we’ll define schema and hooks; provider integration comes later).
@@ -131,13 +124,14 @@ The migration aims to achieve enterprise-grade robustness, consistency, scalabil
 - All operations must log audit events for material accesses and changes.
 - All functions must include input validation and schema-safe parsing.
 
-## 13. Requirements
+## Requirements
 
 ### Requirement 1 — Project Initialization and Repo Structure
 
 User Story: As a developer, I want a clean Convex project with a scalable, typed structure so we can implement real-time features confidently.
 
 Acceptance Criteria:
+
 1. WHEN initializing the project THEN a new Convex app SHALL be created with TypeScript, linting, Prettier, and strict `tsconfig`.
 2. WHEN organizing server code THEN the system SHALL structure Convex modules by domain: `auth`, `users`, `profiles`, `meetings`, `participants`, `notes`, `transcripts`, `prompts`, `insights`, `matching`, `embeddings`, `messaging`, `analytics`, `admin`.
 3. WHEN configuring environments THEN separate config/secrets SHALL exist for local, staging, prod; documented variables include WorkOS keys, Stream keys, AI providers (stub allowed), vector provider (optional).
@@ -150,6 +144,7 @@ Acceptance Criteria:
 User Story: As a developer, I want secure, enterprise-grade authentication with role- and resource-based authorization.
 
 Acceptance Criteria:
+
 1. WHEN users authenticate THEN the system SHALL integrate WorkOS Auth Kit to issue JWTs that Convex validates for identity and org context.
 2. WHEN user sessions are created THEN user documents SHALL be upserted in Convex with WorkOS IDs, email, orgId, orgRole, and minimal profile fields.
 3. WHEN authorization is required THEN the system SHALL implement RBAC + resource ACLs. Meeting access is derived from `meetingParticipants`. Admin and org-scoped roles must be respected.
@@ -162,6 +157,7 @@ Acceptance Criteria:
 User Story: As a developer, I want robust schemas and indexes that scale for real-time workloads and matching.
 
 Acceptance Criteria:
+
 1. WHEN defining schemas THEN collections SHALL be created for all entities in Section 11, with strict validation (Convex schema types), `createdAt`/`updatedAt`, and composite indexes.
 2. WHEN handling relationships THEN data SHALL be denormalized where it reduces hot reads/writes (e.g., store `meetingId` on child docs, embed participant list counts on meeting).
 3. WHEN indexing THEN the system SHALL create indexes for high-volume filters: by `userId`, `meetingId`, time bucket, `orgId`, and status. Range queries must exist for time-based fetches.
@@ -174,6 +170,7 @@ Acceptance Criteria:
 User Story: As a developer, I want isolated per-meeting data streams to ensure privacy and least privilege.
 
 Acceptance Criteria:
+
 1. WHEN a client subscribes to notes/transcripts/prompts/messages THEN the system SHALL enforce access based on `meetingParticipants` membership and role.
 2. WHEN participants join or leave THEN access SHALL be granted/revoked immediately, including active WebSocket streams (e.g., terminate or downgrade unauthorized streams).
 3. WHEN meeting ownership changes THEN ACLs SHALL update atomically with consistent visibility across existing subscriptions.
@@ -185,6 +182,7 @@ Acceptance Criteria:
 User Story: As a developer, I want Convex reactive queries that power sub-100ms live UX.
 
 Acceptance Criteria:
+
 1. WHEN implementing real-time features THEN the system SHALL use reactive queries for meeting state, participants, notes, transcripts (live cursor), prompts, and chat messages.
 2. WHEN subscriptions emit updates THEN only minimal diffs SHALL be published to clients; queries must avoid unbounded result sets (pagination or time windows).
 3. WHEN scaling to many streams THEN high-frequency data (transcripts, `noteOps`) SHALL be batched and coalesced (e.g., debounce to 100–250ms windows) to balance latency and throughput.
@@ -196,6 +194,7 @@ Acceptance Criteria:
 User Story: As a developer, I want a reliable backend lifecycle for meetings integrated with Stream.
 
 Acceptance Criteria:
+
 1. WHEN scheduling a meeting THEN a meeting doc SHALL be created with participants list, organizer, planned start/end, and Stream room pre-provisioning status.
 2. WHEN a meeting starts THEN the system SHALL create or join a Stream room via an action, mint participant tokens server-side, and store `roomId` and ephemeral tokens (never persist raw tokens beyond lifetime).
 3. WHEN Stream webhooks fire (`call.created`, `participant.joined/left`, `call.ended`) THEN the system SHALL verify signatures, update `meetingState` and `meetingParticipants` presence, and log audit entries.
@@ -207,6 +206,7 @@ Acceptance Criteria:
 User Story: As a developer, I want scalable, secure storage and streaming for live transcripts.
 
 Acceptance Criteria:
+
 1. WHEN transcription starts THEN the system SHALL create an isolated transcription stream per meeting, accessible only to current participants via subscriptions.
 2. WHEN speech is processed THEN transcription chunks SHALL store `speakerId` (or provisional label), timestamps, confidence scores, and raw text; chunks are append-only with increasing sequence.
 3. WHEN write rates are high THEN chunks SHALL be partitioned by `meetingId` + time bucket to reduce write contention; batch writes permitted with transactional guarantees.
@@ -218,6 +218,7 @@ Acceptance Criteria:
 User Story: As a developer, I want real-time shared notes with conflict resolution and optimistic UI.
 
 Acceptance Criteria:
+
 1. WHEN editing notes THEN the system SHALL support optimistic UI updates with rollback on failure.
 2. WHEN conflicts occur THEN the system SHALL resolve using OT/CRDT-inspired operation ordering: sequence numbers, per-author clocks, and associative transforms; final state materialized in `meetingNotes`.
 3. WHEN offline scenarios happen THEN client operations SHALL queue and sync on reconnect with conflict-safe merging.
@@ -229,6 +230,7 @@ Acceptance Criteria:
 User Story: As a developer, I want to generate pre-call insights from participant profiles and interests.
 
 Acceptance Criteria:
+
 1. WHEN a meeting is scheduled THEN queries SHALL analyze participant profiles (interests, skills, bio, goals) and compute shared/complementary features.
 2. WHEN generating ideas THEN actions SHALL call AI providers (stub allowed initially) with deterministic, idempotent requests (include request hash) to produce prompts, agendas, and questions.
 3. WHEN ideas are generated THEN results SHALL be stored in `prompts` collection with `type=precall`, `meetingId`, and surfaced via reactive queries.
@@ -240,6 +242,7 @@ Acceptance Criteria:
 User Story: As a developer, I want contextual prompts to appear during lulls or based on topics.
 
 Acceptance Criteria:
+
 1. WHEN meetings are active THEN the system SHALL track engagement metrics (speaking time ratios, lull detectors from transcript cadence) and current topics (keyword extraction stub) in `meetingState`.
 2. WHEN a lull is detected OR topic shifts THEN actions SHALL generate contextual prompts using meeting context and participant expertise; fallback to precall prompts if AI unavailable.
 3. WHEN prompts are published THEN they SHALL stream via reactive queries, visible to all participants with timestamps and relevance tags.
@@ -251,6 +254,7 @@ Acceptance Criteria:
 User Story: As a developer, I want post-call summaries and recommendations per participant.
 
 Acceptance Criteria:
+
 1. WHEN meetings end THEN actions SHALL analyze full transcripts and notes (stub pipeline) to extract topics, decisions, and action items.
 2. WHEN insights are generated THEN `insights` docs SHALL be created per user with privacy controls; deliver via reactive queries/notifications.
 3. WHEN generating recommendations THEN include connection recommendations and follow-ups; store rationale and confidence.
@@ -262,6 +266,7 @@ Acceptance Criteria:
 User Story: As a developer, I want a scalable matching system with real-time queues, vector similarity, and feedback loops.
 
 Acceptance Criteria:
+
 1. WHEN users enter a queue THEN a `matchingQueue` doc SHALL be created with availability window, constraints (roles, interests), and status; updates stream in real time.
 2. WHEN computing compatibility THEN scoring SHALL combine shared interests, complementary skills, org constraints, historical success signals, and vector similarity from `embeddings` (pluggable).
 3. WHEN matches are found THEN both users SHALL be notified via reactive queries with compatibility score and key factors.
@@ -273,6 +278,7 @@ Acceptance Criteria:
 User Story: As a developer, I want a provider-agnostic vector layer to support qualitative matching.
 
 Acceptance Criteria:
+
 1. WHEN generating embeddings THEN actions SHALL produce `embeddings` for bios, interests, notes, and transcript segments with versioned metadata; backfills supported.
 2. WHEN performing similarity search THEN an abstraction SHALL route to either an in-Convex approximate method (if available) or external providers (e.g., Pinecone/Weaviate) via actions.
 3. WHEN providers change THEN no calling code SHALL change; only `vectorIndexMeta`/config updates are required.
@@ -284,6 +290,7 @@ Acceptance Criteria:
 User Story: As a developer, I want deep visibility into performance and security.
 
 Acceptance Criteria:
+
 1. WHEN queries/mutations/actions execute THEN trace IDs and timing SHALL be recorded; aggregate p50/p95/p99 per function.
 2. WHEN WebSocket streams operate THEN track subscriber counts, update fan-out latency, and dropped update rates.
 3. WHEN errors occur THEN structured logs SHALL capture context (`userId`, `meetingId`, function name, error code) without leaking secrets.
@@ -295,6 +302,7 @@ Acceptance Criteria:
 User Story: As a developer, I want confidence the system sustains thousands of concurrent meetings.
 
 Acceptance Criteria:
+
 1. WHEN designing high-frequency writes THEN batching and coalescing SHALL be implemented (e.g., transcripts 50–250ms batch windows); ensure ACID within batches.
 2. WHEN indexing THEN hot partitions SHALL be avoided via shard keys (`meetingId` + timeBucket) and bounded result windows.
 3. WHEN global users connect THEN Convex edge distribution SHALL be configured to minimize latency; document region strategy.
@@ -306,6 +314,7 @@ Acceptance Criteria:
 User Story: As a developer, I want a safe and verifiable migration.
 
 Acceptance Criteria:
+
 1. WHEN mapping schemas THEN a migration document SHALL define old→new mapping for each table/field, including IDs, timestamps, and relationships.
 2. WHEN migrating users THEN WorkOS identities SHALL be reconciled; orphaned records flagged.
 3. WHEN migrating meetings and connections THEN referential integrity SHALL be preserved; meeting history imported where available.
@@ -317,6 +326,7 @@ Acceptance Criteria:
 User Story: As a developer, I want minimal downtime and safe rollback.
 
 Acceptance Criteria:
+
 1. WHEN preparing cutover THEN a dual-write phase SHALL be implemented where updates write to both stores; comparisons run in background.
 2. WHEN confidence is sufficient THEN reads SHALL switch to Convex behind a feature flag per-endpoint/module.
 3. WHEN backfilling embeddings THEN a background job SHALL populate embeddings for legacy items incrementally with progress metrics.
@@ -328,6 +338,7 @@ Acceptance Criteria:
 User Story: As a developer, I want high confidence via tests.
 
 Acceptance Criteria:
+
 1. WHEN implementing functions THEN unit tests SHALL cover happy paths, auth failures, and edge cases.
 2. WHEN designing real-time flows THEN integration tests SHALL simulate multiple participants editing notes and streaming transcripts with conflict checks.
 3. WHEN handling actions THEN idempotency and retry behavior SHALL be tested with simulated timeouts and transient errors.
@@ -339,6 +350,7 @@ Acceptance Criteria:
 User Story: As a developer, I want hardened security from day one.
 
 Acceptance Criteria:
+
 1. WHEN storing secrets THEN only Convex secrets/env SHALL be used; tokens never logged; Stream tokens ephemeral.
 2. WHEN receiving webhooks THEN HMAC signature verification SHALL be enforced; replay protection implemented.
 3. WHEN validating inputs THEN all payloads SHALL be schema-validated; rate limits per user/IP apply to sensitive mutations.
@@ -350,6 +362,7 @@ Acceptance Criteria:
 User Story: As a developer, I want efficient, debuggable, type-safe caching.
 
 Acceptance Criteria:
+
 1. WHEN serving reads THEN rely on Convex reactive cache; avoid duplicative client caches that fight server reactivity.
 2. WHEN expensive queries exist THEN materialized views or aggregates SHALL be maintained asynchronously (e.g., meeting summaries).
 3. WHEN per-user dashboards load THEN queries SHALL be paginated and indexed; no N+1 patterns.
@@ -360,6 +373,7 @@ Acceptance Criteria:
 User Story: As a developer, I want controlled rollouts.
 
 Acceptance Criteria:
+
 1. WHEN introducing new capabilities THEN flags SHALL gate precall, in-call prompts, and insights separately.
 2. WHEN flags change THEN the system SHALL update behavior without redeploy; flags are readable via reactive queries for immediate effect.
 3. WHEN auditing flag changes THEN admin actions SHALL be logged with reason and operator.
@@ -369,6 +383,7 @@ Acceptance Criteria:
 User Story: As a developer, I want clear docs and operational runbooks.
 
 Acceptance Criteria:
+
 1. WHEN onboarding THEN a Developer Guide SHALL explain auth, data model, reactive patterns, and how to add a new collection with indexes and ACL.
 2. WHEN integrating AI providers THEN a Runbook SHALL define secrets, configs, rate limits, and fallback behavior.
 3. WHEN incidents occur THEN an Incident Runbook SHALL outline steps for Stream outages, WorkOS issues, and Convex scaling incidents.
@@ -378,6 +393,7 @@ Acceptance Criteria:
 User Story: As a developer, I want to ensure our implementation follows current best practices.
 
 Acceptance Criteria:
+
 1. WHEN implementing Convex functions THEN developers SHALL consult `steering/convex_rules.mdc` and verify compliance via code review checklists.
 2. WHEN ambiguities arise THEN developers SHALL use `context7 MCP` tool to fetch latest Convex docs and paste links/references into PRs.
 3. WHEN audits occur THEN references to rules and doc versions SHALL be present in PR descriptions for traceability.
