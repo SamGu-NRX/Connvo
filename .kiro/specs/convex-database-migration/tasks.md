@@ -81,7 +81,7 @@
     - Build stable indexes to maintain p95 < 120ms and p99 < 250ms latency targets
     - _Requirements: 5.4_
 
-- [x] 5. Meeting Lifecycle and Stream Integration
+- [-] 5. Meeting Lifecycle and Stream Integration
   - [x] 5.1 Implement Core Meeting Lifecycle Functions
     - Create scheduleMeeting mutation with participant invitation and meetingParticipants creation
     - Implement startMeeting mutation with host validation and meetingState activation

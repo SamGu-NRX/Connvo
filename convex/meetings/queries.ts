@@ -2,7 +2,7 @@
  * Meeting Query Functions
  *
  * This module provides query functions for meeting data access with
- * proper authorization and performance optimization.
+ * proper authorization and performance optimization for WebRTC signaling.
  *
  * Requirements: 5.1, 5.2, 5.5
  * Compliance: steering/convex_rules.mdc - Uses proper Convex query patterns
@@ -27,7 +27,7 @@ export const getMeetingById = internalQuery({
       description: v.optional(v.string()),
       scheduledAt: v.optional(v.number()),
       duration: v.optional(v.number()),
-      streamRoomId: v.optional(v.string()),
+      webrtcEnabled: v.optional(v.boolean()),
       state: v.union(
         v.literal("scheduled"),
         v.literal("active"),
@@ -93,7 +93,7 @@ export const getMeetingParticipant = internalQuery({
 });
 
 /**
- * Gets meeting details for authenticated user
+ * Gets meeting details for authenticated user with WebRTC info
  */
 export const getMeeting = query({
   args: { meetingId: v.id("meetings") },
@@ -105,7 +105,7 @@ export const getMeeting = query({
       description: v.optional(v.string()),
       scheduledAt: v.optional(v.number()),
       duration: v.optional(v.number()),
-      streamRoomId: v.optional(v.string()),
+      webrtcEnabled: v.optional(v.boolean()),
       state: v.union(
         v.literal("scheduled"),
         v.literal("active"),
@@ -123,6 +123,8 @@ export const getMeeting = query({
         v.literal("joined"),
         v.literal("left"),
       ),
+      // WebRTC session info
+      activeWebRTCSessions: v.number(),
     }),
     v.null(),
   ),
@@ -135,10 +137,23 @@ export const getMeeting = query({
       return null;
     }
 
+    // Count active WebRTC sessions
+    const activeSessions = await ctx.db
+      .query("webrtcSessions")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .filter((q) =>
+        q.and(
+          q.neq(q.field("state"), "closed"),
+          q.neq(q.field("state"), "failed"),
+        ),
+      )
+      .collect();
+
     return {
       ...meeting,
       userRole: participant.role,
       userPresence: participant.presence,
+      activeWebRTCSessions: activeSessions.length,
     };
   },
 });
@@ -223,7 +238,7 @@ export const listUserMeetings = query({
 });
 
 /**
- * Gets meeting participants
+ * Gets meeting participants with WebRTC session info
  */
 export const getMeetingParticipants = query({
   args: { meetingId: v.id("meetings") },
@@ -247,6 +262,9 @@ export const getMeetingParticipants = query({
         email: v.string(),
         avatarUrl: v.optional(v.string()),
       }),
+      // WebRTC connection status
+      webrtcConnected: v.boolean(),
+      webrtcSessionCount: v.number(),
     }),
   ),
   handler: async (ctx, { meetingId }) => {
@@ -259,11 +277,22 @@ export const getMeetingParticipants = query({
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .collect();
 
-    // Enrich with user details
+    // Enrich with user details and WebRTC status
     const enrichedParticipants = [];
     for (const participant of participants) {
       const user = await ctx.db.get(participant.userId);
       if (user) {
+        // Check WebRTC sessions for this participant
+        const webrtcSessions = await ctx.db
+          .query("webrtcSessions")
+          .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+          .filter((q) => q.eq(q.field("userId"), participant.userId))
+          .collect();
+
+        const connectedSessions = webrtcSessions.filter(
+          (s) => s.state === "connected",
+        );
+
         enrichedParticipants.push({
           ...participant,
           user: {
@@ -272,6 +301,8 @@ export const getMeetingParticipants = query({
             email: user.email,
             avatarUrl: user.avatarUrl,
           },
+          webrtcConnected: connectedSessions.length > 0,
+          webrtcSessionCount: webrtcSessions.length,
         });
       }
     }
@@ -281,7 +312,7 @@ export const getMeetingParticipants = query({
 });
 
 /**
- * Gets meeting state
+ * Gets meeting state with WebRTC connection info
  */
 export const getMeetingState = query({
   args: { meetingId: v.id("meetings") },
@@ -303,6 +334,9 @@ export const getMeetingState = query({
       topics: v.array(v.string()),
       recordingEnabled: v.boolean(),
       updatedAt: v.number(),
+      // WebRTC connection metrics
+      totalWebRTCSessions: v.number(),
+      connectedWebRTCSessions: v.number(),
     }),
     v.null(),
   ),
@@ -310,15 +344,35 @@ export const getMeetingState = query({
     // Verify user has access to this meeting
     await assertMeetingAccess(ctx, meetingId);
 
-    return await ctx.db
+    const meetingState = await ctx.db
       .query("meetingState")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
+
+    if (!meetingState) {
+      return null;
+    }
+
+    // Get WebRTC session metrics
+    const allSessions = await ctx.db
+      .query("webrtcSessions")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .collect();
+
+    const connectedSessions = allSessions.filter(
+      (s) => s.state === "connected",
+    );
+
+    return {
+      ...meetingState,
+      totalWebRTCSessions: allSessions.length,
+      connectedWebRTCSessions: connectedSessions.length,
+    };
   },
 });
 
 /**
- * Gets active meetings (for monitoring/admin)
+ * Gets active meetings with WebRTC metrics (for monitoring/admin)
  */
 export const getActiveMeetings = query({
   args: {
@@ -332,6 +386,7 @@ export const getActiveMeetings = query({
       participantCount: v.optional(v.number()),
       createdAt: v.number(),
       startedAt: v.optional(v.number()),
+      webrtcSessionCount: v.number(),
     }),
   ),
   handler: async (ctx, { limit = 100 }) => {
@@ -343,13 +398,18 @@ export const getActiveMeetings = query({
       .withIndex("by_state", (q) => q.eq("state", "active"))
       .take(limit);
 
-    // Enrich with meeting state data
+    // Enrich with meeting state and WebRTC data
     const enrichedMeetings = [];
     for (const meeting of activeMeetings) {
       const meetingState = await ctx.db
         .query("meetingState")
         .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
         .unique();
+
+      const webrtcSessions = await ctx.db
+        .query("webrtcSessions")
+        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
+        .collect();
 
       enrichedMeetings.push({
         _id: meeting._id,
@@ -358,6 +418,7 @@ export const getActiveMeetings = query({
         participantCount: meeting.participantCount,
         createdAt: meeting.createdAt,
         startedAt: meetingState?.startedAt,
+        webrtcSessionCount: webrtcSessions.length,
       });
     }
 

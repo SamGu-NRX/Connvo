@@ -1,317 +1,423 @@
 /**
- * Resilience and Fault Tolerance Utilities
+ * Resilience and Retry Management System
  *
- * This module provides utilities for building resilient systems including
- * retry logic, circuit breakers, timeouts, and graceful degradation.
+ * This module provides circuit breakers, retry policies, and backoff strategies
+ * for handling transient failures in external service integrations.
  *
- * Requirements: 6.5
- * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
+ * Requirements: 6.5, 19.3
+ * Compliance: steering/convex_rules.mdc - Uses proper error handling patterns
  */
 
+import { ActionCtx, MutationCtx } from "../_generated/server";
+import { createError } from "./errors";
+
 /**
- * Retry configuration options
+ * Retry policy configuration
  */
-export interface RetryOptions {
+export interface RetryPolicy {
   maxAttempts: number;
   baseDelayMs: number;
   maxDelayMs: number;
   backoffMultiplier: number;
-  retryableErrors?: (error: Error) => boolean;
+  jitterMs?: number;
+  retryableErrors?: string[];
 }
 
 /**
- * Default retry configuration
+ * Circuit breaker configuration
  */
-const DEFAULT_RETRY_OPTIONS: RetryOptions = {
-  maxAttempts: 3,
-  baseDelayMs: 1000,
-  maxDelayMs: 30000,
-  backoffMultiplier: 2,
-  retryableErrors: (error: Error) => {
-    // Don't retry on authentication or validation errors
-    return (
-      !error.message.includes("UNAUTHORIZED") &&
-      !error.message.includes("FORBIDDEN") &&
-      !error.message.includes("VALIDATION_ERROR")
-    );
-  },
-};
+export interface CircuitBreakerConfig {
+  failureThreshold: number;
+  recoveryTimeoutMs: number;
+  monitoringWindowMs: number;
+  minimumThroughput: number;
+}
 
 /**
- * Executes a function with retry logic and exponential backoff
+ * Circuit breaker states
+ */
+export type CircuitBreakerState = "closed" | "open" | "half-open";
+
+/**
+ * Circuit breaker status
+ */
+export interface CircuitBreakerStatus {
+  state: CircuitBreakerState;
+  failureCount: number;
+  lastFailureTime?: number;
+  nextRetryTime?: number;
+}
+
+/**
+ * Retry with exponential backoff and jitter
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  options: Partial<RetryOptions> = {},
+  policy: RetryPolicy,
 ): Promise<T> {
-  const config = { ...DEFAULT_RETRY_OPTIONS, ...options };
-  let lastError: Error;
+  let lastError: Error | undefined;
 
-  for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= policy.maxAttempts; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error as Error;
 
-      // Don't retry on the last attempt or non-retryable errors
-      if (
-        attempt === config.maxAttempts ||
-        (config.retryableErrors && !config.retryableErrors(lastError))
-      ) {
-        throw lastError;
+      // Check if error is retryable
+      if (policy.retryableErrors && policy.retryableErrors.length > 0) {
+        const isRetryable = policy.retryableErrors.some(
+          (retryableError) =>
+            lastError?.message.includes(retryableError) ||
+            lastError?.name.includes(retryableError),
+        );
+
+        if (!isRetryable) {
+          throw lastError;
+        }
+      }
+
+      // Don't delay on the last attempt
+      if (attempt === policy.maxAttempts) {
+        break;
       }
 
       // Calculate delay with exponential backoff and jitter
-      const delay = Math.min(
-        config.baseDelayMs * Math.pow(config.backoffMultiplier, attempt - 1),
-        config.maxDelayMs,
+      const baseDelay = Math.min(
+        policy.baseDelayMs * Math.pow(policy.backoffMultiplier, attempt - 1),
+        policy.maxDelayMs,
       );
 
-      // Add jitter to prevent thundering herd
-      const jitteredDelay = delay + Math.random() * delay * 0.1;
+      const jitter = policy.jitterMs ? Math.random() * policy.jitterMs : 0;
+      const delay = baseDelay + jitter;
 
-      console.warn(
-        `Attempt ${attempt}/${config.maxAttempts} failed, retrying in ${jitteredDelay}ms:`,
-        lastError.message,
+      console.log(
+        `Retry attempt ${attempt}/${policy.maxAttempts} after ${delay}ms delay`,
       );
-
-      await new Promise((resolve) => setTimeout(resolve, jitteredDelay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError!;
+  throw lastError || new Error("Max retry attempts exceeded");
 }
 
 /**
- * Timeout wrapper for operations
+ * Circuit breaker implementation
  */
-export async function withTimeout<T>(
-  operation: () => Promise<T>,
-  timeoutMs: number,
-  timeoutMessage = "Operation timed out",
-): Promise<T> {
-  return Promise.race([
-    operation(),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs),
-    ),
-  ]);
-}
+export class CircuitBreaker {
+  private config: CircuitBreakerConfig;
+  private state: CircuitBreakerState = "closed";
+  private failureCount = 0;
+  private lastFailureTime?: number;
+  private nextRetryTime?: number;
+  private successCount = 0;
+  private requestCount = 0;
+  private windowStartTime = Date.now();
 
-/**
- * Combines retry and timeout for robust operation execution
- */
-export async function withRetryAndTimeout<T>(
-  operation: () => Promise<T>,
-  retryOptions: Partial<RetryOptions> = {},
-  timeoutMs = 10000,
-): Promise<T> {
-  return withRetry(() => withTimeout(operation, timeoutMs), retryOptions);
-}
-
-/**
- * Bulkhead pattern implementation for resource isolation
- */
-export class Bulkhead {
-  private activeOperations = 0;
-  private readonly maxConcurrent: number;
-  private readonly queue: Array<{
-    operation: () => Promise<any>;
-    resolve: (value: any) => void;
-    reject: (error: any) => void;
-  }> = [];
-
-  constructor(maxConcurrent: number) {
-    this.maxConcurrent = maxConcurrent;
+  constructor(config: CircuitBreakerConfig) {
+    this.config = config;
   }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
-      if (this.activeOperations < this.maxConcurrent) {
-        this.executeOperation(operation, resolve, reject);
-      } else {
-        this.queue.push({ operation, resolve, reject });
+    // Check if circuit is open
+    if (this.state === "open") {
+      if (Date.now() < (this.nextRetryTime || 0)) {
+        throw createError.externalServiceTimeout(
+          "Circuit breaker",
+          this.config.recoveryTimeoutMs,
+        );
       }
-    });
-  }
 
-  private async executeOperation<T>(
-    operation: () => Promise<T>,
-    resolve: (value: T) => void,
-    reject: (error: any) => void,
-  ): Promise<void> {
-    this.activeOperations++;
+      // Transition to half-open
+      this.state = "half-open";
+    }
 
     try {
       const result = await operation();
-      resolve(result);
+      this.onSuccess();
+      return result;
     } catch (error) {
-      reject(error);
-    } finally {
-      this.activeOperations--;
-      this.processQueue();
+      this.onFailure();
+      throw error;
     }
   }
 
-  private processQueue(): void {
-    if (this.queue.length > 0 && this.activeOperations < this.maxConcurrent) {
-      const { operation, resolve, reject } = this.queue.shift()!;
-      this.executeOperation(operation, resolve, reject);
+  private onSuccess(): void {
+    this.successCount++;
+    this.requestCount++;
+
+    if (this.state === "half-open") {
+      // Successful call in half-open state, close the circuit
+      this.state = "closed";
+      this.failureCount = 0;
+      this.lastFailureTime = undefined;
+      this.nextRetryTime = undefined;
+    }
+
+    this.resetWindowIfNeeded();
+  }
+
+  private onFailure(): void {
+    this.failureCount++;
+    this.requestCount++;
+    this.lastFailureTime = Date.now();
+
+    if (this.state === "half-open") {
+      // Failure in half-open state, open the circuit again
+      this.openCircuit();
+    } else if (this.shouldOpenCircuit()) {
+      this.openCircuit();
+    }
+
+    this.resetWindowIfNeeded();
+  }
+
+  private shouldOpenCircuit(): boolean {
+    // Check if we have minimum throughput
+    if (this.requestCount < this.config.minimumThroughput) {
+      return false;
+    }
+
+    // Check failure rate
+    const failureRate = this.failureCount / this.requestCount;
+    return failureRate >= this.config.failureThreshold;
+  }
+
+  private openCircuit(): void {
+    this.state = "open";
+    this.nextRetryTime = Date.now() + this.config.recoveryTimeoutMs;
+  }
+
+  private resetWindowIfNeeded(): void {
+    const now = Date.now();
+    if (now - this.windowStartTime >= this.config.monitoringWindowMs) {
+      this.windowStartTime = now;
+      this.failureCount = 0;
+      this.successCount = 0;
+      this.requestCount = 0;
     }
   }
 
-  getStats() {
+  getStatus(): CircuitBreakerStatus {
     return {
-      activeOperations: this.activeOperations,
-      queueLength: this.queue.length,
-      maxConcurrent: this.maxConcurrent,
+      state: this.state,
+      failureCount: this.failureCount,
+      lastFailureTime: this.lastFailureTime,
+      nextRetryTime: this.nextRetryTime,
     };
   }
 }
 
 /**
- * Graceful degradation helper
+ * Predefined retry policies
  */
-export async function withFallback<T>(
-  primaryOperation: () => Promise<T>,
-  fallbackOperation: () => Promise<T>,
-  shouldFallback: (error: Error) => boolean = () => true,
-): Promise<T> {
-  try {
-    return await primaryOperation();
-  } catch (error) {
-    if (shouldFallback(error as Error)) {
-      console.warn(
-        "Primary operation failed, using fallback:",
-        (error as Error).message,
-      );
-      return await fallbackOperation();
-    }
-    throw error;
-  }
-}
+export const RetryPolicies = {
+  /**
+   * Conservative retry for critical operations
+   */
+  conservative: (): RetryPolicy => ({
+    maxAttempts: 3,
+    baseDelayMs: 1000,
+    maxDelayMs: 5000,
+    backoffMultiplier: 2,
+    jitterMs: 500,
+  }),
+
+  /**
+   * Aggressive retry for non-critical operations
+   */
+  aggressive: (): RetryPolicy => ({
+    maxAttempts: 5,
+    baseDelayMs: 500,
+    maxDelayMs: 10000,
+    backoffMultiplier: 1.5,
+    jitterMs: 1000,
+  }),
+
+  /**
+   * Quick retry for real-time operations
+   */
+  realtime: (): RetryPolicy => ({
+    maxAttempts: 2,
+    baseDelayMs: 100,
+    maxDelayMs: 1000,
+    backoffMultiplier: 2,
+    jitterMs: 100,
+  }),
+
+  /**
+   * External service retry with common retryable errors
+   */
+  externalService: (): RetryPolicy => ({
+    maxAttempts: 4,
+    baseDelayMs: 1000,
+    maxDelayMs: 8000,
+    backoffMultiplier: 2,
+    jitterMs: 500,
+    retryableErrors: [
+      "timeout",
+      "ECONNRESET",
+      "ENOTFOUND",
+      "ECONNREFUSED",
+      "500",
+      "502",
+      "503",
+      "504",
+    ],
+  }),
+};
 
 /**
- * Dead letter queue for failed operations
+ * Predefined circuit breaker configurations
  */
-export interface FailedOperation {
-  id: string;
-  operation: string;
-  payload: any;
-  error: string;
-  attempts: number;
-  lastAttemptAt: number;
-  createdAt: number;
-}
+export const CircuitBreakerConfigs = {
+  /**
+   * Configuration for external API calls
+   */
+  externalApi: (): CircuitBreakerConfig => ({
+    failureThreshold: 0.5, // 50% failure rate
+    recoveryTimeoutMs: 30000, // 30 seconds
+    monitoringWindowMs: 60000, // 1 minute window
+    minimumThroughput: 5, // Minimum 5 requests
+  }),
 
-export class DeadLetterQueue {
-  private failedOperations = new Map<string, FailedOperation>();
+  /**
+   * Configuration for video service calls
+   */
+  videoService: (): CircuitBreakerConfig => ({
+    failureThreshold: 0.3, // 30% failure rate (more sensitive)
+    recoveryTimeoutMs: 60000, // 1 minute
+    monitoringWindowMs: 120000, // 2 minute window
+    minimumThroughput: 3, // Minimum 3 requests
+  }),
 
-  add(operation: FailedOperation): void {
-    this.failedOperations.set(operation.id, operation);
-  }
-
-  get(id: string): FailedOperation | undefined {
-    return this.failedOperations.get(id);
-  }
-
-  getAll(): FailedOperation[] {
-    return Array.from(this.failedOperations.values());
-  }
-
-  remove(id: string): boolean {
-    return this.failedOperations.delete(id);
-  }
-
-  cleanup(olderThanMs: number): number {
-    const cutoff = Date.now() - olderThanMs;
-    let removed = 0;
-
-    for (const [id, operation] of this.failedOperations.entries()) {
-      if (operation.createdAt < cutoff) {
-        this.failedOperations.delete(id);
-        removed++;
-      }
-    }
-
-    return removed;
-  }
-
-  getStats() {
-    return {
-      totalFailed: this.failedOperations.size,
-      oldestFailure: Math.min(
-        ...Array.from(this.failedOperations.values()).map((op) => op.createdAt),
-      ),
-    };
-  }
-}
+  /**
+   * Configuration for transcription services
+   */
+  transcriptionService: (): CircuitBreakerConfig => ({
+    failureThreshold: 0.4, // 40% failure rate
+    recoveryTimeoutMs: 45000, // 45 seconds
+    monitoringWindowMs: 90000, // 1.5 minute window
+    minimumThroughput: 4, // Minimum 4 requests
+  }),
+};
 
 /**
- * Global instances for common use cases
+ * Global circuit breakers for different services
  */
-export const streamBulkhead = new Bulkhead(10); // Max 10 concurrent Stream operations
-export const deadLetterQueue = new DeadLetterQueue();
+export const CircuitBreakers = {
+  getstream: new CircuitBreaker(CircuitBreakerConfigs.videoService()),
+  whisper: new CircuitBreaker(CircuitBreakerConfigs.transcriptionService()),
+  assemblyai: new CircuitBreaker(CircuitBreakerConfigs.transcriptionService()),
+  workos: new CircuitBreaker(CircuitBreakerConfigs.externalApi()),
+};
 
 /**
- * Health check with automatic recovery
+ * Utility functions for resilience patterns
  */
-export interface HealthCheckResult {
-  healthy: boolean;
-  latency?: number;
-  error?: string;
-  timestamp: number;
-}
+export const ResilienceUtils = {
+  /**
+   * Combines retry and circuit breaker patterns
+   */
+  async withResiliency<T>(
+    operation: () => Promise<T>,
+    circuitBreaker: CircuitBreaker,
+    retryPolicy: RetryPolicy,
+  ): Promise<T> {
+    return await circuitBreaker.execute(async () => {
+      return await withRetry(operation, retryPolicy);
+    });
+  },
 
-export class HealthMonitor {
-  private lastCheck: HealthCheckResult | null = null;
-  private checkInterval: NodeJS.Timeout | null = null;
+  /**
+   * Creates a timeout wrapper for operations
+   */
+  async withTimeout<T>(
+    operation: () => Promise<T>,
+    timeoutMs: number,
+    timeoutMessage = "Operation timed out",
+  ): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(createError.externalServiceTimeout("Operation", timeoutMs));
+      }, timeoutMs);
 
-  constructor(
-    private checkFn: () => Promise<void>,
-    private intervalMs: number = 30000,
-  ) {}
+      operation()
+        .then((result) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        });
+    });
+  },
 
-  start(): void {
-    this.performCheck();
-    this.checkInterval = setInterval(
-      () => this.performCheck(),
-      this.intervalMs,
-    );
-  }
-
-  stop(): void {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
-    }
-  }
-
-  private async performCheck(): Promise<void> {
-    const startTime = Date.now();
-
+  /**
+   * Implements bulkhead pattern for resource isolation
+   */
+  async withBulkhead<T>(
+    operation: () => Promise<T>,
+    semaphore: { acquire: () => Promise<void>; release: () => void },
+  ): Promise<T> {
+    await semaphore.acquire();
     try {
-      await withTimeout(this.checkFn, 5000);
-      this.lastCheck = {
-        healthy: true,
-        latency: Date.now() - startTime,
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      this.lastCheck = {
-        healthy: false,
-        latency: Date.now() - startTime,
-        error: (error as Error).message,
-        timestamp: Date.now(),
-      };
+      return await operation();
+    } finally {
+      semaphore.release();
+    }
+  },
+
+  /**
+   * Gets health status of all circuit breakers
+   */
+  getSystemHealth(): Record<string, CircuitBreakerStatus> {
+    return {
+      getstream: CircuitBreakers.getstream.getStatus(),
+      whisper: CircuitBreakers.whisper.getStatus(),
+      assemblyai: CircuitBreakers.assemblyai.getStatus(),
+      workos: CircuitBreakers.workos.getStatus(),
+    };
+  },
+};
+
+/**
+ * Simple semaphore implementation for bulkhead pattern
+ */
+export class Semaphore {
+  private permits: number;
+  private waiting: Array<() => void> = [];
+
+  constructor(permits: number) {
+    this.permits = permits;
+  }
+
+  async acquire(): Promise<void> {
+    if (this.permits > 0) {
+      this.permits--;
+      return;
+    }
+
+    return new Promise<void>((resolve) => {
+      this.waiting.push(resolve);
+    });
+  }
+
+  release(): void {
+    if (this.waiting.length > 0) {
+      const resolve = this.waiting.shift()!;
+      resolve();
+    } else {
+      this.permits++;
     }
   }
-
-  getStatus(): HealthCheckResult | null {
-    return this.lastCheck;
-  }
-
-  isHealthy(): boolean {
-    return this.lastCheck?.healthy ?? false;
-  }
 }
+
+/**
+ * Global semaphores for different resource types
+ */
+export const Semaphores = {
+  videoOperations: new Semaphore(10), // Max 10 concurrent video operations
+  transcriptionOperations: new Semaphore(5), // Max 5 concurrent transcription operations
+  externalApiCalls: new Semaphore(20), // Max 20 concurrent external API calls
+};

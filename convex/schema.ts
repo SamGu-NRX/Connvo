@@ -73,6 +73,9 @@ export default defineSchema({
     description: v.optional(v.string()),
     scheduledAt: v.optional(v.number()),
     duration: v.optional(v.number()),
+    // WebRTC doesn't need external room IDs - signaling is handled internally
+    webrtcEnabled: v.optional(v.boolean()),
+    // GetStream room identifier when using paid provider
     streamRoomId: v.optional(v.string()),
     state: v.union(
       v.literal("scheduled"),
@@ -90,12 +93,17 @@ export default defineSchema({
     .index("by_state", ["state"])
     .index("by_scheduled", ["scheduledAt"])
     .index("by_state_and_scheduled", ["state", "scheduledAt"])
-    .index("by_organizer_and_state", ["organizerId", "state"]),
+    .index("by_organizer_and_state", ["organizerId", "state"])
+    .index("by_stream_room_id", ["streamRoomId"]),
 
   meetingParticipants: defineTable({
     meetingId: v.id("meetings"),
     userId: v.id("users"),
-    role: v.union(v.literal("host"), v.literal("participant")),
+    role: v.union(
+      v.literal("host"),
+      v.literal("participant"),
+      v.literal("observer"),
+    ),
     joinedAt: v.optional(v.number()),
     leftAt: v.optional(v.number()),
     presence: v.union(
@@ -183,6 +191,30 @@ export default defineSchema({
     .index("by_meeting_bucket_seq", ["meetingId", "bucketMs", "sequence"])
     .index("by_meeting_time_range", ["meetingId", "startMs"])
     .index("by_bucket_global", ["bucketMs"]), // For cleanup jobs
+
+  transcriptionSessions: defineTable({
+    meetingId: v.id("meetings"),
+    provider: v.union(
+      v.literal("whisper"),
+      v.literal("assemblyai"),
+      v.literal("getstream"),
+    ),
+    status: v.union(
+      v.literal("initializing"),
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_status", ["status"])
+    .index("by_provider", ["provider"]),
 
   transcriptSegments: defineTable({
     meetingId: v.id("meetings"),
@@ -340,12 +372,178 @@ export default defineSchema({
     .index("by_meeting", ["meetingId"])
     .index("by_meeting_time", ["meetingId", "timestamp"]),
 
+  // Video Room Configuration (Hybrid Architecture)
+  videoRoomConfigs: defineTable({
+    meetingId: v.id("meetings"),
+    roomId: v.string(),
+    provider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    iceServers: v.optional(
+      v.array(
+        v.object({
+          urls: v.union(v.string(), v.array(v.string())),
+          username: v.optional(v.string()),
+          credential: v.optional(v.string()),
+        }),
+      ),
+    ),
+    features: v.object({
+      recording: v.boolean(),
+      transcription: v.boolean(),
+      maxParticipants: v.number(),
+      screenSharing: v.boolean(),
+      chat: v.boolean(),
+    }),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_room_id", ["roomId"])
+    .index("by_provider", ["provider"]),
+
+  // WebRTC Signaling
+  webrtcSessions: defineTable({
+    meetingId: v.id("meetings"),
+    sessionId: v.string(),
+    userId: v.id("users"),
+    state: v.union(
+      v.literal("connecting"),
+      v.literal("connected"),
+      v.literal("disconnected"),
+      v.literal("failed"),
+      v.literal("closed"),
+    ),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_user", ["userId"])
+    .index("by_meeting_and_session", ["meetingId", "sessionId"])
+    .index("by_state", ["state"]),
+
+  webrtcSignals: defineTable({
+    meetingId: v.id("meetings"),
+    sessionId: v.string(),
+    fromUserId: v.id("users"),
+    toUserId: v.optional(v.id("users")), // null for broadcast signals
+    type: v.union(v.literal("sdp"), v.literal("ice")),
+    data: v.any(), // SDP or ICE candidate data
+    timestamp: v.number(),
+    processed: v.boolean(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_session", ["sessionId"])
+    .index("by_meeting_and_target", ["meetingId", "toUserId"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_processed", ["processed"]),
+
+  // Connection Quality Metrics
+  connectionMetrics: defineTable({
+    meetingId: v.id("meetings"),
+    sessionId: v.string(),
+    userId: v.id("users"),
+    quality: v.union(
+      v.literal("excellent"),
+      v.literal("good"),
+      v.literal("fair"),
+      v.literal("poor"),
+    ),
+    stats: v.object({
+      bitrate: v.number(),
+      packetLoss: v.number(),
+      latency: v.number(),
+      jitter: v.number(),
+    }),
+    timestamp: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"])
+    .index("by_quality", ["quality"])
+    .index("by_timestamp", ["timestamp"]),
+
   // System Collections
   idempotencyKeys: defineTable({
     key: v.string(),
     scope: v.string(),
+    metadata: v.optional(v.any()),
     createdAt: v.number(),
-  }).index("by_key_scope", ["key", "scope"]),
+  })
+    .index("by_key_scope", ["key", "scope"])
+    .index("by_created_at", ["createdAt"]),
+
+  // Alerting and Monitoring
+  alerts: defineTable({
+    alertId: v.string(),
+    severity: v.union(
+      v.literal("critical"),
+      v.literal("error"),
+      v.literal("warning"),
+      v.literal("info"),
+    ),
+    category: v.union(
+      v.literal("meeting_lifecycle"),
+      v.literal("video_provider"),
+      v.literal("transcription"),
+      v.literal("authentication"),
+      v.literal("performance"),
+      v.literal("security"),
+      v.literal("system"),
+    ),
+    title: v.string(),
+    message: v.string(),
+    metadata: v.any(),
+    actionable: v.boolean(),
+    status: v.union(
+      v.literal("active"),
+      v.literal("acknowledged"),
+      v.literal("resolved"),
+    ),
+    escalationTime: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_severity", ["severity"])
+    .index("by_category", ["category"])
+    .index("by_status", ["status"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_escalation_time", ["escalationTime"]),
+
+  performanceMetrics: defineTable({
+    name: v.string(),
+    value: v.number(),
+    unit: v.string(),
+    labels: v.any(),
+    threshold: v.optional(
+      v.object({
+        warning: v.number(),
+        critical: v.number(),
+      }),
+    ),
+    timestamp: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_name", ["name"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_name_and_timestamp", ["name", "timestamp"]),
+
+  meetingEvents: defineTable({
+    meetingId: v.id("meetings"),
+    event: v.string(),
+    userId: v.optional(v.id("users")),
+    duration: v.optional(v.number()),
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    metadata: v.any(),
+    timestamp: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_event", ["event"])
+    .index("by_success", ["success"])
+    .index("by_timestamp", ["timestamp"])
+    .index("by_meeting_and_event", ["meetingId", "event"]),
 
   rateLimits: defineTable({
     userId: v.id("users"),
@@ -383,6 +581,28 @@ export default defineSchema({
     .index("by_key", ["key"])
     .index("by_environment", ["environment"])
     .index("by_key_env", ["key", "environment"]),
+
+  // Meeting Recordings
+  meetingRecordings: defineTable({
+    meetingId: v.id("meetings"),
+    recordingId: v.string(),
+    recordingUrl: v.optional(v.string()),
+    provider: v.union(v.literal("getstream"), v.literal("custom")),
+    status: v.union(
+      v.literal("recording"),
+      v.literal("processing"),
+      v.literal("ready"),
+      v.literal("failed"),
+    ),
+    duration: v.optional(v.number()),
+    fileSize: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_recording_id", ["recordingId"])
+    .index("by_provider", ["provider"])
+    .index("by_status", ["status"]),
 
   // Legacy Support (for migration)
   connections: defineTable({

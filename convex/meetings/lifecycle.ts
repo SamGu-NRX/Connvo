@@ -2,7 +2,8 @@
  * Enhanced Meeting Lifecycle Management
  *
  * This module implements comprehensive meeting lifecycle functions with
- * Stream integration, participant management, and real-time state tracking.
+ * WebRTC integration, participant management, and real-time state tracking.
+ * Designed for hybrid WebRTC (free tier) + GetStream (paid tier) architecture.
  *
  * Requirements: 6.1, 6.4
  * Compliance: steering/convex_rules.mdc - Uses proper Convex function patterns
@@ -18,9 +19,12 @@ import {
 import { createError } from "../lib/errors";
 import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
+import { withIdempotency, IdempotencyUtils } from "../lib/idempotency";
+import { sendAlert, trackMeetingEvent, AlertTemplates } from "../lib/alerting";
+import { withRetry, RetryPolicies, ResilienceUtils } from "../lib/resilience";
 
 /**
- * Creates a new meeting with comprehensive setup
+ * Creates a new meeting with comprehensive setup and hybrid video provider support
  */
 export const createMeeting = mutation({
   args: {
@@ -29,127 +33,264 @@ export const createMeeting = mutation({
     scheduledAt: v.optional(v.number()),
     duration: v.optional(v.number()),
     participantEmails: v.optional(v.array(v.string())),
+    // Hybrid architecture options
+    recordingEnabled: v.optional(v.boolean()),
+    transcriptionEnabled: v.optional(v.boolean()),
+    maxParticipants: v.optional(v.number()),
+    // Meeting type affects provider selection
+    meetingType: v.optional(
+      v.union(
+        v.literal("one-on-one"),
+        v.literal("small-group"),
+        v.literal("large-meeting"),
+        v.literal("webinar"),
+      ),
+    ),
   },
   returns: v.object({
     meetingId: v.id("meetings"),
-    streamRoomId: v.optional(v.string()),
+    webrtcReady: v.boolean(),
+    videoProvider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    features: v.object({
+      recording: v.boolean(),
+      transcription: v.boolean(),
+      maxParticipants: v.number(),
+    }),
   }),
   handler: async (ctx, args) => {
+    const startTime = Date.now();
     const identity = await requireIdentity(ctx);
 
-    // Validate input
-    if (args.title.trim().length === 0) {
-      throw createError.validation("Meeting title cannot be empty");
-    }
-
-    if (args.scheduledAt && args.scheduledAt < Date.now()) {
-      throw createError.validation("Cannot schedule meeting in the past");
-    }
-
-    // Get or create user record
-    let user = await ctx.db
-      .query("users")
-      .withIndex("by_workos_id", (q) =>
-        q.eq("workosUserId", identity.workosUserId),
-      )
-      .unique();
-
-    if (!user) {
-      // Create user if doesn't exist
-      const userId = await ctx.db.insert("users", {
-        workosUserId: identity.workosUserId,
-        email: identity.email || "",
-        orgId: identity.orgId,
-        orgRole: identity.orgRole,
-        displayName: identity.name,
-        isActive: true,
-        lastSeenAt: Date.now(),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-      user = await ctx.db.get(userId);
-      if (!user) throw createError.notFound("User");
-    }
-
-    const now = Date.now();
-
-    // Create meeting
-    const meetingId = await ctx.db.insert("meetings", {
-      organizerId: user._id,
-      title: args.title.trim(),
-      description: args.description?.trim(),
-      scheduledAt: args.scheduledAt,
-      duration: args.duration || 1800000, // Default 30 minutes in ms
-      state: "scheduled",
-      participantCount: 1, // Organizer
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    // Add organizer as host participant
-    await ctx.db.insert("meetingParticipants", {
-      meetingId,
-      userId: user._id,
-      role: "host",
-      presence: "invited",
-      createdAt: now,
-    });
-
-    // Create initial meeting state
-    await ctx.db.insert("meetingState", {
-      meetingId,
-      active: false,
-      topics: [],
-      recordingEnabled: false,
-      updatedAt: now,
-    });
-
-    // Create initial empty notes
-    await ctx.db.insert("meetingNotes", {
-      meetingId,
-      content: "",
-      version: 0,
-      lastRebasedAt: now,
-      updatedAt: now,
-    });
-
-    // Schedule Stream room creation if meeting is immediate or soon
-    let streamRoomId: string | undefined;
-    if (!args.scheduledAt || args.scheduledAt <= Date.now() + 300000) {
-      // Within 5 minutes
-      try {
-        const roomResult = await ctx.scheduler.runAfter(
-          0,
-          internal.meetings.stream.createStreamRoom,
-          { meetingId },
-        );
-        // Note: We can't get the return value from scheduled actions
-        // The room ID will be updated via the action
-      } catch (error) {
-        console.warn("Failed to schedule Stream room creation:", error);
+    try {
+      // Validate input
+      if (args.title.trim().length === 0) {
+        throw createError.validation("Meeting title cannot be empty");
       }
-    }
 
-    return {
-      meetingId,
-      streamRoomId,
-    };
+      if (args.scheduledAt && args.scheduledAt < Date.now()) {
+        throw createError.validation("Cannot schedule meeting in the past");
+      }
+
+      if (args.maxParticipants && args.maxParticipants < 1) {
+        throw createError.validation("Maximum participants must be at least 1");
+      }
+
+      // Get or create user record
+      let user = await ctx.db
+        .query("users")
+        .withIndex("by_workos_id", (q) =>
+          q.eq("workosUserId", identity.workosUserId),
+        )
+        .unique();
+
+      if (!user) {
+        // Create user if doesn't exist
+        const userId = await ctx.db.insert("users", {
+          workosUserId: identity.workosUserId,
+          email: identity.email || "",
+          orgId: identity.orgId,
+          orgRole: identity.orgRole,
+          displayName: identity.name,
+          isActive: true,
+          lastSeenAt: Date.now(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+        user = await ctx.db.get(userId);
+        if (!user) throw createError.notFound("User");
+      }
+
+      const now = Date.now();
+
+      // Determine video provider and features based on user plan and meeting requirements
+      const maxParticipants = args.maxParticipants || 10;
+      const recordingEnabled = args.recordingEnabled || false;
+      const transcriptionEnabled = args.transcriptionEnabled || true; // Free tier gets transcription
+
+      // Provider selection logic (hybrid architecture)
+      // Free tier: WebRTC for small meetings, transcription enabled, no recording
+      // Paid tier: GetStream for large meetings, recording enabled
+      const userPlan = identity.orgRole === "admin" ? "paid" : "free"; // Simplified for demo
+      const isLargeMeeting =
+        maxParticipants > 4 ||
+        args.meetingType === "large-meeting" ||
+        args.meetingType === "webinar";
+
+      let videoProvider: "webrtc" | "getstream";
+      let finalRecordingEnabled: boolean;
+      let finalTranscriptionEnabled: boolean;
+      let finalMaxParticipants: number;
+
+      if (userPlan === "paid" && (isLargeMeeting || recordingEnabled)) {
+        // Use GetStream for paid tier with advanced features
+        videoProvider = "getstream";
+        finalRecordingEnabled = recordingEnabled;
+        finalTranscriptionEnabled = transcriptionEnabled;
+        finalMaxParticipants = Math.min(maxParticipants, 100); // GetStream limit
+      } else {
+        // Use WebRTC for free tier
+        videoProvider = "webrtc";
+        finalRecordingEnabled = false; // No recording on free tier
+        finalTranscriptionEnabled = transcriptionEnabled; // Free tier gets transcription
+        finalMaxParticipants = Math.min(maxParticipants, 4); // WebRTC practical limit
+      }
+
+      // Create meeting with provider-specific configuration
+      const meetingId = await ctx.db.insert("meetings", {
+        organizerId: user._id,
+        title: args.title.trim(),
+        description: args.description?.trim(),
+        scheduledAt: args.scheduledAt,
+        duration: args.duration || 1800000, // Default 30 minutes in ms
+        webrtcEnabled: videoProvider === "webrtc",
+        state: "scheduled",
+        participantCount: 1, // Organizer
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Add organizer as host participant
+      await ctx.db.insert("meetingParticipants", {
+        meetingId,
+        userId: user._id,
+        role: "host",
+        presence: "invited",
+        createdAt: now,
+      });
+
+      // Create initial meeting state with provider-specific settings
+      await ctx.db.insert("meetingState", {
+        meetingId,
+        active: false,
+        topics: [],
+        recordingEnabled: finalRecordingEnabled,
+        updatedAt: now,
+      });
+
+      // Create initial empty notes
+      await ctx.db.insert("meetingNotes", {
+        meetingId,
+        content: "",
+        version: 0,
+        lastRebasedAt: now,
+        updatedAt: now,
+      });
+
+      // Provider-specific initialization
+      let webrtcReady = false;
+      if (videoProvider === "webrtc") {
+        // WebRTC is always ready - no external service needed
+        webrtcReady = true;
+      } else {
+        // GetStream room will be created when meeting starts
+        webrtcReady = false;
+        // TODO: Schedule GetStream room creation for immediate meetings
+        if (!args.scheduledAt || args.scheduledAt <= Date.now() + 300000) {
+          // Schedule GetStream room creation
+          try {
+            await ctx.scheduler.runAfter(
+              0,
+              internal.meetings.stream.createStreamRoom,
+              { meetingId },
+            );
+          } catch (error) {
+            console.warn("Failed to schedule GetStream room creation:", error);
+          }
+        }
+      }
+
+      // Track successful meeting creation
+      const duration = Date.now() - startTime;
+      await trackMeetingEvent(ctx, {
+        meetingId,
+        event: "meeting_created",
+        userId: user._id,
+        duration,
+        success: true,
+        metadata: {
+          videoProvider,
+          participantCount: 1,
+          recordingEnabled: finalRecordingEnabled,
+          transcriptionEnabled: finalTranscriptionEnabled,
+        },
+      });
+
+      return {
+        meetingId,
+        webrtcReady,
+        videoProvider,
+        features: {
+          recording: finalRecordingEnabled,
+          transcription: finalTranscriptionEnabled,
+          maxParticipants: finalMaxParticipants,
+        },
+      };
+    } catch (error) {
+      // Track failed meeting creation
+      const duration = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      // Don't track validation errors as they're user errors
+      if (!errorMessage.includes("validation")) {
+        await trackMeetingEvent(ctx, {
+          meetingId: "unknown" as Id<"meetings">,
+          event: "meeting_creation_failed",
+          userId: identity.userId as Id<"users">,
+          duration,
+          success: false,
+          error: errorMessage,
+          metadata: {
+            title: args.title,
+            scheduledAt: args.scheduledAt,
+            maxParticipants: args.maxParticipants,
+          },
+        });
+
+        // Send critical alert for system failures
+        if (
+          !errorMessage.includes("validation") &&
+          !errorMessage.includes("not found")
+        ) {
+          await sendAlert(
+            ctx,
+            AlertTemplates.meetingCreationFailed("unknown", errorMessage),
+          );
+        }
+      }
+
+      throw error;
+    }
   },
 });
 
 /**
- * Adds a participant to a meeting with proper validation
+ * Adds a participant to a meeting with proper validation and role management
  */
 export const addParticipant = mutation({
   args: {
     meetingId: v.id("meetings"),
     userId: v.id("users"),
-    role: v.union(v.literal("host"), v.literal("participant")),
+    role: v.union(
+      v.literal("host"),
+      v.literal("co-host"),
+      v.literal("participant"),
+      v.literal("observer"),
+    ),
   },
-  returns: v.null(),
+  returns: v.object({
+    participantId: v.id("meetingParticipants"),
+    success: v.boolean(),
+  }),
   handler: async (ctx, { meetingId, userId, role }) => {
     // Verify user has permission to add participants (host only)
-    await assertMeetingAccess(ctx, meetingId, "host");
+    const currentParticipant = await assertMeetingAccess(ctx, meetingId);
+    if (currentParticipant.role !== "host") {
+      throw createError.insufficientPermissions(
+        "host",
+        currentParticipant.role,
+      );
+    }
 
     // Check if user is already a participant
     const existingParticipant = await ctx.db
@@ -171,25 +312,152 @@ export const addParticipant = mutation({
       throw createError.notFound("User", userId);
     }
 
+    // Verify meeting exists and is not concluded
+    const meeting = await ctx.db.get(meetingId);
+    if (!meeting) {
+      throw createError.notFound("Meeting", meetingId);
+    }
+
+    if (meeting.state === "concluded" || meeting.state === "cancelled") {
+      throw createError.validation(
+        "Cannot add participants to concluded or cancelled meeting",
+      );
+    }
+
     // Add participant
-    await ctx.db.insert("meetingParticipants", {
+    const participantId = await ctx.db.insert("meetingParticipants", {
       meetingId,
       userId,
-      role,
+      role: role === "co-host" ? "participant" : role, // Map co-host to participant for now
       presence: "invited",
       createdAt: Date.now(),
     });
 
     // Update participant count
+    await ctx.db.patch(meetingId, {
+      participantCount: (meeting.participantCount || 0) + 1,
+      updatedAt: Date.now(),
+    });
+
+    return {
+      participantId,
+      success: true,
+    };
+  },
+});
+
+/**
+ * Adds multiple participants to a meeting (bulk operation)
+ */
+export const addMultipleParticipants = mutation({
+  args: {
+    meetingId: v.id("meetings"),
+    participants: v.array(
+      v.object({
+        userId: v.id("users"),
+        role: v.union(
+          v.literal("host"),
+          v.literal("co-host"),
+          v.literal("participant"),
+          v.literal("observer"),
+        ),
+      }),
+    ),
+  },
+  returns: v.object({
+    added: v.array(v.id("meetingParticipants")),
+    skipped: v.array(
+      v.object({
+        userId: v.id("users"),
+        reason: v.string(),
+      }),
+    ),
+    success: v.boolean(),
+  }),
+  handler: async (ctx, { meetingId, participants }) => {
+    // Verify user has permission to add participants (host only)
+    const currentParticipant = await assertMeetingAccess(ctx, meetingId);
+    if (currentParticipant.role !== "host") {
+      throw createError.insufficientPermissions(
+        "host",
+        currentParticipant.role,
+      );
+    }
+
     const meeting = await ctx.db.get(meetingId);
-    if (meeting) {
+    if (!meeting) {
+      throw createError.notFound("Meeting", meetingId);
+    }
+
+    if (meeting.state === "concluded" || meeting.state === "cancelled") {
+      throw createError.validation(
+        "Cannot add participants to concluded or cancelled meeting",
+      );
+    }
+
+    const added: Id<"meetingParticipants">[] = [];
+    const skipped: Array<{ userId: Id<"users">; reason: string }> = [];
+
+    for (const participant of participants) {
+      try {
+        // Check if user is already a participant
+        const existingParticipant = await ctx.db
+          .query("meetingParticipants")
+          .withIndex("by_meeting_and_user", (q) =>
+            q.eq("meetingId", meetingId).eq("userId", participant.userId),
+          )
+          .unique();
+
+        if (existingParticipant) {
+          skipped.push({
+            userId: participant.userId,
+            reason: "Already a participant",
+          });
+          continue;
+        }
+
+        // Verify target user exists
+        const targetUser = await ctx.db.get(participant.userId);
+        if (!targetUser) {
+          skipped.push({
+            userId: participant.userId,
+            reason: "User not found",
+          });
+          continue;
+        }
+
+        // Add participant
+        const participantId = await ctx.db.insert("meetingParticipants", {
+          meetingId,
+          userId: participant.userId,
+          role:
+            participant.role === "co-host" ? "participant" : participant.role,
+          presence: "invited",
+          createdAt: Date.now(),
+        });
+
+        added.push(participantId);
+      } catch (error) {
+        skipped.push({
+          userId: participant.userId,
+          reason: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }
+
+    // Update participant count
+    if (added.length > 0) {
       await ctx.db.patch(meetingId, {
-        participantCount: (meeting.participantCount || 0) + 1,
+        participantCount: (meeting.participantCount || 0) + added.length,
         updatedAt: Date.now(),
       });
     }
 
-    return null;
+    return {
+      added,
+      skipped,
+      success: true,
+    };
   },
 });
 
@@ -309,13 +577,28 @@ export const updateParticipantRole = mutation({
 });
 
 /**
- * Starts a meeting and activates real-time features
+ * Starts a meeting and activates real-time features with hybrid provider support
  */
 export const startMeeting = mutation({
   args: { meetingId: v.id("meetings") },
   returns: v.object({
     success: v.boolean(),
-    streamRoomId: v.optional(v.string()),
+    webrtcReady: v.boolean(),
+    videoProvider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    roomInfo: v.optional(
+      v.object({
+        roomId: v.optional(v.string()),
+        iceServers: v.optional(
+          v.array(
+            v.object({
+              urls: v.union(v.string(), v.array(v.string())),
+              username: v.optional(v.string()),
+              credential: v.optional(v.string()),
+            }),
+          ),
+        ),
+      }),
+    ),
   }),
   handler: async (ctx, { meetingId }) => {
     // Verify user has permission to start meeting (host only)
@@ -358,23 +641,80 @@ export const startMeeting = mutation({
       });
     }
 
-    // Ensure Stream room exists
-    let streamRoomId = meeting.streamRoomId;
-    if (!streamRoomId) {
+    // Determine video provider and initialize accordingly
+    const videoProvider = meeting.webrtcEnabled
+      ? ("webrtc" as const)
+      : ("getstream" as const);
+    let webrtcReady = false;
+    let roomInfo: any = undefined;
+
+    if (videoProvider === "webrtc") {
+      // WebRTC signaling is ready - no external service needed
+      webrtcReady = true;
+
+      // Provide STUN/TURN server configuration for WebRTC
+      roomInfo = {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          // Add TURN servers if configured
+          ...(process.env.TURN_SERVER_URL
+            ? [
+                {
+                  urls: process.env.TURN_SERVER_URL,
+                  username: process.env.TURN_USERNAME || "",
+                  credential: process.env.TURN_CREDENTIAL || "",
+                },
+              ]
+            : []),
+        ],
+      };
+    } else {
+      // GetStream provider - create room if not exists
       try {
+        // Schedule GetStream room creation
         await ctx.scheduler.runAfter(
           0,
           internal.meetings.stream.createStreamRoom,
           { meetingId },
         );
+        webrtcReady = false; // Will be ready after room creation
       } catch (error) {
-        console.warn("Failed to create Stream room:", error);
+        console.warn("Failed to create GetStream room:", error);
+        // Fallback to WebRTC if GetStream fails
+        await ctx.db.patch(meetingId, {
+          webrtcEnabled: true,
+          updatedAt: now,
+        });
+        webrtcReady = true;
+        roomInfo = {
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+          ],
+        };
+      }
+    }
+
+    // Schedule transcription initialization if enabled
+    if (meetingState?.recordingEnabled || true) {
+      // Free tier gets transcription
+      try {
+        await ctx.scheduler.runAfter(
+          1000, // 1 second delay
+          internal.transcripts.initialization.initializeTranscription,
+          { meetingId },
+        );
+      } catch (error) {
+        console.warn("Failed to initialize transcription:", error);
       }
     }
 
     return {
       success: true,
-      streamRoomId,
+      webrtcReady,
+      videoProvider,
+      roomInfo,
     };
   },
 });
@@ -446,13 +786,105 @@ export const endMeeting = mutation({
 });
 
 /**
+ * Gets meeting connection information for participants
+ */
+export const getMeetingConnectionInfo = mutation({
+  args: { meetingId: v.id("meetings") },
+  returns: v.object({
+    success: v.boolean(),
+    videoProvider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    connectionInfo: v.object({
+      roomId: v.optional(v.string()),
+      iceServers: v.optional(
+        v.array(
+          v.object({
+            urls: v.union(v.string(), v.array(v.string())),
+            username: v.optional(v.string()),
+            credential: v.optional(v.string()),
+          }),
+        ),
+      ),
+      streamToken: v.optional(v.string()),
+    }),
+    features: v.object({
+      recording: v.boolean(),
+      transcription: v.boolean(),
+      maxParticipants: v.number(),
+    }),
+  }),
+  handler: async (ctx, { meetingId }) => {
+    // Verify user is a participant
+    const participant = await assertMeetingAccess(ctx, meetingId);
+
+    const meeting = await ctx.db.get(meetingId);
+    if (!meeting) {
+      throw createError.notFound("Meeting", meetingId);
+    }
+
+    if (meeting.state !== "active") {
+      throw createError.validation("Meeting is not active");
+    }
+
+    const meetingState = await ctx.db
+      .query("meetingState")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .unique();
+
+    // Determine video provider and connection info
+    const videoProvider = meeting.webrtcEnabled
+      ? ("webrtc" as const)
+      : ("getstream" as const);
+    let connectionInfo: any = {};
+
+    if (videoProvider === "webrtc") {
+      // WebRTC connection info
+      connectionInfo = {
+        roomId: `webrtc_${meetingId}`,
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          // Add TURN servers if configured
+          ...(process.env.TURN_SERVER_URL
+            ? [
+                {
+                  urls: process.env.TURN_SERVER_URL,
+                  username: process.env.TURN_USERNAME || "",
+                  credential: process.env.TURN_CREDENTIAL || "",
+                },
+              ]
+            : []),
+        ],
+      };
+    } else {
+      // GetStream connection info
+      // TODO: Generate GetStream token for participant
+      connectionInfo = {
+        roomId: meeting.streamRoomId,
+        streamToken: undefined, // Will be generated by GetStream action
+      };
+    }
+
+    return {
+      success: true,
+      videoProvider,
+      connectionInfo,
+      features: {
+        recording: meetingState?.recordingEnabled || false,
+        transcription: true, // Always enabled for free tier
+        maxParticipants: meeting.webrtcEnabled ? 4 : 100,
+      },
+    };
+  },
+});
+
+/**
  * Handles participant joining (presence update)
  */
 export const joinMeeting = mutation({
   args: { meetingId: v.id("meetings") },
   returns: v.object({
     success: v.boolean(),
-    streamToken: v.optional(v.string()),
+    webrtcReady: v.boolean(),
   }),
   handler: async (ctx, { meetingId }) => {
     // Verify user is a participant
@@ -475,23 +907,12 @@ export const joinMeeting = mutation({
       joinedAt: now,
     });
 
-    // Generate Stream token for this participant
-    let streamToken: string | undefined;
-    try {
-      const tokenResult = await ctx.scheduler.runAfter(
-        0,
-        internal.meetings.stream.generateParticipantToken,
-        { meetingId, userId: participant.userId },
-      );
-      // Note: We can't get the return value from scheduled actions
-      // The token would need to be retrieved separately
-    } catch (error) {
-      console.warn("Failed to generate Stream token:", error);
-    }
+    // WebRTC doesn't need tokens - direct peer-to-peer connection
+    const webrtcReady = true;
 
     return {
       success: true,
-      streamToken,
+      webrtcReady,
     };
   },
 });
