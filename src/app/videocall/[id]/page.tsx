@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Clock,
   Lightbulb,
@@ -147,7 +147,10 @@ export default function VideoMeeting() {
   // Helpers: persist small pieces of state to localStorage
   const persist = (key: string, value: any) => {
     try {
-      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+      localStorage.setItem(
+        key,
+        typeof value === "string" ? value : JSON.stringify(value),
+      );
     } catch {}
   };
 
@@ -166,19 +169,27 @@ export default function VideoMeeting() {
 
     // If this is a user message, simulate partner auto-response
     if (sender === "You") {
-      setTimeout(() => {
-        const reply = {
-          id: String(Date.now() + 1),
-          sender: MOCK_USERS.partner.name,
-          message: ["Nice!", "Thanks for that.", "Great point!", "Love that idea."][Math.floor(Math.random() * 4)],
-          timestamp: "Now",
-        };
-        setMessages((prev: any[]) => {
-          const next = [...prev, reply];
-          persist(LS_KEYS.MESSAGES, next);
-          return next;
-        });
-      }, 1200 + Math.floor(Math.random() * 1500));
+      setTimeout(
+        () => {
+          const reply = {
+            id: String(Date.now() + 1),
+            sender: MOCK_USERS.partner.name,
+            message: [
+              "Nice!",
+              "Thanks for that.",
+              "Great point!",
+              "Love that idea.",
+            ][Math.floor(Math.random() * 4)],
+            timestamp: "Now",
+          };
+          setMessages((prev: any[]) => {
+            const next = [...prev, reply];
+            persist(LS_KEYS.MESSAGES, next);
+            return next;
+          });
+        },
+        1200 + Math.floor(Math.random() * 1500),
+      );
     }
   };
 
@@ -201,7 +212,10 @@ export default function VideoMeeting() {
   // Ensure other interactive state is persisted
   useEffect(() => persist(LS_KEYS.NOTES, notes), [notes]);
   useEffect(() => persist(LS_KEYS.MESSAGES, messages), [messages]);
-  useEffect(() => persist(LS_KEYS.TIME_REMAINING, timeRemaining), [timeRemaining]);
+  useEffect(
+    () => persist(LS_KEYS.TIME_REMAINING, timeRemaining),
+    [timeRemaining],
+  );
   useEffect(() => persist(LS_KEYS.ACTIVE_VIDEO, activeVideo), [activeVideo]);
 
   const prompts = generatePrompts(userInterests.user1, userInterests.user2);
@@ -266,20 +280,23 @@ export default function VideoMeeting() {
     });
 
     // Simulate partner response after a short delay and then end the call locally
-    setTimeout(() => {
-      setIsLeaveRequestPending(false);
-      window.addToast({
-        message: "John Doe approved your leave request",
-        type: "success",
-        icon: PhoneOff,
-      });
-      // End the simulated call locally and show after-call screen
-      setIsCallEnded(true);
-      // Cleanup localStorage for call-related keys
-      try {
-        Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
-      } catch {}
-    }, 1500 + Math.floor(Math.random() * 1000));
+    setTimeout(
+      () => {
+        setIsLeaveRequestPending(false);
+        window.addToast({
+          message: "John Doe approved your leave request",
+          type: "success",
+          icon: PhoneOff,
+        });
+        // End the simulated call locally and show after-call screen
+        setIsCallEnded(true);
+        // Cleanup localStorage for call-related keys
+        try {
+          Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
+        } catch {}
+      },
+      1500 + Math.floor(Math.random() * 1000),
+    );
   }, []);
 
   const handleAcceptTimeRequest = () => {
@@ -304,27 +321,30 @@ export default function VideoMeeting() {
     });
 
     // Simulate partner response/approval after a short delay
-    setTimeout(() => {
-      const success = timeManager.addTime();
-      if (success) {
-        const addedMsg = timeManager.getTimeAddedMessage();
-        window.addToast({
-          message: addedMsg,
-          type: "success",
-          icon: Clock,
-        });
-        const newRemaining = timeManager.getRemainingTime();
-        setTimeRemaining(newRemaining);
-        persist("connvo:call:timeRemaining", newRemaining);
-      } else {
-        window.addToast({
-          message: "Partner denied the request",
-          type: "error",
-        });
-      }
-    }, 1500 + Math.floor(Math.random() * 1500));
+    setTimeout(
+      () => {
+        const success = timeManager.addTime();
+        if (success) {
+          const addedMsg = timeManager.getTimeAddedMessage();
+          window.addToast({
+            message: addedMsg,
+            type: "success",
+            icon: Clock,
+          });
+          const newRemaining = timeManager.getRemainingTime();
+          setTimeRemaining(newRemaining);
+          persist("connvo:call:timeRemaining", newRemaining);
+        } else {
+          window.addToast({
+            message: "Partner denied the request",
+            type: "error",
+          });
+        }
+      },
+      1500 + Math.floor(Math.random() * 1500),
+    );
   }, [timeManager]);
-  
+
   if (isCallEnded) {
     return <AfterCallScreen />;
   }
@@ -374,12 +394,15 @@ export default function VideoMeeting() {
                   // optional fields
                   interests: MOCK_USERS.partner.interests || [],
                   connectionStatus:
-                    MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status === "excellent"
+                    MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status ===
+                    "excellent"
                       ? "excellent"
-                      : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status === "good"
+                      : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]
+                            ?.status === "good"
                         ? "good"
                         : "poor",
-                  isSpeaking: MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
+                  isSpeaking:
+                    MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
                   meetingStats: MOCK_USERS.partner.meetingStats,
                 }}
                 inMeeting={true}

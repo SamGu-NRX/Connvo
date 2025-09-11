@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import UserCard from "@/components/app/user-card";
 import { Button } from "@/components/ui/button";
 

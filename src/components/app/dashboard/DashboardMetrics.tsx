@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 ChartJS.register(
   ArcElement,

@@ -3,7 +3,7 @@
 
 import { useEffect } from "react";
 import confetti from "canvas-confetti";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";

@@ -3,7 +3,7 @@
 
 import type React from "react";
 import { useState, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView } from "motion/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { UserInfo } from "@/types/user"; // Use the central type

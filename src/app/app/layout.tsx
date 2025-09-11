@@ -10,7 +10,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 import { Providers } from "./providers";
 import { Sidebar } from "@/components/app/dashboard/sidebar";

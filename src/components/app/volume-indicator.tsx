@@ -1,5 +1,5 @@
 import { Volume2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 export default function VolumeIndicator() {
   return (

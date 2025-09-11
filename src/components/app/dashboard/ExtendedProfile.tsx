@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Award, Briefcase, Globe, Link } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 

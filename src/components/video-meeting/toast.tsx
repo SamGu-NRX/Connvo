@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { createElement, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { LucideIcon } from "lucide-react";
@@ -50,22 +50,22 @@ const ToastComponent = ({ toast, onRemove }: ToastProps) => {
 export function ToastContainer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [mounted, setMounted] = useState(false);
- 
+
   useEffect(() => {
     setMounted(true);
   }, []);
- 
+
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
- 
+
   // Expose the add toast function globally (only on client)
   useEffect(() => {
     const addToast = (toast: Omit<Toast, "id">) => {
       const id = Math.random().toString(36).slice(2);
       setToasts((prev) => [...prev, { ...toast, id }]);
     };
- 
+
     (window as any).addToast = addToast;
     return () => {
       try {
@@ -76,7 +76,7 @@ export function ToastContainer() {
       }
     };
   }, []);
- 
+
   // Prevent rendering portal until mounted on the client to avoid hydration mismatch
   if (!mounted || typeof document === "undefined") return null;
 

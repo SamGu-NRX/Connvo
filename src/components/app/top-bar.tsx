@@ -1,5 +1,5 @@
 import { Clock } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 type TopBarProps = {
   prompt: string;

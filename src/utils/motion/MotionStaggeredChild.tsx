@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/shadcn";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { ReactNode } from "react";
 
 export const MotionStaggeredChild = ({

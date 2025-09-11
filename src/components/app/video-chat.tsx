@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import VolumeIndicator from "./volume-indicator";
 
 export default function VideoChat() {

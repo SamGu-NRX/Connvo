@@ -10,14 +10,15 @@
 
 import { v } from "convex/values";
 import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
-import { createError, ErrorCodes } from "../lib/errors";
+import { createError } from "../lib/errors";
 
 /**
  * Authenticated user identity with WorkOS context
  */
 export interface AuthIdentity {
-  userId: string;
+  userId: Id<"users">;
   workosUserId: string;
   orgId: string | null;
   orgRole: string | null;
@@ -44,20 +45,42 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
     throw createError.unauthorized("Authentication required");
   }
 
-  // Extract WorkOS-specific claims from JWT
-  // TODO: FIX
-  const workosUserId = (identity as any).subject as string | undefined;
-  const email = (identity as any).email ?? null;
-  const name = (identity as any).name ?? null;
-  const orgId = (identity as any).org_id ?? null;
-  const orgRole = (identity as any).org_role ?? null;
-
+  const workosUserId = identity.subject;
   if (!workosUserId) {
     throw createError.unauthorized("Invalid authentication token");
   }
 
+  // Load the corresponding Convex user document (no writes here).
+  // Queries/Mutations have ctx.db; Actions must use ctx.runQuery.
+  let userDoc:
+    | { _id: Id<"users">; email: string; displayName?: string | undefined; orgId?: string; orgRole?: string }
+    | null = null;
+  const hasDb = (ctx as any).db && typeof (ctx as any).db.query === "function";
+  if (hasDb) {
+    userDoc = await (ctx as QueryCtx).db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
+      .unique();
+  } else {
+    userDoc = await (ctx as ActionCtx).runQuery(
+      internal.users.queries.getUserByWorkosId,
+      { workosUserId },
+    );
+  }
+
+  if (!userDoc) {
+    throw createError.unauthorized(
+      "User not provisioned. Please complete sign-in and try again.",
+    );
+  }
+
+  const email = identity.email ?? userDoc.email ?? null;
+  const name = identity.name ?? userDoc.displayName ?? null;
+  const orgId = (userDoc as any).orgId ?? null;
+  const orgRole = (userDoc as any).orgRole ?? null;
+
   return {
-    userId: workosUserId,
+    userId: userDoc._id,
     workosUserId,
     orgId,
     orgRole,
@@ -86,7 +109,7 @@ export async function assertMeetingAccess(
   const participant = await ctx.db
     .query("meetingParticipants")
     .withIndex("by_meeting_and_user", (q) =>
-      q.eq("meetingId", meetingId).eq("userId", userId as Id<"users">),
+      q.eq("meetingId", meetingId).eq("userId", userId),
     )
     .unique();
 
@@ -104,7 +127,7 @@ export async function assertMeetingAccess(
 
   // Log successful access for audit trail
   await logAuditEvent(ctx, {
-    actorUserId: userId as Id<"users">,
+    actorUserId: userId,
     resourceType: "meeting",
     resourceId: meetingId,
     action: "access_granted",

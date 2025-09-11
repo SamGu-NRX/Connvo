@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   Card,
   CardContent,
