@@ -99,9 +99,10 @@ export const handleCallEnded = internalMutation({
       metadata: {
         callId,
         endedAt,
-        duration: meetingState?.startedAt
-          ? endedAt - meetingState.startedAt
-          : undefined,
+        duration:
+          meetingState?.startedAt != null
+            ? endedAt - meetingState.startedAt
+            : 0,
       },
     });
 
@@ -229,7 +230,7 @@ export const handleRecordingStarted = internalMutation({
       category: "meeting",
       success: true,
       metadata: {
-        recordingId,
+        recordingId: recordingId ?? "",
         startedAt,
       },
     });
@@ -271,9 +272,9 @@ export const handleRecordingStopped = internalMutation({
       category: "meeting",
       success: true,
       metadata: {
-        recordingId,
+        recordingId: recordingId ?? "",
         stoppedAt,
-        downloadUrl,
+        downloadUrl: downloadUrl ?? "",
       },
     });
 

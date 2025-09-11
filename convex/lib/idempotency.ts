@@ -33,6 +33,59 @@ export interface IdempotencyResult<T> {
 }
 
 /**
+ * Persist an operation result in a metadata-safe way.
+ * - For primitive results (string | number | boolean), store inline in metadata as `resultInline`.
+ * - For objects/arrays, serialize to JSON and store in Convex storage; keep the storage id in `resultRef`.
+ * Metadata fields only contain primitives to satisfy strict validators.
+ */
+async function persistResultMutation(
+  ctx: MutationCtx,
+  result: unknown,
+): Promise<{ meta: Record<string, string | number | boolean> }> {
+  if (
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean"
+  ) {
+    return { meta: { resultType: "inline", resultInline: result } };
+  }
+  // Mutations don't have access to storage.get/store in all environments.
+  // Store a compact summary and size to keep metadata primitive-only and safe.
+  const json = JSON.stringify(result);
+  const preview = json.length > 4096 ? json.slice(0, 4096) : json;
+  return {
+    meta: {
+      resultType: "summary",
+      resultSize: json.length,
+      resultPreview: preview,
+    },
+  };
+}
+
+async function persistResultAction(
+  ctx: ActionCtx,
+  result: unknown,
+): Promise<{ meta: Record<string, string | number | boolean> }> {
+  if (
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean"
+  ) {
+    return { meta: { resultType: "inline", resultInline: result } };
+  }
+  const json = JSON.stringify(result);
+  const blob = new Blob([json], { type: "application/json" });
+  const storageId = await ctx.storage.store(blob);
+  return {
+    meta: {
+      resultType: "storage",
+      resultRef: String(storageId),
+      resultSize: json.length,
+    },
+  };
+}
+
+/**
  * Ensures idempotent execution of mutations
  */
 export async function withIdempotency<T>(
@@ -90,12 +143,13 @@ export async function withIdempotency<T>(
     // Execute the operation
     const result = await operation();
 
-    // Update idempotency key with success
+    // Update idempotency key with success; store result via storage if object
+    const stored = await persistResultMutation(ctx, result);
     await ctx.db.patch(idempotencyId, {
       metadata: {
         status: "completed",
-        result,
         completedAt: Date.now(),
+        ...stored.meta,
       },
     });
 
@@ -181,12 +235,13 @@ export async function withActionIdempotency<T>(
 
   try {
     const result = await operation();
+    const stored = await persistResultAction(ctx, result);
     await ctx.runMutation(internal.system.idempotency.patchKey, {
       id: idempotencyId,
       metadata: {
         status: "completed",
-        result,
         completedAt: Date.now(),
+        ...stored.meta,
       },
     });
     return { isFirstExecution: true, result };

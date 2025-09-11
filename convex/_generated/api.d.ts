@@ -35,7 +35,9 @@ import type * as lib_observability from "../lib/observability.js";
 import type * as lib_performance from "../lib/performance.js";
 import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_queryOptimization from "../lib/queryOptimization.js";
+import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_resilience from "../lib/resilience.js";
+import type * as lib_validators from "../lib/validators.js";
 import type * as lib_videoProviders from "../lib/videoProviders.js";
 import type * as meetings_cleanup from "../meetings/cleanup.js";
 import type * as meetings_lifecycle from "../meetings/lifecycle.js";
@@ -54,6 +56,7 @@ import type * as realtime_subscriptionActions from "../realtime/subscriptionActi
 import type * as realtime_subscriptionManager from "../realtime/subscriptionManager.js";
 import type * as realtime_subscriptions from "../realtime/subscriptions.js";
 import type * as system_idempotency from "../system/idempotency.js";
+import type * as system_rateLimit from "../system/rateLimit.js";
 import type * as transcripts_aggregation from "../transcripts/aggregation.js";
 import type * as transcripts_ingestion from "../transcripts/ingestion.js";
 import type * as transcripts_initialization from "../transcripts/initialization.js";
@@ -91,7 +94,9 @@ declare const fullApi: ApiFromModules<{
   "lib/performance": typeof lib_performance;
   "lib/permissions": typeof lib_permissions;
   "lib/queryOptimization": typeof lib_queryOptimization;
+  "lib/rateLimit": typeof lib_rateLimit;
   "lib/resilience": typeof lib_resilience;
+  "lib/validators": typeof lib_validators;
   "lib/videoProviders": typeof lib_videoProviders;
   "meetings/cleanup": typeof meetings_cleanup;
   "meetings/lifecycle": typeof meetings_lifecycle;
@@ -110,6 +115,7 @@ declare const fullApi: ApiFromModules<{
   "realtime/subscriptionManager": typeof realtime_subscriptionManager;
   "realtime/subscriptions": typeof realtime_subscriptions;
   "system/idempotency": typeof system_idempotency;
+  "system/rateLimit": typeof system_rateLimit;
   "transcripts/aggregation": typeof transcripts_aggregation;
   "transcripts/ingestion": typeof transcripts_ingestion;
   "transcripts/initialization": typeof transcripts_initialization;

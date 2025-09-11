@@ -581,7 +581,7 @@ export const recordCustomMetric = mutation({
       metadata: {
         metricName,
         value,
-        tags: tags || {},
+        tagsJson: JSON.stringify(tags ?? {}),
         category: "performance_monitoring",
       },
     });

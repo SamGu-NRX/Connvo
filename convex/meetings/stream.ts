@@ -15,8 +15,8 @@
 import { action, internalAction } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
-import { Id, Doc } from "../_generated/dataModel";
 import { createError } from "../lib/errors";
+import { Id, Doc } from "../_generated/dataModel";
 import { requireIdentity } from "../auth/guards";
 import { withActionIdempotency, IdempotencyUtils } from "../lib/idempotency";
 // Alerting helpers are invoked through internal mutations in streamHelpers.
@@ -573,6 +573,18 @@ export const startRecording = action({
       }
       const streamRoomId: string = meeting.streamRoomId as string;
 
+      // Rate limit: max 3 recording starts per minute per host
+      try {
+        await ctx.runMutation(internal.system.idempotency.enforceRateLimit, {
+          userId: participant1.userId,
+          action: "recording_start",
+          windowMs: 60_000,
+          maxCount: 3,
+        });
+      } catch {
+        throw createError.rateLimitExceeded("recording_start", 3);
+      }
+
       // Start recording using GetStream Video JS SDK
       const result = await withRetry<{
         recordingId: string;
@@ -625,19 +637,19 @@ export const startRecording = action({
 
       // Track successful recording start
       const duration = Date.now() - startTime;
-      const _result4: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.trackStreamEvent,
-        {
-          meetingId,
-          event: "recording_started",
-          success: true,
-          duration,
-          metadata: {
-            recordingId: result.recordingId,
-            config: recordingConfig,
-          },
-        },
-      );
+          const _result4: null = await ctx.runMutation(
+            internal.meetings.streamHelpers.trackStreamEvent,
+            {
+              meetingId,
+              event: "recording_started",
+              success: true,
+              duration,
+              metadata: {
+                recordingId: result.recordingId ?? "",
+                config: JSON.stringify(recordingConfig),
+              },
+            },
+          );
 
       console.log(
         `Started recording ${result.recordingId} for meeting ${meetingId}`,
@@ -731,6 +743,18 @@ export const stopRecording = action({
       }
       const streamRoomId2: string = meeting.streamRoomId as string;
 
+      // Rate limit: max 5 recording stops per minute per host
+      try {
+        await ctx.runMutation(internal.system.idempotency.enforceRateLimit, {
+          userId: participant2.userId,
+          action: "recording_stop",
+          windowMs: 60_000,
+          maxCount: 5,
+        });
+      } catch {
+        throw createError.rateLimitExceeded("recording_stop", 5);
+      }
+
       // Stop recording using GetStream Video JS SDK
       const result = await withRetry<{
         recordingUrl?: string;
@@ -785,9 +809,9 @@ export const stopRecording = action({
           success: true,
           duration,
           metadata: {
-            recordingId: result.recordingId,
-            recordingUrl: result.recordingUrl,
-            recordingDuration: result.duration,
+            recordingId: result.recordingId ?? "",
+            recordingUrl: result.recordingUrl ?? "",
+            recordingDuration: result.duration ?? 0,
           },
         },
       );

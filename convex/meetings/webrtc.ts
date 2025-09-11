@@ -685,7 +685,7 @@ export const handleConnectionFailure = action({
       state: "failed",
       metadata: {
         errorType,
-        errorDetails,
+        errorDetails: errorDetails ?? "",
         failedAt: Date.now(),
       },
     });

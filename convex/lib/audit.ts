@@ -31,12 +31,14 @@ export type AuditEvent = {
   action: string;
   category: AuditCategory;
   success: boolean;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string | number | boolean>;
 };
 
 export function buildSubscriptionAudit(
   base: Omit<AuditEvent, "category" | "success"> & {
-    metadata?: SubscriptionMetadata & Record<string, unknown>;
+    metadata?:
+      | (SubscriptionMetadata & Record<string, string | number | boolean>)
+      | undefined;
   },
   success = true,
 ): AuditEvent {

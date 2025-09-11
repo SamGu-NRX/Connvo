@@ -8,6 +8,9 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
+// TODO: Review whether or not the preset delay is robust for different enviroments (bandwidths)
+// -- doesn't seem like the most scalable nor efficient approach? what about just `await` actions
+
 import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";

@@ -71,7 +71,7 @@ export async function recordMetric(
         metric: metric.name,
         type: metric.type,
         value: metric.value,
-        labels: metric.labels,
+        labelsJson: JSON.stringify(metric.labels ?? {}),
       },
     });
   } catch (error) {
@@ -104,7 +104,7 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
         title: alert.title,
         message: alert.message,
         source: alert.source,
-        alertMetadata: alert.metadata,
+        alertMetadataJson: JSON.stringify(alert.metadata ?? {}),
       },
     });
   } catch (error) {
@@ -160,7 +160,7 @@ export async function withTiming<T>(
           operation,
           duration,
           success,
-          error: error?.message,
+          error: error?.message ?? "",
         },
         timestamp: Date.now(),
       });
@@ -178,7 +178,7 @@ export async function withTiming<T>(
           operation,
           duration,
           error: error.message,
-          stack: error.stack,
+          stack: error.stack ?? "",
         },
         timestamp: Date.now(),
       });
@@ -230,8 +230,8 @@ export async function monitorStreamHealth(
       source: "stream_monitor",
       metadata: {
         operation,
-        error,
-        responseTime,
+        error: error ?? "",
+        responseTime: responseTime ?? 0,
       },
       timestamp: Date.now(),
     });

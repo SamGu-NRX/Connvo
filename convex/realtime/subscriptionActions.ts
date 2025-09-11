@@ -52,7 +52,7 @@ export const validateAndLogSubscription = action({
         metadata: {
           subscriptionId: args.subscriptionId,
           lastValidated: args.lastValidated,
-          reason: result.reason,
+          reason: result.reason ?? "",
           actorExternalId: identity.userId,
         },
         success: false,
