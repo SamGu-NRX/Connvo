@@ -10,7 +10,9 @@
 
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
-import { QueryCtx } from "../_generated/server";
+import { QueryCtx, MutationCtx } from "../_generated/server";
+
+type DbCtx = QueryCtx | MutationCtx;
 
 // Minimal document shapes used by this module
 type TranscriptDoc = {
@@ -23,6 +25,8 @@ type TranscriptDoc = {
   confidence: number;
   startMs: number;
   endMs: number;
+  // Align with schema: transcripts.wordCount is required
+  wordCount: number;
   createdAt: number;
 };
 
@@ -79,7 +83,7 @@ export class TranscriptQueryOptimizer {
   private static readonly MAX_BUCKETS_PER_QUERY = 12; // 1 hour max
 
   static async queryTranscripts(
-    ctx: QueryCtx,
+    ctx: DbCtx,
     meetingId: Id<"meetings">,
     fromSequence = 0,
     limit = 50,
@@ -208,7 +212,7 @@ export class TranscriptQueryOptimizer {
  */
 export class NotesQueryOptimizer {
   static async queryNoteOps(
-    ctx: QueryCtx,
+    ctx: DbCtx,
     meetingId: Id<"meetings">,
     fromSequence = 0,
     limit = 100,
@@ -244,7 +248,7 @@ export class NotesQueryOptimizer {
   }
 
   static async getMaterializedNotes(
-    ctx: QueryCtx,
+    ctx: DbCtx,
     meetingId: Id<"meetings">,
   ): Promise<{
     content: string;

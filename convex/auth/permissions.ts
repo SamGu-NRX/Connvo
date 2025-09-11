@@ -13,6 +13,7 @@ import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { assertMeetingAccess } from "./guards";
 import { normalizeRole, permissionsForResource } from "../lib/permissions";
+import { logAudit } from "../lib/audit";
 
 export const validateSubscriptionPermissions = query({
   args: {
@@ -124,16 +125,17 @@ export const handleParticipantRemoval = internalMutation({
     );
 
     // Log the permission revocation
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       actorUserId: removedBy,
       resourceType: "meeting",
       resourceId: meetingId,
       action: "permissions_revoked",
+      category: "auth",
+      success: true,
       metadata: {
         targetUserId: userId,
         reason: "participant_removed",
       },
-      timestamp: Date.now(),
     });
 
     return null;
@@ -159,16 +161,17 @@ export const updateParticipantPermissions = internalMutation({
     );
 
     // Log the permission update
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       actorUserId: userId,
       resourceType: "meeting",
       resourceId: meetingId,
       action: "permissions_updated",
+      category: "auth",
+      success: true,
       metadata: {
         oldRole,
         newRole,
       },
-      timestamp: Date.now(),
     });
 
     return null;
@@ -194,15 +197,16 @@ export const revokeSubscriptionPermissions = internalMutation({
     );
 
     // Log the subscription revocation
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       actorUserId: userId,
       resourceType,
       resourceId,
       action: "subscription_revoked",
+      category: "auth",
+      success: true,
       metadata: {
         reason,
       },
-      timestamp: Date.now(),
     });
 
     return null;

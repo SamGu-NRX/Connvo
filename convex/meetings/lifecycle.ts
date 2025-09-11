@@ -483,8 +483,9 @@ export const removeParticipant = mutation({
     if (identity.userId === userId) {
       const hosts = await ctx.db
         .query("meetingParticipants")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-        .filter((q) => q.eq(q.field("role"), "host"))
+        .withIndex("by_meeting_and_role", (q) =>
+          q.eq("meetingId", meetingId).eq("role", "host"),
+        )
         .collect();
 
       if (hosts.length === 1) {
@@ -558,8 +559,9 @@ export const updateParticipantRole = mutation({
     ) {
       const hosts = await ctx.db
         .query("meetingParticipants")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-        .filter((q) => q.eq(q.field("role"), "host"))
+        .withIndex("by_meeting_and_role", (q) =>
+          q.eq("meetingId", meetingId).eq("role", "host"),
+        )
         .collect();
 
       if (hosts.length === 1) {

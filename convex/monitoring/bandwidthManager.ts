@@ -520,16 +520,18 @@ export const resetCircuitBreaker = mutation({
 
     if (success) {
       // Log the reset action
-      await ctx.db.insert("auditLogs", {
+      const { logAudit } = await import("../lib/audit");
+      await logAudit(ctx, {
         actorUserId: identity.userId as Id<"users">,
         resourceType: "circuit_breaker",
         resourceId: serviceName,
         action: "circuit_breaker_reset",
+        category: "meeting",
+        success: true,
         metadata: {
           serviceName,
           category: "system_administration",
         },
-        timestamp: Date.now(),
       });
     }
 

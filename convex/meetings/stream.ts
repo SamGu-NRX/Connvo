@@ -12,7 +12,7 @@
 
 "use node";
 
-import { action, internalAction, internalMutation, httpAction } from "../_generated/server";
+import { action, internalAction } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import { Id, Doc } from "../_generated/dataModel";
@@ -27,7 +27,12 @@ type CreateStreamRoomResult = {
   roomId: string;
   callId: string;
   success: boolean;
-  features: { recording: boolean; transcription: boolean; screensharing: boolean; chat: boolean };
+  features: {
+    recording: boolean;
+    transcription: boolean;
+    screensharing: boolean;
+    chat: boolean;
+  };
 };
 
 type ParticipantTokenPublicResult = {
@@ -46,7 +51,11 @@ type GenerateParticipantTokenResult = {
   success: boolean;
 };
 
-type StartRecordingResult = { recordingId: string; recordingUrl?: string; success: boolean };
+type StartRecordingResult = {
+  recordingId: string;
+  recordingUrl?: string;
+  success: boolean;
+};
 type StopRecordingResult = {
   success: boolean;
   recordingUrl?: string;
@@ -60,16 +69,16 @@ type StopRecordingResult = {
 type StreamRecording = { id?: string; url?: string; duration?: number };
 type StreamCall = {
   create: (opts: { data: Record<string, unknown> }) => Promise<void>;
-  startRecording: (
-    config: {
-      mode: string;
-      audio_only: boolean;
-      quality: string;
-      layout: { name: string; options?: Record<string, unknown> };
-    },
-  ) => Promise<{ recording?: StreamRecording }>;
+  startRecording: (config: {
+    mode: string;
+    audio_only: boolean;
+    quality: string;
+    layout: { name: string; options?: Record<string, unknown> };
+  }) => Promise<{ recording?: StreamRecording }>;
   stopRecording: () => Promise<unknown>;
-  queryRecordings: (query: { session_id: string }) => Promise<{ recordings?: StreamRecording[] }>;
+  queryRecordings: (query: {
+    session_id: string;
+  }) => Promise<{ recordings?: StreamRecording[] }>;
 };
 type StreamVideoClient = {
   call: (callType: string, callId: string) => StreamCall;
@@ -93,9 +102,13 @@ function getStreamVideoClient(): StreamVideoClient {
     }
 
     // Import GetStream Video JS SDK for Node.js
-    const { StreamVideoClient: StreamCtor } = require("@stream-io/video-js") as {
-      StreamVideoClient: new (apiKey: string, opts: { secret: string }) => StreamVideoClient;
-    };
+    const { StreamVideoClient: StreamCtor } =
+      require("@stream-io/video-react-sdk") as {
+        StreamVideoClient: new (
+          apiKey: string,
+          opts: { secret: string },
+        ) => StreamVideoClient;
+      };
 
     streamVideoClient = new StreamCtor(streamApiKey, { secret: streamSecret });
   }
@@ -319,7 +332,10 @@ export const generateParticipantTokenPublic = action({
     expiresAt: v.number(),
     success: v.boolean(),
   }),
-  handler: async (ctx, { meetingId }): Promise<ParticipantTokenPublicResult> => {
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<ParticipantTokenPublicResult> => {
     // Get current user identity and resolve Convex user id
     const identity = await requireIdentity(ctx);
     const user: Doc<"users"> | null = await ctx.runQuery(
@@ -331,13 +347,15 @@ export const generateParticipantTokenPublic = action({
     }
     const userId = user._id;
 
-    const result: { token: string; userId: string; expiresAt: number; success: boolean } = await ctx.runAction(
-      internal.meetings.stream.generateParticipantToken,
-      {
-        meetingId,
-        userId,
-      },
-    );
+    const result: {
+      token: string;
+      userId: string;
+      expiresAt: number;
+      success: boolean;
+    } = await ctx.runAction(internal.meetings.stream.generateParticipantToken, {
+      meetingId,
+      userId,
+    });
 
     // Get user details for the response
     const freshUser: Doc<"users"> | null = await ctx.runQuery(
@@ -398,7 +416,9 @@ export const generateParticipantToken = internalAction({
             ctx.runQuery(internal.meetings.queries.getMeetingById, {
               meetingId,
             }),
-            ctx.runQuery(internal.users.queries.getUserByIdInternal, { userId }),
+            ctx.runQuery(internal.users.queries.getUserByIdInternal, {
+              userId,
+            }),
           ]);
 
           if (!meeting) {
@@ -459,12 +479,15 @@ export const generateParticipantToken = internalAction({
             error instanceof Error ? error.message : "Unknown error";
 
           // Send alert for token generation failures
-          await ctx.runMutation(internal.meetings.streamHelpers.sendStreamAlert, {
-            alertType: "token_generation_failed",
-            meetingId,
-            error: errorMessage,
-            metadata: { userId },
-          });
+          await ctx.runMutation(
+            internal.meetings.streamHelpers.sendStreamAlert,
+            {
+              alertType: "token_generation_failed",
+              meetingId,
+              error: errorMessage,
+              metadata: { userId },
+            },
+          );
 
           console.error("Failed to generate GetStream token:", error);
           throw createError.streamError("token generation", errorMessage);
@@ -522,7 +545,10 @@ export const startRecording = action({
         { meetingId, workosUserId: workosUserId1 },
       );
       if (!participant1 || participant1.role !== "host") {
-        throw createError.insufficientPermissions("host", participant1?.role ?? "participant");
+        throw createError.insufficientPermissions(
+          "host",
+          participant1?.role ?? "participant",
+        );
       }
 
       const meeting: Doc<"meetings"> | null = await ctx.runQuery(
@@ -576,9 +602,8 @@ export const startRecording = action({
           };
 
           // Start recording
-          const recordingResponse: { recording?: StreamRecording } = await call.startRecording(
-            config,
-          );
+          const recordingResponse: { recording?: StreamRecording } =
+            await call.startRecording(config);
 
           return {
             recordingId:
@@ -684,7 +709,10 @@ export const stopRecording = action({
         { meetingId, workosUserId: workosUserId2 },
       );
       if (!participant2 || participant2.role !== "host") {
-        throw createError.insufficientPermissions("host", participant2?.role ?? "participant");
+        throw createError.insufficientPermissions(
+          "host",
+          participant2?.role ?? "participant",
+        );
       }
 
       const meeting: Doc<"meetings"> | null = await ctx.runQuery(
@@ -814,7 +842,7 @@ export const deleteStreamRoom = internalAction({
       if (streamApiKey && streamSecret) {
         // TODO: Actual GetStream room deletion
         /*
-        const StreamVideo = require('@stream-io/video-js');
+        const StreamVideo = require('@stream-io/video-react-sdk');
         const client = new StreamVideo(streamApiKey, streamSecret);
 
         const call = client.call('default', roomId);
@@ -835,618 +863,10 @@ export const deleteStreamRoom = internalAction({
 /**
  * Handles GetStream webhooks with proper signature verification and event processing
  */
-export const handleStreamWebhook = httpAction(async (ctx, request) => {
-  try {
-    const body = await request.text();
-    const signature =
-      request.headers.get("x-signature") || request.headers.get("signature");
-
-    // Verify webhook signature for security
-    if (signature) {
-      const streamSecret = process.env.STREAM_SECRET;
-      if (!streamSecret) {
-        console.error(
-          "GetStream secret not configured for webhook verification",
-        );
-        return new Response("Webhook secret not configured", { status: 500 });
-      }
-
-      // Verify HMAC signature
-      const crypto: typeof import("crypto") = require("crypto");
-      const expectedSignature = crypto
-        .createHmac("sha256", streamSecret)
-        .update(body)
-        .digest("hex");
-
-      const providedSignature = signature.replace("sha256=", "");
-
-      if (expectedSignature !== providedSignature) {
-        console.error("Invalid webhook signature");
-        return new Response("Invalid signature", { status: 401 });
-      }
-    }
-
-    // Parse webhook payload
-    const payload = JSON.parse(body);
-    const eventType = payload.type;
-    const eventData = payload;
-
-    console.log(`Received GetStream webhook: ${eventType}`);
-
-    // Process webhook event based on type
-    let processingResult = { success: false };
-
-    switch (eventType) {
-      case "call.session_started":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleCallSessionStarted,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.session_ended":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleCallSessionEnded,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.member_joined":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleMemberJoined,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.member_left":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleMemberLeft,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.recording_started":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleRecordingStarted,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.recording_stopped":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleRecordingStopped,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.recording_ready":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleRecordingReady,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.transcription_started":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleTranscriptionStarted,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      case "call.transcription_stopped":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.handleTranscriptionStopped,
-          {
-            data: eventData,
-          },
-        );
-        break;
-
-      default:
-        console.log(`Unhandled GetStream webhook event: ${eventType}`);
-        processingResult = { success: true }; // Don't fail for unknown events
-    }
-
-    if (processingResult.success) {
-      return new Response("OK", { status: 200 });
-    } else {
-      return new Response("Processing failed", { status: 500 });
-    }
-  } catch (error) {
-    console.error("Failed to handle GetStream webhook:", error);
-    return new Response("Internal server error", { status: 500 });
-  }
-});
+// (HTTP webhook handler moved to convex/http.ts)
 
 /**
  * Internal mutations for webhook event handling
  */
 
-export const handleCallSessionStarted = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const sessionId = data.call_session?.id;
-
-      if (!callId) {
-        console.warn("Call session started webhook missing call ID");
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Update meeting state to active
-      await ctx.db.patch(meeting._id, {
-        state: "active",
-        updatedAt: Date.now(),
-      });
-
-      // Update meeting state record
-      const meetingState = await ctx.db
-        .query("meetingState")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-
-      if (meetingState) {
-        await ctx.db.patch(meetingState._id, {
-          active: true,
-          startedAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      }
-
-      console.log(`GetStream call session started for meeting ${meeting._id}`);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle call session started:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleCallSessionEnded = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const sessionId = data.call_session?.id;
-      const duration = data.call_session?.duration_ms;
-
-      if (!callId) {
-        console.warn("Call session ended webhook missing call ID");
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Update meeting state to concluded
-      await ctx.db.patch(meeting._id, {
-        state: "concluded",
-        updatedAt: Date.now(),
-      });
-
-      // Update meeting state record
-      const meetingState = await ctx.db
-        .query("meetingState")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-
-      if (meetingState) {
-        await ctx.db.patch(meetingState._id, {
-          active: false,
-          endedAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      }
-
-      // Schedule post-meeting processing
-      await ctx.scheduler.runAfter(
-        5000, // 5 second delay
-        internal.meetings.postProcessing.handleMeetingEnd,
-        { meetingId: meeting._id, endedAt: Date.now() },
-      );
-
-      console.log(
-        `GetStream call session ended for meeting ${meeting._id}, duration: ${duration}ms`,
-      );
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle call session ended:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleMemberJoined = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const userId = data.user?.id;
-      const sessionId = data.call_session?.id;
-
-      if (!callId || !userId) {
-        console.warn("Member joined webhook missing call ID or user ID");
-        return { success: false };
-      }
-
-      // Find meeting and user
-      const [meeting, user] = await Promise.all([
-        ctx.db
-          .query("meetings")
-          .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-          .unique(),
-        ctx.db
-          .query("users")
-          .withIndex("by_workos_id", (q) => q.eq("workosUserId", userId))
-          .unique(),
-      ]);
-
-      if (!meeting || !user) {
-        console.warn(
-          `Meeting or user not found for GetStream member joined event`,
-        );
-        return { success: false };
-      }
-
-      // Update participant presence
-      const participant = await ctx.db
-        .query("meetingParticipants")
-        .withIndex("by_meeting_and_user", (q) =>
-          q.eq("meetingId", meeting._id).eq("userId", user._id),
-        )
-        .unique();
-
-      if (participant) {
-        await ctx.db.patch(participant._id, {
-          presence: "joined",
-          joinedAt: Date.now(),
-        });
-      }
-
-      console.log(`User ${userId} joined GetStream call ${callId}`);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle member joined:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleMemberLeft = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const userId = data.user?.id;
-
-      if (!callId || !userId) {
-        console.warn("Member left webhook missing call ID or user ID");
-        return { success: false };
-      }
-
-      // Find meeting and user
-      const [meeting, user] = await Promise.all([
-        ctx.db
-          .query("meetings")
-          .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-          .unique(),
-        ctx.db
-          .query("users")
-          .withIndex("by_workos_id", (q) => q.eq("workosUserId", userId))
-          .unique(),
-      ]);
-
-      if (!meeting || !user) {
-        console.warn(
-          `Meeting or user not found for GetStream member left event`,
-        );
-        return { success: false };
-      }
-
-      // Update participant presence
-      const participant = await ctx.db
-        .query("meetingParticipants")
-        .withIndex("by_meeting_and_user", (q) =>
-          q.eq("meetingId", meeting._id).eq("userId", user._id),
-        )
-        .unique();
-
-      if (participant) {
-        await ctx.db.patch(participant._id, {
-          presence: "left",
-          leftAt: Date.now(),
-        });
-      }
-
-      console.log(`User ${userId} left GetStream call ${callId}`);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle member left:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleRecordingStarted = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const recordingId = data.call_recording?.id;
-
-      if (!callId || !recordingId) {
-        console.warn(
-          "Recording started webhook missing call ID or recording ID",
-        );
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Update meeting state to indicate recording is active
-      const meetingState = await ctx.db
-        .query("meetingState")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-
-      if (meetingState) {
-        await ctx.db.patch(meetingState._id, {
-          recordingEnabled: true,
-          updatedAt: Date.now(),
-        });
-      }
-
-      console.log(
-        `Recording ${recordingId} started for GetStream call ${callId}`,
-      );
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle recording started:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleRecordingStopped = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const recordingId = data.call_recording?.id;
-
-      if (!callId || !recordingId) {
-        console.warn(
-          "Recording stopped webhook missing call ID or recording ID",
-        );
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Update meeting state to indicate recording is stopped
-      const meetingState = await ctx.db
-        .query("meetingState")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-
-      if (meetingState) {
-        await ctx.db.patch(meetingState._id, {
-          recordingEnabled: false,
-          updatedAt: Date.now(),
-        });
-      }
-
-      console.log(
-        `Recording ${recordingId} stopped for GetStream call ${callId}`,
-      );
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle recording stopped:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleRecordingReady = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-      const recordingId = data.call_recording?.id;
-      const recordingUrl = data.call_recording?.url;
-
-      if (!callId || !recordingId) {
-        console.warn("Recording ready webhook missing call ID or recording ID");
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Store recording information
-      await ctx.db.insert("meetingRecordings", {
-        meetingId: meeting._id,
-        recordingId,
-        recordingUrl,
-        provider: "getstream",
-        status: "ready",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      console.log(
-        `Recording ${recordingId} ready for GetStream call ${callId}, URL: ${recordingUrl}`,
-      );
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle recording ready:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleTranscriptionStarted = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-
-      if (!callId) {
-        console.warn("Transcription started webhook missing call ID");
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Update transcription session status
-      const transcriptionSession = await ctx.db
-        .query("transcriptionSessions")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-
-      if (transcriptionSession) {
-        await ctx.db.patch(transcriptionSession._id, {
-          status: "active",
-          updatedAt: Date.now(),
-        });
-      }
-
-      console.log(`Transcription started for GetStream call ${callId}`);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle transcription started:", error);
-      return { success: false };
-    }
-  },
-});
-
-export const handleTranscriptionStopped = internalMutation({
-  args: { data: v.any() },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
-    try {
-      const callId = data.call?.id;
-
-      if (!callId) {
-        console.warn("Transcription stopped webhook missing call ID");
-        return { success: false };
-      }
-
-      // Find meeting by GetStream call ID
-      const meeting = await ctx.db
-        .query("meetings")
-        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
-        .unique();
-
-      if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
-      }
-
-      // Update transcription session status
-      const transcriptionSession = await ctx.db
-        .query("transcriptionSessions")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-
-      if (transcriptionSession) {
-        await ctx.db.patch(transcriptionSession._id, {
-          status: "completed",
-          endedAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      }
-
-      console.log(`Transcription stopped for GetStream call ${callId}`);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to handle transcription stopped:", error);
-      return { success: false };
-    }
-  },
-});
-
-/**
- * Helper mutations for internal operations
- */
-
-// moved helper internal mutations to convex/meetings/streamHelpers.ts
+// (webhook handler mutations moved to convex/meetings/streamHandlers.ts)

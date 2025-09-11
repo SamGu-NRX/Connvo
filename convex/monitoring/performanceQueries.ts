@@ -570,18 +570,20 @@ export const recordCustomMetric = mutation({
   handler: async (ctx, { metricName, value, tags, timestamp }) => {
     const identity = await requireIdentity(ctx);
 
-    await ctx.db.insert("auditLogs", {
+    const { logAudit } = await import("../lib/audit");
+    await logAudit(ctx, {
       actorUserId: identity.userId as Id<"users">,
       resourceType: "performance_metric",
       resourceId: metricName,
       action: "custom_metric_recorded",
+      category: "meeting",
+      success: true,
       metadata: {
         metricName,
         value,
         tags: tags || {},
         category: "performance_monitoring",
       },
-      timestamp: timestamp || Date.now(),
     });
   },
 });

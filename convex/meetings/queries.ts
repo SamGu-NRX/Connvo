@@ -179,16 +179,22 @@ export const getMeeting = query({
     }
 
     // Count active WebRTC sessions
-    const activeSessions = await ctx.db
-      .query("webrtcSessions")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .filter((q) =>
-        q.and(
-          q.neq(q.field("state"), "closed"),
-          q.neq(q.field("state"), "failed"),
-        ),
-      )
-      .collect();
+    const states: Array<"connecting" | "connected" | "disconnected"> = [
+      "connecting",
+      "connected",
+      "disconnected",
+    ];
+    const activeResults = await Promise.all(
+      states.map((state) =>
+        ctx.db
+          .query("webrtcSessions")
+          .withIndex("by_meeting_and_state", (q) =>
+            q.eq("meetingId", meetingId).eq("state", state),
+          )
+          .collect(),
+      ),
+    );
+    const activeSessions = activeResults.flat();
 
     return {
       ...meeting,

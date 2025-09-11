@@ -10,6 +10,7 @@
 
 import { mutation, internalMutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
+import { TranscriptQueryOptimizer } from "../lib/queryOptimization";
 import { assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
@@ -224,11 +225,14 @@ export const getTranscriptChunks = mutation({
         );
       results = await q.order("asc").take(Math.min(limit, 200));
     } else {
-      const q = ctx.db
-        .query("transcripts")
-        .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", meetingId))
-        .filter((q) => q.gt(q.field("sequence"), fromSequence));
-      results = await q.order("asc").take(Math.min(limit, 200));
+      // Use optimizer for bucketed, index-backed query without server-side filters
+      const optimized = await TranscriptQueryOptimizer.queryTranscripts(
+        ctx,
+        meetingId,
+        fromSequence,
+        Math.min(limit, 200),
+      );
+      results = optimized.transcripts;
     }
 
     
@@ -257,14 +261,13 @@ export const cleanupOldTranscripts = internalMutation({
     const oldTranscripts = meetingId
       ? await ctx.db
           .query("transcripts")
-          .withIndex("by_meeting_time_range", (q) =>
-            q.eq("meetingId", meetingId),
+          .withIndex("by_meeting_and_created_at", (q) =>
+            q.eq("meetingId", meetingId).lt("createdAt", cutoff),
           )
-          .filter((q) => q.lt(q.field("createdAt"), cutoff))
           .collect()
       : await ctx.db
           .query("transcripts")
-          .filter((q) => q.lt(q.field("createdAt"), cutoff))
+          .withIndex("by_created_at", (q) => q.lt("createdAt", cutoff))
           .collect();
 
     for (const transcript of oldTranscripts) {

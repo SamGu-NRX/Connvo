@@ -11,6 +11,7 @@
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
+import { logAudit } from "../lib/audit";
 
 /**
  * Handles call session started event
@@ -38,15 +39,16 @@ export const handleCallStarted = internalMutation({
     }
 
     // Log the event
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       resourceType: "meeting",
       resourceId: meetingId,
       action: "stream_call_started",
+      category: "meeting",
+      success: true,
       metadata: {
         callId,
         startedAt,
       },
-      timestamp: Date.now(),
     });
 
     return null;
@@ -88,10 +90,12 @@ export const handleCallEnded = internalMutation({
     }
 
     // Log the event
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       resourceType: "meeting",
       resourceId: meetingId,
       action: "stream_call_ended",
+      category: "meeting",
+      success: true,
       metadata: {
         callId,
         endedAt,
@@ -99,7 +103,6 @@ export const handleCallEnded = internalMutation({
           ? endedAt - meetingState.startedAt
           : undefined,
       },
-      timestamp: Date.now(),
     });
 
     return null;
@@ -120,8 +123,9 @@ export const handleParticipantJoined = internalMutation({
     // Find the participant by user ID (assuming Stream user ID matches our user ID)
     const participant = await ctx.db
       .query("meetingParticipants")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .filter((q) => q.eq(q.field("userId"), userId as Id<"users">))
+      .withIndex("by_meeting_and_user", (q) =>
+        q.eq("meetingId", meetingId).eq("userId", userId as Id<"users">),
+      )
       .unique();
 
     if (participant) {
@@ -131,16 +135,17 @@ export const handleParticipantJoined = internalMutation({
       });
 
       // Log the event
-      await ctx.db.insert("auditLogs", {
+      await logAudit(ctx, {
         actorUserId: userId as Id<"users">,
         resourceType: "meeting",
         resourceId: meetingId,
         action: "participant_joined_stream",
+        category: "meeting",
+        success: true,
         metadata: {
           joinedAt,
           role: participant.role,
         },
-        timestamp: Date.now(),
       });
     }
 
@@ -162,8 +167,9 @@ export const handleParticipantLeft = internalMutation({
     // Find the participant by user ID
     const participant = await ctx.db
       .query("meetingParticipants")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .filter((q) => q.eq(q.field("userId"), userId as Id<"users">))
+      .withIndex("by_meeting_and_user", (q) =>
+        q.eq("meetingId", meetingId).eq("userId", userId as Id<"users">),
+      )
       .unique();
 
     if (participant) {
@@ -173,16 +179,17 @@ export const handleParticipantLeft = internalMutation({
       });
 
       // Log the event
-      await ctx.db.insert("auditLogs", {
+      await logAudit(ctx, {
         actorUserId: userId as Id<"users">,
         resourceType: "meeting",
         resourceId: meetingId,
         action: "participant_left_stream",
+        category: "meeting",
+        success: true,
         metadata: {
           leftAt,
           role: participant.role,
         },
-        timestamp: Date.now(),
       });
     }
 
@@ -215,15 +222,16 @@ export const handleRecordingStarted = internalMutation({
     }
 
     // Log the event
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       resourceType: "meeting",
       resourceId: meetingId,
       action: "recording_started",
+      category: "meeting",
+      success: true,
       metadata: {
         recordingId,
         startedAt,
       },
-      timestamp: Date.now(),
     });
 
     return null;
@@ -256,16 +264,17 @@ export const handleRecordingStopped = internalMutation({
     }
 
     // Log the event with download URL for future access
-    await ctx.db.insert("auditLogs", {
+    await logAudit(ctx, {
       resourceType: "meeting",
       resourceId: meetingId,
       action: "recording_stopped",
+      category: "meeting",
+      success: true,
       metadata: {
         recordingId,
         stoppedAt,
         downloadUrl,
       },
-      timestamp: Date.now(),
     });
 
     return null;

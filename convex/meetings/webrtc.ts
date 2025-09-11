@@ -352,22 +352,24 @@ export const getPendingSignals = query({
     // Verify user is a participant
     const participant = await assertMeetingAccess(ctx, meetingId);
 
-    let query = ctx.db
+    let baseQuery = ctx.db
       .query("webrtcSignals")
-      .withIndex("by_meeting_and_target", (q) =>
-        q.eq("meetingId", meetingId).eq("toUserId", participant.userId),
-      )
-      .filter((q) => q.eq(q.field("processed"), false));
+      .withIndex("by_meeting_target_and_processed", (q) =>
+        q.eq("meetingId", meetingId)
+          .eq("toUserId", participant.userId)
+          .eq("processed", false),
+      );
 
+    // Apply optional filters in-memory to avoid additional indexes explosion
+    let signals = await baseQuery.order("asc").take(200);
     if (sessionId) {
-      query = query.filter((q) => q.eq(q.field("sessionId"), sessionId));
+      signals = signals.filter((s) => s.sessionId === sessionId);
     }
 
     if (lastSignalId) {
-      query = query.filter((q) => q.gt(q.field("_id"), lastSignalId));
+      signals = signals.filter((s) => s._id > lastSignalId);
     }
-
-    const signals = await query.order("asc").take(50); // Limit to prevent overwhelming clients
+    signals = signals.slice(0, 50); // hard cap to prevent overwhelming clients
 
     return signals.map((signal) => ({
       _id: signal._id,
@@ -419,13 +421,14 @@ export const updateSessionState = mutation({
     // Verify user is a participant
     const participant = await assertMeetingAccess(ctx, meetingId);
 
-    const session = await ctx.db
+    // Use composite index by_user_and_meeting and check sessionId in memory
+    const candidateSessions = await ctx.db
       .query("webrtcSessions")
-      .withIndex("by_meeting_and_session", (q) =>
-        q.eq("meetingId", meetingId).eq("sessionId", sessionId),
+      .withIndex("by_user_and_meeting", (q) =>
+        q.eq("userId", participant.userId).eq("meetingId", meetingId),
       )
-      .filter((q) => q.eq(q.field("userId"), participant.userId))
-      .unique();
+      .collect();
+    const session = candidateSessions.find((s) => s.sessionId === sessionId) || null;
 
     if (!session) {
       throw createError.notFound("WebRTC session not found");
@@ -466,15 +469,23 @@ export const getActiveSessions = query({
     // Verify user is a participant
     await assertMeetingAccess(ctx, meetingId);
 
-    const sessions = await ctx.db
-      .query("webrtcSessions")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .filter(
-        (q) =>
-          q.neq(q.field("state"), "closed") &&
-          q.neq(q.field("state"), "failed"),
-      )
-      .collect();
+    // Use composite index by_meeting_and_state and union acceptable states
+    const states: Array<"connecting" | "connected" | "disconnected"> = [
+      "connecting",
+      "connected",
+      "disconnected",
+    ];
+    const results = await Promise.all(
+      states.map((state) =>
+        ctx.db
+          .query("webrtcSessions")
+          .withIndex("by_meeting_and_state", (q) =>
+            q.eq("meetingId", meetingId).eq("state", state),
+          )
+          .collect(),
+      ),
+    );
+    const sessions = results.flat();
 
     // Enrich with user details
     const enrichedSessions = [];
@@ -610,13 +621,13 @@ export const closeSession = mutation({
     // Verify user is a participant
     const participant = await assertMeetingAccess(ctx, meetingId);
 
-    const session = await ctx.db
+    const candidateSessions2 = await ctx.db
       .query("webrtcSessions")
-      .withIndex("by_meeting_and_session", (q) =>
-        q.eq("meetingId", meetingId).eq("sessionId", sessionId),
+      .withIndex("by_user_and_meeting", (q) =>
+        q.eq("userId", participant.userId).eq("meetingId", meetingId),
       )
-      .filter((q) => q.eq(q.field("userId"), participant.userId))
-      .unique();
+      .collect();
+    const session = candidateSessions2.find((s) => s.sessionId === sessionId) || null;
 
     if (session) {
       await ctx.db.patch(session._id, {
@@ -971,11 +982,8 @@ export const cleanupOldWebRTCData = internalMutation({
     // Clean up old processed signals
     const oldSignals = await ctx.db
       .query("webrtcSignals")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("processed"), true),
-          q.lt(q.field("timestamp"), cutoff),
-        ),
+      .withIndex("by_processed_and_timestamp", (q) =>
+        q.eq("processed", true).lt("timestamp", cutoff),
       )
       .collect();
 
@@ -984,18 +992,21 @@ export const cleanupOldWebRTCData = internalMutation({
     }
 
     // Clean up old closed/failed sessions
-    const oldSessions = await ctx.db
-      .query("webrtcSessions")
-      .filter((q) =>
-        q.and(
-          q.or(
-            q.eq(q.field("state"), "closed"),
-            q.eq(q.field("state"), "failed"),
-          ),
-          q.lt(q.field("updatedAt"), cutoff),
-        ),
-      )
-      .collect();
+    const [closedSessions, failedSessions] = await Promise.all([
+      ctx.db
+        .query("webrtcSessions")
+        .withIndex("by_state_and_updatedAt", (q) =>
+          q.eq("state", "closed").lt("updatedAt", cutoff),
+        )
+        .collect(),
+      ctx.db
+        .query("webrtcSessions")
+        .withIndex("by_state_and_updatedAt", (q) =>
+          q.eq("state", "failed").lt("updatedAt", cutoff),
+        )
+        .collect(),
+    ]);
+    const oldSessions = [...closedSessions, ...failedSessions];
 
     for (const session of oldSessions) {
       await ctx.db.delete(session._id);

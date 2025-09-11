@@ -16,6 +16,7 @@ import { globalBandwidthManager } from "../lib/batching";
 import { SubscriptionPerformanceTracker } from "../lib/performance";
 import { SubscriptionStateManager, QueryCache } from "../lib/queryOptimization";
 import { internal } from "../_generated/api";
+import { buildSubscriptionAudit } from "../lib/audit";
 import { normalizeRole, permissionsForResource } from "../lib/permissions";
 
 /**
@@ -195,19 +196,20 @@ export const establishSubscription = mutation({
     SubscriptionRegistry.register(subscription);
 
     // Log establishment using centralized audit logger
-    await ctx.runMutation(internal.audit.logging.createAuditLog, {
-      actorUserId: identity.userId as Id<"users">,
-      resourceType,
-      resourceId,
-      action: "subscription_established",
-      category: "subscription_management",
-      metadata: {
-        subscriptionId,
-        permissions,
-        priority,
-      },
-      success: true,
-    });
+    await ctx.runMutation(
+      internal.audit.logging.createAuditLog,
+      buildSubscriptionAudit({
+        actorUserId: identity.userId as Id<"users">,
+        resourceType,
+        resourceId,
+        action: "subscription_established",
+        metadata: {
+          subscriptionId,
+          permissions,
+          priority,
+        },
+      }),
+    );
 
     return {
       success: true,
@@ -402,19 +404,20 @@ export const terminateSubscription = mutation({
       QueryCache.invalidate(subscription.resourceId);
 
       // Log termination using centralized audit logger
-      await ctx.runMutation(internal.audit.logging.createAuditLog, {
-        actorUserId: identity.userId as Id<"users">,
-        resourceType: subscription.resourceType,
-        resourceId: subscription.resourceId,
-        action: "subscription_terminated",
-        category: "subscription_management",
-        metadata: {
-          subscriptionId,
-          reason,
-          duration: Date.now() - subscription.establishedAt,
-        },
-        success: true,
-      });
+      await ctx.runMutation(
+        internal.audit.logging.createAuditLog,
+        buildSubscriptionAudit({
+          actorUserId: identity.userId as Id<"users">,
+          resourceType: subscription.resourceType,
+          resourceId: subscription.resourceId,
+          action: "subscription_terminated",
+          metadata: {
+            subscriptionId,
+            reason,
+            duration: Date.now() - subscription.establishedAt,
+          },
+        }),
+      );
     }
   },
 });
@@ -457,19 +460,20 @@ export const bulkTerminateUserSubscriptions = internalMutation({
       terminatedIds.push(subscription.subscriptionId);
 
       // Log termination
-      await ctx.db.insert("auditLogs", {
-        actorUserId: userId,
-        resourceType: subscription.resourceType,
-        resourceId: subscription.resourceId,
-        action: "subscription_bulk_terminated",
-        metadata: {
-          subscriptionId: subscription.subscriptionId,
-          reason,
-          duration: Date.now() - subscription.establishedAt,
-          category: "subscription_management",
-        },
-        timestamp: Date.now(),
-      });
+      await ctx.runMutation(
+        internal.audit.logging.createAuditLog,
+        buildSubscriptionAudit({
+          actorUserId: userId,
+          resourceType: subscription.resourceType,
+          resourceId: subscription.resourceId,
+          action: "subscription_bulk_terminated",
+          metadata: {
+            subscriptionId: subscription.subscriptionId,
+            reason,
+            duration: Date.now() - subscription.establishedAt,
+          },
+        }),
+      );
     }
 
     return {

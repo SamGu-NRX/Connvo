@@ -239,7 +239,7 @@ export async function cleanupExpiredKeys(
 
   const expiredKeys = await ctx.db
     .query("idempotencyKeys")
-    .filter((q) => q.lt(q.field("createdAt"), cutoff))
+    .withIndex("by_created_at", (q) => q.lt("createdAt", cutoff))
     .collect();
 
   for (const key of expiredKeys) {

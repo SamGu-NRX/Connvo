@@ -60,17 +60,19 @@ export async function recordMetric(
   );
 
   try {
-    await ctx.db.insert("auditLogs", {
+    const { logAudit } = await import("./audit");
+    await logAudit(ctx, {
       resourceType: "system",
       resourceId: "metrics",
       action: "metric_recorded",
+      category: "meeting",
+      success: true,
       metadata: {
         metric: metric.name,
         type: metric.type,
         value: metric.value,
         labels: metric.labels,
       },
-      timestamp: metric.timestamp,
     });
   } catch (error) {
     console.error("Failed to record metric:", error);
@@ -89,10 +91,13 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
   );
 
   try {
-    await ctx.db.insert("auditLogs", {
+    const { logAudit } = await import("./audit");
+    await logAudit(ctx, {
       resourceType: "system",
       resourceId: "alerts",
       action: "alert_sent",
+      category: "meeting",
+      success: true,
       metadata: {
         alertId: alert.id,
         severity: alert.severity,
@@ -101,7 +106,6 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
         source: alert.source,
         alertMetadata: alert.metadata,
       },
-      timestamp: alert.timestamp,
     });
   } catch (error) {
     console.error("Failed to record alert:", error);

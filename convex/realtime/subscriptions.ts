@@ -28,6 +28,8 @@ import {
   QueryCache,
 } from "../lib/queryOptimization";
 import { normalizeRole, permissionsForResource } from "../lib/permissions";
+import { buildSubscriptionAudit } from "../lib/audit";
+import { internal } from "../_generated/api";
 
 /**
  * Subscription context for tracking active connections
@@ -325,7 +327,7 @@ export const validateSubscription = query({
   args: {
     subscriptionId: v.string(),
     resourceType: v.string(),
-    resourceId: v.string(),
+    resourceId: v.id("meetings"),
     lastValidated: v.number(),
   },
   returns: v.object({
@@ -419,20 +421,21 @@ export const terminateSubscription = internalMutation({
     ctx,
     { userId, subscriptionId, resourceType, resourceId, reason },
   ) => {
-    // Log subscription termination (writes allowed in actions/mutations)
-    await ctx.db.insert("auditLogs", {
-      actorUserId: userId,
-      resourceType,
-      resourceId,
-      action: "subscription_terminated",
-      metadata: {
-        subscriptionId,
-        reason,
-        terminatedAt: Date.now(),
-        category: "subscription_management",
-      },
-      timestamp: Date.now(),
-    });
+    // Log subscription termination using centralized audit logger
+    await ctx.runMutation(
+      internal.audit.logging.createAuditLog,
+      buildSubscriptionAudit({
+        actorUserId: userId,
+        resourceType,
+        resourceId,
+        action: "subscription_terminated",
+        metadata: {
+          subscriptionId,
+          reason,
+          terminatedAt: Date.now(),
+        },
+      }),
+    );
 
     // In a complete implementation, this would:
     // 1. Send termination message to WebSocket connection

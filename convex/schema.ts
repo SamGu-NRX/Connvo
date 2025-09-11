@@ -115,7 +115,8 @@ export default defineSchema({
   })
     .index("by_meeting", ["meetingId"])
     .index("by_user", ["userId"])
-    .index("by_meeting_and_user", ["meetingId", "userId"]),
+    .index("by_meeting_and_user", ["meetingId", "userId"])
+    .index("by_meeting_and_role", ["meetingId", "role"]),
 
   meetingState: defineTable({
     meetingId: v.id("meetings"),
@@ -190,6 +191,8 @@ export default defineSchema({
     .index("by_meeting_bucket", ["meetingId", "bucketMs"])
     .index("by_meeting_bucket_seq", ["meetingId", "bucketMs", "sequence"])
     .index("by_meeting_time_range", ["meetingId", "startMs"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_meeting_and_created_at", ["meetingId", "createdAt"])
     .index("by_bucket_global", ["bucketMs"]), // For cleanup jobs
 
   transcriptionSessions: defineTable({
@@ -420,7 +423,10 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_and_meeting", ["userId", "meetingId"]) 
     .index("by_meeting_and_session", ["meetingId", "sessionId"])
-    .index("by_state", ["state"]),
+    .index("by_meeting_and_state", ["meetingId", "state"]) 
+    .index("by_state", ["state"])
+    // Composite index for cleanup queries on state + updatedAt
+    .index("by_state_and_updatedAt", ["state", "updatedAt"]),
 
   webrtcSignals: defineTable({
     meetingId: v.id("meetings"),
@@ -436,7 +442,9 @@ export default defineSchema({
     .index("by_session", ["sessionId"])
     .index("by_meeting_and_target", ["meetingId", "toUserId"])
     .index("by_timestamp", ["timestamp"])
-    .index("by_processed", ["processed"]),
+    .index("by_processed", ["processed"])
+    .index("by_processed_and_timestamp", ["processed", "timestamp"])
+    .index("by_meeting_target_and_processed", ["meetingId", "toUserId", "processed"]),
 
   // Connection Quality Metrics
   connectionMetrics: defineTable({
@@ -509,7 +517,8 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_status", ["status"])
     .index("by_created_at", ["createdAt"])
-    .index("by_escalation_time", ["escalationTime"]),
+    .index("by_escalation_time", ["escalationTime"])
+    .index("by_status_and_created_at", ["status", "createdAt"]),
 
   performanceMetrics: defineTable({
     name: v.string(),

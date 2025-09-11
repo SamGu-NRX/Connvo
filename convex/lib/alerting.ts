@@ -325,8 +325,9 @@ export async function getSystemHealth(
   // Get recent alerts
   const recentAlerts = await ctx.db
     .query("alerts")
-    .withIndex("by_created_at", (q) => q.gt("createdAt", oneHourAgo))
-    .filter((q) => q.eq(q.field("status"), "active"))
+    .withIndex("by_status_and_created_at", (q) =>
+      q.eq("status", "active").gt("createdAt", oneHourAgo),
+    )
     .collect();
 
   const alertCounts = {

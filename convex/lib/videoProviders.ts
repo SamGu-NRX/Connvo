@@ -177,7 +177,7 @@ export class GetStreamProvider implements IVideoProvider {
     }
 
     // Create actual GetStream call using Node.js SDK
-    const { StreamVideoClient } = require("@stream-io/video-js");
+    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
     const client = new StreamVideoClient(streamApiKey, {
       secret: streamSecret,
     });
@@ -234,7 +234,7 @@ export class GetStreamProvider implements IVideoProvider {
         throw new Error("GetStream credentials not configured");
       }
 
-      const { StreamVideoClient } = require("@stream-io/video-js");
+      const { StreamVideoClient } = require("@stream-io/video-react-sdk");
       const client = new StreamVideoClient(streamApiKey, {
         secret: streamSecret,
       });
@@ -263,7 +263,7 @@ export class GetStreamProvider implements IVideoProvider {
     }
 
     // Generate actual GetStream JWT token
-    const { StreamVideoClient } = require("@stream-io/video-js");
+    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
     const client = new StreamVideoClient(streamApiKey, {
       secret: streamSecret,
     });
@@ -288,7 +288,7 @@ export class GetStreamProvider implements IVideoProvider {
     }
 
     // Start actual GetStream recording
-    const { StreamVideoClient } = require("@stream-io/video-js");
+    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
     const client = new StreamVideoClient(streamApiKey, {
       secret: streamSecret,
     });
@@ -320,7 +320,7 @@ export class GetStreamProvider implements IVideoProvider {
     }
 
     // Stop actual GetStream recording and get URL
-    const { StreamVideoClient } = require("@stream-io/video-js");
+    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
     const client = new StreamVideoClient(streamApiKey, {
       secret: streamSecret,
     });
