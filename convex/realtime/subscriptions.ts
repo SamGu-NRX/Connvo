@@ -112,14 +112,15 @@ export const subscribeMeetingNotes = query({
 
     // Try cache first for frequently accessed notes
     const cacheKey = `notes_${meetingId}`;
-    let notes = QueryCache.get(cacheKey);
+    type NotesMaterialized = { content: string; version: number; lastUpdated: number };
+    let notes = QueryCache.get<NotesMaterialized>(cacheKey);
 
     if (!notes) {
       // Get meeting notes using optimized query
       notes = await NotesQueryOptimizer.getMaterializedNotes(ctx, meetingId);
 
       // Cache for 30 seconds
-      QueryCache.set(cacheKey, notes, 30000);
+      QueryCache.set<NotesMaterialized>(cacheKey, notes, 30000);
     }
 
     // Save subscription state for resumability

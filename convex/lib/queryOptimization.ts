@@ -10,6 +10,33 @@
 
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
+import { QueryCtx } from "../_generated/server";
+
+// Minimal document shapes used by this module
+type TranscriptDoc = {
+  _id: Id<"transcripts">;
+  meetingId: Id<"meetings">;
+  sequence: number;
+  bucketMs: number;
+  speakerId?: string;
+  text: string;
+  confidence: number;
+  startMs: number;
+  endMs: number;
+  createdAt: number;
+};
+
+type NoteOp = {
+  _id?: Id<"noteOps">;
+  meetingId: Id<"meetings">;
+  sequence: number;
+};
+
+type MeetingNotesDoc = {
+  content?: string;
+  version?: number;
+  updatedAt?: number;
+};
 
 /**
  * Cursor-based pagination configuration
@@ -52,13 +79,13 @@ export class TranscriptQueryOptimizer {
   private static readonly MAX_BUCKETS_PER_QUERY = 12; // 1 hour max
 
   static async queryTranscripts(
-    ctx: any,
+    ctx: QueryCtx,
     meetingId: Id<"meetings">,
     fromSequence = 0,
     limit = 50,
     timeWindowMs = 30 * 60 * 1000, // 30 minutes default
   ): Promise<{
-    transcripts: any[];
+    transcripts: TranscriptDoc[];
     nextCursor: PaginationCursor;
     performance: {
       bucketsQueried: number;
@@ -77,8 +104,7 @@ export class TranscriptQueryOptimizer {
     );
 
     const buckets = this.generateOptimalBuckets(now, maxBuckets);
-    // TODO: not any
-    const allTranscripts: any[] = [];
+    const allTranscripts: TranscriptDoc[] = [];
     let bucketsQueried = 0;
     let earlyTermination = false;
 
@@ -86,7 +112,7 @@ export class TranscriptQueryOptimizer {
     for (const bucketMs of buckets) {
       bucketsQueried++;
 
-      const bucketTranscripts: any[] = await ctx.db
+      const bucketTranscripts: TranscriptDoc[] = await ctx.db
         .query("transcripts")
         .withIndex("by_meeting_bucket_seq", (q: any) =>
           q
@@ -182,12 +208,12 @@ export class TranscriptQueryOptimizer {
  */
 export class NotesQueryOptimizer {
   static async queryNoteOps(
-    ctx: any,
+    ctx: QueryCtx,
     meetingId: Id<"meetings">,
     fromSequence = 0,
     limit = 100,
   ): Promise<{
-    operations: any[];
+    operations: NoteOp[];
     nextCursor: PaginationCursor;
     hasMore: boolean;
   }> {
@@ -218,17 +244,17 @@ export class NotesQueryOptimizer {
   }
 
   static async getMaterializedNotes(
-    ctx: any,
+    ctx: QueryCtx,
     meetingId: Id<"meetings">,
   ): Promise<{
     content: string;
     version: number;
     lastUpdated: number;
   }> {
-    const notes = await ctx.db
+    const notes = (await ctx.db
       .query("meetingNotes")
       .withIndex("by_meeting", (q: any) => q.eq("meetingId", meetingId))
-      .unique();
+      .unique()) as MeetingNotesDoc | null;
 
     return {
       content: notes?.content || "",
@@ -290,13 +316,13 @@ export class QueryCache {
   private static cache = new Map<
     string,
     {
-      data: any;
+      data: unknown;
       timestamp: number;
       ttl: number;
     }
   >();
 
-  static set(key: string, data: any, ttlMs = 30000): void {
+  static set<T>(key: string, data: T, ttlMs = 30000): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -304,7 +330,7 @@ export class QueryCache {
     });
   }
 
-  static get(key: string): any | null {
+  static get<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
@@ -314,7 +340,7 @@ export class QueryCache {
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
   static invalidate(pattern: string): void {
@@ -370,7 +396,10 @@ export class BoundedQueryExecutor {
     });
 
     try {
-      const results = await Promise.race([queryFn(), timeoutPromise]);
+      const results = (await Promise.race<Promise<T[]> | never>([
+        queryFn(),
+        timeoutPromise,
+      ])) as T[];
       const truncated = results.length > maxResults;
 
       return {
