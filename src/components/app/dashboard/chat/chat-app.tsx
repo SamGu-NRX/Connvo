@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScheduleCallForm } from "./schedule-call-form"; // Assuming this component exists and works
 import UserCard from "@/components/app/user-card"; // Import UserCard
-import type { UserInfo, Interest, ConnectionStatus } from "@/types/user"; // Import central types
+import type { UserInfo } from "@/types/user"; // Import central types
 import {
   generateAvatarDataUrl,
   getStatusColor,
@@ -54,7 +54,7 @@ export const profiles: UserInfo[] = [
     ],
     connectionType: "collaboration",
     interests: ["NLP", "Deep Learning", "AI Ethics"],
-    connectionStatus: "online",
+    status: "online",
     isSpeaking: false,
     meetingStats: undefined, // Or provide default stats if applicable
   },
@@ -75,7 +75,7 @@ export const profiles: UserInfo[] = [
     ],
     connectionType: "mentorship",
     interests: ["React", "Node.js", "AWS", "Microservices"],
-    connectionStatus: "away",
+    status: "away",
     isSpeaking: false,
     meetingStats: undefined,
   },
@@ -96,7 +96,7 @@ export const profiles: UserInfo[] = [
     ],
     connectionType: "b2b",
     interests: ["Startups", "Venture Capital", "Growth Hacking"],
-    connectionStatus: "offline",
+    status: "offline",
     isSpeaking: false,
     meetingStats: undefined,
   },
@@ -117,7 +117,7 @@ export const profiles: UserInfo[] = [
     ],
     connectionType: "collaboration",
     interests: ["Design Systems", "Accessibility", "User Research"],
-    connectionStatus: "online",
+    status: "online",
     isSpeaking: false,
     meetingStats: undefined,
   },
@@ -318,8 +318,8 @@ const ModernChatApp: React.FC = () => {
                     />
                     {/* Use getStatusColor utility */}
                     <div
-                      className={`absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white dark:border-gray-900 ${getStatusColor(profile.connectionStatus)}`}
-                      title={`Status: ${profile.connectionStatus || "unknown"}`} // Add title for accessibility
+                      className={`absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white dark:border-gray-900 ${getStatusColor(profile.status)}`}
+                      title={`Status: ${profile.status || "unknown"}`} // Add title for accessibility
                     ></div>
                   </div>
                   <AnimatePresence>
@@ -404,7 +404,7 @@ const ModernChatApp: React.FC = () => {
                   </h3>
                   <p className="truncate text-sm text-gray-500 dark:text-gray-400">
                     {/* Display connection status */}
-                    {activeProfile.connectionStatus || "unknown"}
+                    {activeProfile.status || "unknown"}
                   </p>
                 </div>
               </div>
@@ -413,7 +413,7 @@ const ModernChatApp: React.FC = () => {
                   variant="outline"
                   size="sm"
                   className="border-green-600 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-900/30"
-                  disabled={activeProfile.connectionStatus !== "online"} // Disable based on status
+                  disabled={activeProfile.status !== "online"} // Disable based on status
                   aria-label={`Call ${activeProfile.name}`}
                 >
                   <Phone className="mr-2 h-4 w-4" />
@@ -511,10 +511,7 @@ const ModernChatApp: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           {/* Ensure ScheduleCallForm receives necessary props and handles closing */}
-          <ScheduleCallForm
-            userName={activeProfile.name}
-            onSchedule={() => setShowScheduleCall(false)}
-          />
+          <ScheduleCallForm onSchedule={() => setShowScheduleCall(false)} />
         </DialogContent>
       </Dialog>
 
@@ -544,9 +541,12 @@ const ModernChatApp: React.FC = () => {
           ) : (
             <div className="flex h-64 items-center justify-center p-4">
               {/* --- DEBUG LOG 5: Indicate fallback render --- */}
-              {console.log(
-                "[DialogContent Render] Rendering fallback (activeProfile is falsy)",
-              )}
+              {(() => {
+                console.log(
+                  "[DialogContent Render] Rendering fallback (activeProfile is falsy)",
+                );
+                return null;
+              })()}
               <p className="text-gray-500">Loading profile...</p>
             </div>
           )}

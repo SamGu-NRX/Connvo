@@ -28,7 +28,6 @@ const speakingPulse = {
     transition: {
       duration: 1.5,
       repeat: Number.POSITIVE_INFINITY,
-      ease: "easeInOut",
     },
   },
 };

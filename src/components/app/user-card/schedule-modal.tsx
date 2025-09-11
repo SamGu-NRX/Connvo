@@ -66,7 +66,6 @@ export function ScheduleModal({
       scale: 1,
       transition: {
         duration: 0.2,
-        ease: "easeOut",
       },
     },
     exit: {
@@ -74,7 +73,6 @@ export function ScheduleModal({
       scale: 0.95,
       transition: {
         duration: 0.15,
-        ease: "easeIn",
       },
     },
   };

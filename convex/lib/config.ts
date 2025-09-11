@@ -6,7 +6,7 @@ type Environment = "local" | "staging" | "production";
 
 function getEnvironment(): Environment {
   // In Convex, we can use process.env to determine environment
-  const env = process.env.NODE_ENV;
+  const env = (process.env.NODE_ENV ?? "") as string;
   const convexUrl = process.env.CONVEX_URL || "";
 
   if (env === "production" || convexUrl.includes("prod")) {

@@ -37,12 +37,8 @@ import {
 // Import UserInfo type from our centralized type definition
 import { UserInfo } from "@/types/user";
 // Import utility functions
-import {
-  generateAvatarColor,
-  getInitials,
-  formatTime,
-  getStatusColor,
-} from "@/data/avatar-utils";
+import { generateAvatarColor, getInitials, formatTime, getStatusColor } from "@/data/avatar-utils";
+import { mockUsers } from "@/data/mock-users";
 
 // Define Message type compatible with UserInfo
 interface Message {
@@ -156,7 +152,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
                       </Avatar>
                       <div
                         className={`absolute right-0 bottom-0 h-3 w-3 rounded-full ${getStatusColor(
-                          profile.connectionStatus || "good",
+                          profile.status,
                         )} border-2 border-white dark:border-zinc-900`}
                       />
                     </div>
@@ -272,14 +268,12 @@ const ChatArea: React.FC<ChatAppProps> = ({
             </Avatar>
           </Button>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium">{activeProfile.name}</h3>
-              <div
-                className={`h-2 w-2 rounded-full ${getStatusColor(
-                  activeProfile.connectionStatus || "good",
-                )}`}
-              />
-            </div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium">{activeProfile.name}</h3>
+                <div
+                className={`h-2 w-2 rounded-full ${getStatusColor(activeProfile.status)}`}
+                />
+              </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {activeProfile.profession} at {activeProfile.company}
             </p>
@@ -294,7 +288,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
                   variant="outline"
                   size="icon"
                   className="rounded-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950"
-                  disabled={activeProfile.connectionStatus !== "excellent"}
+                  disabled={activeProfile.status !== "online"}
                 >
                   <Phone className="h-4 w-4" />
                 </Button>
@@ -456,10 +450,8 @@ const ChatArea: React.FC<ChatAppProps> = ({
 
 const ModernChatApp: React.FC = () => {
   // Update state to use UserInfo instead of Profile
-  const [activeProfile, setActiveProfile] =
-    useState<UserInfo>(/* import your profiles data */);
-  const [messages, setMessages] =
-    useState<Record<string, Message[]>>(/* import your initial messages */);
+  const [activeProfile, setActiveProfile] = useState<UserInfo>(mockUsers[0]);
+  const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [newMessage, setNewMessage] = useState("");
   const [showScheduleCall, setShowScheduleCall] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
@@ -475,8 +467,7 @@ const ModernChatApp: React.FC = () => {
   useEffect(() => {
     // Simulate receiving new messages from random users
     const interval = setInterval(() => {
-      const randomProfileId =
-        profiles[Math.floor(Math.random() * profiles.length)].id;
+      const randomProfileId = mockUsers[Math.floor(Math.random() * mockUsers.length)].id;
 
       // Don't mark messages as unread for the active chat
       if (randomProfileId !== activeProfile.id) {
@@ -534,7 +525,7 @@ const ModernChatApp: React.FC = () => {
     <div className="mx-auto flex w-full max-w-6xl gap-4 p-4">
       {/* Collapsible Sidebar */}
       <ProfileList
-        profiles={/* your profiles data */}
+        profiles={mockUsers}
         activeProfile={activeProfile}
         unreadCounts={unreadCounts}
         sidebarCollapsed={sidebarCollapsed}
@@ -578,7 +569,7 @@ const ModernChatApp: React.FC = () => {
       <Dialog open={showUserProfile} onOpenChange={setShowUserProfile}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{activeProfile.name}&apos;s Profile</DialogTitle>
+          <DialogTitle>{activeProfile.name}&apos;s Profile</DialogTitle>
           </DialogHeader>
           <UserCard user={activeProfile} /> {/* Updated to pass user prop */}
         </DialogContent>

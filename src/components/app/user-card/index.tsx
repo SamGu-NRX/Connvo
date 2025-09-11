@@ -19,8 +19,8 @@ export interface UserCardProps {
   user: UserInfo; // Use the imported UserInfo type
   inMeeting?: boolean;
   inChat?: boolean;
-  onMessage?: (message: string) => void; // Consider more specific types if needed
-  onSchedule?: (date: Date, duration: number, topic: string) => void; // Consider more specific types
+  onMessage?: () => void; // Parameterless for now
+  onSchedule?: () => void; // Parameterless for now
   className?: string;
   forceVisible?: boolean; // Prop to override inView animation for modals
 }
@@ -64,7 +64,6 @@ export function UserCard({
       y: 0,
       transition: {
         duration: 0.5,
-        ease: "easeOut",
       },
     },
   };

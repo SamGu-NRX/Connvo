@@ -22,9 +22,7 @@ export function useWorkOSAuth() {
   const { isLoading: convexLoading, isAuthenticated: convexAuthenticated } =
     useConvexAuth();
 
-  const createOrUpdateUser = useMutation(
-    api.users.mutations.createOrUpdateUser,
-  );
+  const createOrUpdateUser = useMutation(api.users.mutations.upsertUser);
   const getCurrentUser = useQuery(api.users.queries.getCurrentUser);
 
   const loading = authLoading || tokenLoading || convexLoading;
@@ -35,6 +33,7 @@ export function useWorkOSAuth() {
     if (isAuthenticated && user && !getCurrentUser) {
       const syncUser = async () => {
         try {
+          const wUser = user as Partial<WorkOSUser>;
           await createOrUpdateUser({
             workosUserId: user.id,
             email: user.email,
@@ -42,9 +41,8 @@ export function useWorkOSAuth() {
               user.firstName && user.lastName
                 ? `${user.firstName} ${user.lastName}`
                 : user.firstName || user.email,
-            avatarUrl: user.profilePictureUrl,
-            orgId: user.organizationId,
-            orgRole: user.role,
+            orgId: wUser.organizationId,
+            orgRole: wUser.role,
           });
         } catch (error) {
           console.error("Failed to sync user:", error);
@@ -61,14 +59,14 @@ export function useWorkOSAuth() {
     isAuthenticated,
 
     // WorkOS user data
-    user: user as WorkOSUser | null,
+    user: user as unknown as WorkOSUser | null,
     accessToken,
 
     // Convex user data
     convexUser: getCurrentUser,
 
     // Organization info
-    organizationId: user?.organizationId,
-    role: user?.role,
+    organizationId: (user as Partial<WorkOSUser>)?.organizationId,
+    role: (user as Partial<WorkOSUser>)?.role,
   };
 }

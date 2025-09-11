@@ -6,21 +6,14 @@ export const basicInfoSchema = z.object({
     .number()
     .min(13, "You must be at least 13")
     .max(100, "Age must be 100 or below"),
-  gender: z.enum(["male", "female", "non-binary", "prefer-not-to-say"], {
-    required_error: "Gender is required",
-  }),
+  gender: z.enum(["male", "female", "non-binary", "prefer-not-to-say"]),
 });
 
 export const professionalInfoSchema = z.object({
   field: z.string().min(1, "Field is required"),
   jobTitle: z.string().min(1, "Job title is required"),
   company: z.string().min(1, "Company is required"),
-  linkedinUrl: z
-    .string()
-    .url("Invalid URL")
-    .optional()
-    .nullable()
-    .transform((val) => val ?? undefined),
+  linkedinUrl: z.string().url("Invalid URL").optional(),
 });
 
 export const bioSchema = z.object({
@@ -33,7 +26,7 @@ export const bioSchema = z.object({
 export const interestSchema = z.object({
   id: z.string(),
   name: z.string(),
-  category: z.string(),
+  category: z.enum(["academic", "industry", "skill", "personal"]),
   iconName: z.string().optional(),
 });
 

@@ -1,8 +1,11 @@
+import * as React from "react";
 import { MessageCircle, Calendar } from "lucide-react";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ActionType = "message" | "schedule";
+
+type ButtonProps = React.ComponentProps<typeof Button>;
 
 interface ActionButtonProps extends Omit<ButtonProps, "children"> {
   action: ActionType;

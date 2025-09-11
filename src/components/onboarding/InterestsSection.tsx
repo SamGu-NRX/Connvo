@@ -40,58 +40,58 @@ const predefinedInterests: (Omit<InterestType, "iconName"> & {
   icon: string;
 })[] = [
   // Tech
-  { id: "programming", name: "Programming", category: "Tech", icon: "Code" },
-  { id: "ai", name: "Artificial Intelligence", category: "Tech", icon: "Code" },
-  { id: "web-dev", name: "Web Development", category: "Tech", icon: "Code" },
+  { id: "programming", name: "Programming", category: "industry", icon: "Code" },
+  { id: "ai", name: "Artificial Intelligence", category: "industry", icon: "Code" },
+  { id: "web-dev", name: "Web Development", category: "industry", icon: "Code" },
 
   // Art
-  { id: "drawing", name: "Drawing", category: "Art", icon: "Palette" },
-  { id: "painting", name: "Painting", category: "Art", icon: "Palette" },
-  { id: "design", name: "Design", category: "Art", icon: "Palette" },
+  { id: "drawing", name: "Drawing", category: "personal", icon: "Palette" },
+  { id: "painting", name: "Painting", category: "personal", icon: "Palette" },
+  { id: "design", name: "Design", category: "personal", icon: "Palette" },
 
   // Gaming
   {
     id: "video-games",
     name: "Video Games",
-    category: "Gaming",
+    category: "personal",
     icon: "Gamepad2",
   },
   {
     id: "board-games",
     name: "Board Games",
-    category: "Gaming",
+    category: "personal",
     icon: "Gamepad2",
   },
 
   // Sports
-  { id: "fitness", name: "Fitness", category: "Sports", icon: "Dumbbell" },
-  { id: "yoga", name: "Yoga", category: "Sports", icon: "Dumbbell" },
-  { id: "running", name: "Running", category: "Sports", icon: "Dumbbell" },
+  { id: "fitness", name: "Fitness", category: "personal", icon: "Dumbbell" },
+  { id: "yoga", name: "Yoga", category: "personal", icon: "Dumbbell" },
+  { id: "running", name: "Running", category: "personal", icon: "Dumbbell" },
 
   // Music
   {
     id: "playing-music",
     name: "Playing Music",
-    category: "Music",
+    category: "personal",
     icon: "Music",
   },
-  { id: "singing", name: "Singing", category: "Music", icon: "Music" },
+  { id: "singing", name: "Singing", category: "personal", icon: "Music" },
 
   // Photography
   {
     id: "photography",
     name: "Photography",
-    category: "Photography",
+    category: "personal",
     icon: "Camera",
   },
 
   // Reading
-  { id: "books", name: "Books", category: "Reading", icon: "Book" },
-  { id: "poetry", name: "Poetry", category: "Reading", icon: "Book" },
+  { id: "books", name: "Books", category: "personal", icon: "Book" },
+  { id: "poetry", name: "Poetry", category: "personal", icon: "Book" },
 
   // Travel
-  { id: "traveling", name: "Traveling", category: "Travel", icon: "Plane" },
-  { id: "backpacking", name: "Backpacking", category: "Travel", icon: "Plane" },
+  { id: "traveling", name: "Traveling", category: "personal", icon: "Plane" },
+  { id: "backpacking", name: "Backpacking", category: "personal", icon: "Plane" },
 ];
 
 // Compute the list of categories
@@ -147,7 +147,7 @@ export default function InterestsSection({
       const newInterest = {
         id: `custom-${customInterest.toLowerCase().replace(/\s+/g, "-")}`,
         name: customInterest,
-        category: "Custom",
+        category: "personal" as const,
         iconName: "Plus",
       };
       setValue("interests", [...currentInterests, newInterest], {

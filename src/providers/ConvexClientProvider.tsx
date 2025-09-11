@@ -55,7 +55,7 @@ function useAuthFromAuthKit() {
 function UpsertUserOnAuth() {
   const { user, loading: authLoading } = useAuth();
   const { accessToken, loading: tokenLoading, error } = useAccessToken();
-  const upsertUser = useMutation(api.users.upsertUser);
+  const upsertUser = useMutation(api.users.mutations.upsertUser);
   const didRun = useRef(false);
 
   const ready = useMemo(() => {

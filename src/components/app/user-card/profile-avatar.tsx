@@ -39,7 +39,6 @@ export function ProfileAvatar({
   const animationProps = showAnimation
     ? {
         whileHover: { scale: 1.05 },
-        transition: { type: "spring", stiffness: 400, damping: 17 },
       }
     : {};
 

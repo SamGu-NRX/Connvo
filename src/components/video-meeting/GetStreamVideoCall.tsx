@@ -39,7 +39,7 @@ import {
   VideoOff,
   Monitor,
   MonitorOff,
-  Record,
+  CircleDot,
   Square,
   Users,
   Wifi,
@@ -235,7 +235,7 @@ export function GetStreamVideoCall({
           <Badge variant={isRecording ? "destructive" : "secondary"}>
             {isRecording ? (
               <>
-                <Record className="mr-1 h-3 w-3" />
+                <CircleDot className="mr-1 h-3 w-3" />
                 Recording
               </>
             ) : (
@@ -273,7 +273,7 @@ export function GetStreamVideoCall({
           {/* Recording Controls */}
           {!isRecording ? (
             <Button onClick={handleStartRecording} variant="outline" size="sm">
-              <Record className="mr-2 h-4 w-4" />
+              <CircleDot className="mr-2 h-4 w-4" />
               Start Recording
             </Button>
           ) : (

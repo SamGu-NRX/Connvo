@@ -55,7 +55,6 @@ export function UserCardDetails({
       transition: {
         height: {
           duration: 0.3,
-          ease: "easeInOut",
         },
         opacity: {
           duration: 0.3,
@@ -69,7 +68,6 @@ export function UserCardDetails({
       transition: {
         height: {
           duration: 0.3,
-          ease: "easeInOut",
         },
         opacity: {
           duration: 0.2,

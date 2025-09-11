@@ -1,6 +1,6 @@
 // @/lib/avatar-utils.ts (assuming path)
 
-import type { ConnectionStatus, UserInfo } from "@/types/user"; // Import types
+import type { PresenceStatus, UserInfo } from "@/types/user"; // Import types
 
 export interface AvatarColor {
   from: string;
@@ -176,7 +176,7 @@ export const formatTime = (timestamp: number): string => {
  * @returns Tailwind CSS background color class
  */
 export const getStatusColor = (
-  status: ConnectionStatus | undefined | null,
+  status: PresenceStatus | undefined | null,
 ): string => {
   switch (status) {
     case "online":

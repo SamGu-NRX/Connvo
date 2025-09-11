@@ -20,12 +20,23 @@ import { CheckCircle, XCircle, RefreshCw } from "lucide-react";
 export default function AuthTestPage() {
   const { loading, isAuthenticated, user, convexUser, organizationId, role } =
     useWorkOSAuth();
-  const syncUser = useMutation(api.users.mutations.syncUserFromWorkOS);
-  const updateActivity = useMutation(api.users.mutations.updateUserActivity);
+  const syncUser = useMutation(api.users.mutations.upsertUser);
+  const updateActivity = useMutation(api.users.mutations.updateLastSeen);
 
   const handleSyncUser = async () => {
     try {
-      await syncUser({});
+      if (!user) return;
+      const displayName = [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      await syncUser({
+        workosUserId: user.id,
+        email: user.email,
+        displayName: displayName || undefined,
+        orgId: organizationId,
+        orgRole: role,
+      });
       console.log("User synced successfully");
     } catch (error) {
       console.error("Failed to sync user:", error);

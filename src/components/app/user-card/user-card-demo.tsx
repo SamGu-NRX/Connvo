@@ -42,14 +42,8 @@ export default function UserCardDemo() {
             user={user}
             inMeeting={activeView === "meeting"}
             inChat={activeView === "chat"}
-            onMessage={(message) =>
-              console.log(`Message to ${user.name}: ${message}`)
-            }
-            onSchedule={(date, duration, topic) =>
-              console.log(
-                `Meeting with ${user.name}: ${topic} on ${date.toLocaleString()} for ${duration} minutes`,
-              )
-            }
+            onMessage={() => console.log(`Message to ${user.name}`)}
+            onSchedule={() => console.log(`Schedule with ${user.name}`)}
           />
         </div>
       ))}

@@ -7,15 +7,15 @@ export type ConnectionType =
   | "mentorship"
   | "investment";
 
-// Define ConnectionStatus based on usage in Profile and UserCard
-// Assuming it maps directly from the old 'status'
-export type ConnectionStatus = "good" | "excellent" | "poor";
+// Presence status for online indicator
+export type PresenceStatus = "online" | "away" | "offline";
 
-export type Status = "online" | "away" | "offline"; // Assuming these are the statuses used in the app
+// Connection quality for video meeting context
+export type ConnectionQuality = "excellent" | "good" | "poor" | "offline";
 
 // Define Interest based on usage in Profile and UserCardInterests
 export interface Interest {
-  type: "academic" | "industry" | "skill" | string; // Allow string for flexibility if needed
+  type: "academic" | "industry" | "skill";
   name: string;
 }
 
@@ -39,11 +39,12 @@ export interface UserInfo {
   sharedInterests: Interest[]; // Use the defined Interest type
   connectionType: ConnectionType; // Use the defined ConnectionType
   isBot?: boolean;
-  status: Status;
+  // Presence and connection quality
+  status?: PresenceStatus;
+  connectionStatus?: ConnectionQuality;
 
   // Optional fields potentially used by UserCard or other components
   interests?: string[]; // General list of interests
-  connectionStatus?: ConnectionStatus; // Use the defined ConnectionStatus
   isSpeaking?: boolean; // For meeting context
   meetingStats?: MeetingStats; // Use the defined MeetingStats type
 }

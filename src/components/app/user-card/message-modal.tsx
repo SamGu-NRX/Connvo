@@ -38,7 +38,6 @@ export function MessageModal({
       scale: 1,
       transition: {
         duration: 0.2,
-        ease: "easeOut",
       },
     },
     exit: {
@@ -46,7 +45,6 @@ export function MessageModal({
       scale: 0.95,
       transition: {
         duration: 0.15,
-        ease: "easeIn",
       },
     },
   };

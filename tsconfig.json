@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -30,12 +34,15 @@
     }
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
+    "convex/**/*.ts",
+    "next-env.d.ts",
     "src/components/page.jsx",
-    "convex/**/*.ts"
+    ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "convex/_generated"]
+  "exclude": [
+    "node_modules",
+    "convex/_generated"
+  ]
 }
