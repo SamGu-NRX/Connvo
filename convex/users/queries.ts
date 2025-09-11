@@ -114,12 +114,16 @@ export const getCurrentUser = query({
     v.null(),
   ),
   handler: async (ctx) => {
-    const identity = await requireIdentity(ctx);
+    // Return null instead of throwing when unauthenticated so clients can
+    // safely subscribe without triggering errors during logged-out states.
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const workosUserId: string = identity.subject;
 
     return await ctx.db
       .query("users")
       .withIndex("by_workos_id", (q) =>
-        q.eq("workosUserId", identity.workosUserId),
+        q.eq("workosUserId", workosUserId),
       )
       .unique();
   },

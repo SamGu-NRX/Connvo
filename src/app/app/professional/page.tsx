@@ -14,15 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 
 export default function ProfessionalConnectionPage() {
   const router = useRouter();
+  const { user } = useWorkOSAuth();
   const [purpose, setPurpose] = useState("");
   const [description, setDescription] = useState("");
 
   const handleStartQueue = (type: string) => {
+    if (!user) {
+      router.push("/auth/signin");
+      return;
+    }
     router.push(
-      `/professional/${type}?purpose=${encodeURIComponent(purpose)}&description=${encodeURIComponent(description)}`,
+      `/app/professional/${type}?purpose=${encodeURIComponent(purpose)}&description=${encodeURIComponent(description)}`,
     );
   };
 

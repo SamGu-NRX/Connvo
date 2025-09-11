@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 import { motion } from "motion/react";
 import {
   Card,
@@ -39,16 +39,20 @@ const item = {
 };
 export default function HomePage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useWorkOSAuth();
   const [queueType, setQueueType] = useState<"professional" | "casual">(
     "casual",
   );
 
   const handleStartQueue = (type: string) => {
+    if (!user) {
+      router.push("/auth/signin");
+      return;
+    }
     if (type === "casual") {
-      router.push(`app/smart-connection?type=${type}`);
+      router.push(`/app/smart-connection?type=${type}`);
     } else {
-      router.push(`app/professional/${type}`);
+      router.push(`/app/professional/${type}`);
     }
   };
 
@@ -89,7 +93,7 @@ export default function HomePage() {
           className="mb-12 text-center"
         >
           <h1 className="bg-emerald-400 bg-clip-text pb-1 text-4xl font-bold text-transparent md:text-5xl dark:bg-emerald-300">
-            Welcome to LinkedUp, {user?.firstName || "Guest"}
+            Welcome to LinkedUp, {user?.firstName || user?.email || "Guest"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
             Connect with professionals and casual contacts through voice calls

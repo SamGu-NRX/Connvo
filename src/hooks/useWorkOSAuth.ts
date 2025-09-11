@@ -23,14 +23,19 @@ export function useWorkOSAuth() {
     useConvexAuth();
 
   const createOrUpdateUser = useMutation(api.users.mutations.upsertUser);
-  const getCurrentUser = useQuery(api.users.queries.getCurrentUser);
 
   const loading = authLoading || tokenLoading || convexLoading;
   const isAuthenticated = !!user && !!accessToken && convexAuthenticated;
 
+  // Skip Convex user query until authenticated to avoid UNAUTHORIZED errors
+  const convexUser = useQuery(
+    api.users.queries.getCurrentUser,
+    isAuthenticated ? {} : undefined,
+  );
+
   // Sync WorkOS user with Convex database
   useEffect(() => {
-    if (isAuthenticated && user && !getCurrentUser) {
+    if (isAuthenticated && user && !convexUser) {
       const syncUser = async () => {
         try {
           const wUser = user as Partial<WorkOSUser>;
@@ -51,7 +56,7 @@ export function useWorkOSAuth() {
 
       syncUser();
     }
-  }, [isAuthenticated, user, getCurrentUser, createOrUpdateUser]);
+  }, [isAuthenticated, user, convexUser, createOrUpdateUser]);
 
   return {
     // Authentication state
@@ -63,7 +68,7 @@ export function useWorkOSAuth() {
     accessToken,
 
     // Convex user data
-    convexUser: getCurrentUser,
+    convexUser,
 
     // Organization info
     organizationId: (user as Partial<WorkOSUser>)?.organizationId,

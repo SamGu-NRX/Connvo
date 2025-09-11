@@ -2,16 +2,15 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
-import { useUser } from "@clerk/nextjs";
-
 import { tokenProvider } from "@/actions/stream.actions";
 import Loader from "@/components/Loader";
+import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 
 const API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 
 const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
   const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(null);
-  const { user, isLoaded } = useUser();
+  const { user, loading } = useWorkOSAuth();
 
   useEffect(() => {
     // If no API key, skip initialization (frontend-only simulation mode)
@@ -22,14 +21,17 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    if (!isLoaded || !user) return;
+    if (loading || !user) return;
 
     const client = new StreamVideoClient({
       apiKey: API_KEY,
       user: {
         id: user.id,
-        name: user.username || user.id,
-        image: user.imageUrl,
+        name:
+          (user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.firstName || user.email || user.id) ?? user.id,
+        image: user.profilePictureUrl,
       },
       tokenProvider,
     });
@@ -46,7 +48,7 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
         // ignore cleanup errors
       }
     };
-  }, [user, isLoaded]);
+  }, [user, loading]);
 
   // If API key is not provided, render children (skip Stream provider)
   if (!API_KEY) return <>{children}</>;

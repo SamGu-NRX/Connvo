@@ -31,15 +31,10 @@ import {
   Moon,
 } from "lucide-react";
 import { handleTransition } from "@/utils/TransitionLink";
+import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  UserButton,
-} from "@clerk/nextjs";
+// Auth UI is handled via WorkOS components and hooks; remove Clerk usage
 
 // Retention data for the chart
 const retentionData = [
@@ -250,6 +245,27 @@ const FloatingShapes = () => {
   );
 };
 
+function StartCta({ className, children }: { className?: string; children: React.ReactNode }) {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  return (
+    <motion.a
+      href="#start"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className={className}
+      onClick={(e) => {
+        e.preventDefault();
+        if (loading) return;
+        const dest = user ? "/app" : "/auth/signin";
+        handleTransition(e, dest, router);
+      }}
+    >
+      {children}
+    </motion.a>
+  );
+}
+
 // Main Landing Page component
 const LandingPage = () => {
   const [theme, setTheme] = useState("light");
@@ -353,15 +369,9 @@ const LandingPage = () => {
                 )}
               </button>
 
-              <motion.a
-                href="/app"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white shadow-md transition-colors duration-300 hover:bg-emerald-700 hover:shadow-lg"
-                onClick={(e) => handleTransition(e, "/app", router)}
-              >
+              <StartCta className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white shadow-md transition-colors duration-300 hover:bg-emerald-700 hover:shadow-lg">
                 Start Connecting
-              </motion.a>
+              </StartCta>
             </div>
           </div>
         </nav>
@@ -396,15 +406,9 @@ const LandingPage = () => {
               </p>
 
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <motion.a
-                  href="/app"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={(e) => handleTransition(e, "/app", router)}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-4 font-medium text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg sm:w-auto"
-                >
+                <StartCta className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-4 font-medium text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg sm:w-auto">
                   Start Real Networking <ArrowRight className="h-5 w-5" />
-                </motion.a>
+                </StartCta>
 
                 <motion.button
                   onClick={() => scrollToSection("how-it-works")}
