@@ -1,23 +1,35 @@
 /**
- * Real-Time Subscription Management with Dynamic Permissions
+ * Real-Time Subscription Management with Advanced Batching and Coalescing
  *
  * This module manages WebSocket subscriptions with real-time permission
- * validation and automatic termination of unauthorized streams.
+ * validation, automatic termination of unauthorized streams, and advanced
+ * batching/coalescing for high-frequency operations.
  *
- * Requirements: 2.5, 4.2, 5.1, 5.2
+ * Requirements: 2.5, 4.2, 5.1, 5.2, 5.3
  * Compliance: steering/convex_rules.mdc - Uses proper Convex reactive patterns
  */
 
 import { v } from "convex/values";
-import {
-  query,
-  mutation,
-  internalMutation,
-  internalQuery,
-} from "../_generated/server";
+import { query, mutation, internalMutation, internalQuery, QueryCtx } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { requireIdentity, assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
+import {
+  globalBandwidthManager,
+  CircuitBreaker,
+  debounce,
+  throttle,
+} from "../lib/batching";
+import { withTrace, SubscriptionPerformanceTracker } from "../lib/performance";
+import {
+  TranscriptQueryOptimizer,
+  NotesQueryOptimizer,
+  SubscriptionStateManager,
+  QueryCache,
+} from "../lib/queryOptimization";
+import { normalizeRole, permissionsForResource } from "../lib/permissions";
+import { buildSubscriptionAudit } from "../lib/audit";
+import { internal } from "../_generated/api";
 
 /**
  * Subscription context for tracking active connections
@@ -35,12 +47,13 @@ export interface SubscriptionContext {
 }
 
 /**
- * Real-time meeting notes subscription with permission validation
+ * Real-time meeting notes subscription with permission validation and bandwidth management
  */
 export const subscribeMeetingNotes = query({
   args: {
     meetingId: v.id("meetings"),
     subscriptionId: v.optional(v.string()),
+    cursor: v.optional(v.string()),
   },
   returns: v.union(
     v.object({
@@ -49,42 +62,82 @@ export const subscribeMeetingNotes = query({
       lastUpdated: v.number(),
       subscriptionValid: v.boolean(),
       permissions: v.array(v.string()),
+      cursor: v.string(),
+      rateLimited: v.boolean(),
     }),
     v.null(),
   ),
-  handler: async (ctx, { meetingId, subscriptionId }) => {
+  handler: async (ctx, { meetingId, subscriptionId, cursor }) => {
+    const startTime = Date.now();
+
     // Validate meeting access and log subscription attempt
     const participant = await assertMeetingAccess(ctx, meetingId);
     const identity = await requireIdentity(ctx);
 
-    // Log subscription establishment
-    await logSubscriptionEvent(ctx, {
-      userId: identity.userId as Id<"users">,
-      action: "subscription_established",
+    const subId = subscriptionId || `notes_${meetingId}_${Date.now()}`;
+
+    // Check bandwidth limits
+    const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "normal");
+    if (!canSendUpdate) {
+      const roleForNotes = normalizeRole(participant.role);
+      return {
+        content: "",
+        version: 0,
+        lastUpdated: Date.now(),
+        subscriptionValid: true,
+        permissions: permissionsForResource("meetingNotes", roleForNotes),
+        cursor: cursor || "",
+        rateLimited: true,
+      };
+    }
+
+    // Do not write from queries; log via mutations elsewhere if needed
+
+    // Track subscription establishment
+    SubscriptionPerformanceTracker.trackSubscriptionEstablished(subId);
+
+    // Try cache first for frequently accessed notes
+    const cacheKey = `notes_${meetingId}`;
+    type NotesMaterialized = { content: string; version: number; lastUpdated: number };
+    let notes = QueryCache.get<NotesMaterialized>(cacheKey);
+
+    if (!notes) {
+      // Get meeting notes using optimized query
+      notes = await NotesQueryOptimizer.getMaterializedNotes(ctx, meetingId);
+
+      // Cache for 30 seconds
+      QueryCache.set<NotesMaterialized>(cacheKey, notes, 30000);
+    }
+
+    // Save subscription state for resumability
+    SubscriptionStateManager.saveState({
+      subscriptionId: subId,
+      lastCursor: { timestamp: Date.now(), sequence: notes.version },
+      lastUpdate: Date.now(),
       resourceType: "meetingNotes",
       resourceId: meetingId,
-      subscriptionId: subscriptionId || `notes_${meetingId}_${Date.now()}`,
-      metadata: {
-        participantRole: participant.role,
-        meetingState: await getMeetingState(ctx, meetingId),
-      },
+      userId: identity.userId as Id<"users">,
     });
 
-    // Get meeting notes
-    const notes = await ctx.db
-      .query("meetingNotes")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .unique();
-
     // Determine user permissions
-    const permissions = getNotesPermissions(participant.role);
+    const roleForNotes = normalizeRole(participant.role);
+    const permissions = permissionsForResource("meetingNotes", roleForNotes);
+
+    // Record successful update with latency
+    const latency = Date.now() - startTime;
+    globalBandwidthManager.recordUpdate(subId);
+    SubscriptionPerformanceTracker.trackUpdate(subId, latency);
+
+    const newCursor = `${notes.version}_${Date.now()}`;
 
     return {
-      content: notes?.content || "",
-      version: notes?.version || 0,
-      lastUpdated: notes?.updatedAt || Date.now(),
+      content: notes.content,
+      version: notes.version,
+      lastUpdated: notes.lastUpdated,
       subscriptionValid: true,
       permissions,
+      cursor: newCursor,
+      rateLimited: false,
     };
   },
 });
@@ -131,65 +184,60 @@ export const subscribeTranscriptStream = query({
       throw createError.meetingNotActive(meetingId);
     }
 
-    // Log subscription
-      await logSubscriptionEvent(ctx, {
-        userId: identity.userId as Id<"users">,
-        action: "transcript_subscription_established",
-        resourceType: "transcripts",
-        resourceId: meetingId,
-        subscriptionId:
-          subscriptionId || `transcripts_${meetingId}_${Date.now()}`,
-        metadata: {
-          fromSequence,
-          participantRole: participant.role,
-        meetingActive: meetingState.active,
-      },
+    const startTime = Date.now();
+    const subId = subscriptionId || `transcripts_${meetingId}_${Date.now()}`;
+
+    // Check bandwidth limits - transcripts are high priority
+    const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "high");
+    if (!canSendUpdate) {
+      const roleForPerms = normalizeRole(participant.role);
+      return {
+        transcripts: [],
+        nextSequence: fromSequence,
+        subscriptionValid: true,
+        permissions: permissionsForResource("transcripts", roleForPerms),
+        validUntil: undefined,
+      };
+    }
+
+    // Track subscription establishment
+    SubscriptionPerformanceTracker.trackSubscriptionEstablished(subId);
+
+    // Use optimized transcript query with intelligent bucketing
+    const queryResult = await TranscriptQueryOptimizer.queryTranscripts(
+      ctx,
+      meetingId,
+      fromSequence,
+      limit,
+      30 * 60 * 1000, // 30 minutes window
+    );
+
+    const { transcripts, nextCursor, performance } = queryResult;
+
+    // Save subscription state for resumability
+    SubscriptionStateManager.saveState({
+      subscriptionId: subId,
+      lastCursor: nextCursor,
+      lastUpdate: Date.now(),
+      resourceType: "transcripts",
+      resourceId: meetingId,
+      userId: identity.userId as Id<"users">,
     });
 
-    // Get recent transcripts across time buckets
-    const now = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
-    const buckets = [];
-
-    // Generate recent time buckets (last 30 minutes)
-    for (let i = 0; i < 6; i++) {
-      const bucketTime = now - i * fiveMinutes;
-      buckets.push(Math.floor(bucketTime / fiveMinutes) * fiveMinutes);
-    }
-
-    const allTranscripts = [];
-    for (const bucketMs of buckets) {
-      const bucketTranscripts = await ctx.db
-        .query("transcripts")
-        .withIndex("by_meeting_bucket_seq", (q) =>
-          q
-            .eq("meetingId", meetingId)
-            .eq("bucketMs", bucketMs)
-            .gt("sequence", fromSequence),
-        )
-        .take(limit - allTranscripts.length);
-
-      allTranscripts.push(...bucketTranscripts);
-
-      if (allTranscripts.length >= limit) break;
-    }
-
-    // Sort by sequence and limit
-    const sortedTranscripts = allTranscripts
-      .sort((a, b) => a.sequence - b.sequence)
-      .slice(0, limit);
-
-    const nextSequence =
-      sortedTranscripts.length > 0
-        ? Math.max(...sortedTranscripts.map((t) => t.sequence)) + 1
-        : fromSequence;
-
-    const permissions = getTranscriptPermissions(participant.role);
+    const roleForPerms2 = normalizeRole(participant.role);
+    const permissions = permissionsForResource("transcripts", roleForPerms2);
     const validUntil = meetingState.endedAt || undefined;
 
+    // Do not write from queries
+
+    // Record successful update with comprehensive latency tracking
+    const totalLatency = Date.now() - startTime;
+    globalBandwidthManager.recordUpdate(subId);
+    SubscriptionPerformanceTracker.trackUpdate(subId, totalLatency);
+
     return {
-      transcripts: sortedTranscripts,
-      nextSequence,
+      transcripts,
+      nextSequence: nextCursor.sequence || fromSequence,
       subscriptionValid: true,
       permissions,
       validUntil,
@@ -210,7 +258,11 @@ export const subscribeMeetingParticipants = query({
       v.object({
         _id: v.id("meetingParticipants"),
         userId: v.id("users"),
-        role: v.union(v.literal("host"), v.literal("participant")),
+        role: v.union(
+          v.literal("host"),
+          v.literal("participant"),
+          v.literal("observer"),
+        ),
         presence: v.union(
           v.literal("invited"),
           v.literal("joined"),
@@ -233,18 +285,7 @@ export const subscribeMeetingParticipants = query({
     const participant = await assertMeetingAccess(ctx, meetingId);
     const identity = await requireIdentity(ctx);
 
-    // Log subscription
-    await logSubscriptionEvent(ctx, {
-      userId: identity.userId as Id<"users">,
-      action: "participants_subscription_established",
-      resourceType: "meetingParticipants",
-      resourceId: meetingId,
-      subscriptionId:
-        subscriptionId || `participants_${meetingId}_${Date.now()}`,
-      metadata: {
-        participantRole: participant.role,
-      },
-    });
+    // Do not write from queries
 
     // Get all participants
     const participants = await ctx.db
@@ -267,7 +308,8 @@ export const subscribeMeetingParticipants = query({
       }),
     );
 
-    const permissions = getParticipantsPermissions(participant.role);
+    const roleForPerms3 = normalizeRole(participant.role);
+    const permissions = permissionsForResource("meetingParticipants", roleForPerms3);
 
     return {
       participants: enrichedParticipants,
@@ -285,7 +327,7 @@ export const validateSubscription = query({
   args: {
     subscriptionId: v.string(),
     resourceType: v.string(),
-    resourceId: v.string(),
+    resourceId: v.id("meetings"),
     lastValidated: v.number(),
   },
   returns: v.object({
@@ -329,10 +371,8 @@ export const validateSubscription = query({
           };
         }
 
-        const permissions = getPermissionsForResource(
-          resourceType,
-          participant.role,
-        );
+        const roleForPerms4 = normalizeRole(participant.role);
+        const permissions = permissionsForResource(resourceType, roleForPerms4);
 
         return {
           valid: true,
@@ -350,18 +390,7 @@ export const validateSubscription = query({
         shouldReconnect: false,
       };
     } catch (error) {
-      // Log validation failure
-      await logSubscriptionEvent(ctx, {
-        userId: identity.userId as Id<"users">,
-        action: "subscription_validation_failed",
-        resourceType,
-        resourceId,
-        subscriptionId,
-        metadata: {
-          error: error instanceof Error ? error.message : String(error),
-          lastValidated,
-        },
-      });
+      // Do not write from queries
 
       return {
         valid: false,
@@ -392,18 +421,21 @@ export const terminateSubscription = internalMutation({
     ctx,
     { userId, subscriptionId, resourceType, resourceId, reason },
   ) => {
-    // Log subscription termination
-    await logSubscriptionEvent(ctx, {
-      userId,
-      action: "subscription_terminated",
-      resourceType,
-      resourceId,
-      subscriptionId,
-      metadata: {
-        reason,
-        terminatedAt: Date.now(),
-      },
-    });
+    // Log subscription termination using centralized audit logger
+    await ctx.runMutation(
+      internal.audit.logging.createAuditLog,
+      buildSubscriptionAudit({
+        actorUserId: userId,
+        resourceType,
+        resourceId,
+        action: "subscription_terminated",
+        metadata: {
+          subscriptionId,
+          reason,
+          terminatedAt: Date.now(),
+        },
+      }),
+    );
 
     // In a complete implementation, this would:
     // 1. Send termination message to WebSocket connection
@@ -420,80 +452,13 @@ export const terminateSubscription = internalMutation({
  * Helper functions
  */
 
-async function getMeetingState(ctx: any, meetingId: Id<"meetings">) {
+async function getMeetingState(ctx: QueryCtx, meetingId: Id<"meetings">) {
   return await ctx.db
     .query("meetingState")
-    .withIndex("by_meeting", (q: any) => q.eq("meetingId", meetingId))
+    .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
     .unique();
 }
 
-function getNotesPermissions(role: "host" | "participant"): string[] {
-  const basePermissions = ["read", "write"];
-  if (role === "host") {
-    return [...basePermissions, "manage", "export"];
-  }
-  return basePermissions;
-}
+// Permission helpers moved to ../lib/permissions for consistency
 
-function getTranscriptPermissions(role: "host" | "participant"): string[] {
-  const basePermissions = ["read"];
-  if (role === "host") {
-    return [...basePermissions, "export", "manage"];
-  }
-  return basePermissions;
-}
-
-function getParticipantsPermissions(role: "host" | "participant"): string[] {
-  const basePermissions = ["read"];
-  if (role === "host") {
-    return [...basePermissions, "invite", "remove", "manage"];
-  }
-  return basePermissions;
-}
-
-function getPermissionsForResource(
-  resourceType: string,
-  role: "host" | "participant",
-): string[] {
-  switch (resourceType) {
-    case "meetingNotes":
-      return getNotesPermissions(role);
-    case "transcripts":
-      return getTranscriptPermissions(role);
-    case "meetingParticipants":
-    case "participants":
-      return getParticipantsPermissions(role);
-    default:
-      return ["read"];
-  }
-}
-
-async function logSubscriptionEvent(
-  ctx: any,
-  event: {
-    userId: Id<"users">;
-    action: string;
-    resourceType: string;
-    resourceId: string;
-    subscriptionId: string;
-    metadata?: any;
-  },
-) {
-  try {
-    await ctx.db.insert("auditLogs", {
-      actorUserId: event.userId,
-      resourceType: event.resourceType,
-      resourceId: event.resourceId,
-      action: event.action,
-      metadata: {
-        subscriptionId: event.subscriptionId,
-        category: "subscription_management",
-        severity: "low",
-        ...event.metadata,
-      },
-      timestamp: Date.now(),
-    });
-  } catch (error) {
-    console.error("Failed to log subscription event:", error);
-  }
-}
+// Intentionally no logging writes from queries

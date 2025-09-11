@@ -203,13 +203,15 @@ async function logAuditEvent(
   const dbAny = (ctx as any).db;
   if (dbAny && typeof dbAny.insert === "function") {
     try {
-      await dbAny.insert("auditLogs", {
+      const { logAudit } = await import("../lib/audit");
+      await logAudit(ctx as any, {
         actorUserId: event.actorUserId,
         resourceType: event.resourceType,
         resourceId: event.resourceId,
         action: event.action,
+        category: "auth",
+        success: true,
         metadata: event.metadata || {},
-        timestamp: Date.now(),
       });
     } catch (error) {
       // Log audit failures but don't block the main operation

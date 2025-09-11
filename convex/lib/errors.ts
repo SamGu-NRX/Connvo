@@ -39,8 +39,12 @@ export const ErrorCodes = {
 
   // External Services
   STREAM_ERROR: "STREAM_ERROR",
+  STREAM_ROOM_NOT_FOUND: "STREAM_ROOM_NOT_FOUND",
+  STREAM_TOKEN_EXPIRED: "STREAM_TOKEN_EXPIRED",
+  STREAM_WEBHOOK_INVALID: "STREAM_WEBHOOK_INVALID",
   AI_PROVIDER_ERROR: "AI_PROVIDER_ERROR",
   VECTOR_PROVIDER_ERROR: "VECTOR_PROVIDER_ERROR",
+  EXTERNAL_SERVICE_TIMEOUT: "EXTERNAL_SERVICE_TIMEOUT",
 
   // Rate Limiting
   RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
@@ -61,10 +65,19 @@ export const ErrorCodes = {
  */
 export const createError = {
   unauthorized: (message = "Authentication required") =>
-    new ConvexError({ code: ErrorCodes.UNAUTHORIZED, message, statusCode: 401 }),
+    new ConvexError({
+      code: ErrorCodes.UNAUTHORIZED,
+      message,
+      statusCode: 401,
+    }),
 
   forbidden: (message = "Access denied", metadata?: Record<string, any>) =>
-    new ConvexError({ code: ErrorCodes.FORBIDDEN, message, statusCode: 403, metadata }),
+    new ConvexError({
+      code: ErrorCodes.FORBIDDEN,
+      message,
+      statusCode: 403,
+      metadata,
+    }),
 
   notFound: (resource: string, id?: string) =>
     new ConvexError({
@@ -75,7 +88,12 @@ export const createError = {
     }),
 
   validation: (message: string, field?: string) =>
-    new ConvexError({ code: ErrorCodes.VALIDATION_ERROR, message, statusCode: 400, metadata: { field } }),
+    new ConvexError({
+      code: ErrorCodes.VALIDATION_ERROR,
+      message,
+      statusCode: 400,
+      metadata: { field },
+    }),
 
   meetingNotActive: (meetingId: string) =>
     new ConvexError({
@@ -99,5 +117,29 @@ export const createError = {
       message: `Rate limit exceeded for ${action}`,
       statusCode: 429,
       metadata: { action, limit },
+    }),
+
+  streamError: (operation: string, details?: string) =>
+    new ConvexError({
+      code: ErrorCodes.STREAM_ERROR,
+      message: `Stream ${operation} failed${details ? `: ${details}` : ""}`,
+      statusCode: 502,
+      metadata: { operation, details },
+    }),
+
+  externalServiceTimeout: (service: string, timeoutMs: number) =>
+    new ConvexError({
+      code: ErrorCodes.EXTERNAL_SERVICE_TIMEOUT,
+      message: `${service} request timed out after ${timeoutMs}ms`,
+      statusCode: 504,
+      metadata: { service, timeoutMs },
+    }),
+
+  webhookInvalid: (reason: string) =>
+    new ConvexError({
+      code: ErrorCodes.STREAM_WEBHOOK_INVALID,
+      message: `Invalid webhook: ${reason}`,
+      statusCode: 400,
+      metadata: { reason },
     }),
 };
