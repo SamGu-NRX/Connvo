@@ -305,16 +305,28 @@ describe("Dynamic Permission Management", () => {
       });
 
       // Check audit logs
-      const auditLogs = await t.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await t.query(api.audit.logging.getAuditLogs, {
         resourceType: "meetingNotes",
         resourceId: testMeetingId,
         action: "subscription_established",
         limit: 10,
-      });
+      })) as {
+        logs: Array<{
+          _id: import("../_generated/dataModel").Id<"auditLogs">;
+          actorUserId?: import("../_generated/dataModel").Id<"users">;
+          resourceType: string;
+          resourceId: string;
+          action: string;
+          metadata: Record<string, unknown>;
+          timestamp: number;
+          _creationTime: number;
+        }>;
+      };
 
       expect(auditLogs.logs.length).toBeGreaterThan(0);
-      const subscriptionLog = auditLogs.logs.find(
-        (log) => log.metadata.subscriptionId === "test-audit-sub",
+      const subscriptionLog = auditLogs.logs.find((log) =>
+        (log.metadata as { subscriptionId?: string }).subscriptionId ===
+        "test-audit-sub",
       );
       expect(subscriptionLog).toBeDefined();
       expect(subscriptionLog?.action).toBe("subscription_established");
@@ -328,15 +340,27 @@ describe("Dynamic Permission Management", () => {
       });
 
       // Check audit logs for revocation
-      const auditLogs = await t.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await t.query(api.audit.logging.getAuditLogs, {
         actorUserId: hostUserId,
         action: "participant_removed",
         limit: 10,
-      });
+      })) as {
+        logs: Array<{
+          _id: import("../_generated/dataModel").Id<"auditLogs">;
+          actorUserId?: import("../_generated/dataModel").Id<"users">;
+          resourceType: string;
+          resourceId: string;
+          action: string;
+          metadata: Record<string, unknown>;
+          timestamp: number;
+          _creationTime: number;
+        }>;
+      };
 
       expect(auditLogs.logs.length).toBeGreaterThan(0);
-      const revocationLog = auditLogs.logs.find(
-        (log) => log.metadata.removedUserId === participantUserId,
+      const revocationLog = auditLogs.logs.find((log) =>
+        (log.metadata as { removedUserId?: unknown }).removedUserId ===
+        participantUserId,
       );
       expect(revocationLog).toBeDefined();
     });
@@ -350,17 +374,30 @@ describe("Dynamic Permission Management", () => {
       });
 
       // Check audit logs
-      const auditLogs = await t.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await t.query(api.audit.logging.getAuditLogs, {
         action: "participant_role_changed",
         limit: 10,
-      });
+      })) as {
+        logs: Array<{
+          _id: import("../_generated/dataModel").Id<"auditLogs">;
+          actorUserId?: import("../_generated/dataModel").Id<"users">;
+          resourceType: string;
+          resourceId: string;
+          action: string;
+          metadata: Record<string, unknown>;
+          timestamp: number;
+          _creationTime: number;
+        }>;
+      };
 
       expect(auditLogs.logs.length).toBeGreaterThan(0);
-      const roleChangeLog = auditLogs.logs.find(
-        (log) =>
-          log.metadata.targetUserId === participantUserId &&
-          log.metadata.newRole === "host",
-      );
+      const roleChangeLog = auditLogs.logs.find((log) => {
+        const meta = log.metadata as {
+          targetUserId?: unknown;
+          newRole?: unknown;
+        };
+        return meta.targetUserId === participantUserId && meta.newRole === "host";
+      });
       expect(roleChangeLog).toBeDefined();
     });
   });
@@ -376,7 +413,18 @@ describe("Dynamic Permission Management", () => {
       );
 
       const start = Date.now();
-      const subscriptions = await Promise.all(subscriptionPromises);
+      const subscriptions = (await Promise.all(subscriptionPromises)) as Array<
+        | {
+            content: string;
+            version: number;
+            lastUpdated: number;
+            subscriptionValid: boolean;
+            permissions: string[];
+            cursor: string;
+            rateLimited: boolean;
+          }
+        | null
+      >;
       const duration = Date.now() - start;
 
       // All should succeed
@@ -397,16 +445,22 @@ describe("Dynamic Permission Management", () => {
       }));
 
       const start = Date.now();
-      const results = await t.query(
+      const results = (await t.query(
         api.auth.permissions.refreshSubscriptionPermissions,
         {
           subscriptions: validations,
         },
-      );
+      )) as Array<{
+        resourceType: string;
+        resourceId: string;
+        valid: boolean;
+        updatedPermissions: string[];
+        reason?: string;
+      }>;
       const duration = Date.now() - start;
 
       expect(results).toHaveLength(20);
-      results.forEach((result: any) => {
+      results.forEach((result) => {
         expect(result.valid).toBe(true);
       });
 

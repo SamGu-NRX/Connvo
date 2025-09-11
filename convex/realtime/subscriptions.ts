@@ -1,10 +1,11 @@
 /**
- * Real-Time Subscription Management with Dynamic Permissions
+ * Real-Time Subscription Management with Advanced Batching and Coalescing
  *
  * This module manages WebSocket subscriptions with real-time permission
- * validation and automatic termination of unauthorized streams.
+ * validation, automatic termination of unauthorized streams, and advanced
+ * batching/coalescing for high-frequency operations.
  *
- * Requirements: 2.5, 4.2, 5.1, 5.2
+ * Requirements: 2.5, 4.2, 5.1, 5.2, 5.3
  * Compliance: steering/convex_rules.mdc - Uses proper Convex reactive patterns
  */
 
@@ -18,6 +19,19 @@ import {
 import { Id } from "../_generated/dataModel";
 import { requireIdentity, assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
+import {
+  globalBandwidthManager,
+  CircuitBreaker,
+  debounce,
+  throttle,
+} from "../lib/batching";
+import { withTrace, SubscriptionPerformanceTracker } from "../lib/performance";
+import {
+  TranscriptQueryOptimizer,
+  NotesQueryOptimizer,
+  SubscriptionStateManager,
+  QueryCache,
+} from "../lib/queryOptimization";
 
 /**
  * Subscription context for tracking active connections
@@ -35,12 +49,13 @@ export interface SubscriptionContext {
 }
 
 /**
- * Real-time meeting notes subscription with permission validation
+ * Real-time meeting notes subscription with permission validation and bandwidth management
  */
 export const subscribeMeetingNotes = query({
   args: {
     meetingId: v.id("meetings"),
     subscriptionId: v.optional(v.string()),
+    cursor: v.optional(v.string()),
   },
   returns: v.union(
     v.object({
@@ -49,13 +64,33 @@ export const subscribeMeetingNotes = query({
       lastUpdated: v.number(),
       subscriptionValid: v.boolean(),
       permissions: v.array(v.string()),
+      cursor: v.string(),
+      rateLimited: v.boolean(),
     }),
     v.null(),
   ),
-  handler: async (ctx, { meetingId, subscriptionId }) => {
+  handler: async (ctx, { meetingId, subscriptionId, cursor }) => {
+    const startTime = Date.now();
+
     // Validate meeting access and log subscription attempt
     const participant = await assertMeetingAccess(ctx, meetingId);
     const identity = await requireIdentity(ctx);
+
+    const subId = subscriptionId || `notes_${meetingId}_${Date.now()}`;
+
+    // Check bandwidth limits
+    const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "normal");
+    if (!canSendUpdate) {
+      return {
+        content: "",
+        version: 0,
+        lastUpdated: Date.now(),
+        subscriptionValid: true,
+        permissions: getNotesPermissions(participant.role),
+        cursor: cursor || "",
+        rateLimited: true,
+      };
+    }
 
     // Log subscription establishment
     await logSubscriptionEvent(ctx, {
@@ -63,28 +98,58 @@ export const subscribeMeetingNotes = query({
       action: "subscription_established",
       resourceType: "meetingNotes",
       resourceId: meetingId,
-      subscriptionId: subscriptionId || `notes_${meetingId}_${Date.now()}`,
+      subscriptionId: subId,
       metadata: {
         participantRole: participant.role,
         meetingState: await getMeetingState(ctx, meetingId),
+        cursor,
+        latency: Date.now() - startTime,
       },
     });
 
-    // Get meeting notes
-    const notes = await ctx.db
-      .query("meetingNotes")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .unique();
+    // Track subscription establishment
+    SubscriptionPerformanceTracker.trackSubscriptionEstablished(subId);
+
+    // Try cache first for frequently accessed notes
+    const cacheKey = `notes_${meetingId}`;
+    let notes = QueryCache.get(cacheKey);
+
+    if (!notes) {
+      // Get meeting notes using optimized query
+      notes = await NotesQueryOptimizer.getMaterializedNotes(ctx, meetingId);
+
+      // Cache for 30 seconds
+      QueryCache.set(cacheKey, notes, 30000);
+    }
+
+    // Save subscription state for resumability
+    SubscriptionStateManager.saveState({
+      subscriptionId: subId,
+      lastCursor: { timestamp: Date.now(), sequence: notes.version },
+      lastUpdate: Date.now(),
+      resourceType: "meetingNotes",
+      resourceId: meetingId,
+      userId: identity.userId as Id<"users">,
+    });
 
     // Determine user permissions
     const permissions = getNotesPermissions(participant.role);
 
+    // Record successful update with latency
+    const latency = Date.now() - startTime;
+    globalBandwidthManager.recordUpdate(subId);
+    SubscriptionPerformanceTracker.trackUpdate(subId, latency);
+
+    const newCursor = `${notes.version}_${Date.now()}`;
+
     return {
-      content: notes?.content || "",
-      version: notes?.version || 0,
-      lastUpdated: notes?.updatedAt || Date.now(),
+      content: notes.content,
+      version: notes.version,
+      lastUpdated: notes.lastUpdated,
       subscriptionValid: true,
       permissions,
+      cursor: newCursor,
+      rateLimited: false,
     };
   },
 });
@@ -131,65 +196,74 @@ export const subscribeTranscriptStream = query({
       throw createError.meetingNotActive(meetingId);
     }
 
-    // Log subscription
-      await logSubscriptionEvent(ctx, {
-        userId: identity.userId as Id<"users">,
-        action: "transcript_subscription_established",
-        resourceType: "transcripts",
-        resourceId: meetingId,
-        subscriptionId:
-          subscriptionId || `transcripts_${meetingId}_${Date.now()}`,
-        metadata: {
-          fromSequence,
-          participantRole: participant.role,
-        meetingActive: meetingState.active,
-      },
+    const startTime = Date.now();
+    const subId = subscriptionId || `transcripts_${meetingId}_${Date.now()}`;
+
+    // Check bandwidth limits - transcripts are high priority
+    const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "high");
+    if (!canSendUpdate) {
+      return {
+        transcripts: [],
+        nextSequence: fromSequence,
+        subscriptionValid: true,
+        permissions: getTranscriptPermissions(participant.role),
+        validUntil: undefined,
+      };
+    }
+
+    // Track subscription establishment
+    SubscriptionPerformanceTracker.trackSubscriptionEstablished(subId);
+
+    // Use optimized transcript query with intelligent bucketing
+    const queryResult = await TranscriptQueryOptimizer.queryTranscripts(
+      ctx,
+      meetingId,
+      fromSequence,
+      limit,
+      30 * 60 * 1000, // 30 minutes window
+    );
+
+    const { transcripts, nextCursor, performance } = queryResult;
+
+    // Save subscription state for resumability
+    SubscriptionStateManager.saveState({
+      subscriptionId: subId,
+      lastCursor: nextCursor,
+      lastUpdate: Date.now(),
+      resourceType: "transcripts",
+      resourceId: meetingId,
+      userId: identity.userId as Id<"users">,
     });
-
-    // Get recent transcripts across time buckets
-    const now = Date.now();
-    const fiveMinutes = 5 * 60 * 1000;
-    const buckets = [];
-
-    // Generate recent time buckets (last 30 minutes)
-    for (let i = 0; i < 6; i++) {
-      const bucketTime = now - i * fiveMinutes;
-      buckets.push(Math.floor(bucketTime / fiveMinutes) * fiveMinutes);
-    }
-
-    const allTranscripts = [];
-    for (const bucketMs of buckets) {
-      const bucketTranscripts = await ctx.db
-        .query("transcripts")
-        .withIndex("by_meeting_bucket_seq", (q) =>
-          q
-            .eq("meetingId", meetingId)
-            .eq("bucketMs", bucketMs)
-            .gt("sequence", fromSequence),
-        )
-        .take(limit - allTranscripts.length);
-
-      allTranscripts.push(...bucketTranscripts);
-
-      if (allTranscripts.length >= limit) break;
-    }
-
-    // Sort by sequence and limit
-    const sortedTranscripts = allTranscripts
-      .sort((a, b) => a.sequence - b.sequence)
-      .slice(0, limit);
-
-    const nextSequence =
-      sortedTranscripts.length > 0
-        ? Math.max(...sortedTranscripts.map((t) => t.sequence)) + 1
-        : fromSequence;
 
     const permissions = getTranscriptPermissions(participant.role);
     const validUntil = meetingState.endedAt || undefined;
 
+    // Log subscription with comprehensive performance metrics
+    await logSubscriptionEvent(ctx, {
+      userId: identity.userId as Id<"users">,
+      action: "transcript_subscription_established",
+      resourceType: "transcripts",
+      resourceId: meetingId,
+      subscriptionId: subId,
+      metadata: {
+        fromSequence,
+        participantRole: participant.role,
+        meetingActive: meetingState.active,
+        performance: {
+          ...performance,
+          totalLatency: Date.now() - startTime,
+        },
+      },
+    });
+
+    // Record successful update with comprehensive latency tracking
+    const totalLatency = Date.now() - startTime;
+    globalBandwidthManager.recordUpdate(subId);
+    SubscriptionPerformanceTracker.trackUpdate(subId, totalLatency);
+
     return {
-      transcripts: sortedTranscripts,
-      nextSequence,
+      transcripts,
+      nextSequence: nextCursor.sequence || fromSequence,
       subscriptionValid: true,
       permissions,
       validUntil,

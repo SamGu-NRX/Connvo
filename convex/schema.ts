@@ -29,7 +29,8 @@ export default defineSchema({
     .index("by_workos_id", ["workosUserId"])
     .index("by_org_and_active", ["orgId", "isActive"])
     .index("by_email", ["email"])
-    .index("by_last_seen", ["lastSeenAt"]),
+    .index("by_last_seen", ["lastSeenAt"])
+    .index("by_org_and_role", ["orgId", "orgRole"]),
 
   profiles: defineTable({
     userId: v.id("users"),
@@ -48,10 +49,14 @@ export default defineSchema({
     key: v.string(),
     label: v.string(),
     category: v.string(),
+    // Denormalized field for performance
+    usageCount: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_key", ["key"])
-    .index("by_category", ["category"]),
+    .index("by_category", ["category"])
+    .index("by_usage_count", ["usageCount"])
+    .index("by_category_and_usage", ["category", "usageCount"]),
 
   userInterests: defineTable({
     userId: v.id("users"),
@@ -75,12 +80,17 @@ export default defineSchema({
       v.literal("concluded"),
       v.literal("cancelled"),
     ),
+    // Denormalized fields for performance
+    participantCount: v.optional(v.number()),
+    averageRating: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_organizer", ["organizerId"])
     .index("by_state", ["state"])
-    .index("by_scheduled", ["scheduledAt"]),
+    .index("by_scheduled", ["scheduledAt"])
+    .index("by_state_and_scheduled", ["state", "scheduledAt"])
+    .index("by_organizer_and_state", ["organizerId", "state"]),
 
   meetingParticipants: defineTable({
     meetingId: v.id("meetings"),
@@ -126,7 +136,12 @@ export default defineSchema({
     version: v.number(),
     lastRebasedAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_meeting", ["meetingId"]),
+  })
+    .index("by_meeting", ["meetingId"])
+    .searchIndex("search_content", {
+      searchField: "content",
+      filterFields: ["meetingId"],
+    }),
 
   noteOps: defineTable({
     meetingId: v.id("meetings"),
@@ -180,7 +195,11 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_meeting", ["meetingId"])
-    .index("by_meeting_time", ["meetingId", "startMs"]),
+    .index("by_meeting_time", ["meetingId", "startMs"])
+    .searchIndex("search_text", {
+      searchField: "text",
+      filterFields: ["meetingId"],
+    }),
 
   // AI Prompts and Insights
   prompts: defineTable({
@@ -279,7 +298,7 @@ export default defineSchema({
       v.literal("transcriptSegment"),
     ),
     sourceId: v.string(),
-    vector: v.array(v.number()),
+    vector: v.array(v.float64()),
     model: v.string(),
     dimensions: v.number(),
     version: v.string(),
@@ -288,7 +307,12 @@ export default defineSchema({
   })
     .index("by_source", ["sourceType", "sourceId"])
     .index("by_model", ["model"])
-    .index("by_created", ["createdAt"]),
+    .index("by_created", ["createdAt"])
+    .vectorIndex("by_vector", {
+      vectorField: "vector",
+      dimensions: 1536, // OpenAI embedding dimensions
+      filterFields: ["sourceType", "model"],
+    }),
 
   vectorIndexMeta: defineTable({
     provider: v.string(),

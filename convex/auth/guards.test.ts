@@ -237,10 +237,23 @@ describe("Authentication Guards", () => {
 
       const start = Date.now();
       const results = await Promise.all(promises);
+      type GetMeetingReturn = {
+        _id: import("../_generated/dataModel").Id<"meetings">;
+        organizerId: import("../_generated/dataModel").Id<"users">;
+        title: string;
+        description?: string;
+        scheduledAt?: number;
+        duration?: number;
+        streamRoomId?: string;
+        state: "scheduled" | "active" | "concluded" | "cancelled";
+        createdAt: number;
+        updatedAt: number;
+      } | null;
+      const typedResults = results as Array<GetMeetingReturn>;
       const duration = Date.now() - start;
 
       // All should succeed
-      results.forEach((result) => {
+      typedResults.forEach((result) => {
         expect(result).toBeDefined();
         expect(result?._id).toBe(testMeetingId);
       });
@@ -266,7 +279,7 @@ describe("Authentication Guards", () => {
     test("should handle malformed JWT tokens", async () => {
       // This would be tested with malformed auth context
       // The guards should gracefully handle and throw appropriate errors
-      expect(true).toBe(true); // Placeholder for actual implementation
+      expect(true).toBe(true); // URGENT TODO: Placeholder for actual implementation
     });
   });
 });
