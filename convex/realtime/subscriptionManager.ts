@@ -490,9 +490,22 @@ export const getSubscriptionStats = query({
   args: {},
   returns: v.object({
     totalActive: v.number(),
-    byResourceType: v.any(),
-    byPriority: v.any(),
-    performanceStats: v.any(),
+    byResourceType: v.record(v.string(), v.number()),
+    byPriority: v.record(v.string(), v.number()),
+    performanceStats: v.array(
+      v.object({
+        subscriptionId: v.string(),
+        stats: v.object({
+          durationMs: v.number(),
+          updateCount: v.number(),
+          avgLatency: v.number(),
+          updatesPerSecond: v.number(),
+          errors: v.number(),
+          lastUpdate: v.number(),
+          sloCompliant: v.boolean(),
+        }),
+      }),
+    ),
   }),
   handler: async (ctx, {}) => {
     const identity = await requireIdentity(ctx);

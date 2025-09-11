@@ -407,7 +407,9 @@ export const executeWithCircuitBreaker = action({
   },
   returns: v.object({
     success: v.boolean(),
-    result: v.optional(v.any()),
+    result: v.optional(
+      v.object({ operationId: v.string(), timestamp: v.number() }),
+    ),
     error: v.optional(v.string()),
     circuitState: v.string(),
   }),

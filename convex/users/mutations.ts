@@ -154,13 +154,15 @@ export const updateUserInterests = mutation({
     // Verify user has permission to update interests
     await assertOwnershipOrAdmin(ctx, userId);
 
-    // Validate interests exist
-    const validInterests = await ctx.db.query("interests").collect();
-
-    const validInterestKeys = new Set(validInterests.map((i) => i.key));
-    const invalidInterests = interests.filter(
-      (key) => !validInterestKeys.has(key),
-    );
+    // Validate interests exist using indexed lookups (avoid full table scan)
+    const invalidInterests: string[] = [];
+    for (const key of interests) {
+      const exists = await ctx.db
+        .query("interests")
+        .withIndex("by_key", (q) => q.eq("key", key))
+        .unique();
+      if (!exists) invalidInterests.push(key);
+    }
 
     if (invalidInterests.length > 0) {
       throw createError.validation(

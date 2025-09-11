@@ -10,6 +10,7 @@
 
 import { internalAction, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
+import { metadataRecordV } from "../lib/validators";
 import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 
@@ -119,7 +120,7 @@ export const updateTranscriptionStatus = internalMutation({
       v.literal("completed"),
       v.literal("failed"),
     ),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, { meetingId, status, metadata }): Promise<null> => {

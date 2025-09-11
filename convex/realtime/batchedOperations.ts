@@ -26,6 +26,7 @@ import {
   presenceCoalescing,
 } from "../lib/batching";
 import { withTrace } from "../lib/performance";
+import { metadataRecordV } from "../lib/validators";
 
 /**
  * Global batch processors for different operation types
@@ -312,7 +313,7 @@ export const batchUpdatePresence = mutation({
   args: {
     meetingId: v.id("meetings"),
     presence: v.union(v.literal("joined"), v.literal("left")),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.object({
     queued: v.boolean(),
@@ -515,7 +516,7 @@ export const processBatchedPresenceUpdates = internalMutation({
       v.object({
         userId: v.id("users"),
         presence: v.union(v.literal("joined"), v.literal("left")),
-        metadata: v.optional(v.any()),
+        metadata: v.optional(metadataRecordV),
         timestamp: v.number(),
       }),
     ),

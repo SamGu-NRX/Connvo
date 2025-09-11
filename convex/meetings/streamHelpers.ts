@@ -1,5 +1,6 @@
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
+import { metadataRecordV } from "../lib/validators";
 
 export const updateRecordingState = internalMutation({
   args: {
@@ -48,7 +49,7 @@ export const trackStreamEvent = internalMutation({
     success: v.boolean(),
     duration: v.optional(v.number()),
     error: v.optional(v.string()),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -71,7 +72,7 @@ export const sendStreamAlert = internalMutation({
     alertType: v.string(),
     meetingId: v.id("meetings"),
     error: v.string(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, { alertType, meetingId, error, metadata }) => {
@@ -105,4 +106,3 @@ export const sendStreamAlert = internalMutation({
     return null;
   },
 });
-

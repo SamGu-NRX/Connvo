@@ -396,7 +396,12 @@ export const getMeetingState = query({
       active: v.boolean(),
       startedAt: v.optional(v.number()),
       endedAt: v.optional(v.number()),
-      speakingStats: v.optional(v.any()),
+      speakingStats: v.optional(
+        v.object({
+          totalMs: v.number(),
+          byUserMs: v.record(v.string(), v.number()),
+        }),
+      ),
       lullState: v.optional(
         v.object({
           detected: v.boolean(),

@@ -25,6 +25,7 @@ import {
   VideoProviderFactory,
   VideoProviderUtils,
 } from "../lib/videoProviders";
+import { metadataRecordV } from "../lib/validators";
 
 /**
  * WebRTC session state types
@@ -414,7 +415,7 @@ export const updateSessionState = mutation({
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     state: WebRTCSessionState,
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, { meetingId, sessionId, state, metadata }) => {
@@ -455,7 +456,7 @@ export const getActiveSessions = query({
       sessionId: v.string(),
       userId: v.id("users"),
       state: WebRTCSessionState,
-      metadata: v.optional(v.any()),
+      metadata: v.optional(metadataRecordV),
       createdAt: v.number(),
       updatedAt: v.number(),
       user: v.object({
@@ -727,7 +728,7 @@ export const updateSessionStateInternal = internalMutation({
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     state: WebRTCSessionState,
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, { meetingId, sessionId, state, metadata }) => {

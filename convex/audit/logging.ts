@@ -9,6 +9,7 @@
 
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
+import { metadataRecordV } from "../lib/validators";
 import { query } from "../_generated/server";
 
 /**
@@ -24,7 +25,7 @@ export const logDataAccessEvent = internalMutation({
       v.literal("write"),
       v.literal("admin"),
     ),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -51,7 +52,7 @@ export const logAuthorizationEvent = internalMutation({
     resourceType: v.string(),
     resourceId: v.string(),
     success: v.boolean(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -81,7 +82,7 @@ export const createAuditLog = internalMutation({
     resourceId: v.string(),
     action: v.string(),
     category: v.string(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
     success: v.boolean(),
   },
   returns: v.null(),
@@ -116,7 +117,7 @@ export const getAuditLogs = query({
         resourceType: v.string(),
         resourceId: v.string(),
         action: v.string(),
-        metadata: v.any(),
+        metadata: metadataRecordV,
         timestamp: v.number(),
         _id: v.id("auditLogs"),
         _creationTime: v.number(),

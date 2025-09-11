@@ -1,5 +1,6 @@
 import { internalQuery, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
+import { metadataRecordV } from "../lib/validators";
 
 export const getKey = internalQuery({
   args: { key: v.string(), scope: v.string() },
@@ -10,7 +11,7 @@ export const getKey = internalQuery({
       key: v.string(),
       scope: v.string(),
       createdAt: v.number(),
-      metadata: v.optional(v.any()),
+      metadata: v.optional(metadataRecordV),
     }),
   ),
   handler: async (ctx, { key, scope }) => {
@@ -25,7 +26,7 @@ export const createKey = internalMutation({
   args: {
     key: v.string(),
     scope: v.string(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
     createdAt: v.number(),
   },
   returns: v.id("idempotencyKeys"),
@@ -42,7 +43,7 @@ export const createKey = internalMutation({
 export const patchKey = internalMutation({
   args: {
     id: v.id("idempotencyKeys"),
-    metadata: v.any(),
+    metadata: metadataRecordV,
   },
   returns: v.null(),
   handler: async (ctx, { id, metadata }) => {
@@ -59,4 +60,3 @@ export const deleteKey = internalMutation({
     return null;
   },
 });
-

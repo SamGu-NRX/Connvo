@@ -10,6 +10,14 @@
 
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  metadataRecordV,
+  labelsRecordV,
+  speakingStatsV,
+  numericMapV,
+  featureFlagValueV,
+  attachmentV,
+} from "./lib/validators";
 
 export default defineSchema({
   // User Management
@@ -143,7 +151,7 @@ export default defineSchema({
     active: v.boolean(),
     startedAt: v.optional(v.number()),
     endedAt: v.optional(v.number()),
-    speakingStats: v.optional(v.any()),
+    speakingStats: v.optional(speakingStatsV),
     lullState: v.optional(
       v.object({
         detected: v.boolean(),
@@ -231,7 +239,7 @@ export default defineSchema({
     ),
     startedAt: v.number(),
     endedAt: v.optional(v.number()),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -335,8 +343,8 @@ export default defineSchema({
         comments: v.optional(v.string()),
       }),
     ),
-    features: v.any(),
-    weights: v.any(),
+    features: numericMapV,
+    weights: numericMapV,
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
@@ -357,7 +365,7 @@ export default defineSchema({
     model: v.string(),
     dimensions: v.number(),
     version: v.string(),
-    metadata: v.any(),
+    metadata: metadataRecordV,
     createdAt: v.number(),
   })
     .index("by_source", ["sourceType", "sourceId"])
@@ -372,7 +380,7 @@ export default defineSchema({
   vectorIndexMeta: defineTable({
     provider: v.string(),
     indexName: v.string(),
-    config: v.any(),
+    config: metadataRecordV,
     status: v.union(
       v.literal("active"),
       v.literal("inactive"),
@@ -389,7 +397,7 @@ export default defineSchema({
     meetingId: v.id("meetings"),
     userId: v.optional(v.id("users")),
     content: v.string(),
-    attachments: v.optional(v.array(v.any())),
+    attachments: v.optional(v.array(attachmentV)),
     timestamp: v.number(),
   })
     .index("by_meeting", ["meetingId"])
@@ -435,7 +443,7 @@ export default defineSchema({
       v.literal("failed"),
       v.literal("closed"),
     ),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -496,7 +504,7 @@ export default defineSchema({
   idempotencyKeys: defineTable({
     key: v.string(),
     scope: v.string(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(metadataRecordV),
     createdAt: v.number(),
   })
     .index("by_key_scope", ["key", "scope"])
@@ -522,7 +530,7 @@ export default defineSchema({
     ),
     title: v.string(),
     message: v.string(),
-    metadata: v.any(),
+    metadata: metadataRecordV,
     actionable: v.boolean(),
     status: v.union(
       v.literal("active"),
@@ -544,7 +552,7 @@ export default defineSchema({
     name: v.string(),
     value: v.number(),
     unit: v.string(),
-    labels: v.any(),
+    labels: labelsRecordV,
     threshold: v.optional(
       v.object({
         warning: v.number(),
@@ -565,7 +573,7 @@ export default defineSchema({
     duration: v.optional(v.number()),
     success: v.boolean(),
     error: v.optional(v.string()),
-    metadata: v.any(),
+    metadata: metadataRecordV,
     timestamp: v.number(),
     createdAt: v.number(),
   })
@@ -589,7 +597,7 @@ export default defineSchema({
     resourceType: v.string(),
     resourceId: v.string(),
     action: v.string(),
-    metadata: v.any(),
+    metadata: metadataRecordV,
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
     timestamp: v.number(),
@@ -601,7 +609,7 @@ export default defineSchema({
 
   featureFlags: defineTable({
     key: v.string(),
-    value: v.any(),
+    value: featureFlagValueV,
     environment: v.string(),
     rolloutPercentage: v.number(),
     updatedBy: v.id("users"),
