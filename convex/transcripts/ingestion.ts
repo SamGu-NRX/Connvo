@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
  */
 
-import { mutation, internalMutation } from "../_generated/server";
+import { mutation, internalMutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 import { assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";

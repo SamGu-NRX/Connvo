@@ -371,7 +371,7 @@ export const ResilienceUtils = {
   /**
    * Gets health status of all circuit breakers
    */
-  getSystemHealth(): Record<string, CircuitBreakerStatus> {
+  getSystemHealth() {
     return {
       getstream: CircuitBreakers.getstream.getStatus(),
       whisper: CircuitBreakers.whisper.getStatus(),

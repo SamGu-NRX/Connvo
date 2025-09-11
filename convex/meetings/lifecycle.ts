@@ -88,9 +88,9 @@ export const createMeeting = mutation({
         const userId = await ctx.db.insert("users", {
           workosUserId: identity.workosUserId,
           email: identity.email || "",
-          orgId: identity.orgId,
-          orgRole: identity.orgRole,
-          displayName: identity.name,
+          orgId: identity.orgId ?? undefined,
+          orgRole: identity.orgRole ?? undefined,
+          displayName: identity.name ?? undefined,
           isActive: true,
           lastSeenAt: Date.now(),
           createdAt: Date.now(),

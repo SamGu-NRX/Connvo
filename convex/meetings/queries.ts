@@ -59,7 +59,11 @@ export const getMeetingParticipant = internalQuery({
       _id: v.id("meetingParticipants"),
       meetingId: v.id("meetings"),
       userId: v.id("users"),
-      role: v.union(v.literal("host"), v.literal("participant")),
+      role: v.union(
+        v.literal("host"),
+        v.literal("participant"),
+        v.literal("observer"),
+      ),
       joinedAt: v.optional(v.number()),
       leftAt: v.optional(v.number()),
       presence: v.union(
@@ -117,7 +121,11 @@ export const getMeeting = query({
       createdAt: v.number(),
       updatedAt: v.number(),
       // User's role in this meeting
-      userRole: v.union(v.literal("host"), v.literal("participant")),
+      userRole: v.union(
+        v.literal("host"),
+        v.literal("participant"),
+        v.literal("observer"),
+      ),
       userPresence: v.union(
         v.literal("invited"),
         v.literal("joined"),
@@ -190,7 +198,11 @@ export const listUserMeetings = query({
       participantCount: v.optional(v.number()),
       createdAt: v.number(),
       updatedAt: v.number(),
-      userRole: v.union(v.literal("host"), v.literal("participant")),
+      userRole: v.union(
+        v.literal("host"),
+        v.literal("participant"),
+        v.literal("observer"),
+      ),
       userPresence: v.union(
         v.literal("invited"),
         v.literal("joined"),
@@ -246,7 +258,11 @@ export const getMeetingParticipants = query({
     v.object({
       _id: v.id("meetingParticipants"),
       userId: v.id("users"),
-      role: v.union(v.literal("host"), v.literal("participant")),
+      role: v.union(
+        v.literal("host"),
+        v.literal("participant"),
+        v.literal("observer"),
+      ),
       presence: v.union(
         v.literal("invited"),
         v.literal("joined"),

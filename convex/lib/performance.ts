@@ -115,9 +115,9 @@ export class PerformanceTracker {
       };
     }
 
-    const executionTimes = metrics
+    const executionTimes: number[] = metrics
       .map((m) => m.executionTimeMs)
-      .sort((a, b) => a - b);
+      .sort((a: number, b: number) => a - b);
     const successCount = metrics.filter((m) => m.success).length;
     const sloBreaches = metrics.filter(
       (m) => m.executionTimeMs > SLO_TARGETS.queryP95Ms,
@@ -130,7 +130,8 @@ export class PerformanceTracker {
       p95: percentile(executionTimes, 0.95),
       p99: percentile(executionTimes, 0.99),
       avgExecutionTime:
-        executionTimes.reduce((a, b) => a + b, 0) / executionTimes.length,
+        executionTimes.reduce((a: number, b: number) => a + b, 0) /
+          executionTimes.length,
       sloBreaches,
     };
   }
@@ -188,7 +189,7 @@ export function withTrace<T extends (...args: any[]) => Promise<any>>(
  * WebSocket subscription performance tracker
  */
 export class SubscriptionPerformanceTracker {
-  private static subscriptions = new Map<
+  private static subscriptions: Map<
     string,
     {
       establishedAt: number;
@@ -197,7 +198,7 @@ export class SubscriptionPerformanceTracker {
       totalLatency: number;
       errors: number;
     }
-  >();
+  > = new Map();
 
   static trackSubscriptionEstablished(subscriptionId: string): void {
     this.subscriptions.set(subscriptionId, {

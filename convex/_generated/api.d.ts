@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as analytics_meetings from "../analytics/meetings.js";
 import type * as audit_logging from "../audit/logging.js";
+import type * as auth_access from "../auth/access.js";
 import type * as auth_guards from "../auth/guards.js";
 import type * as auth_permissions from "../auth/permissions.js";
 import type * as environments_local from "../environments/local.js";
@@ -40,6 +41,7 @@ import type * as meetings_mutations from "../meetings/mutations.js";
 import type * as meetings_postProcessing from "../meetings/postProcessing.js";
 import type * as meetings_queries from "../meetings/queries.js";
 import type * as meetings_stream from "../meetings/stream.js";
+import type * as meetings_streamHelpers from "../meetings/streamHelpers.js";
 import type * as meetings_webhooks from "../meetings/webhooks.js";
 import type * as meetings_webrtc from "../meetings/webrtc.js";
 import type * as monitoring_bandwidthManager from "../monitoring/bandwidthManager.js";
@@ -66,6 +68,7 @@ import type * as users_queries from "../users/queries.js";
 declare const fullApi: ApiFromModules<{
   "analytics/meetings": typeof analytics_meetings;
   "audit/logging": typeof audit_logging;
+  "auth/access": typeof auth_access;
   "auth/guards": typeof auth_guards;
   "auth/permissions": typeof auth_permissions;
   "environments/local": typeof environments_local;
@@ -91,6 +94,7 @@ declare const fullApi: ApiFromModules<{
   "meetings/postProcessing": typeof meetings_postProcessing;
   "meetings/queries": typeof meetings_queries;
   "meetings/stream": typeof meetings_stream;
+  "meetings/streamHelpers": typeof meetings_streamHelpers;
   "meetings/webhooks": typeof meetings_webhooks;
   "meetings/webrtc": typeof meetings_webrtc;
   "monitoring/bandwidthManager": typeof monitoring_bandwidthManager;

@@ -20,7 +20,7 @@ import {
 } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
+import { Id, Doc } from "../_generated/dataModel";
 import { createError } from "../lib/errors";
 import { requireIdentity, assertMeetingAccess } from "../auth/guards";
 import { withActionIdempotency, IdempotencyUtils } from "../lib/idempotency";
@@ -73,13 +73,13 @@ export const createStreamRoom = internalAction({
   handler: async (ctx, { meetingId }) => {
     const startTime = Date.now();
 
-    return await withActionIdempotency(
+    const idem1 = await withActionIdempotency(
       ctx,
       IdempotencyUtils.externalService("getstream", "create_call", meetingId),
       async () => {
         try {
           // Get meeting details
-          const meeting = await ctx.runQuery(
+          const meeting: Doc<"meetings"> | null = await ctx.runQuery(
             internal.meetings.queries.getMeetingById,
             {
               meetingId,
@@ -119,7 +119,7 @@ export const createStreamRoom = internalAction({
                 const call = client.call(callType, callId);
 
                 // Get organizer user details
-                const organizer = await ctx.runQuery(
+                const organizer: Doc<"users"> | null = await ctx.runQuery(
                   internal.users.queries.getUserById,
                   {
                     userId: meeting.organizerId,
@@ -173,7 +173,7 @@ export const createStreamRoom = internalAction({
           );
 
           // Update meeting with GetStream call ID
-          await ctx.runMutation(
+          const _updated: null = await ctx.runMutation(
             internal.meetings.lifecycle.updateStreamRoomId,
             {
               meetingId,
@@ -184,7 +184,7 @@ export const createStreamRoom = internalAction({
           // Track successful room creation
           const duration = Date.now() - startTime;
           const _result0: null = await ctx.runMutation(
-            internal.meetings.stream.trackStreamEvent,
+            internal.meetings.streamHelpers.trackStreamEvent,
             {
               meetingId,
               event: "call_created",
@@ -219,7 +219,7 @@ export const createStreamRoom = internalAction({
             error instanceof Error ? error.message : "Unknown error";
 
           const _result1: null = await ctx.runMutation(
-            internal.meetings.stream.trackStreamEvent,
+            internal.meetings.streamHelpers.trackStreamEvent,
             {
               meetingId,
               event: "call_creation_failed",
@@ -231,7 +231,7 @@ export const createStreamRoom = internalAction({
 
           // Send alert for GetStream failures
           const _result2: null = await ctx.runMutation(
-            internal.meetings.stream.sendStreamAlert,
+            internal.meetings.streamHelpers.sendStreamAlert,
             {
               alertType: "call_creation_failed",
               meetingId,
@@ -244,6 +244,10 @@ export const createStreamRoom = internalAction({
         }
       },
     );
+    if (!idem1.result) {
+      throw new Error("Idempotent result missing");
+    }
+    return idem1.result;
   },
 });
 
@@ -267,11 +271,18 @@ export const generateParticipantTokenPublic = action({
     success: v.boolean(),
   }),
   handler: async (ctx, { meetingId }) => {
-    // Get current user identity
+    // Get current user identity and resolve Convex user id
     const identity = await requireIdentity(ctx);
-    const userId = identity.subject as Id<"users">;
+    const user: Doc<"users"> | null = await ctx.runQuery(
+      internal.users.queries.getUserByWorkosId,
+      { workosUserId: identity.workosUserId },
+    );
+    if (!user) {
+      throw createError.notFound("User", identity.workosUserId as any);
+    }
+    const userId = user._id;
 
-    const result = await ctx.runAction(
+    const result: { token: string; userId: string; expiresAt: number; success: boolean } = await ctx.runAction(
       internal.meetings.stream.generateParticipantToken,
       {
         meetingId,
@@ -280,10 +291,13 @@ export const generateParticipantTokenPublic = action({
     );
 
     // Get user details for the response
-    const user = await ctx.runQuery(internal.users.queries.getUserById, {
-      userId,
-    });
-    if (!user) {
+    const freshUser: Doc<"users"> | null = await ctx.runQuery(
+      internal.users.queries.getUserById,
+      {
+        userId,
+      },
+    );
+    if (!freshUser) {
       throw createError.notFound("User", userId);
     }
 
@@ -291,9 +305,9 @@ export const generateParticipantTokenPublic = action({
       token: result.token,
       userId: result.userId,
       user: {
-        id: user.workosUserId,
-        name: user.displayName || user.email,
-        image: user.profileImageUrl,
+        id: freshUser.workosUserId,
+        name: freshUser.displayName || freshUser.email,
+        image: freshUser.avatarUrl,
       },
       expiresAt: result.expiresAt,
       success: result.success,
@@ -318,7 +332,7 @@ export const generateParticipantToken = internalAction({
     success: v.boolean(),
   }),
   handler: async (ctx, { meetingId, userId, role = "participant" }) => {
-    return await withActionIdempotency(
+    const idem2 = await withActionIdempotency(
       ctx,
       IdempotencyUtils.externalService(
         "getstream",
@@ -405,6 +419,10 @@ export const generateParticipantToken = internalAction({
         }
       },
     );
+    if (!idem2.result) {
+      throw new Error("Idempotent result missing");
+    }
+    return idem2.result;
   },
 });
 
@@ -443,9 +461,15 @@ export const startRecording = action({
 
     try {
       // Verify user has permission to start recording (host only)
-      await assertMeetingAccess(ctx, meetingId, "host");
+      const hasAccess: boolean = await ctx.runQuery(
+        internal.auth.access.verifyMeetingAccess,
+        { meetingId, requiredRole: "host" },
+      );
+      if (!hasAccess) {
+        throw createError.insufficientPermissions("host", "participant");
+      }
 
-      const meeting = await ctx.runQuery(
+      const meeting: Doc<"meetings"> | null = await ctx.runQuery(
         internal.meetings.queries.getMeetingById,
         {
           meetingId,
@@ -507,7 +531,7 @@ export const startRecording = action({
 
       // Update meeting state to indicate recording is active
       const _result3: null = await ctx.runMutation(
-        internal.meetings.stream.updateRecordingState,
+        internal.meetings.streamHelpers.updateRecordingState,
         {
           meetingId,
           recordingEnabled: true,
@@ -518,7 +542,7 @@ export const startRecording = action({
       // Track successful recording start
       const duration = Date.now() - startTime;
       const _result4: null = await ctx.runMutation(
-        internal.meetings.stream.trackStreamEvent,
+        internal.meetings.streamHelpers.trackStreamEvent,
         {
           meetingId,
           event: "recording_started",
@@ -547,7 +571,7 @@ export const startRecording = action({
         error instanceof Error ? error.message : "Unknown error";
 
       const _result5: null = await ctx.runMutation(
-        internal.meetings.stream.trackStreamEvent,
+        internal.meetings.streamHelpers.trackStreamEvent,
         {
           meetingId,
           event: "recording_start_failed",
@@ -559,7 +583,7 @@ export const startRecording = action({
 
       // Send alert for recording failures
       const _result6: null = await ctx.runMutation(
-        internal.meetings.stream.sendStreamAlert,
+        internal.meetings.streamHelpers.sendStreamAlert,
         {
           alertType: "recording_failed",
           meetingId,
@@ -592,9 +616,15 @@ export const stopRecording = action({
 
     try {
       // Verify user has permission to stop recording (host only)
-      await assertMeetingAccess(ctx, meetingId, "host");
+      const hasAccess2: boolean = await ctx.runQuery(
+        internal.auth.access.verifyMeetingAccess,
+        { meetingId, requiredRole: "host" },
+      );
+      if (!hasAccess2) {
+        throw createError.insufficientPermissions("host", "participant");
+      }
 
-      const meeting = await ctx.runQuery(
+      const meeting: Doc<"meetings"> | null = await ctx.runQuery(
         internal.meetings.queries.getMeetingById,
         {
           meetingId,
@@ -644,7 +674,7 @@ export const stopRecording = action({
 
       // Update meeting state to indicate recording is stopped
       const _result7: null = await ctx.runMutation(
-        internal.meetings.stream.updateRecordingState,
+        internal.meetings.streamHelpers.updateRecordingState,
         {
           meetingId,
           recordingEnabled: false,
@@ -656,7 +686,7 @@ export const stopRecording = action({
       // Track successful recording stop
       const duration = Date.now() - startTime;
       const _result8: null = await ctx.runMutation(
-        internal.meetings.stream.trackStreamEvent,
+        internal.meetings.streamHelpers.trackStreamEvent,
         {
           meetingId,
           event: "recording_stopped",
@@ -900,7 +930,7 @@ export const handleCallSessionStarted = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {
@@ -954,7 +984,7 @@ export const handleCallSessionEnded = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {
@@ -1018,7 +1048,7 @@ export const handleMemberJoined = internalMutation({
       const [meeting, user] = await Promise.all([
         ctx.db
           .query("meetings")
-          .filter((q) => q.eq(q.field("streamRoomId"), callId))
+          .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
           .unique(),
         ctx.db
           .query("users")
@@ -1074,7 +1104,7 @@ export const handleMemberLeft = internalMutation({
       const [meeting, user] = await Promise.all([
         ctx.db
           .query("meetings")
-          .filter((q) => q.eq(q.field("streamRoomId"), callId))
+          .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
           .unique(),
         ctx.db
           .query("users")
@@ -1131,7 +1161,7 @@ export const handleRecordingStarted = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {
@@ -1181,7 +1211,7 @@ export const handleRecordingStopped = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {
@@ -1230,7 +1260,7 @@ export const handleRecordingReady = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {
@@ -1355,108 +1385,4 @@ export const handleTranscriptionStopped = internalMutation({
  * Helper mutations for internal operations
  */
 
-export const updateRecordingState = internalMutation({
-  args: {
-    meetingId: v.id("meetings"),
-    recordingEnabled: v.boolean(),
-    recordingId: v.optional(v.string()),
-    recordingUrl: v.optional(v.string()),
-  },
-  returns: v.null(),
-  handler: async (
-    ctx,
-    { meetingId, recordingEnabled, recordingId, recordingUrl },
-  ) => {
-    const meetingState = await ctx.db
-      .query("meetingState")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .unique();
-
-    if (meetingState) {
-      await ctx.db.patch(meetingState._id, {
-        recordingEnabled,
-        updatedAt: Date.now(),
-      });
-    }
-
-    // Store recording information if provided
-    if (recordingId && recordingUrl) {
-      await ctx.db.insert("meetingRecordings", {
-        meetingId,
-        recordingId,
-        recordingUrl,
-        provider: "getstream",
-        status: recordingEnabled ? "recording" : "ready",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-    }
-
-    return null;
-  },
-});
-
-export const trackStreamEvent = internalMutation({
-  args: {
-    meetingId: v.id("meetings"),
-    event: v.string(),
-    success: v.boolean(),
-    duration: v.optional(v.number()),
-    error: v.optional(v.string()),
-    metadata: v.optional(v.any()),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    await ctx.db.insert("meetingEvents", {
-      meetingId: args.meetingId,
-      event: args.event,
-      success: args.success,
-      duration: args.duration,
-      error: args.error,
-      metadata: args.metadata || {},
-      timestamp: Date.now(),
-      createdAt: Date.now(),
-    });
-    return null;
-  },
-});
-
-export const sendStreamAlert = internalMutation({
-  args: {
-    alertType: v.string(),
-    meetingId: v.id("meetings"),
-    error: v.string(),
-    metadata: v.optional(v.any()),
-  },
-  returns: v.null(),
-  handler: async (ctx, { alertType, meetingId, error, metadata }) => {
-    const alertConfig = {
-      id: `stream_${alertType}_${meetingId}_${Date.now()}`,
-      severity: "error" as const,
-      category: "video_provider" as const,
-      title: `GetStream ${alertType.replace(/_/g, " ")}`,
-      message: `GetStream operation failed for meeting ${meetingId}: ${error}`,
-      metadata: {
-        meetingId,
-        provider: "getstream",
-        ...metadata,
-      },
-      actionable: true,
-    };
-
-    await ctx.db.insert("alerts", {
-      alertId: alertConfig.id,
-      severity: alertConfig.severity,
-      category: alertConfig.category,
-      title: alertConfig.title,
-      message: alertConfig.message,
-      metadata: alertConfig.metadata,
-      actionable: alertConfig.actionable,
-      status: "active",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
-    return null;
-  },
-});
+// moved helper internal mutations to convex/meetings/streamHelpers.ts
