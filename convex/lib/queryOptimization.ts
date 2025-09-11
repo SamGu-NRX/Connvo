@@ -114,7 +114,7 @@ export class TranscriptQueryOptimizer {
 
       const bucketTranscripts: TranscriptDoc[] = await ctx.db
         .query("transcripts")
-        .withIndex("by_meeting_bucket_seq", (q: any) =>
+        .withIndex("by_meeting_bucket_seq", (q) =>
           q
             .eq("meetingId", meetingId)
             .eq("bucketMs", bucketMs)
@@ -219,7 +219,7 @@ export class NotesQueryOptimizer {
   }> {
     const operations = await ctx.db
       .query("noteOps")
-      .withIndex("by_meeting_sequence", (q: any) =>
+      .withIndex("by_meeting_sequence", (q) =>
         q.eq("meetingId", meetingId).gt("sequence", fromSequence),
       )
       .order("asc")
@@ -253,7 +253,7 @@ export class NotesQueryOptimizer {
   }> {
     const notes = (await ctx.db
       .query("meetingNotes")
-      .withIndex("by_meeting", (q: any) => q.eq("meetingId", meetingId))
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique()) as MeetingNotesDoc | null;
 
     return {

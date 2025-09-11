@@ -118,9 +118,8 @@ export const subscribeMeetingNotes = query({
     });
 
     // Determine user permissions
-    const roleForNotes: "host" | "participant" =
-      participant.role === "observer" ? "participant" : participant.role;
-    const permissions = getNotesPermissions(roleForNotes);
+    const roleForNotes = normalizeRole(participant.role);
+    const permissions = permissionsForResource("meetingNotes", roleForNotes);
 
     // Record successful update with latency
     const latency = Date.now() - startTime;
@@ -189,13 +188,12 @@ export const subscribeTranscriptStream = query({
     // Check bandwidth limits - transcripts are high priority
     const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "high");
     if (!canSendUpdate) {
-      const roleForPerms: "host" | "participant" =
-        participant.role === "observer" ? "participant" : participant.role;
+      const roleForPerms = normalizeRole(participant.role);
       return {
         transcripts: [],
         nextSequence: fromSequence,
         subscriptionValid: true,
-        permissions: getTranscriptPermissions(roleForPerms),
+        permissions: permissionsForResource("transcripts", roleForPerms),
         validUntil: undefined,
       };
     }
@@ -224,28 +222,11 @@ export const subscribeTranscriptStream = query({
       userId: identity.userId as Id<"users">,
     });
 
-    const roleForPerms2: "host" | "participant" =
-      participant.role === "observer" ? "participant" : participant.role;
-    const permissions = getTranscriptPermissions(roleForPerms2);
+    const roleForPerms2 = normalizeRole(participant.role);
+    const permissions = permissionsForResource("transcripts", roleForPerms2);
     const validUntil = meetingState.endedAt || undefined;
 
-    // Log subscription with comprehensive performance metrics
-    await logSubscriptionEvent(ctx, {
-      userId: identity.userId as Id<"users">,
-      action: "transcript_subscription_established",
-      resourceType: "transcripts",
-      resourceId: meetingId,
-      subscriptionId: subId,
-      metadata: {
-        fromSequence,
-        participantRole: participant.role,
-        meetingActive: meetingState.active,
-        performance: {
-          ...performance,
-          totalLatency: Date.now() - startTime,
-        },
-      },
-    });
+    // Do not write from queries
 
     // Record successful update with comprehensive latency tracking
     const totalLatency = Date.now() - startTime;
@@ -302,18 +283,7 @@ export const subscribeMeetingParticipants = query({
     const participant = await assertMeetingAccess(ctx, meetingId);
     const identity = await requireIdentity(ctx);
 
-    // Log subscription
-    await logSubscriptionEvent(ctx, {
-      userId: identity.userId as Id<"users">,
-      action: "participants_subscription_established",
-      resourceType: "meetingParticipants",
-      resourceId: meetingId,
-      subscriptionId:
-        subscriptionId || `participants_${meetingId}_${Date.now()}`,
-      metadata: {
-        participantRole: participant.role,
-      },
-    });
+    // Do not write from queries
 
     // Get all participants
     const participants = await ctx.db
@@ -336,9 +306,8 @@ export const subscribeMeetingParticipants = query({
       }),
     );
 
-    const roleForPerms3: "host" | "participant" =
-      participant.role === "observer" ? "participant" : participant.role;
-    const permissions = getParticipantsPermissions(roleForPerms3);
+    const roleForPerms3 = normalizeRole(participant.role);
+    const permissions = permissionsForResource("meetingParticipants", roleForPerms3);
 
     return {
       participants: enrichedParticipants,
@@ -450,17 +419,19 @@ export const terminateSubscription = internalMutation({
     ctx,
     { userId, subscriptionId, resourceType, resourceId, reason },
   ) => {
-    // Log subscription termination
-    await logSubscriptionEvent(ctx, {
-      userId,
-      action: "subscription_terminated",
+    // Log subscription termination (writes allowed in actions/mutations)
+    await ctx.db.insert("auditLogs", {
+      actorUserId: userId,
       resourceType,
       resourceId,
-      subscriptionId,
+      action: "subscription_terminated",
       metadata: {
+        subscriptionId,
         reason,
         terminatedAt: Date.now(),
+        category: "subscription_management",
       },
+      timestamp: Date.now(),
     });
 
     // In a complete implementation, this would:
@@ -481,7 +452,7 @@ export const terminateSubscription = internalMutation({
 async function getMeetingState(ctx: QueryCtx, meetingId: Id<"meetings">) {
   return await ctx.db
     .query("meetingState")
-    .withIndex("by_meeting", (q: any) => q.eq("meetingId", meetingId))
+    .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
     .unique();
 }
 

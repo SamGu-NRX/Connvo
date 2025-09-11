@@ -147,7 +147,9 @@ export const establishSubscription = mutation({
       if (resourceType === "transcripts") {
         const meetingState = await ctx.db
           .query("meetingState")
-          .withIndex("by_meeting", (q: any) => q.eq("meetingId", resourceId))
+          .withIndex("by_meeting", (q) =>
+            q.eq("meetingId", resourceId as Id<"meetings">),
+          )
           .unique();
 
         if (!meetingState?.active) {
@@ -301,8 +303,11 @@ export const validateAndUpdateSubscription = query({
         if (subscription.resourceType === "transcripts") {
           const meetingState = await ctx.db
             .query("meetingState")
-            .withIndex("by_meeting", (q: any) =>
-              q.eq("meetingId", subscription.resourceId),
+            .withIndex("by_meeting", (q) =>
+              q.eq(
+                "meetingId",
+                subscription.resourceId as Id<"meetings">,
+              ),
             )
             .unique();
 

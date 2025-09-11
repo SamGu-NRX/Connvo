@@ -18,7 +18,16 @@ export const validateSubscriptionPermissions = query({
   args: {
     resourceType: v.string(),
     resourceId: v.id("meetings"),
-    requiredPermissions: v.array(v.string()),
+    requiredPermissions: v.array(
+      v.union(
+        v.literal("read"),
+        v.literal("write"),
+        v.literal("manage"),
+        v.literal("export"),
+        v.literal("invite"),
+        v.literal("remove"),
+      ),
+    ),
   },
   returns: v.object({
     granted: v.boolean(),
