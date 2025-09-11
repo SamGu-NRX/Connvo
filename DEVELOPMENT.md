@@ -577,3 +577,40 @@ export const updateMeeting = mutation({
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [Project Specifications](./.kiro/specs/convex-database-migration/)
 - [Deployment Guide](./DEPLOYMENT.md)
+
+
+Onboarding Flow (WorkOS + Convex)
+
+- Client auth via WorkOS AuthKit → Convex. User is upserted on auth by `UpsertUserOnAuth` in `src/providers/ConvexClientProvider.tsx` calling `api.users.mutations.upsertUser`.
+- Single atomic save: `api.users.mutations.saveOnboarding` persists:
+  - Profile: `age, gender, field, jobTitle, company, linkedinUrl, bio`
+  - Interests: validated canonical keys; allows controlled custom (category `personal`) seeded into catalog as `custom:<slug>`
+  - User flags: `onboardingComplete`, `onboardingCompletedAt`
+  - Idempotent: uses `idempotencyKeys` under scope `users.onboarding.saveOnboarding`
+  - Audited: `auditLogs` entry `onboarding.save`
+
+Schema
+
+- `users`: adds `onboardingComplete`, `onboardingStartedAt`, `onboardingCompletedAt`; index `by_onboarding_complete`.
+- `profiles`: contains all structured onboarding fields for long-term use and indexing.
+- `interests` + `userInterests`: canonical catalog and user selections.
+
+Queries
+
+- `api.users.queries.getOnboardingState` → `{ userId, onboardingComplete, profileExists, profileId?, completedAt? }` used to route users.
+- `api.interests.queries.listCatalog` → preload interests (key, label, category, usageCount?).
+
+Frontend
+
+- `src/app/onboarding/page.tsx`: uses `saveOnboarding` mutation; computes idempotency key from form values; redirects to `/app` on success or if `getOnboardingState.onboardingComplete` is true.
+- `src/components/onboarding/InterestsSection.tsx`: loads catalog via `useQuery(api.interests.queries.listCatalog)` and allows selectable + custom interests.
+
+Testing
+
+- `convex/users/onboarding.test.ts`: happy path, invalid interest, idempotency. Seeds catalog directly via `t.run` inserts for isolation.
+
+Notes
+
+- Always use new Convex function syntax with explicit validators and return validators.
+- Avoid table scans; all lookups use indexes: `interests.by_key`, `profiles.by_user`, `userInterests.by_user`, `users.by_workos_id`.
+- Keep types consistent; no `any` in public interfaces. Use runtime guards when narrowing unknown metadata.

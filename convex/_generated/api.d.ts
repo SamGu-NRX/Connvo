@@ -22,6 +22,7 @@ import type * as environments_production from "../environments/production.js";
 import type * as environments_staging from "../environments/staging.js";
 import type * as http from "../http.js";
 import type * as insights_generation from "../insights/generation.js";
+import type * as interests_queries from "../interests/queries.js";
 import type * as lib_alerting from "../lib/alerting.js";
 import type * as lib_audit from "../lib/audit.js";
 import type * as lib_batching from "../lib/batching.js";
@@ -77,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   "environments/staging": typeof environments_staging;
   http: typeof http;
   "insights/generation": typeof insights_generation;
+  "interests/queries": typeof interests_queries;
   "lib/alerting": typeof lib_alerting;
   "lib/audit": typeof lib_audit;
   "lib/batching": typeof lib_batching;

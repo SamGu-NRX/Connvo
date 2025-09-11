@@ -1,103 +1,81 @@
 // src/components/onboarding/InterestsSection.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "motion/react";
 import {
+  Plus,
   Code,
+  Briefcase,
+  Brain,
+  Rocket,
   Palette,
+  Book,
   Gamepad2,
   Dumbbell,
   Music,
   Camera,
-  Book,
   Plane,
-  Plus,
 } from "lucide-react";
-import type { OnboardingFormData, InterestType } from "@/schemas/onboarding";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import type { OnboardingFormData } from "@/schemas/onboarding";
 
-// Mapping of iconNames to actual components for UI
+// Load canonical interests catalog from Convex
 const iconMap: Record<string, React.ComponentType<any>> = {
+  Plus,
   Code,
+  Briefcase,
+  Brain,
+  Rocket,
   Palette,
+
+  Book,
   Gamepad2,
   Dumbbell,
   Music,
   Camera,
-  Book,
   Plane,
-  Plus,
 };
 
-// Predefined interests
-const predefinedInterests: (Omit<InterestType, "iconName"> & {
-  icon: string;
-})[] = [
-  // Tech
-  { id: "programming", name: "Programming", category: "industry", icon: "Code" },
-  { id: "ai", name: "Artificial Intelligence", category: "industry", icon: "Code" },
-  { id: "web-dev", name: "Web Development", category: "industry", icon: "Code" },
+type InterestOption = {
+  id: string;
+  name: string;
+  category: OnboardingFormData["interests"][number]["category"];
+  iconName?: string;
+};
 
-  // Art
-  { id: "drawing", name: "Drawing", category: "personal", icon: "Palette" },
-  { id: "painting", name: "Painting", category: "personal", icon: "Palette" },
-  { id: "design", name: "Design", category: "personal", icon: "Palette" },
-
-  // Gaming
-  {
-    id: "video-games",
-    name: "Video Games",
-    category: "personal",
-    icon: "Gamepad2",
-  },
-  {
-    id: "board-games",
-    name: "Board Games",
-    category: "personal",
-    icon: "Gamepad2",
-  },
-
-  // Sports
-  { id: "fitness", name: "Fitness", category: "personal", icon: "Dumbbell" },
-  { id: "yoga", name: "Yoga", category: "personal", icon: "Dumbbell" },
-  { id: "running", name: "Running", category: "personal", icon: "Dumbbell" },
-
-  // Music
-  {
-    id: "playing-music",
-    name: "Playing Music",
-    category: "personal",
-    icon: "Music",
-  },
-  { id: "singing", name: "Singing", category: "personal", icon: "Music" },
-
-  // Photography
-  {
-    id: "photography",
-    name: "Photography",
-    category: "personal",
-    icon: "Camera",
-  },
-
-  // Reading
-  { id: "books", name: "Books", category: "personal", icon: "Book" },
-  { id: "poetry", name: "Poetry", category: "personal", icon: "Book" },
-
-  // Travel
-  { id: "traveling", name: "Traveling", category: "personal", icon: "Plane" },
-  { id: "backpacking", name: "Backpacking", category: "personal", icon: "Plane" },
-];
-
-// Compute the list of categories
-const categories = Array.from(
-  new Set(predefinedInterests.map((interest) => interest.category)),
-);
+function useInterestCatalog() {
+  const catalog = useQuery(api.interests.queries.listCatalog, {});
+  const byCategory = useMemo(() => {
+    const map = new Map<string, Array<InterestOption>>();
+    if (!catalog) return map;
+    for (const i of catalog) {
+      const arr = map.get(i.category) || [];
+      arr.push({
+        id: i.key,
+        name: i.label,
+        // Narrow category type using a runtime assertion — server enforces valid enums
+        category: i.category as InterestOption["category"],
+        iconName: i.iconName,
+      });
+      map.set(i.category, arr);
+    }
+    return map;
+  }, [catalog]);
+  const categories = useMemo(
+    () => Array.from(byCategory.keys()).sort((a, b) => a.localeCompare(b)),
+    [byCategory],
+  );
+  return { catalog, byCategory, categories };
+}
 
 interface InterestsSectionProps {
   onNext: () => void;
@@ -117,12 +95,30 @@ export default function InterestsSection({
 
   // We use a separate state for the custom interest input
   const [customInterest, setCustomInterest] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Get the current interests from the form
   const currentInterests = watch("interests");
+  const { catalog, byCategory, categories } = useInterestCatalog();
+
+  const filteredByCategory = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return byCategory;
+    const map = new Map<string, Array<InterestOption>>();
+    for (const [cat, list] of byCategory.entries()) {
+      const filtered = list.filter((i) => i.name.toLowerCase().includes(term));
+      if (filtered.length) map.set(cat, filtered);
+    }
+    return map;
+  }, [byCategory, searchTerm]);
+
+  const filteredCategories = useMemo(
+    () => Array.from(filteredByCategory.keys()).sort((a, b) => a.localeCompare(b)),
+    [filteredByCategory],
+  );
 
   // Toggle an interest: if already selected, remove it; otherwise, add it
-  const handleToggleInterest = (interest: any) => {
+  const handleToggleInterest = (interest: InterestOption) => {
     const index = currentInterests.findIndex((i) => i.id === interest.id);
     if (index !== -1) {
       const newInterests = [...currentInterests];
@@ -133,7 +129,7 @@ export default function InterestsSection({
         id: interest.id,
         name: interest.name,
         category: interest.category,
-        iconName: interest.icon,
+        iconName: interest.iconName || undefined,
       };
       setValue("interests", [...currentInterests, newInterest], {
         shouldValidate: true,
@@ -144,8 +140,13 @@ export default function InterestsSection({
   // Add a custom interest using the custom input
   const handleAddCustom = () => {
     if (customInterest.trim()) {
+      const slug = customInterest
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
       const newInterest = {
-        id: `custom-${customInterest.toLowerCase().replace(/\s+/g, "-")}`,
+        id: `custom:${slug}`,
         name: customInterest,
         category: "personal" as const,
         iconName: "Plus",
@@ -171,6 +172,16 @@ export default function InterestsSection({
         <p className="text-muted-foreground">
           Select interests to help us match you with like-minded people
         </p>
+
+        {/* Search Interests */}
+        <div className="flex items-center gap-2">
+          <Input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search interests"
+            className="flex-1"
+          />
+        </div>
 
         {/* Custom Interest Input */}
         <div className="flex space-x-2">
@@ -215,20 +226,41 @@ export default function InterestsSection({
           </div>
         )}
 
-        {/* Predefined Interests by Category */}
+        {/* Interests Catalog by Category */}
         <ScrollArea className="h-[300px] pr-4">
           <div className="space-y-6">
-            {categories.map((category) => (
+            {catalog === undefined && (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-40" />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <Skeleton key={idx} className="h-10 w-full" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {catalog !== undefined && filteredCategories.map((category) => (
               <div key={category} className="space-y-2">
                 <Label>{category}</Label>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                  {predefinedInterests
-                    .filter((interest) => interest.category === category)
-                    .map((interest) => {
+                  {Array.from(filteredByCategory.get(category) || []).map(
+                    (interest) => {
                       const isSelected = currentInterests.some(
                         (i) => i.id === interest.id,
                       );
-                      const IconComponent = iconMap[interest.icon];
+                      const Icon = interest.iconName
+                        ? iconMap[interest.iconName]
+                        : undefined;
+                      // Fallback icon by category if none provided
+                      const FallbackIcon =
+                        Icon ||
+                        (category === "industry"
+                          ? Briefcase
+                          : category === "academic"
+                            ? Book
+                            : category === "skill"
+                              ? Palette
+                              : Rocket);
                       return (
                         <motion.button
                           key={interest.id}
@@ -242,16 +274,20 @@ export default function InterestsSection({
                               : "hover:bg-secondary"
                           }`}
                         >
-                          {IconComponent && (
-                            <IconComponent className="h-4 w-4" />
-                          )}
+                          <FallbackIcon className="h-4 w-4" />
                           <span>{interest.name}</span>
                         </motion.button>
                       );
-                    })}
+                    },
+                  )}
                 </div>
               </div>
             ))}
+            {catalog !== undefined && filteredCategories.length === 0 && (
+              <div className="text-muted-foreground text-sm">
+                No results.
+              </div>
+            )}
           </div>
         </ScrollArea>
 

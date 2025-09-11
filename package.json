@@ -1,6 +1,6 @@
 {
   "name": "connvo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -14,12 +14,12 @@
     "type-check": "tsc --noEmit",
     "test": "echo \"No tests yet\"",
     "seed": "echo \"No seed script yet\"",
-    "db:pull": "npx drizzle-kit pull:pg",
-    "db:generate": "npx drizzle-kit generate:pg",
-    "db:seed": "npx drizzle-kit seed:pg",
-    "db:reset": "npx drizzle-kit reset:pg",
-    "db:studio": "npx drizzle-kit studio",
-    "db:push": "npx drizzle-kit push:pg"
+    "db:pull": "bunx drizzle-kit pull:pg",
+    "db:generate": "bunx drizzle-kit generate:pg",
+    "db:seed": "bunx drizzle-kit seed:pg",
+    "db:reset": "bunx drizzle-kit reset:pg",
+    "db:studio": "bunx drizzle-kit studio",
+    "db:push": "bunx drizzle-kit push:pg"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.10.0",

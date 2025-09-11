@@ -23,6 +23,10 @@ export default defineSchema({
     avatarUrl: v.optional(v.string()),
     isActive: v.boolean(),
     lastSeenAt: v.optional(v.number()),
+    // Onboarding state
+    onboardingComplete: v.optional(v.boolean()),
+    onboardingStartedAt: v.optional(v.number()),
+    onboardingCompletedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -30,7 +34,8 @@ export default defineSchema({
     .index("by_org_and_active", ["orgId", "isActive"])
     .index("by_email", ["email"])
     .index("by_last_seen", ["lastSeenAt"])
-    .index("by_org_and_role", ["orgId", "orgRole"]),
+    .index("by_org_and_role", ["orgId", "orgRole"]) 
+    .index("by_onboarding_complete", ["onboardingComplete"]),
 
   profiles: defineTable({
     userId: v.id("users"),
@@ -39,6 +44,20 @@ export default defineSchema({
     goals: v.optional(v.string()),
     languages: v.array(v.string()),
     experience: v.optional(v.string()),
+    // Onboarding fields (structured)
+    age: v.optional(v.number()),
+    gender: v.optional(
+      v.union(
+        v.literal("male"),
+        v.literal("female"),
+        v.literal("non-binary"),
+        v.literal("prefer-not-to-say"),
+      ),
+    ),
+    field: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    company: v.optional(v.string()),
+    linkedinUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -49,6 +68,7 @@ export default defineSchema({
     key: v.string(),
     label: v.string(),
     category: v.string(),
+    iconName: v.optional(v.string()),
     // Denormalized field for performance
     usageCount: v.optional(v.number()),
     createdAt: v.number(),

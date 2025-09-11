@@ -14,26 +14,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-          cache: "npm"
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Run type checking
-        run: npm run type-check
+        run: bun run type-check
 
       - name: Run linting
-        run: npm run lint
+        run: bun run lint
 
       - name: Run tests
-        run: npm test
+        run: bun test
 
       - name: Test build
-        run: npm run build
+        run: bun run build
 
   deploy-staging:
     needs: test
@@ -44,14 +43,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-          cache: "npm"
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Deploy to staging
         env:
@@ -59,8 +57,8 @@ jobs:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID_STAGING }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY_STAGING }}
         run: |
-          npm run convex:codegen
-          npx convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
+          bun run convex:codegen
+          bun run convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
 
   deploy-production:
     needs: test
@@ -71,14 +69,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-          cache: "npm"
+          bun-version: latest
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Deploy to production
         env:
@@ -86,5 +83,5 @@ jobs:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID_PROD }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY_PROD }}
         run: |
-          npm run convex:codegen
-          npx convex deploy --prod --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
+          bun run convex:codegen
+          bun run convex deploy --prod --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL

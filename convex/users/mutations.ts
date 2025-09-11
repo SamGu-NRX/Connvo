@@ -12,6 +12,7 @@ import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
 import { createError } from "../lib/errors";
+import { Id } from "../_generated/dataModel";
 
 /**
  * Create or update user profile from WorkOS authentication
@@ -246,5 +247,256 @@ export const updateLastSeen = mutation({
         updatedAt: Date.now(),
       });
     }
+  },
+});
+
+/**
+ * Save onboarding data atomically: profile fields + interests + onboarding flags.
+ * Idempotent via idempotencyKeys.
+ */
+const interestInputV = v.object({
+  id: v.string(),
+  name: v.string(),
+  category: v.union(
+    v.literal("academic"),
+    v.literal("industry"),
+    v.literal("skill"),
+    v.literal("personal"),
+  ),
+  iconName: v.optional(v.string()),
+});
+
+type SaveOnboardingResult = {
+  userId: Id<"users">;
+  profileId: Id<"profiles">;
+  interestsCount: number;
+  onboardingCompleted: boolean;
+};
+
+export const saveOnboarding = mutation({
+  args: {
+    age: v.number(),
+    gender: v.union(
+      v.literal("male"),
+      v.literal("female"),
+      v.literal("non-binary"),
+      v.literal("prefer-not-to-say"),
+    ),
+    field: v.string(),
+    jobTitle: v.string(),
+    company: v.string(),
+    linkedinUrl: v.optional(v.string()),
+    bio: v.string(),
+    interests: v.array(interestInputV),
+    idempotencyKey: v.optional(v.string()),
+  },
+  returns: v.object({
+    userId: v.id("users"),
+    profileId: v.id("profiles"),
+    interestsCount: v.number(),
+    onboardingCompleted: v.boolean(),
+  }),
+  handler: async (ctx, args): Promise<SaveOnboardingResult> => {
+    const identity = await requireIdentity(ctx);
+
+    if (args.age < 13 || args.age > 120) {
+      throw createError.validation("Invalid age");
+    }
+    if (args.bio.length < 10 || args.bio.length > 1000) {
+      throw createError.validation("Bio must be between 10 and 1000 characters");
+    }
+
+    const scope = "users.onboarding.saveOnboarding" as const;
+    const now = Date.now();
+    const derivedKey =
+      args.idempotencyKey ||
+      JSON.stringify({ userId: identity.userId, ...args }).slice(0, 512);
+
+    type IdempotencyKeyReturn =
+      | {
+          _id: Id<"idempotencyKeys">;
+          key: string;
+          scope: string;
+          createdAt: number;
+          metadata?: unknown;
+        }
+      | null;
+
+    const { internal } = await import("../_generated/api");
+    const existingKey: IdempotencyKeyReturn = await ctx.runQuery(
+      internal.system.idempotency.getKey,
+      {
+        key: derivedKey,
+        scope,
+      },
+    );
+    type CompletedMeta = {
+      status: "completed";
+      userId: string;
+      profileId: string;
+      interestsCount?: number;
+      completedAt?: number;
+    };
+    const isCompletedMeta = (m: unknown): m is CompletedMeta => {
+      if (!m || typeof m !== "object") return false;
+      const mm = m as Record<string, unknown>;
+      return mm["status"] === "completed" && typeof mm["userId"] === "string" && typeof mm["profileId"] === "string";
+    };
+    if (existingKey && isCompletedMeta(existingKey.metadata)) {
+      return {
+        userId: existingKey.metadata.userId as Id<"users">,
+        profileId: existingKey.metadata.profileId as Id<"profiles">,
+        interestsCount: existingKey.metadata.interestsCount ?? 0,
+        onboardingCompleted: true,
+      };
+    }
+    if (!existingKey) {
+      await ctx.runMutation(internal.system.idempotency.createKey, {
+        key: derivedKey,
+        scope,
+        createdAt: now,
+        metadata: { status: "started" as const },
+      });
+    }
+
+    // Validate/resolve interests to canonical keys
+    const interestKeys: string[] = [];
+    const perUserCustomLimit = 5;
+    let customCount = 0;
+    for (const item of args.interests) {
+      const candidateKey = item.id.trim();
+      const found = await ctx.db
+        .query("interests")
+        .withIndex("by_key", (q) => q.eq("key", candidateKey))
+        .unique();
+      if (found) {
+        interestKeys.push(found.key);
+        continue;
+      }
+      if (item.category === "personal") {
+        if (customCount >= perUserCustomLimit) {
+          throw createError.validation(`Too many custom interests (max ${perUserCustomLimit})`, "interests");
+        }
+        const label = item.name.trim().slice(0, 48);
+        if (label.length < 2) {
+          throw createError.validation("Custom interest too short", "interests");
+        }
+        const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        const customKey = `custom:${slug}`;
+        const existingCustom = await ctx.db
+          .query("interests")
+          .withIndex("by_key", (q) => q.eq("key", customKey))
+          .unique();
+        if (!existingCustom) {
+          await ctx.db.insert("interests", {
+            key: customKey,
+            label,
+            category: "custom",
+            usageCount: 0,
+            createdAt: now,
+          });
+        }
+        interestKeys.push(customKey);
+        customCount += 1;
+        continue;
+      }
+      throw createError.validation(`Invalid interest key: ${candidateKey}`, "interests");
+    }
+
+    // Upsert profile
+    const existingProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", identity.userId))
+      .unique();
+    let profileId = existingProfile?._id as Id<"profiles"> | undefined;
+    if (existingProfile) {
+      await ctx.db.patch(existingProfile._id, {
+        bio: args.bio,
+        age: args.age,
+        gender: args.gender,
+        field: args.field,
+        jobTitle: args.jobTitle,
+        company: args.company,
+        linkedinUrl: args.linkedinUrl,
+        updatedAt: now,
+      });
+      profileId = existingProfile._id;
+    } else {
+      const displayName = (await ctx.db.get(identity.userId))?.displayName || args.jobTitle;
+      profileId = await ctx.db.insert("profiles", {
+        userId: identity.userId,
+        displayName,
+        bio: args.bio,
+        goals: undefined,
+        languages: [],
+        experience: undefined,
+        age: args.age,
+        gender: args.gender,
+        field: args.field,
+        jobTitle: args.jobTitle,
+        company: args.company,
+        linkedinUrl: args.linkedinUrl,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // Replace user interests
+    const existingInterests = await ctx.db
+      .query("userInterests")
+      .withIndex("by_user", (q) => q.eq("userId", identity.userId))
+      .collect();
+    for (const row of existingInterests) await ctx.db.delete(row._id);
+    for (const key of interestKeys) {
+      await ctx.db.insert("userInterests", { userId: identity.userId, interestKey: key, createdAt: now });
+    }
+
+    // Mark onboarding complete
+    await ctx.db.patch(identity.userId, {
+      onboardingComplete: true,
+      onboardingCompletedAt: now,
+      onboardingStartedAt: (await ctx.db.get(identity.userId))?.onboardingStartedAt ?? now,
+      updatedAt: now,
+    });
+
+    // Increment usage counts
+    for (const key of interestKeys) {
+      const entry = await ctx.db
+        .query("interests")
+        .withIndex("by_key", (q) => q.eq("key", key))
+        .unique();
+      if (entry) await ctx.db.patch(entry._id, { usageCount: (entry.usageCount || 0) + 1 });
+    }
+
+    // Audit
+    await ctx.runMutation(internal.audit.logging.createAuditLog, {
+      actorUserId: identity.userId,
+      resourceType: "user",
+      resourceId: String(identity.userId),
+      action: "onboarding.save",
+      category: "auth",
+      success: true,
+      metadata: { profileId, interestsCount: interestKeys.length },
+    });
+
+    // Complete idempotency
+    const doneMeta = {
+      status: "completed" as const,
+      userId: String(identity.userId),
+      profileId: String(profileId),
+      interestsCount: interestKeys.length,
+      completedAt: now,
+    };
+    const keyDoc: IdempotencyKeyReturn = await ctx.runQuery(
+      internal.system.idempotency.getKey,
+      { key: derivedKey, scope },
+    );
+    if (keyDoc)
+      await ctx.runMutation(internal.system.idempotency.patchKey, {
+        id: keyDoc._id,
+        metadata: doneMeta,
+      });
+
+    return { userId: identity.userId, profileId: profileId!, interestsCount: interestKeys.length, onboardingCompleted: true };
   },
 });

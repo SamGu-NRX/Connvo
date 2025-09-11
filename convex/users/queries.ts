@@ -166,3 +166,33 @@ export const getUserProfile = query({
     };
   },
 });
+
+/**
+ * Get onboarding state for the current user.
+ */
+export const getOnboardingState = query({
+  args: {},
+  returns: v.object({
+    userId: v.id("users"),
+    onboardingComplete: v.boolean(),
+    profileExists: v.boolean(),
+    profileId: v.optional(v.id("profiles")),
+    completedAt: v.optional(v.number()),
+  }),
+  handler: async (ctx) => {
+    const identity = await requireIdentity(ctx);
+    const user = await ctx.db.get(identity.userId);
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", identity.userId))
+      .unique();
+
+    return {
+      userId: identity.userId,
+      onboardingComplete: user?.onboardingComplete ?? false,
+      profileExists: !!profile,
+      profileId: profile?._id,
+      completedAt: user?.onboardingCompletedAt,
+    };
+  },
+});

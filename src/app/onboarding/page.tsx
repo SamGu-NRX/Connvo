@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "motion/react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +16,8 @@ import InterestsSection from "@/components/onboarding/InterestsSection";
 import ProfileSummary from "@/components/onboarding/ProfileSummary";
 import BasicInfo from "@/components/onboarding/BasicInfo";
 import Congratulations from "@/components/onboarding/Congratulations";
-import { saveUserOnboardingData } from "./_actions";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { onboardingSchema, OnboardingFormData } from "@/schemas/onboarding";
 import {
   Briefcase,
@@ -50,6 +52,14 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showCongrats, setShowCongrats] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const saveOnboarding = useMutation(api.users.mutations.saveOnboarding);
+  const onboardingState = useQuery(api.users.queries.getOnboardingState, {});
+
+  useEffect(() => {
+    if (onboardingState?.onboardingComplete) {
+      router.replace("/app");
+    }
+  }, [onboardingState?.onboardingComplete, router]);
 
   const methods = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
@@ -83,14 +93,20 @@ export default function OnboardingPage() {
       }
 
       const formData = methods.getValues();
-      const result = await saveUserOnboardingData(formData);
 
-      if (result.error) {
-        toast.error("Error", {
-          description: result.error,
-        });
-        return;
-      }
+      const idempotencyKey = computeIdempotencyKey(formData);
+
+      await saveOnboarding({
+        age: formData.age,
+        gender: formData.gender,
+        field: formData.field,
+        jobTitle: formData.jobTitle,
+        company: formData.company,
+        linkedinUrl: formData.linkedinUrl || undefined,
+        bio: formData.bio,
+        interests: formData.interests,
+        idempotencyKey,
+      });
       setShowCongrats(true);
     } catch (error) {
       console.error("Submission error:", error);
@@ -101,6 +117,26 @@ export default function OnboardingPage() {
       setIsSubmitting(false);
     }
   };
+
+  function computeIdempotencyKey(data: OnboardingFormData): string {
+    const str = JSON.stringify({
+      age: data.age,
+      gender: data.gender,
+      field: data.field,
+      jobTitle: data.jobTitle,
+      company: data.company,
+      linkedinUrl: data.linkedinUrl || "",
+      bio: data.bio,
+      interests: data.interests.map((i) => ({ id: i.id, name: i.name, category: i.category })),
+    });
+    // djb2 hash
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash & 0xffffffff;
+    }
+    return `onboarding:${hash >>> 0}`;
+  }
 
   return (
     <div className="from-background to-secondary/20 min-h-screen bg-linear-to-b">
