@@ -29,6 +29,7 @@ import { VideoArea } from "@/components/video-meeting/video-area";
 import { ChatDialog } from "@/components/video-meeting/chat-dialog";
 import { EndCallDialog } from "@/components/video-meeting/end-call-dialog";
 import UserCard from "@/components/app/user-card";
+import AfterCallScreen from "@/components/app/after-call-screen";
 import {
   MOCK_USERS,
   MOCK_SPEAKING_STATES,
@@ -64,31 +65,144 @@ const MOCK_MESSAGES = [
 ];
 
 export default function VideoMeeting() {
+  const LS_KEYS = {
+    MESSAGES: "connvo:call:messages",
+    NOTES: "connvo:call:notes",
+    MUTED: "connvo:call:muted",
+    VIDEO_OFF: "connvo:call:videoOff",
+    TIME_REMAINING: "connvo:call:timeRemaining",
+    ACTIVE_VIDEO: "connvo:call:activeVideo",
+  };
+
   const [timeManager] = useState(() => new TimeManager());
-  const [timeRemaining, setTimeRemaining] = useState(
-    timeManager.getRemainingTime(),
-  );
+  const [timeRemaining, setTimeRemaining] = useState(() => {
+    try {
+      const v = localStorage.getItem(LS_KEYS.TIME_REMAINING);
+      return v ? Number(v) : timeManager.getRemainingTime();
+    } catch {
+      return timeManager.getRemainingTime();
+    }
+  });
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [showTimeLeft, setShowTimeLeft] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => {
+    try {
+      return localStorage.getItem(LS_KEYS.MUTED) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [isVideoOff, setIsVideoOff] = useState(() => {
+    try {
+      return localStorage.getItem(LS_KEYS.VIDEO_OFF) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [isChatOpen, setIsChatOpen] = useState(false);
+  // Defer reading localStorage until client mount to avoid SSR/client hydration mismatch
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEYS.ACTIVE_VIDEO);
+      if (raw === null) return;
+      try {
+        const parsed = JSON.parse(raw);
+        setActiveVideo(parsed === null ? null : String(parsed));
+      } catch {
+        setActiveVideo(raw === "null" ? null : raw);
+      }
+    } catch {}
+  }, []);
   const [showTimeAddedToast, setShowTimeAddedToast] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAlmostOutOfTime, setIsAlmostOutOfTime] = useState(false);
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEYS.MESSAGES);
+      return raw ? JSON.parse(raw) : MOCK_MESSAGES;
+    } catch {
+      return MOCK_MESSAGES;
+    }
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddTimeRequestOpen, setIsAddTimeRequestOpen] = useState(false);
   const [addTimeRequester, setAddTimeRequester] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(() => {
+    try {
+      return localStorage.getItem(LS_KEYS.NOTES) || "";
+    } catch {
+      return "";
+    }
+  });
   const [isAutosaving, setIsAutosaving] = useState(false);
   const [speakingStates, setSpeakingStates] = useState(MOCK_SPEAKING_STATES);
   const [isEndCallOpen, setIsEndCallOpen] = useState(false);
+  const [isCallEnded, setIsCallEnded] = useState(false);
   const [currentTimeRequest, setCurrentTimeRequest] = useState(null);
   const [isLeaveRequestPending, setIsLeaveRequestPending] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  // Helpers: persist small pieces of state to localStorage
+  const persist = (key: string, value: any) => {
+    try {
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    } catch {}
+  };
+
+  const sendMessage = (message: string, sender = "You") => {
+    const msg = {
+      id: String(Date.now()),
+      sender,
+      message,
+      timestamp: "Now",
+    };
+    setMessages((prev: any[]) => {
+      const next = [...prev, msg];
+      persist(LS_KEYS.MESSAGES, next);
+      return next;
+    });
+
+    // If this is a user message, simulate partner auto-response
+    if (sender === "You") {
+      setTimeout(() => {
+        const reply = {
+          id: String(Date.now() + 1),
+          sender: MOCK_USERS.partner.name,
+          message: ["Nice!", "Thanks for that.", "Great point!", "Love that idea."][Math.floor(Math.random() * 4)],
+          timestamp: "Now",
+        };
+        setMessages((prev: any[]) => {
+          const next = [...prev, reply];
+          persist(LS_KEYS.MESSAGES, next);
+          return next;
+        });
+      }, 1200 + Math.floor(Math.random() * 1500));
+    }
+  };
+
+  const toggleMute = () => {
+    setIsMuted((prev) => {
+      const v = !prev;
+      persist(LS_KEYS.MUTED, String(v));
+      return v;
+    });
+  };
+
+  const toggleVideo = () => {
+    setIsVideoOff((prev) => {
+      const v = !prev;
+      persist(LS_KEYS.VIDEO_OFF, String(v));
+      return v;
+    });
+  };
+
+  // Ensure other interactive state is persisted
+  useEffect(() => persist(LS_KEYS.NOTES, notes), [notes]);
+  useEffect(() => persist(LS_KEYS.MESSAGES, messages), [messages]);
+  useEffect(() => persist(LS_KEYS.TIME_REMAINING, timeRemaining), [timeRemaining]);
+  useEffect(() => persist(LS_KEYS.ACTIVE_VIDEO, activeVideo), [activeVideo]);
 
   const prompts = generatePrompts(userInterests.user1, userInterests.user2);
 
@@ -137,11 +251,8 @@ export default function VideoMeeting() {
     setIsSidebarOpen((prev) => !prev);
   }, []);
 
-  const handleSendMessage = (message) => {
-    setMessages((prev) => [
-      ...prev,
-      { sender: "You", message, timestamp: "Now" },
-    ]);
+  const handleSendMessage = (message: string) => {
+    sendMessage(message, "You");
   };
 
   const handleEndCall = useCallback(() => {
@@ -154,7 +265,7 @@ export default function VideoMeeting() {
       icon: PhoneOff,
     });
 
-    // Simulate partner response after 2 seconds
+    // Simulate partner response after a short delay and then end the call locally
     setTimeout(() => {
       setIsLeaveRequestPending(false);
       window.addToast({
@@ -162,8 +273,13 @@ export default function VideoMeeting() {
         type: "success",
         icon: PhoneOff,
       });
-      // Actually end the call here
-    }, 2000);
+      // End the simulated call locally and show after-call screen
+      setIsCallEnded(true);
+      // Cleanup localStorage for call-related keys
+      try {
+        Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
+      } catch {}
+    }, 1500 + Math.floor(Math.random() * 1000));
   }, []);
 
   const handleAcceptTimeRequest = () => {
@@ -187,19 +303,31 @@ export default function VideoMeeting() {
       icon: Clock,
     });
 
-    // Simulate partner accepting after 2 seconds
+    // Simulate partner response/approval after a short delay
     setTimeout(() => {
       const success = timeManager.addTime();
       if (success) {
+        const addedMsg = timeManager.getTimeAddedMessage();
         window.addToast({
-          message: timeManager.getTimeAddedMessage(),
+          message: addedMsg,
           type: "success",
           icon: Clock,
         });
-        setTimeRemaining(timeManager.getRemainingTime());
+        const newRemaining = timeManager.getRemainingTime();
+        setTimeRemaining(newRemaining);
+        persist("connvo:call:timeRemaining", newRemaining);
+      } else {
+        window.addToast({
+          message: "Partner denied the request",
+          type: "error",
+        });
       }
-    }, 2000);
+    }, 1500 + Math.floor(Math.random() * 1500));
   }, [timeManager]);
+  
+  if (isCallEnded) {
+    return <AfterCallScreen />;
+  }
 
   return (
     <div
@@ -230,24 +358,31 @@ export default function VideoMeeting() {
             >
               {/* User Card */}
               <UserCard
-                name={MOCK_USERS.partner.name}
-                avatar={MOCK_USERS.partner.avatar}
-                bio="" // You may not have this in meeting context
-                profession={MOCK_USERS.partner.role}
-                company={MOCK_USERS.partner.company}
-                school="" // You may not have this in meeting context
-                experience={0} // You may not have this in meeting context
-                sharedInterests={[]} // You may not have this in meeting context
-                connectionType="collaboration"
+                user={{
+                  id: MOCK_USERS.partner.id,
+                  name: MOCK_USERS.partner.name,
+                  avatar: MOCK_USERS.partner.avatar || null,
+                  bio: "", // not available in meeting mock
+                  profession: MOCK_USERS.partner.role || "",
+                  company: MOCK_USERS.partner.company || "",
+                  school: "",
+                  experience: 0,
+                  sharedInterests: [],
+                  connectionType: "collaboration",
+                  isBot: false,
+                  status: "online",
+                  // optional fields
+                  interests: MOCK_USERS.partner.interests || [],
+                  connectionStatus:
+                    MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status === "excellent"
+                      ? "excellent"
+                      : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status === "good"
+                        ? "good"
+                        : "poor",
+                  isSpeaking: MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
+                  meetingStats: MOCK_USERS.partner.meetingStats,
+                }}
                 inMeeting={true}
-                meetingStats={MOCK_USERS.partner.meetingStats}
-                interests={MOCK_USERS.partner.interests}
-                connectionStatus={
-                  MOCK_CONNECTION_STATES[MOCK_USERS.partner.id] || "good"
-                }
-                isSpeaking={
-                  MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false
-                }
               />
               {/* Compact Prompts Card */}
               <Card className="border-none bg-zinc-800/30 shadow-lg">
@@ -352,6 +487,8 @@ export default function VideoMeeting() {
             speakingStates={speakingStates}
             connectionStates={MOCK_CONNECTION_STATES}
             onVideoClick={handleVideoClick}
+            isMuted={isMuted}
+            isVideoOff={isVideoOff}
           />
 
           {/* Control Bar */}
@@ -362,7 +499,7 @@ export default function VideoMeeting() {
                   <Button
                     variant={isMuted ? "destructive" : "secondary"}
                     size="icon"
-                    onClick={() => setIsMuted(!isMuted)}
+                    onClick={toggleMute}
                     className={`h-11 w-11 rounded-full transition-all duration-200 ${
                       isMuted
                         ? "bg-red-500/90 text-white hover:bg-red-600"
@@ -386,7 +523,7 @@ export default function VideoMeeting() {
                   <Button
                     variant={isVideoOff ? "destructive" : "secondary"}
                     size="icon"
-                    onClick={() => setIsVideoOff(!isVideoOff)}
+                    onClick={toggleVideo}
                     className={`h-11 w-11 rounded-full transition-all duration-200 ${
                       isVideoOff
                         ? "bg-red-500/90 text-white hover:bg-red-600"
@@ -433,7 +570,7 @@ export default function VideoMeeting() {
                     onClick={() => {
                       setAddTimeRequester("You");
                       setIsAddTimeRequestOpen(true);
-                      handleTimeRequest("You");
+                      handleTimeRequest();
                     }}
                     className="h-11 w-11 rounded-full bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
                   >
@@ -484,17 +621,7 @@ export default function VideoMeeting() {
           open={isChatOpen}
           onOpenChange={setIsChatOpen}
           messages={messages}
-          onSendMessage={(message) => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: String(Date.now()),
-                sender: "You",
-                message,
-                timestamp: "Now",
-              },
-            ]);
-          }}
+          onSendMessage={(message) => sendMessage(message, "You")}
         />
         <EndCallDialog
           open={isEndCallOpen}

@@ -49,31 +49,36 @@ const ToastComponent = ({ toast, onRemove }: ToastProps) => {
 
 export function ToastContainer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
-
+  const [mounted, setMounted] = useState(false);
+ 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+ 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
-
-  // Expose the add toast function globally
+ 
+  // Expose the add toast function globally (only on client)
   useEffect(() => {
     const addToast = (toast: Omit<Toast, "id">) => {
       const id = Math.random().toString(36).slice(2);
       setToasts((prev) => [...prev, { ...toast, id }]);
     };
-
-    window.addToast = addToast;
+ 
+    (window as any).addToast = addToast;
     return () => {
-      // delete window.addToast
-      window.addToast = () => {};
-      /*
-        delete cannot be used with non-optional parameters
-        therfore, I have made addToast a "dummy" function as per ChatGPT
-        the prior code is commented
-      */
+      try {
+        // remove the global when unmounting
+        delete (window as any).addToast;
+      } catch {
+        (window as any).addToast = undefined;
+      }
     };
   }, []);
-
-  if (typeof document === "undefined") return null;
+ 
+  // Prevent rendering portal until mounted on the client to avoid hydration mismatch
+  if (!mounted || typeof document === "undefined") return null;
 
   return createPortal(
     <div className="fixed top-4 right-4 z-50 flex flex-col space-y-2">
