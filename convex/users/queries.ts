@@ -16,7 +16,31 @@ import { Id } from "../_generated/dataModel";
 /**
  * Gets user by ID (internal use)
  */
-export const getUserById = internalQuery({
+export const getUserByIdInternal = internalQuery({
+  args: { userId: v.id("users") },
+  returns: v.union(
+    v.object({
+      _id: v.id("users"),
+      workosUserId: v.string(),
+      email: v.string(),
+      orgId: v.optional(v.string()),
+      orgRole: v.optional(v.string()),
+      displayName: v.optional(v.string()),
+      avatarUrl: v.optional(v.string()),
+      isActive: v.boolean(),
+      lastSeenAt: v.optional(v.number()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, { userId }) => {
+    return await ctx.db.get(userId);
+  },
+});
+
+// Public wrapper for tests and non-sensitive usage
+export const getUserById = query({
   args: { userId: v.id("users") },
   returns: v.union(
     v.object({

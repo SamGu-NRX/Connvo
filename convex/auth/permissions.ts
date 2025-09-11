@@ -8,8 +8,94 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { internalMutation } from "../_generated/server";
+import { internalMutation, query } from "../_generated/server";
 import { v } from "convex/values";
+import { Id } from "../_generated/dataModel";
+import { assertMeetingAccess } from "./guards";
+import { normalizeRole, permissionsForResource } from "../lib/permissions";
+
+export const validateSubscriptionPermissions = query({
+  args: {
+    resourceType: v.string(),
+    resourceId: v.id("meetings"),
+    requiredPermissions: v.array(v.string()),
+  },
+  returns: v.object({
+    granted: v.boolean(),
+    permissions: v.array(v.string()),
+    metadata: v.object({
+      error: v.optional(v.string()),
+    }),
+  }),
+  handler: async (ctx, { resourceType, resourceId, requiredPermissions }) => {
+    try {
+      const participant = await assertMeetingAccess(ctx, resourceId);
+      const role = normalizeRole(participant.role);
+      const permissions = permissionsForResource(resourceType, role);
+
+      const granted = requiredPermissions.every((p) => permissions.includes(p));
+      return { granted, permissions, metadata: {} };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { granted: false, permissions: [], metadata: { error: message } };
+    }
+  },
+});
+
+export const refreshSubscriptionPermissions = query({
+  args: {
+    subscriptions: v.array(
+      v.object({
+        resourceType: v.string(),
+        resourceId: v.id("meetings"),
+        permissions: v.array(v.string()),
+        lastValidated: v.number(),
+      }),
+    ),
+  },
+  returns: v.array(
+    v.object({
+      resourceType: v.string(),
+      resourceId: v.id("meetings"),
+      valid: v.boolean(),
+      updatedPermissions: v.array(v.string()),
+      reason: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx, { subscriptions }) => {
+    const results: Array<{
+      resourceType: string;
+      resourceId: Id<"meetings">;
+      valid: boolean;
+      updatedPermissions: string[];
+      reason?: string;
+    }> = [];
+
+    for (const sub of subscriptions) {
+      try {
+        const participant = await assertMeetingAccess(ctx, sub.resourceId);
+        const role = normalizeRole(participant.role);
+        const updatedPermissions = permissionsForResource(sub.resourceType, role);
+        results.push({
+          resourceType: sub.resourceType,
+          resourceId: sub.resourceId,
+          valid: true,
+          updatedPermissions,
+        });
+      } catch (error) {
+        results.push({
+          resourceType: sub.resourceType,
+          resourceId: sub.resourceId,
+          valid: false,
+          updatedPermissions: [],
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return results;
+  },
+});
 
 /**
  * Handles participant removal and permission revocation

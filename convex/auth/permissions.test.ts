@@ -49,10 +49,11 @@ describe("Dynamic Permission Management", () => {
     });
 
     // Create test meeting
-    testMeetingId = await t.mutation(api.meetings.mutations.createMeeting, {
+    const created = await t.mutation(api.meetings.mutations.createMeeting, {
       title: "Test Meeting for Permissions",
       description: "Testing dynamic permissions",
     });
+    testMeetingId = created.meetingId;
 
     // Add participant
     await t.mutation(api.meetings.mutations.addParticipant, {

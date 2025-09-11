@@ -12,27 +12,76 @@
 
 "use node";
 
-import {
-  action,
-  internalAction,
-  internalMutation,
-  httpAction,
-} from "../_generated/server";
+import { action, internalAction, internalMutation, httpAction } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import { Id, Doc } from "../_generated/dataModel";
 import { createError } from "../lib/errors";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
+import { requireIdentity } from "../auth/guards";
 import { withActionIdempotency, IdempotencyUtils } from "../lib/idempotency";
-import { sendAlert, trackMeetingEvent, AlertTemplates } from "../lib/alerting";
+// Alerting helpers are invoked through internal mutations in streamHelpers.
 import { withRetry, RetryPolicies, CircuitBreakers } from "../lib/resilience";
+
+// Result type aliases to avoid recursive inference and keep return types consistent.
+type CreateStreamRoomResult = {
+  roomId: string;
+  callId: string;
+  success: boolean;
+  features: { recording: boolean; transcription: boolean; screensharing: boolean; chat: boolean };
+};
+
+type ParticipantTokenPublicResult = {
+  token: string;
+  userId: string;
+  user: { id: string; name: string; image?: string };
+  expiresAt: number;
+  success: boolean;
+};
+
+type GenerateParticipantTokenResult = {
+  token: string;
+  userId: string;
+  callId: string;
+  expiresAt: number;
+  success: boolean;
+};
+
+type StartRecordingResult = { recordingId: string; recordingUrl?: string; success: boolean };
+type StopRecordingResult = {
+  success: boolean;
+  recordingUrl?: string;
+  recordingId?: string;
+  duration?: number;
+};
+
+/**
+ * Minimal types for GetStream Video client to avoid any.
+ */
+type StreamRecording = { id?: string; url?: string; duration?: number };
+type StreamCall = {
+  create: (opts: { data: Record<string, unknown> }) => Promise<void>;
+  startRecording: (
+    config: {
+      mode: string;
+      audio_only: boolean;
+      quality: string;
+      layout: { name: string; options?: Record<string, unknown> };
+    },
+  ) => Promise<{ recording?: StreamRecording }>;
+  stopRecording: () => Promise<unknown>;
+  queryRecordings: (query: { session_id: string }) => Promise<{ recordings?: StreamRecording[] }>;
+};
+type StreamVideoClient = {
+  call: (callType: string, callId: string) => StreamCall;
+  createToken: (userId: string, claims: Record<string, unknown>) => string;
+};
 
 /**
  * GetStream Video Client singleton for server-side operations
  */
-let streamVideoClient: any = null;
+let streamVideoClient: StreamVideoClient | null = null;
 
-function getStreamVideoClient() {
+function getStreamVideoClient(): StreamVideoClient {
   if (!streamVideoClient) {
     const streamApiKey = process.env.STREAM_API_KEY;
     const streamSecret = process.env.STREAM_SECRET;
@@ -44,11 +93,11 @@ function getStreamVideoClient() {
     }
 
     // Import GetStream Video JS SDK for Node.js
-    const { StreamVideoClient } = require("@stream-io/video-js");
+    const { StreamVideoClient: StreamCtor } = require("@stream-io/video-js") as {
+      StreamVideoClient: new (apiKey: string, opts: { secret: string }) => StreamVideoClient;
+    };
 
-    streamVideoClient = new StreamVideoClient(streamApiKey, {
-      secret: streamSecret,
-    });
+    streamVideoClient = new StreamCtor(streamApiKey, { secret: streamSecret });
   }
 
   return streamVideoClient;
@@ -70,7 +119,7 @@ export const createStreamRoom = internalAction({
       chat: v.boolean(),
     }),
   }),
-  handler: async (ctx, { meetingId }) => {
+  handler: async (ctx, { meetingId }): Promise<CreateStreamRoomResult> => {
     const startTime = Date.now();
 
     const idem1 = await withActionIdempotency(
@@ -110,7 +159,7 @@ export const createStreamRoom = internalAction({
           const callType = "default"; // GetStream call type
 
           // Initialize GetStream client with retry and circuit breaker
-          const result = await withRetry<{ callId: string; call: any }>(
+          const result = await withRetry<{ callId: string; call: StreamCall }>(
             async () => {
               return await CircuitBreakers.getstream.execute(async () => {
                 const client = getStreamVideoClient();
@@ -120,7 +169,7 @@ export const createStreamRoom = internalAction({
 
                 // Get organizer user details
                 const organizer: Doc<"users"> | null = await ctx.runQuery(
-                  internal.users.queries.getUserById,
+                  internal.users.queries.getUserByIdInternal,
                   {
                     userId: meeting.organizerId,
                   },
@@ -270,7 +319,7 @@ export const generateParticipantTokenPublic = action({
     expiresAt: v.number(),
     success: v.boolean(),
   }),
-  handler: async (ctx, { meetingId }) => {
+  handler: async (ctx, { meetingId }): Promise<ParticipantTokenPublicResult> => {
     // Get current user identity and resolve Convex user id
     const identity = await requireIdentity(ctx);
     const user: Doc<"users"> | null = await ctx.runQuery(
@@ -278,7 +327,7 @@ export const generateParticipantTokenPublic = action({
       { workosUserId: identity.workosUserId },
     );
     if (!user) {
-      throw createError.notFound("User", identity.workosUserId as any);
+      throw createError.notFound("User", identity.workosUserId);
     }
     const userId = user._id;
 
@@ -292,7 +341,7 @@ export const generateParticipantTokenPublic = action({
 
     // Get user details for the response
     const freshUser: Doc<"users"> | null = await ctx.runQuery(
-      internal.users.queries.getUserById,
+      internal.users.queries.getUserByIdInternal,
       {
         userId,
       },
@@ -331,7 +380,10 @@ export const generateParticipantToken = internalAction({
     expiresAt: v.number(),
     success: v.boolean(),
   }),
-  handler: async (ctx, { meetingId, userId, role = "participant" }) => {
+  handler: async (
+    ctx,
+    { meetingId, userId, role = "participant" },
+  ): Promise<GenerateParticipantTokenResult> => {
     const idem2 = await withActionIdempotency(
       ctx,
       IdempotencyUtils.externalService(
@@ -346,7 +398,7 @@ export const generateParticipantToken = internalAction({
             ctx.runQuery(internal.meetings.queries.getMeetingById, {
               meetingId,
             }),
-            ctx.runQuery(internal.users.queries.getUserById, { userId }),
+            ctx.runQuery(internal.users.queries.getUserByIdInternal, { userId }),
           ]);
 
           if (!meeting) {
@@ -407,7 +459,7 @@ export const generateParticipantToken = internalAction({
             error instanceof Error ? error.message : "Unknown error";
 
           // Send alert for token generation failures
-          await ctx.runMutation(internal.meetings.stream.sendStreamAlert, {
+          await ctx.runMutation(internal.meetings.streamHelpers.sendStreamAlert, {
             alertType: "token_generation_failed",
             meetingId,
             error: errorMessage,
@@ -456,17 +508,21 @@ export const startRecording = action({
     recordingUrl: v.optional(v.string()),
     success: v.boolean(),
   }),
-  handler: async (ctx, { meetingId, recordingConfig }) => {
+  handler: async (
+    ctx,
+    { meetingId, recordingConfig },
+  ): Promise<StartRecordingResult> => {
     const startTime = Date.now();
 
     try {
       // Verify user has permission to start recording (host only)
-      const hasAccess: boolean = await ctx.runQuery(
-        internal.auth.access.verifyMeetingAccess,
-        { meetingId, requiredRole: "host" },
+      const { workosUserId: workosUserId1 } = await requireIdentity(ctx);
+      const participant1 = await ctx.runQuery(
+        internal.meetings.queries.getMeetingParticipant,
+        { meetingId, workosUserId: workosUserId1 },
       );
-      if (!hasAccess) {
-        throw createError.insufficientPermissions("host", "participant");
+      if (!participant1 || participant1.role !== "host") {
+        throw createError.insufficientPermissions("host", participant1?.role ?? "participant");
       }
 
       const meeting: Doc<"meetings"> | null = await ctx.runQuery(
@@ -489,6 +545,7 @@ export const startRecording = action({
       if (!meeting.streamRoomId) {
         throw createError.validation("Meeting does not have a GetStream call");
       }
+      const streamRoomId: string = meeting.streamRoomId as string;
 
       // Start recording using GetStream Video JS SDK
       const result = await withRetry<{
@@ -497,7 +554,7 @@ export const startRecording = action({
       }>(async () => {
         return await CircuitBreakers.getstream.execute(async () => {
           const client = getStreamVideoClient();
-          const call = client.call("default", meeting.streamRoomId);
+          const call: StreamCall = client.call("default", streamRoomId);
 
           // Configure recording settings
           const config = {
@@ -519,7 +576,9 @@ export const startRecording = action({
           };
 
           // Start recording
-          const recordingResponse = await call.startRecording(config);
+          const recordingResponse: { recording?: StreamRecording } = await call.startRecording(
+            config,
+          );
 
           return {
             recordingId:
@@ -611,17 +670,21 @@ export const stopRecording = action({
     recordingId: v.optional(v.string()),
     duration: v.optional(v.number()),
   }),
-  handler: async (ctx, { meetingId, recordingId }) => {
+  handler: async (
+    ctx,
+    { meetingId, recordingId },
+  ): Promise<StopRecordingResult> => {
     const startTime = Date.now();
 
     try {
       // Verify user has permission to stop recording (host only)
-      const hasAccess2: boolean = await ctx.runQuery(
-        internal.auth.access.verifyMeetingAccess,
-        { meetingId, requiredRole: "host" },
+      const { workosUserId: workosUserId2 } = await requireIdentity(ctx);
+      const participant2 = await ctx.runQuery(
+        internal.meetings.queries.getMeetingParticipant,
+        { meetingId, workosUserId: workosUserId2 },
       );
-      if (!hasAccess2) {
-        throw createError.insufficientPermissions("host", "participant");
+      if (!participant2 || participant2.role !== "host") {
+        throw createError.insufficientPermissions("host", participant2?.role ?? "participant");
       }
 
       const meeting: Doc<"meetings"> | null = await ctx.runQuery(
@@ -638,6 +701,7 @@ export const stopRecording = action({
       if (!meeting.streamRoomId) {
         throw createError.validation("Meeting does not have a GetStream call");
       }
+      const streamRoomId2: string = meeting.streamRoomId as string;
 
       // Stop recording using GetStream Video JS SDK
       const result = await withRetry<{
@@ -647,7 +711,7 @@ export const stopRecording = action({
       }>(async () => {
         return await CircuitBreakers.getstream.execute(async () => {
           const client = getStreamVideoClient();
-          const call = client.call("default", meeting.streamRoomId);
+          const call: StreamCall = client.call("default", streamRoomId2);
 
           // Stop recording
           const stopResponse = await call.stopRecording();
@@ -716,7 +780,7 @@ export const stopRecording = action({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
 
-      await ctx.runMutation(internal.meetings.stream.trackStreamEvent, {
+      await ctx.runMutation(internal.meetings.streamHelpers.trackStreamEvent, {
         meetingId,
         event: "recording_stop_failed",
         success: false,
@@ -788,7 +852,7 @@ export const handleStreamWebhook = httpAction(async (ctx, request) => {
       }
 
       // Verify HMAC signature
-      const crypto = require("crypto");
+      const crypto: typeof import("crypto") = require("crypto");
       const expectedSignature = crypto
         .createHmac("sha256", streamSecret)
         .update(body)
@@ -1305,7 +1369,7 @@ export const handleTranscriptionStarted = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {
@@ -1350,7 +1414,7 @@ export const handleTranscriptionStopped = internalMutation({
       // Find meeting by GetStream call ID
       const meeting = await ctx.db
         .query("meetings")
-        .filter((q) => q.eq(q.field("streamRoomId"), callId))
+        .withIndex("by_stream_room_id", (q) => q.eq("streamRoomId", callId))
         .unique();
 
       if (!meeting) {

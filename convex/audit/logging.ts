@@ -9,6 +9,7 @@
 
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
+import { query } from "../_generated/server";
 
 /**
  * Logs data access events for audit trail
@@ -67,5 +68,82 @@ export const logAuthorizationEvent = internalMutation({
     });
 
     return null;
+  },
+});
+
+/**
+ * General audit log creation for arbitrary events
+ */
+export const createAuditLog = internalMutation({
+  args: {
+    actorUserId: v.optional(v.id("users")),
+    resourceType: v.string(),
+    resourceId: v.string(),
+    action: v.string(),
+    category: v.string(),
+    metadata: v.optional(v.any()),
+    success: v.boolean(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.insert("auditLogs", {
+      actorUserId: args.actorUserId,
+      resourceType: args.resourceType,
+      resourceId: args.resourceId,
+      action: args.action,
+      metadata: { category: args.category, success: args.success, ...(args.metadata || {}) },
+      timestamp: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
+ * Public query to list audit logs by resource
+ */
+export const getAuditLogs = query({
+  args: {
+    resourceType: v.optional(v.string()),
+    resourceId: v.optional(v.string()),
+    actorUserId: v.optional(v.id("users")),
+    action: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  returns: v.object({
+    logs: v.array(
+      v.object({
+        actorUserId: v.optional(v.id("users")),
+        resourceType: v.string(),
+        resourceId: v.string(),
+        action: v.string(),
+        metadata: v.any(),
+        timestamp: v.number(),
+        _id: v.id("auditLogs"),
+        _creationTime: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx, { resourceType, resourceId, actorUserId, action, limit = 50 }) => {
+    // Choose a concrete indexed query path to avoid mixing QueryInitializer and Query types
+    let q = resourceType && resourceId
+      ? ctx.db
+          .query("auditLogs")
+          .withIndex("by_resource", (qi) =>
+            qi.eq("resourceType", resourceType).eq("resourceId", resourceId),
+          )
+      : actorUserId
+      ? ctx.db
+          .query("auditLogs")
+          .withIndex("by_actor", (qi) => qi.eq("actorUserId", actorUserId))
+      : action
+      ? ctx.db
+          .query("auditLogs")
+          .withIndex("by_action", (qi) => qi.eq("action", action))
+      : ctx.db
+          .query("auditLogs")
+          .withIndex("by_timestamp", (qi) => qi.gt("timestamp", 0));
+
+    const rows = await q.order("desc").take(limit);
+    return { logs: rows };
   },
 });

@@ -40,12 +40,13 @@ describe("Authentication Guards", () => {
     });
 
     // Create test meeting
-    testMeetingId = await t.mutation(api.meetings.mutations.createMeeting, {
+    const created = await t.mutation(api.meetings.mutations.createMeeting, {
       title: "Test Meeting",
       description: "A test meeting for auth testing",
       scheduledAt: Date.now() + 3600000, // 1 hour from now
       duration: 1800, // 30 minutes
     });
+    testMeetingId = created.meetingId;
   });
 
   describe("requireIdentity", () => {

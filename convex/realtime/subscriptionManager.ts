@@ -16,6 +16,7 @@ import { globalBandwidthManager } from "../lib/batching";
 import { SubscriptionPerformanceTracker } from "../lib/performance";
 import { SubscriptionStateManager, QueryCache } from "../lib/queryOptimization";
 import { internal } from "../_generated/api";
+import { normalizeRole, permissionsForResource } from "../lib/permissions";
 
 /**
  * Subscription metadata for tracking active connections
@@ -139,7 +140,8 @@ export const establishSubscription = mutation({
         ctx,
         resourceId as Id<"meetings">,
       );
-      permissions = getPermissionsForResource(resourceType, participant.role);
+      const roleForPerms = normalizeRole(participant.role);
+      permissions = permissionsForResource(resourceType, roleForPerms);
 
       // Check if meeting is still active for time-sensitive resources
       if (resourceType === "transcripts") {
@@ -193,12 +195,10 @@ export const establishSubscription = mutation({
     // Log establishment using centralized audit logger
     await ctx.runMutation(internal.audit.logging.createAuditLog, {
       actorUserId: identity.userId as Id<"users">,
-      actorType: "user",
       resourceType,
       resourceId,
       action: "subscription_established",
       category: "subscription_management",
-      severity: "low",
       metadata: {
         subscriptionId,
         permissions,
@@ -291,9 +291,10 @@ export const validateAndUpdateSubscription = query({
           ctx,
           subscription.resourceId as Id<"meetings">,
         );
-        const newPermissions = getPermissionsForResource(
+        const roleForPerms2 = normalizeRole(participant.role);
+        const newPermissions = permissionsForResource(
           subscription.resourceType,
-          participant.role,
+          roleForPerms2,
         );
 
         // Check if meeting state has changed for time-sensitive resources
@@ -398,12 +399,10 @@ export const terminateSubscription = mutation({
       // Log termination using centralized audit logger
       await ctx.runMutation(internal.audit.logging.createAuditLog, {
         actorUserId: identity.userId as Id<"users">,
-        actorType: "user",
         resourceType: subscription.resourceType,
         resourceId: subscription.resourceId,
         action: "subscription_terminated",
         category: "subscription_management",
-        severity: "low",
         metadata: {
           subscriptionId,
           reason,
@@ -516,26 +515,7 @@ export const getSubscriptionStats = query({
 /**
  * Helper function to get permissions for a resource type and role
  */
-function getPermissionsForResource(
-  resourceType: string,
-  role: "host" | "participant",
-): string[] {
-  switch (resourceType) {
-    case "meetingNotes":
-      return role === "host"
-        ? ["read", "write", "manage", "export"]
-        : ["read", "write"];
-    case "transcripts":
-      return role === "host" ? ["read", "export", "manage"] : ["read"];
-    case "meetingParticipants":
-    case "participants":
-      return role === "host"
-        ? ["read", "invite", "remove", "manage"]
-        : ["read"];
-    default:
-      return ["read"];
-  }
-}
+// Permission helpers moved to ../lib/permissions for consistency
 
 /**
  * Cleanup function to be called periodically

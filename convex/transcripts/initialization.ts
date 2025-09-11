@@ -16,6 +16,11 @@ import { Id } from "../_generated/dataModel";
 /**
  * Initializes transcription for a meeting
  */
+type InitTranscriptionResult = {
+  success: boolean;
+  transcriptionProvider: "whisper" | "assemblyai" | "getstream";
+};
+
 export const initializeTranscription = internalAction({
   args: { meetingId: v.id("meetings") },
   returns: v.object({
@@ -26,7 +31,7 @@ export const initializeTranscription = internalAction({
       v.literal("getstream"),
     ),
   }),
-  handler: async (ctx, { meetingId }) => {
+  handler: async (ctx, { meetingId }): Promise<InitTranscriptionResult> => {
     try {
       // Get meeting details
       const meeting = await ctx.runQuery(
@@ -45,7 +50,7 @@ export const initializeTranscription = internalAction({
       }
 
       // Determine transcription provider based on meeting configuration
-      const transcriptionProvider = meeting.webrtcEnabled
+      const transcriptionProvider: "whisper" | "getstream" = meeting.webrtcEnabled
         ? "whisper"
         : "getstream";
 
@@ -86,7 +91,7 @@ export const createTranscriptionSession = internalMutation({
     ),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, provider }) => {
+  handler: async (ctx, { meetingId, provider }): Promise<null> => {
     // Create transcription session metadata
     await ctx.db.insert("transcriptionSessions", {
       meetingId,
@@ -117,7 +122,7 @@ export const updateTranscriptionStatus = internalMutation({
     metadata: v.optional(v.any()),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, status, metadata }) => {
+  handler: async (ctx, { meetingId, status, metadata }): Promise<null> => {
     const session = await ctx.db
       .query("transcriptionSessions")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
@@ -151,19 +156,23 @@ export const processTranscriptionChunk = internalAction({
     }),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, chunk }) => {
+  handler: async (ctx, { meetingId, chunk }): Promise<null> => {
     try {
       // Store transcription chunk using existing ingestion system
       await ctx.runMutation(
-        internal.transcripts.ingestion.ingestTranscriptChunk,
+        internal.transcripts.ingestion.batchIngestTranscriptChunks,
         {
           meetingId,
-          speakerId: chunk.speakerId,
-          text: chunk.text,
-          confidence: chunk.confidence,
-          startTime: chunk.startTime,
-          endTime: chunk.endTime,
-          language: chunk.language,
+          chunks: [
+            {
+              speakerId: chunk.speakerId,
+              language: chunk.language,
+              text: chunk.text,
+              confidence: chunk.confidence,
+              startTime: chunk.startTime,
+              endTime: chunk.endTime,
+            },
+          ],
         },
       );
 
@@ -185,7 +194,7 @@ export const finalizeTranscription = internalAction({
     success: v.boolean(),
     totalChunks: v.number(),
   }),
-  handler: async (ctx, { meetingId }) => {
+  handler: async (ctx, { meetingId }): Promise<{ success: boolean; totalChunks: number }> => {
     try {
       // Update session status
       await ctx.runMutation(
@@ -197,7 +206,7 @@ export const finalizeTranscription = internalAction({
       );
 
       // Count total transcript chunks via internal query
-      const total = await ctx.runQuery(
+      const total: number = await ctx.runQuery(
         internal.transcripts.ingestion.countTranscriptsForMeeting,
         { meetingId },
       );

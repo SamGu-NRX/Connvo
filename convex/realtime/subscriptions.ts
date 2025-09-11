@@ -10,12 +10,7 @@
  */
 
 import { v } from "convex/values";
-import {
-  query,
-  mutation,
-  internalMutation,
-  internalQuery,
-} from "../_generated/server";
+import { query, mutation, internalMutation, internalQuery, QueryCtx } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { requireIdentity, assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
@@ -32,6 +27,7 @@ import {
   SubscriptionStateManager,
   QueryCache,
 } from "../lib/queryOptimization";
+import { normalizeRole, permissionsForResource } from "../lib/permissions";
 
 /**
  * Subscription context for tracking active connections
@@ -81,31 +77,19 @@ export const subscribeMeetingNotes = query({
     // Check bandwidth limits
     const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "normal");
     if (!canSendUpdate) {
+      const roleForNotes = normalizeRole(participant.role);
       return {
         content: "",
         version: 0,
         lastUpdated: Date.now(),
         subscriptionValid: true,
-        permissions: getNotesPermissions(participant.role),
+        permissions: permissionsForResource("meetingNotes", roleForNotes),
         cursor: cursor || "",
         rateLimited: true,
       };
     }
 
-    // Log subscription establishment
-    await logSubscriptionEvent(ctx, {
-      userId: identity.userId as Id<"users">,
-      action: "subscription_established",
-      resourceType: "meetingNotes",
-      resourceId: meetingId,
-      subscriptionId: subId,
-      metadata: {
-        participantRole: participant.role,
-        meetingState: await getMeetingState(ctx, meetingId),
-        cursor,
-        latency: Date.now() - startTime,
-      },
-    });
+    // Do not write from queries; log via mutations elsewhere if needed
 
     // Track subscription establishment
     SubscriptionPerformanceTracker.trackSubscriptionEstablished(subId);
@@ -134,7 +118,9 @@ export const subscribeMeetingNotes = query({
     });
 
     // Determine user permissions
-    const permissions = getNotesPermissions(participant.role);
+    const roleForNotes: "host" | "participant" =
+      participant.role === "observer" ? "participant" : participant.role;
+    const permissions = getNotesPermissions(roleForNotes);
 
     // Record successful update with latency
     const latency = Date.now() - startTime;
@@ -203,11 +189,13 @@ export const subscribeTranscriptStream = query({
     // Check bandwidth limits - transcripts are high priority
     const canSendUpdate = globalBandwidthManager.canSendUpdate(subId, "high");
     if (!canSendUpdate) {
+      const roleForPerms: "host" | "participant" =
+        participant.role === "observer" ? "participant" : participant.role;
       return {
         transcripts: [],
         nextSequence: fromSequence,
         subscriptionValid: true,
-        permissions: getTranscriptPermissions(participant.role),
+        permissions: getTranscriptPermissions(roleForPerms),
         validUntil: undefined,
       };
     }
@@ -236,7 +224,9 @@ export const subscribeTranscriptStream = query({
       userId: identity.userId as Id<"users">,
     });
 
-    const permissions = getTranscriptPermissions(participant.role);
+    const roleForPerms2: "host" | "participant" =
+      participant.role === "observer" ? "participant" : participant.role;
+    const permissions = getTranscriptPermissions(roleForPerms2);
     const validUntil = meetingState.endedAt || undefined;
 
     // Log subscription with comprehensive performance metrics
@@ -285,7 +275,11 @@ export const subscribeMeetingParticipants = query({
       v.object({
         _id: v.id("meetingParticipants"),
         userId: v.id("users"),
-        role: v.union(v.literal("host"), v.literal("participant")),
+        role: v.union(
+          v.literal("host"),
+          v.literal("participant"),
+          v.literal("observer"),
+        ),
         presence: v.union(
           v.literal("invited"),
           v.literal("joined"),
@@ -342,7 +336,9 @@ export const subscribeMeetingParticipants = query({
       }),
     );
 
-    const permissions = getParticipantsPermissions(participant.role);
+    const roleForPerms3: "host" | "participant" =
+      participant.role === "observer" ? "participant" : participant.role;
+    const permissions = getParticipantsPermissions(roleForPerms3);
 
     return {
       participants: enrichedParticipants,
@@ -404,10 +400,8 @@ export const validateSubscription = query({
           };
         }
 
-        const permissions = getPermissionsForResource(
-          resourceType,
-          participant.role,
-        );
+        const roleForPerms4 = normalizeRole(participant.role);
+        const permissions = permissionsForResource(resourceType, roleForPerms4);
 
         return {
           valid: true,
@@ -425,18 +419,7 @@ export const validateSubscription = query({
         shouldReconnect: false,
       };
     } catch (error) {
-      // Log validation failure
-      await logSubscriptionEvent(ctx, {
-        userId: identity.userId as Id<"users">,
-        action: "subscription_validation_failed",
-        resourceType,
-        resourceId,
-        subscriptionId,
-        metadata: {
-          error: error instanceof Error ? error.message : String(error),
-          lastValidated,
-        },
-      });
+      // Do not write from queries
 
       return {
         valid: false,
@@ -495,80 +478,13 @@ export const terminateSubscription = internalMutation({
  * Helper functions
  */
 
-async function getMeetingState(ctx: any, meetingId: Id<"meetings">) {
+async function getMeetingState(ctx: QueryCtx, meetingId: Id<"meetings">) {
   return await ctx.db
     .query("meetingState")
     .withIndex("by_meeting", (q: any) => q.eq("meetingId", meetingId))
     .unique();
 }
 
-function getNotesPermissions(role: "host" | "participant"): string[] {
-  const basePermissions = ["read", "write"];
-  if (role === "host") {
-    return [...basePermissions, "manage", "export"];
-  }
-  return basePermissions;
-}
+// Permission helpers moved to ../lib/permissions for consistency
 
-function getTranscriptPermissions(role: "host" | "participant"): string[] {
-  const basePermissions = ["read"];
-  if (role === "host") {
-    return [...basePermissions, "export", "manage"];
-  }
-  return basePermissions;
-}
-
-function getParticipantsPermissions(role: "host" | "participant"): string[] {
-  const basePermissions = ["read"];
-  if (role === "host") {
-    return [...basePermissions, "invite", "remove", "manage"];
-  }
-  return basePermissions;
-}
-
-function getPermissionsForResource(
-  resourceType: string,
-  role: "host" | "participant",
-): string[] {
-  switch (resourceType) {
-    case "meetingNotes":
-      return getNotesPermissions(role);
-    case "transcripts":
-      return getTranscriptPermissions(role);
-    case "meetingParticipants":
-    case "participants":
-      return getParticipantsPermissions(role);
-    default:
-      return ["read"];
-  }
-}
-
-async function logSubscriptionEvent(
-  ctx: any,
-  event: {
-    userId: Id<"users">;
-    action: string;
-    resourceType: string;
-    resourceId: string;
-    subscriptionId: string;
-    metadata?: any;
-  },
-) {
-  try {
-    await ctx.db.insert("auditLogs", {
-      actorUserId: event.userId,
-      resourceType: event.resourceType,
-      resourceId: event.resourceId,
-      action: event.action,
-      metadata: {
-        subscriptionId: event.subscriptionId,
-        category: "subscription_management",
-        severity: "low",
-        ...event.metadata,
-      },
-      timestamp: Date.now(),
-    });
-  } catch (error) {
-    console.error("Failed to log subscription event:", error);
-  }
-}
+// Intentionally no logging writes from queries

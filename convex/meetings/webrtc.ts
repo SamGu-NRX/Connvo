@@ -499,6 +499,15 @@ export const getActiveSessions = query({
 /**
  * Generates participant access token for video room
  */
+type ParticipantAccessTokenResult = {
+  token: string;
+  provider: "webrtc" | "getstream";
+  roomId: string;
+  participantId: string;
+  permissions: { canRecord: boolean; canMute: boolean; canKick: boolean; canShare: boolean };
+  success: boolean;
+};
+
 export const generateParticipantAccessToken = action({
   args: {
     meetingId: v.id("meetings"),
@@ -517,7 +526,10 @@ export const generateParticipantAccessToken = action({
     }),
     success: v.boolean(),
   }),
-  handler: async (ctx, { meetingId, sessionId }) => {
+  handler: async (
+    ctx,
+    { meetingId, sessionId },
+  ): Promise<ParticipantAccessTokenResult> => {
     const identity = await requireIdentity(ctx);
 
     // Verify user is a participant and get their role via internal query
@@ -563,7 +575,8 @@ export const generateParticipantAccessToken = action({
     );
 
     // Generate unique participant ID
-    const participantId = sessionId || `${participant.userId}_${Date.now()}`;
+    const participantId: string =
+      sessionId ?? `${participant.userId}_${Date.now()}`;
 
     // Determine permissions based on role
     const permissions = {

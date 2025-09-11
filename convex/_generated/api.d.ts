@@ -15,7 +15,6 @@ import type {
 } from "convex/server";
 import type * as analytics_meetings from "../analytics/meetings.js";
 import type * as audit_logging from "../audit/logging.js";
-import type * as auth_access from "../auth/access.js";
 import type * as auth_guards from "../auth/guards.js";
 import type * as auth_permissions from "../auth/permissions.js";
 import type * as environments_local from "../environments/local.js";
@@ -32,6 +31,7 @@ import type * as lib_idempotency from "../lib/idempotency.js";
 import type * as lib_monitoring from "../lib/monitoring.js";
 import type * as lib_observability from "../lib/observability.js";
 import type * as lib_performance from "../lib/performance.js";
+import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_queryOptimization from "../lib/queryOptimization.js";
 import type * as lib_resilience from "../lib/resilience.js";
 import type * as lib_videoProviders from "../lib/videoProviders.js";
@@ -68,7 +68,6 @@ import type * as users_queries from "../users/queries.js";
 declare const fullApi: ApiFromModules<{
   "analytics/meetings": typeof analytics_meetings;
   "audit/logging": typeof audit_logging;
-  "auth/access": typeof auth_access;
   "auth/guards": typeof auth_guards;
   "auth/permissions": typeof auth_permissions;
   "environments/local": typeof environments_local;
@@ -85,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   "lib/monitoring": typeof lib_monitoring;
   "lib/observability": typeof lib_observability;
   "lib/performance": typeof lib_performance;
+  "lib/permissions": typeof lib_permissions;
   "lib/queryOptimization": typeof lib_queryOptimization;
   "lib/resilience": typeof lib_resilience;
   "lib/videoProviders": typeof lib_videoProviders;

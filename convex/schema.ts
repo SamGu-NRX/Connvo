@@ -418,6 +418,7 @@ export default defineSchema({
   })
     .index("by_meeting", ["meetingId"])
     .index("by_user", ["userId"])
+    .index("by_user_and_meeting", ["userId", "meetingId"]) 
     .index("by_meeting_and_session", ["meetingId", "sessionId"])
     .index("by_state", ["state"]),
 
