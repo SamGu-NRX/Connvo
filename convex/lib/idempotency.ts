@@ -49,41 +49,56 @@ async function persistResultMutation(
   ) {
     return { meta: { resultType: "inline", resultInline: result } };
   }
-  // Mutations don't have access to storage.get/store in all environments.
-  // Store a compact summary and size to keep metadata primitive-only and safe.
+  // Store serialized JSON in metadata for complex objects
   const json = JSON.stringify(result);
-  const preview = json.length > 4096 ? json.slice(0, 4096) : json;
+  // Consider implementing size limits
+  if (json.length > 100000) {
+    // 100KB limit
+    throw new Error("Result too large for idempotency storage");
+  }
   return {
     meta: {
-      resultType: "summary",
-      resultSize: json.length,
-      resultPreview: preview,
+      resultType: "json",
+      resultJson: json,
     },
   };
+
 }
 
-async function persistResultAction(
-  ctx: ActionCtx,
-  result: unknown,
-): Promise<{ meta: Record<string, string | number | boolean> }> {
-  if (
-    typeof result === "string" ||
-    typeof result === "number" ||
-    typeof result === "boolean"
-  ) {
-    return { meta: { resultType: "inline", resultInline: result } };
-  }
-  const json = JSON.stringify(result);
-  const blob = new Blob([json], { type: "application/json" });
-  const storageId = await ctx.storage.store(blob);
-  return {
-    meta: {
-      resultType: "storage",
-      resultRef: String(storageId),
-      resultSize: json.length,
-    },
+  async function persistResultAction(
+    ctx: ActionCtx,
+    result: unknown,
+  ): Promise<{ meta: Record<string, string | number | boolean> }> {
+    if (
+      typeof result === "string" ||
+      typeof result === "number" ||
+      typeof result === "boolean"
+    ) {
+      return { meta: { resultType: "inline", resultInline: result } };
+    }
+    const json = JSON.stringify(result);
+    try {
+      const blob = new Blob([json], { type: "application/json" });
+      const storageId = await ctx.storage.store(blob);
+      return {
+        meta: {
+          resultType: "storage",
+          resultRef: String(storageId),
+          resultSize: json.length,
+        },
+      };
+    } catch (error) {
+      // Log error and fall back to storing a summary
+      console.error("Failed to store result in storage:", error);
+      return {
+        meta: {
+          resultType: "error",
+          resultError: "Failed to persist result",
+          resultSize: json.length,
+        },
+      };
+    }
   };
-}
 
 /**
  * Ensures idempotent execution of mutations

@@ -470,7 +470,24 @@ export default defineSchema({
     fromUserId: v.id("users"),
     toUserId: v.optional(v.id("users")), // null for broadcast signals
     type: v.union(v.literal("sdp"), v.literal("ice")),
-    data: v.any(), // SDP or ICE candidate data
+    // SDP or ICE candidate data
+    data: v.union(
+      v.object({
+        type: v.union(
+          v.literal("offer"),
+          v.literal("answer"),
+          v.literal("pranswer"),
+          v.literal("rollback"),
+        ),
+        sdp: v.string(),
+      }),
+      v.object({
+        candidate: v.string(),
+        sdpMLineIndex: v.optional(v.number()),
+        sdpMid: v.optional(v.string()),
+        usernameFragment: v.optional(v.string()),
+      }),
+    ),
     timestamp: v.number(),
     processed: v.boolean(),
   })

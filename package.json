@@ -12,6 +12,8 @@
     "convex:deploy": "convex deploy",
     "convex:codegen": "convex codegen",
     "type-check": "tsc --noEmit",
+    "type-diag": "tsc --noEmit --extendedDiagnostics --listFiles",
+    "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
     "test": "echo \"No tests yet\"",
     "seed": "echo \"No seed script yet\""
   },

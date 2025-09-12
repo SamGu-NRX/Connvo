@@ -60,7 +60,7 @@ export const runMatchingCycle = action({
     await ctx.runMutation(internal.matching.queue.cleanupExpiredEntries, {});
 
     // Process each shard in parallel
-    const shardPromises = [];
+    const shardPromises: Array<Promise<ShardProcessResult>> = [];
     for (let shard = 0; shard < shardCount; shard++) {
       shardPromises.push(
         ctx.runAction(internal.matching.engine.processMatchingShard, {
@@ -72,7 +72,7 @@ export const runMatchingCycle = action({
       );
     }
 
-    const shardResults = await Promise.all(shardPromises);
+    const shardResults: ShardProcessResult[] = await Promise.all(shardPromises);
 
     // Aggregate results
     const totalMatches = shardResults.reduce(
@@ -88,7 +88,7 @@ export const runMatchingCycle = action({
     const processingTimeMs = Date.now() - startTime;
 
     // Log matching cycle metrics
-    await ctx.runMutation(internal.matching.engine.logMatchingMetrics, {
+    const _logged: null = await ctx.runMutation(internal.matching.engine.logMatchingMetrics, {
       shardCount,
       totalMatches,
       averageScore,
@@ -121,7 +121,7 @@ export const processMatchingShard = internalAction({
   }),
   handler: async (ctx, args) => {
     // Get queue entries for this shard
-    const queueEntries = await ctx.runQuery(
+    const queueEntries: ShardQueueEntry[] = await ctx.runQuery(
       internal.matching.engine.getShardQueueEntries,
       {
         shard: args.shard,
@@ -188,7 +188,7 @@ export const processMatchingShard = internalAction({
         );
 
         // Use optimistic concurrency to create the match
-        const matchCreated = await ctx.runMutation(
+        const matchCreated: boolean = await ctx.runMutation(
           internal.matching.engine.createMatch,
           {
             user1QueueId: user1Entry._id,
@@ -504,5 +504,15 @@ function generateMatchId(user1Id: Id<"users">, user2Id: Id<"users">): string {
   const timestamp = Date.now();
   return `match_${ids[0]}_${ids[1]}_${timestamp}`;
 }
-
-// Functions are available via generated internal API under internal.matching.engine
+/**
+ * Local helper types to break deep type inference
+ */
+type ShardProcessResult = { matchCount: number; totalScore: number };
+type ShardQueueEntry = {
+  _id: Id<"matchingQueue">;
+  userId: Id<"users">;
+  availableFrom: number;
+  availableTo: number;
+  constraints: { interests: string[]; roles: string[]; orgConstraints?: string };
+  createdAt: number;
+};

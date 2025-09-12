@@ -71,7 +71,7 @@ export async function recordMetric(
         metric: metric.name,
         type: metric.type,
         value: metric.value,
-        labelsJson: JSON.stringify(metric.labels ?? {}),
+        labels: metric.labels ?? {},
       },
     });
   } catch (error) {
@@ -104,7 +104,7 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
         title: alert.title,
         message: alert.message,
         source: alert.source,
-        alertMetadataJson: JSON.stringify(alert.metadata ?? {}),
+        alertMetadata: alert.metadata ?? {},
       },
     });
   } catch (error) {

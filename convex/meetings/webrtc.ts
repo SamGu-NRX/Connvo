@@ -94,12 +94,30 @@ export const initializeWebRTCRoom = action({
     const identity = await requireIdentity(ctx);
 
     // Verify user is a participant via internal query
-    const participant = await ctx.runQuery(
+    const participant: {
+      _id: Id<"meetingParticipants">;
+      meetingId: Id<"meetings">;
+      userId: Id<"users">;
+      role: "host" | "participant" | "observer";
+      presence: "invited" | "joined" | "left";
+    } = await ctx.runQuery(
       internal.meetings.webrtc.getParticipantForAccess,
       { meetingId },
     );
     // Fetch meeting via internal query
-    const meeting = await ctx.runQuery(
+    const meeting: {
+      _id: Id<"meetings">;
+      organizerId: Id<"users">;
+      title: string;
+      description?: string;
+      scheduledAt?: number;
+      duration?: number;
+      webrtcEnabled?: boolean;
+      streamRoomId?: string;
+      state: "scheduled" | "active" | "concluded" | "cancelled";
+      createdAt: number;
+      updatedAt: number;
+    } | null = await ctx.runQuery(
       internal.meetings.webrtc.getMeetingDoc,
       { meetingId },
     );
@@ -128,7 +146,7 @@ export const initializeWebRTCRoom = action({
     });
 
     // Store room configuration in database
-    await ctx.runMutation(internal.meetings.webrtc.storeRoomConfiguration, {
+    const _storedRoom: null = await ctx.runMutation(internal.meetings.webrtc.storeRoomConfiguration, {
       meetingId,
       roomConfig: {
         roomId: roomConfig.roomId,
@@ -345,7 +363,23 @@ export const getPendingSignals = query({
       sessionId: v.string(),
       fromUserId: v.id("users"),
       type: v.union(v.literal("sdp"), v.literal("ice")),
-      data: v.any(),
+      data: v.union(
+        v.object({
+          type: v.union(
+            v.literal("offer"),
+            v.literal("answer"),
+            v.literal("pranswer"),
+            v.literal("rollback"),
+          ),
+          sdp: v.string(),
+        }),
+        v.object({
+          candidate: v.string(),
+          sdpMLineIndex: v.optional(v.number()),
+          sdpMid: v.optional(v.string()),
+          usernameFragment: v.optional(v.string()),
+        }),
+      ),
       timestamp: v.number(),
     }),
   ),
@@ -666,7 +700,13 @@ export const handleConnectionFailure = action({
   handler: async (ctx, { meetingId, sessionId, errorType, errorDetails }) => {
     const identity = await requireIdentity(ctx);
     // Verify user is a participant
-    await ctx.runQuery(internal.meetings.webrtc.getParticipantForAccess, {
+    const _p1: {
+      _id: Id<"meetingParticipants">;
+      meetingId: Id<"meetings">;
+      userId: Id<"users">;
+      role: "host" | "participant" | "observer";
+      presence: "invited" | "joined" | "left";
+    } = await ctx.runQuery(internal.meetings.webrtc.getParticipantForAccess, {
       meetingId,
     });
 
@@ -679,7 +719,7 @@ export const handleConnectionFailure = action({
     });
 
     // Update session state to failed
-    await ctx.runMutation(internal.meetings.webrtc.updateSessionStateInternal, {
+    const _updated0: null = await ctx.runMutation(internal.meetings.webrtc.updateSessionStateInternal, {
       meetingId,
       sessionId,
       state: "failed",
@@ -691,7 +731,16 @@ export const handleConnectionFailure = action({
     });
 
     // Determine if fallback is available
-    const roomConfig = await ctx.runQuery(
+    const roomConfig: {
+      _id: Id<"videoRoomConfigs">;
+      meetingId: Id<"meetings">;
+      roomId: string;
+      provider: "webrtc" | "getstream";
+      iceServers?: Array<{ urls: string | string[]; username?: string; credential?: string }>;
+      features: { recording: boolean; transcription: boolean; maxParticipants: number; screenSharing: boolean; chat: boolean };
+      createdAt: number;
+      updatedAt: number;
+    } | null = await ctx.runQuery(
       internal.meetings.webrtc.getVideoRoomConfigByMeeting,
       { meetingId },
     );
@@ -778,7 +827,13 @@ export const monitorConnectionQuality = action({
   handler: async (ctx, { meetingId, sessionId, stats }) => {
     const identity = await requireIdentity(ctx);
     // Verify user is a participant
-    await ctx.runQuery(internal.meetings.webrtc.getParticipantForAccess, {
+    const _participant: {
+      _id: Id<"meetingParticipants">;
+      meetingId: Id<"meetings">;
+      userId: Id<"users">;
+      role: "host" | "participant" | "observer";
+      presence: "invited" | "joined" | "left";
+    } = await ctx.runQuery(internal.meetings.webrtc.getParticipantForAccess, {
       meetingId,
     });
 
@@ -815,7 +870,7 @@ export const monitorConnectionQuality = action({
     }
 
     // Store quality metrics for analytics
-    await ctx.runMutation(internal.meetings.webrtc.storeConnectionMetrics, {
+    const _stored: null = await ctx.runMutation(internal.meetings.webrtc.storeConnectionMetrics, {
       meetingId,
       sessionId,
       userId: identity.userId as Id<"users">,

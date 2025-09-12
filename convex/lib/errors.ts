@@ -9,6 +9,7 @@
  */
 
 import { ConvexError } from "convex/values";
+import type { Value } from "convex/values";
 
 /**
  * Standardized error codes for the application
@@ -145,7 +146,10 @@ export const createError = {
       metadata: { reason },
     }),
 
-  internal: (message = "Internal server error", metadata?: Record<string, any>) =>
+  internal: (
+    message = "Internal server error",
+    metadata?: Record<string, Value>,
+  ) =>
     new ConvexError({
       code: ErrorCodes.INTERNAL_ERROR,
       message,
@@ -153,7 +157,7 @@ export const createError = {
       metadata,
     }),
 
-  conflict: (message = "Conflict detected", metadata?: Record<string, any>) =>
+  conflict: (message = "Conflict detected", metadata?: Record<string, Value>) =>
     new ConvexError({
       code: ErrorCodes.CONFLICT,
       message,

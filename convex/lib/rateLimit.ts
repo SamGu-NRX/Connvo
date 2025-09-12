@@ -13,7 +13,7 @@ import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { createError } from "./errors";
 
-type DbCtx = QueryCtx | MutationCtx;
+// Note: Writes must occur in a MutationCtx. Avoid unsafe casts.
 
 /**
  * Rate limit configuration
@@ -75,12 +75,13 @@ export class RateLimiter {
    * Checks and updates rate limit for a given key
    */
   static async checkRateLimit(
-    ctx: DbCtx,
+    ctx: MutationCtx,
     userId: Id<"users">,
     action: string,
     config: RateLimitConfig,
   ): Promise<RateLimitResult> {
     const now = Date.now();
+    // Use fixed-size time buckets to avoid hot partitions and ensure uniqueness
     const windowStart = Math.floor(now / config.windowMs) * config.windowMs;
     const key = config.keyPrefix ? `${config.keyPrefix}_${action}` : action;
 
@@ -111,28 +112,22 @@ export class RateLimiter {
         };
       }
 
-      // Update count
-      const dbAny = (ctx as any).db;
-      if (dbAny && typeof dbAny.patch === "function") {
-        await (ctx as MutationCtx).db.patch(existingLimit._id, {
-          count: currentCount + 1,
-          updatedAt: now,
-        });
-      }
+      // Update count within the same mutation (transactional in Convex)
+      await ctx.db.patch(existingLimit._id, {
+        count: currentCount + 1,
+        updatedAt: now,
+      });
       currentCount += 1;
     } else {
       // Create new rate limit record
-      const dbAny = (ctx as any).db;
-      if (dbAny && typeof dbAny.insert === "function") {
-        await (ctx as MutationCtx).db.insert("rateLimits", {
-          userId,
-          action: key,
-          windowStartMs: windowStart,
-          count: 1,
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
+      await ctx.db.insert("rateLimits", {
+        userId,
+        action: key,
+        windowStartMs: windowStart,
+        count: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
       currentCount = 1;
     }
 
@@ -150,7 +145,7 @@ export class RateLimiter {
    * Enforces rate limit and throws error if exceeded
    */
   static async enforceRateLimit(
-    ctx: DbCtx,
+    ctx: MutationCtx,
     userId: Id<"users">,
     action: string,
     config: RateLimitConfig,
@@ -168,7 +163,7 @@ export class RateLimiter {
    * Gets current rate limit status without updating counters
    */
   static async getRateLimitStatus(
-    ctx: DbCtx,
+    ctx: QueryCtx,
     userId: Id<"users">,
     action: string,
     config: RateLimitConfig,
@@ -225,7 +220,7 @@ export class RateLimiter {
    * Gets rate limit statistics for monitoring
    */
   static async getRateLimitStats(
-    ctx: DbCtx,
+    ctx: QueryCtx,
     timeRangeMs = 60 * 60 * 1000, // 1 hour
   ): Promise<{
     totalRequests: number;
@@ -245,10 +240,10 @@ export class RateLimiter {
       0,
     );
     const uniqueUsers = new Set(recentLimits.map((limit) => limit.userId)).size;
-
-    // Aggregate by action
-    const actionCounts = new Map<string, number>();
-    let rateLimitHits = 0;
+      // Check against actual configured limits to detect rate limit hits
+      // This would require passing config or storing maxRequests with the limit record
+      // For now, this is a limitation that should be documented
+      // TODO: Store maxRequests with rate limit records for accurate detection
 
     for (const limit of recentLimits) {
       const current = actionCounts.get(limit.action) || 0;
@@ -289,11 +284,10 @@ export function withRateLimit(config: RateLimitConfig) {
     descriptor.value = async function (this: any, ...args: T): Promise<R> {
       // Extract context and user ID from arguments
       // This assumes the first argument is the Convex context
-      const ctx = args[0] as any;
-
-      if (ctx && ctx.auth && ctx.db) {
+      const ctx = args[0] as MutationCtx;
+      if (ctx && (ctx as any).auth && ctx.db) {
         try {
-          const identity = await ctx.auth.getUserIdentity();
+          const identity = await (ctx as any).auth.getUserIdentity();
           if (identity) {
             const userId = identity.subject as Id<"users">;
             await RateLimiter.enforceRateLimit(
@@ -320,7 +314,7 @@ export function withRateLimit(config: RateLimitConfig) {
  * Helper function to create rate limit middleware for actions
  */
 export function createRateLimitMiddleware(config: RateLimitConfig) {
-  return async (ctx: DbCtx, userId: Id<"users">, action: string) => {
+  return async (ctx: MutationCtx, userId: Id<"users">, action: string) => {
     return await RateLimiter.enforceRateLimit(ctx, userId, action, config);
   };
 }
@@ -333,7 +327,7 @@ export class BurstRateLimiter {
    * Implements token bucket algorithm for burst handling
    */
   static async checkBurstLimit(
-    ctx: DbCtx,
+    ctx: QueryCtx,
     userId: Id<"users">,
     action: string,
     config: {
@@ -342,15 +336,11 @@ export class BurstRateLimiter {
       burstSize: number;
     },
   ): Promise<{ allowed: boolean; tokensRemaining: number }> {
-    const now = Date.now();
     const key = `burst_${action}`;
-
-    // This is a simplified implementation
-    // In production, you'd want to store bucket state in the database
     const existingLimit = await ctx.db
       .query("rateLimits")
-      .withIndex("by_user_action_window", (q) =>
-        q.eq("userId", userId).eq("action", key),
+      .filter((q) =>
+        q.and(q.eq(q.field("userId"), userId), q.eq(q.field("action"), key)),
       )
       .first();
 
@@ -370,14 +360,14 @@ export class DistributedRateLimiter {
    * Implements distributed rate limiting using database as coordination layer
    */
   static async checkDistributedLimit(
-    ctx: DbCtx,
+    ctx: MutationCtx,
     key: string,
     config: RateLimitConfig,
   ): Promise<RateLimitResult> {
     // This would implement distributed rate limiting
     // using the database as a coordination layer
     // For now, falls back to regular rate limiting
-    const userId = key as Id<"users">; // Simplified for this implementation
+    const userId = key as Id<"users">; // Simplified placeholder
     return await RateLimiter.checkRateLimit(ctx, userId, "distributed", config);
   }
 }

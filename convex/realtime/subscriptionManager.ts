@@ -205,7 +205,7 @@ export const establishSubscription = mutation({
         action: "subscription_established",
         metadata: {
           subscriptionId,
-          permissionsJson: JSON.stringify(permissions),
+          permissions,
           priority,
         },
       }),

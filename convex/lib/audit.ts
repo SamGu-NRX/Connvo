@@ -6,6 +6,10 @@ import { Id } from "../_generated/dataModel";
 import { ActionCtx, MutationCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
 
+// JSON value helpers
+export type JSONPrimitive = string | number | boolean | null;
+export type JsonValue = JSONPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
 export type AuditCategory = "subscription_management" | "auth" | "data_access" | "meeting";
 
 export type SubscriptionEventAction =
@@ -31,14 +35,10 @@ export type AuditEvent = {
   action: string;
   category: AuditCategory;
   success: boolean;
-  metadata?: Record<string, string | number | boolean>;
-};
-
-export function buildSubscriptionAudit(
+  metadata?: Record<string, JsonValue>;
+    metadata?: SubscriptionMetadata & Record<string, JsonValue>;
   base: Omit<AuditEvent, "category" | "success"> & {
-    metadata?:
-      | (SubscriptionMetadata & Record<string, string | number | boolean>)
-      | undefined;
+    metadata?: (SubscriptionMetadata & Record<string, JsonValue>) | undefined;
   },
   success = true,
 ): AuditEvent {

@@ -18,6 +18,7 @@ import {
   SLO_TARGETS,
 } from "../lib/performance";
 import { globalBandwidthManager } from "../lib/batching";
+import { metadataRecordV } from "../lib/validators";
 
 /**
  * Real-time performance metrics query
@@ -161,7 +162,7 @@ export const createAlertInternal = mutation({
     ),
     title: v.string(),
     message: v.string(),
-    metadata: v.any(),
+    metadata: v.optional(metadataRecordV),
     actionable: v.boolean(),
   },
   returns: v.id("alerts"),
@@ -677,7 +678,7 @@ export const recordCustomMetric = mutation({
       metadata: {
         metricName,
         value,
-        tagsJson: JSON.stringify(tags ?? {}),
+        tags: tags ?? {},
         category: "performance_monitoring",
       },
     });

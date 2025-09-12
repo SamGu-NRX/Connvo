@@ -11,6 +11,7 @@
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
+import { metadataRecordV } from "../lib/validators";
 
 /**
  * Creates a system alert
@@ -35,7 +36,7 @@ export const createAlert = internalMutation({
     ),
     title: v.string(),
     message: v.string(),
-    metadata: v.any(),
+    metadata: v.optional(metadataRecordV),
     actionable: v.boolean(),
   },
   returns: v.id("alerts"),

@@ -102,23 +102,24 @@ export const applyNoteOperation = mutation({
     const conflicts: string[] = [];
 
     for (const concurrentOp of concurrentOps) {
+      // Validate the operation type before casting
+      const opType = concurrentOp.operation.type;
+      if (opType !== "insert" && opType !== "delete" && opType !== "retain") {
+        throw createError.validation(`Invalid operation type: ${opType}`);
+      }
       const concurrentOperation: Operation = {
-        type: concurrentOp.operation.type as "insert" | "delete" | "retain",
+        type: opType,
         position: concurrentOp.operation.position,
         content: concurrentOp.operation.content,
-        length: concurrentOp.operation.length,
-      };
-
-      const originalOp = transformedOp;
-      transformedOp = transformAgainst(transformedOp, concurrentOperation);
-
       // Track conflicts for client notification
-      if (
-        originalOp.position !== transformedOp.position ||
-        (originalOp.type === "insert" &&
-          transformedOp.type === "insert" &&
-          originalOp.content !== transformedOp.content)
-      ) {
+      const hasPositionConflict = originalOp.position !== transformedOp.position;
+      const hasContentConflict = originalOp.type === "insert" &&
+        transformedOp.type === "insert" &&
+        originalOp.content !== transformedOp.content;
+      const hasLengthConflict = originalOp.length !== transformedOp.length;
+      const hasTypeConflict = originalOp.type !== transformedOp.type;
+
+      if (hasPositionConflict || hasContentConflict || hasLengthConflict || hasTypeConflict) {
         conflicts.push(concurrentOp._id);
       }
     }
