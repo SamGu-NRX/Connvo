@@ -27,6 +27,8 @@ type TranscriptDoc = {
   endMs: number;
   // Align with schema: transcripts.wordCount is required
   wordCount: number;
+  // Optional language field per schema
+  language?: string;
   createdAt: number;
 };
 

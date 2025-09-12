@@ -1,18 +1,39 @@
-# LinkedUp Backend Migration to Convex — Design Document (v1.2)
+# LinkedUp Backend Migration to Convex — Design Document (v2.0)
 
 Owner: Platform/Backend
-Date: 2025-09-10
+Date: 2025-09-11
 Compliance: Must comply with steering/convex_rules.mdc. Use the context7 MCP tool for up-to-date Convex guidance and patterns.
 
-**REVISION NOTES (v1.2):**
+What changed since 2024 (validated 2025-09-11):
+- Convex now documents full-text search searchIndex and vector search vectorIndex; vector
+  search must be run from actions via ctx.vectorSearch (docs.convex.dev/search/vector-search).
+- Convex full-text search is prefix-only (no fuzzy) as of 2025-01-15 (docs.convex.dev/search/text-search).
+- WorkOS has first-class Convex support (official provider, announced 2025-07-31)
+  which simplifies auth wiring and enforces aud/iss. Use it where available.
+- HTTP actions and router patterns remain the recommended approach for webhooks and
+  external integrations (docs.convex.dev/functions/http-actions).
 
-- Aligned authentication strategy to WorkOS (not Clerk) per requirements
-- Enhanced schema design following Convex best practices and performance patterns
-- Refined index sharding strategies to prevent hot partitions
-- Added concrete OT algorithms for collaborative notes
-- Improved batching/coalescing patterns for scalability
-- Detailed migration mapping from Drizzle schema to Convex collections
-- Enhanced performance optimizations for thousands of concurrent meetings
+REVISION NOTES (v2.0):
+
+- Tiering: Free tier uses native WebRTC with Convex-backed signaling and custom
+  transcription as the base offering; GetStream Video (with recording) is
+  reserved for the paid/pro tier. Meeting lifecycle and provisioning branch by
+  entitlement (free vs paid).
+- Added orgs, orgMemberships, subscriptions, entitlements, rtcSessions,
+  rtcSignals, and recordings to the schema & index plan to support billing and
+  tier-aware feature gating.
+- Authentication: prefer the official Convex + WorkOS integration (2025-07-31
+  provider) for aud/iss enforcement; fallback to customJwt only if the official
+  provider is not yet available in the environment.
+- Added TURN provisioning actions, RTC signaling patterns, and RTC-specific
+  observability (signal throughput, TURN allocation success/fail).
+- Vector & search: vector searches must be invoked from actions (ctx.vectorSearch);
+  text search is prefix-only. Constraints reflected in search/index config.
+- Security: ephemeral ICE/TURN credentials must never be persisted; rtcSignals
+  are short-lived documents with TTL and rate limits to prevent abuse.
+- Migration: extended backfill/cutover plan to populate org/subscription state
+  and default migrated orgs to the free tier; added a feature-flagged read
+  strategy for staged cutover.
 
 Summary
 

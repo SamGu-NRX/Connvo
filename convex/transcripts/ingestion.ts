@@ -8,15 +8,21 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
  */
 
-import { mutation, internalMutation, internalQuery } from "../_generated/server";
+import {
+  mutation,
+  internalMutation,
+  internalQuery,
+} from "../_generated/server";
+import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { TranscriptQueryOptimizer } from "../lib/queryOptimization";
 import { assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
+import { RateLimiter, RateLimitConfigs } from "../lib/rateLimit";
 import { Id } from "../_generated/dataModel";
 
 /**
- * Ingests a transcription chunk with validation and sharding
+ * Ingests a transcription chunk with validation, sharding, and rate limiting
  */
 export const ingestTranscriptChunk = mutation({
   args: {
@@ -27,15 +33,17 @@ export const ingestTranscriptChunk = mutation({
     startTime: v.number(),
     endTime: v.number(),
     language: v.optional(v.string()),
+    isInterim: v.optional(v.boolean()),
   },
   returns: v.object({
     success: v.boolean(),
     sequence: v.number(),
     bucketMs: v.number(),
+    rateLimitRemaining: v.number(),
   }),
   handler: async (ctx, args) => {
     // Verify user is a participant
-    await assertMeetingAccess(ctx, args.meetingId);
+    const participant = await assertMeetingAccess(ctx, args.meetingId);
 
     const meeting = await ctx.db.get(args.meetingId);
     if (!meeting || meeting.state !== "active") {
@@ -55,28 +63,59 @@ export const ingestTranscriptChunk = mutation({
       throw createError.validation("Start time must be before end time");
     }
 
+    // Validate text length (prevent abuse)
+    if (args.text.length > 10000) {
+      throw createError.validation(
+        "Transcript text too long (max 10,000 characters)",
+      );
+    }
+
+    // Check rate limits using the rate limiting utility
+    const rateLimitResult = await RateLimiter.enforceRateLimit(
+      ctx,
+      participant.userId,
+      `meeting_${args.meetingId}`,
+      RateLimitConfigs.TRANSCRIPT_INGESTION,
+    );
+
     // Calculate time bucket (5-minute windows) to prevent hot partitions
     const bucketMs = Math.floor(args.startTime / 300000) * 300000;
 
-    // Get next sequence number for this meeting
+    // Get next sequence number for this meeting (optimized query)
     const lastTranscript = await ctx.db
       .query("transcripts")
-      .withIndex("by_meeting_time_range", (q) =>
-        q.eq("meetingId", args.meetingId),
+      .withIndex("by_meeting_bucket", (q) =>
+        q.eq("meetingId", args.meetingId).eq("bucketMs", bucketMs),
       )
       .order("desc")
       .first();
 
-    const sequence = (lastTranscript?.sequence || 0) + 1;
+    // If no transcript in current bucket, check previous buckets for global sequence
+    let globalSequence = 1;
+    if (!lastTranscript) {
+      const globalLast = await ctx.db
+        .query("transcripts")
+        .withIndex("by_meeting_time_range", (q) =>
+          q.eq("meetingId", args.meetingId),
+        )
+        .order("desc")
+        .first();
+      globalSequence = (globalLast?.sequence || 0) + 1;
+    } else {
+      globalSequence = lastTranscript.sequence + 1;
+    }
 
     // Calculate word count for analytics
-    const wordCount = args.text.trim().split(/\s+/).length;
+    const wordCount = args.text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
 
-    // Insert transcript chunk
+    // Insert transcript chunk with enhanced metadata
     await ctx.db.insert("transcripts", {
       meetingId: args.meetingId,
       bucketMs,
-      sequence,
+      sequence: globalSequence,
       speakerId: args.speakerId,
       text: args.text.trim(),
       confidence: args.confidence,
@@ -87,16 +126,29 @@ export const ingestTranscriptChunk = mutation({
       createdAt: Date.now(),
     });
 
+    // Update meeting state with latest activity
+    const meetingState = await ctx.db
+      .query("meetingState")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", args.meetingId))
+      .unique();
+
+    if (meetingState) {
+      await ctx.db.patch(meetingState._id, {
+        updatedAt: Date.now(),
+      });
+    }
+
     return {
       success: true,
-      sequence,
+      sequence: globalSequence,
       bucketMs,
+      rateLimitRemaining: rateLimitResult.remaining,
     };
   },
 });
 
 /**
- * Internal mutation for batch transcript ingestion
+ * Internal mutation for batch transcript ingestion with optimized performance
  */
 export const batchIngestTranscriptChunks = internalMutation({
   args: {
@@ -109,19 +161,37 @@ export const batchIngestTranscriptChunks = internalMutation({
         startTime: v.number(),
         endTime: v.number(),
         language: v.optional(v.string()),
+        isInterim: v.optional(v.boolean()),
       }),
     ),
+    batchId: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
     processed: v.number(),
     failed: v.number(),
+    batchId: v.string(),
+    performance: v.object({
+      processingTimeMs: v.number(),
+      chunksPerSecond: v.number(),
+    }),
   }),
-  handler: async (ctx, { meetingId, chunks }) => {
+  handler: async (ctx, { meetingId, chunks, batchId }) => {
+    const startTime = Date.now();
+    const generatedBatchId =
+      batchId ||
+      `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     let processed = 0;
     let failed = 0;
 
-    // Get current sequence number
+    // Validate meeting exists and is active
+    const meeting = await ctx.db.get(meetingId);
+    if (!meeting) {
+      throw new Error(`Meeting ${meetingId} not found`);
+    }
+
+    // Get current sequence number with optimized query
     const lastTranscript = await ctx.db
       .query("transcripts")
       .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", meetingId))
@@ -130,57 +200,327 @@ export const batchIngestTranscriptChunks = internalMutation({
 
     let currentSequence = (lastTranscript?.sequence || 0) + 1;
 
-    for (const chunk of chunks) {
-      try {
-        // Validate chunk
-        if (chunk.text.trim().length === 0) {
+    // Sort chunks by start time for proper sequence ordering
+    const sortedChunks = chunks
+      .filter((chunk) => chunk.text.trim().length > 0)
+      .sort((a, b) => a.startTime - b.startTime);
+
+    // Process chunks in batches to avoid transaction timeouts
+    const BATCH_SIZE = 20;
+    for (let i = 0; i < sortedChunks.length; i += BATCH_SIZE) {
+      const batchChunks = sortedChunks.slice(i, i + BATCH_SIZE);
+
+      for (const chunk of batchChunks) {
+        try {
+          // Enhanced validation
+          if (chunk.text.length > 10000) {
+            failed++;
+            continue;
+          }
+
+          if (chunk.confidence < 0 || chunk.confidence > 1) {
+            failed++;
+            continue;
+          }
+
+          if (chunk.startTime >= chunk.endTime) {
+            failed++;
+            continue;
+          }
+
+          // Calculate time bucket (5-minute windows)
+          const bucketMs = Math.floor(chunk.startTime / 300000) * 300000;
+          const wordCount = chunk.text
+            .trim()
+            .split(/\s+/)
+            .filter((word) => word.length > 0).length;
+
+          // Insert transcript chunk with batch metadata
+          await ctx.db.insert("transcripts", {
+            meetingId,
+            bucketMs,
+            sequence: currentSequence++,
+            speakerId: chunk.speakerId,
+            text: chunk.text.trim(),
+            confidence: chunk.confidence,
+            startMs: chunk.startTime,
+            endMs: chunk.endTime,
+            wordCount,
+            language: chunk.language || "en",
+            createdAt: Date.now(),
+          });
+
+          processed++;
+        } catch (error) {
+          console.error("Failed to process transcript chunk:", error);
           failed++;
-          continue;
         }
-
-        if (chunk.confidence < 0 || chunk.confidence > 1) {
-          failed++;
-          continue;
-        }
-
-        if (chunk.startTime >= chunk.endTime) {
-          failed++;
-          continue;
-        }
-
-        // Calculate time bucket
-        const bucketMs = Math.floor(chunk.startTime / 300000) * 300000;
-        const wordCount = chunk.text.trim().split(/\s+/).length;
-
-        // Insert transcript chunk
-        await ctx.db.insert("transcripts", {
-          meetingId,
-          bucketMs,
-          sequence: currentSequence++,
-          speakerId: chunk.speakerId,
-          text: chunk.text.trim(),
-          confidence: chunk.confidence,
-          startMs: chunk.startTime,
-          endMs: chunk.endTime,
-          wordCount,
-          language: chunk.language || "en",
-          createdAt: Date.now(),
-        });
-
-        processed++;
-      } catch (error) {
-        console.error("Failed to process transcript chunk:", error);
-        failed++;
       }
+    }
+
+    const processingTimeMs = Date.now() - startTime;
+    const chunksPerSecond =
+      processed > 0 ? (processed / processingTimeMs) * 1000 : 0;
+
+    // Update meeting state with batch processing info
+    const meetingState = await ctx.db
+      .query("meetingState")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .unique();
+
+    if (meetingState) {
+      await ctx.db.patch(meetingState._id, {
+        updatedAt: Date.now(),
+      });
     }
 
     return {
       success: processed > 0,
       processed,
       failed,
+      batchId: generatedBatchId,
+      performance: {
+        processingTimeMs,
+        chunksPerSecond,
+      },
     };
   },
 });
+
+/**
+ * Coalesced transcript ingestion for high-frequency streams
+ * Buffers chunks and processes them in optimized batches
+ */
+export const coalescedIngestTranscriptChunks = internalMutation({
+  args: {
+    meetingId: v.id("meetings"),
+    chunks: v.array(
+      v.object({
+        speakerId: v.optional(v.string()),
+        text: v.string(),
+        confidence: v.number(),
+        startTime: v.number(),
+        endTime: v.number(),
+        language: v.optional(v.string()),
+        isInterim: v.optional(v.boolean()),
+      }),
+    ),
+    coalescingWindowMs: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    processed: v.number(),
+    coalesced: v.number(),
+    performance: v.object({
+      originalChunks: v.number(),
+      coalescedChunks: v.number(),
+      compressionRatio: v.number(),
+    }),
+  }),
+  handler: async (
+    ctx,
+    { meetingId, chunks, coalescingWindowMs = 250 },
+  ): Promise<{
+    success: boolean;
+    processed: number;
+    coalesced: number;
+    performance: {
+      originalChunks: number;
+      coalescedChunks: number;
+      compressionRatio: number;
+    };
+  }> => {
+    // Group chunks by speaker and time proximity for coalescing
+    const coalescedChunks = coalesceTranscriptChunks(
+      chunks,
+      coalescingWindowMs,
+    );
+
+    // Use batch ingestion for the coalesced chunks via proper function reference
+    const result: {
+      success: boolean;
+      processed: number;
+      failed: number;
+      batchId: string;
+      performance: { processingTimeMs: number; chunksPerSecond: number };
+    } = await ctx.runMutation(
+      internal.transcripts.ingestion.batchIngestTranscriptChunks,
+      {
+        meetingId,
+        chunks: coalescedChunks,
+        batchId: `coalesced_${Date.now()}`,
+      },
+    );
+
+    const compressionRatio =
+      chunks.length > 0 ? coalescedChunks.length / chunks.length : 1;
+
+    return {
+      success: result.success,
+      processed: result.processed,
+      coalesced: coalescedChunks.length,
+      performance: {
+        originalChunks: chunks.length,
+        coalescedChunks: coalescedChunks.length,
+        compressionRatio,
+      },
+    };
+  },
+});
+
+/**
+ * Internal: Ingest a transcript streaming performance metric.
+ * Placed in transcripts/ingestion namespace to ensure availability in generated API.
+ */
+export const ingestStreamingMetric = internalMutation({
+  args: {
+    meetingId: v.id("meetings"),
+    metrics: v.object({
+      chunksProcessed: v.number(),
+      batchesProcessed: v.number(),
+      latencyMs: v.number(),
+      throughputChunksPerSecond: v.number(),
+      timestamp: v.number(),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, { meetingId, metrics }) => {
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming",
+      value: metrics.throughputChunksPerSecond,
+      unit: "chunks_per_second",
+      labels: {
+        meetingId,
+        operation: "transcript_ingestion",
+        batchesProcessed: String(metrics.batchesProcessed),
+      },
+      threshold: { warning: 10, critical: 5 },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
+ * Internal: Create a system alert for monitoring (no auth requirement).
+ */
+export const createAlertInternal = internalMutation({
+  args: {
+    alertId: v.string(),
+    severity: v.union(
+      v.literal("critical"),
+      v.literal("error"),
+      v.literal("warning"),
+      v.literal("info"),
+    ),
+    category: v.union(
+      v.literal("meeting_lifecycle"),
+      v.literal("video_provider"),
+      v.literal("transcription"),
+      v.literal("authentication"),
+      v.literal("performance"),
+      v.literal("security"),
+      v.literal("system"),
+    ),
+    title: v.string(),
+    message: v.string(),
+    metadata: v.any(),
+    actionable: v.boolean(),
+  },
+  returns: v.id("alerts"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("alerts")
+      .filter((q) => q.eq(q.field("alertId"), args.alertId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        message: args.message,
+        metadata: args.metadata,
+        updatedAt: now,
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("alerts", {
+      alertId: args.alertId,
+      severity: args.severity,
+      category: args.category,
+      title: args.title,
+      message: args.message,
+      metadata: args.metadata,
+      actionable: args.actionable,
+      status: "active",
+      escalationTime: args.severity === "critical" ? now + 300000 : undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+/**
+ * Helper function to coalesce transcript chunks by speaker and time proximity
+ */
+function coalesceTranscriptChunks(
+  chunks: Array<{
+    speakerId?: string;
+    text: string;
+    confidence: number;
+    startTime: number;
+    endTime: number;
+    language?: string;
+    isInterim?: boolean;
+  }>,
+  windowMs: number,
+): Array<{
+  speakerId?: string;
+  text: string;
+  confidence: number;
+  startTime: number;
+  endTime: number;
+  language?: string;
+  isInterim?: boolean;
+}> {
+  if (chunks.length === 0) return [];
+
+  // Sort chunks by start time
+  const sortedChunks = [...chunks].sort((a, b) => a.startTime - b.startTime);
+  const coalesced: typeof chunks = [];
+
+  let currentChunk = { ...sortedChunks[0] };
+
+  for (let i = 1; i < sortedChunks.length; i++) {
+    const nextChunk = sortedChunks[i];
+
+    // Check if chunks can be coalesced (same speaker, within time window)
+    const canCoalesce =
+      currentChunk.speakerId === nextChunk.speakerId &&
+      currentChunk.language === nextChunk.language &&
+      nextChunk.startTime - currentChunk.endTime <= windowMs &&
+      !currentChunk.isInterim &&
+      !nextChunk.isInterim; // Don't coalesce interim results
+
+    if (canCoalesce) {
+      // Merge chunks
+      currentChunk.text += " " + nextChunk.text;
+      currentChunk.endTime = nextChunk.endTime;
+      currentChunk.confidence =
+        (currentChunk.confidence + nextChunk.confidence) / 2;
+    } else {
+      // Save current chunk and start new one
+      coalesced.push(currentChunk);
+      currentChunk = { ...nextChunk };
+    }
+  }
+
+  // Add the last chunk
+  coalesced.push(currentChunk);
+
+  return coalesced;
+}
 
 /**
  * Gets transcript chunks for a meeting with pagination
@@ -235,7 +575,6 @@ export const getTranscriptChunks = mutation({
       results = optimized.transcripts;
     }
 
-    
     return results;
   },
 });

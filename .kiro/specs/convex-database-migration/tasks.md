@@ -103,29 +103,29 @@
     - Build alerting and monitoring for Stream integration failures with actionable traces
     - _Requirements: 6.5_
 
-- [ ] 6. Live Transcription System
-  - [ ] 6.1 Build Transcription Ingestion Pipeline with Sharding
+- [-] 6. Live Transcription System
+  - [-] 6.1 Build Transcription Ingestion Pipeline with Sharding
     - Create ingestTranscriptChunk mutation with assertMeetingAccess validation
     - Implement time-bucketed storage with bucketMs (5-minute windows) to prevent hot partitions
     - Add monotonic sequence generation and rate limiting via rateLimits table
     - Build validation for meeting active state and participant permissions
     - _Requirements: 7.1, 7.3_
 
-  - [ ] 6.2 Implement Real-Time Transcript Streaming with Isolation
+  - [-] 6.2 Implement Real-Time Transcript Streaming with Isolation
     - Create subscribeTranscriptStream query with per-meeting access isolation
     - Add speaker identification, confidence scoring, and interim/final transcript handling
     - Implement time-bounded queries across multiple buckets with sequence-based pagination
     - Build dynamic permission updates when participants join/leave meetings
     - _Requirements: 7.2, 7.4_
 
-  - [ ] 6.3 Build Transcript Aggregation and Retention System
+  - [-] 6.3 Build Transcript Aggregation and Retention System
     - Create aggregateTranscriptSegments action for post-meeting processing
     - Implement transcriptSegments creation with speaker grouping and topic extraction
     - Add search indexes on transcript content and retention policies (30-90 days raw, 1 year segments)
     - Build cleanup jobs for expired transcript data with proper audit logging
     - _Requirements: 7.5_
 
-- [ ] 7. Collaborative Notes with Operational Transform
+- [] 7. Collaborative Notes with Operational Transform
   - [ ] 7.1 Implement Comprehensive OT Infrastructure
     - Create Operation interface with insert/delete/retain types and position/content/length fields
     - Build transformAgainst function with proper operational transformation rules for concurrent edits

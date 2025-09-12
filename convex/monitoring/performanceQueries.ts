@@ -102,6 +102,102 @@ export const getPerformanceMetrics = query({
 });
 
 /**
+ * Internal: Ingest a transcript streaming performance metric.
+ * Avoids auth requirement for background/internal reporting.
+ */
+export const ingestStreamingMetric = mutation({
+  args: {
+    meetingId: v.id("meetings"),
+    metrics: v.object({
+      chunksProcessed: v.number(),
+      batchesProcessed: v.number(),
+      latencyMs: v.number(),
+      throughputChunksPerSecond: v.number(),
+      timestamp: v.number(),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, { meetingId, metrics }) => {
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming",
+      value: metrics.throughputChunksPerSecond,
+      unit: "chunks_per_second",
+      labels: {
+        meetingId,
+        operation: "transcript_ingestion",
+        batchesProcessed: String(metrics.batchesProcessed),
+      },
+      threshold: {
+        warning: 10,
+        critical: 5,
+      },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
+ * Internal: Create a system alert (no auth requirement).
+ */
+export const createAlertInternal = mutation({
+  args: {
+    alertId: v.string(),
+    severity: v.union(
+      v.literal("critical"),
+      v.literal("error"),
+      v.literal("warning"),
+      v.literal("info"),
+    ),
+    category: v.union(
+      v.literal("meeting_lifecycle"),
+      v.literal("video_provider"),
+      v.literal("transcription"),
+      v.literal("authentication"),
+      v.literal("performance"),
+      v.literal("security"),
+      v.literal("system"),
+    ),
+    title: v.string(),
+    message: v.string(),
+    metadata: v.any(),
+    actionable: v.boolean(),
+  },
+  returns: v.id("alerts"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("alerts")
+      .filter((q) => q.eq(q.field("alertId"), args.alertId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        message: args.message,
+        metadata: args.metadata,
+        updatedAt: now,
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("alerts", {
+      alertId: args.alertId,
+      severity: args.severity,
+      category: args.category,
+      title: args.title,
+      message: args.message,
+      metadata: args.metadata,
+      actionable: args.actionable,
+      status: "active",
+      escalationTime: args.severity === "critical" ? now + 300000 : undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+/**
  * WebSocket subscription performance metrics
  */
 export const getSubscriptionMetrics = query({

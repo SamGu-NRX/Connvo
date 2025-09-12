@@ -42,7 +42,7 @@ export default defineSchema({
     .index("by_org_and_active", ["orgId", "isActive"])
     .index("by_email", ["email"])
     .index("by_last_seen", ["lastSeenAt"])
-    .index("by_org_and_role", ["orgId", "orgRole"]) 
+    .index("by_org_and_role", ["orgId", "orgRole"])
     .index("by_onboarding_complete", ["onboardingComplete"]),
 
   profiles: defineTable({
@@ -221,7 +221,11 @@ export default defineSchema({
     .index("by_meeting_time_range", ["meetingId", "startMs"])
     .index("by_created_at", ["createdAt"])
     .index("by_meeting_and_created_at", ["meetingId", "createdAt"])
-    .index("by_bucket_global", ["bucketMs"]), // For cleanup jobs
+    .index("by_bucket_global", ["bucketMs"]) // For cleanup jobs
+    .searchIndex("search_text", {
+      searchField: "text",
+      filterFields: ["meetingId"],
+    }),
 
   transcriptionSessions: defineTable({
     meetingId: v.id("meetings"),
@@ -449,9 +453,9 @@ export default defineSchema({
   })
     .index("by_meeting", ["meetingId"])
     .index("by_user", ["userId"])
-    .index("by_user_and_meeting", ["userId", "meetingId"]) 
+    .index("by_user_and_meeting", ["userId", "meetingId"])
     .index("by_meeting_and_session", ["meetingId", "sessionId"])
-    .index("by_meeting_and_state", ["meetingId", "state"]) 
+    .index("by_meeting_and_state", ["meetingId", "state"])
     .index("by_state", ["state"])
     // Composite index for cleanup queries on state + updatedAt
     .index("by_state_and_updatedAt", ["state", "updatedAt"]),
@@ -472,7 +476,11 @@ export default defineSchema({
     .index("by_timestamp", ["timestamp"])
     .index("by_processed", ["processed"])
     .index("by_processed_and_timestamp", ["processed", "timestamp"])
-    .index("by_meeting_target_and_processed", ["meetingId", "toUserId", "processed"]),
+    .index("by_meeting_target_and_processed", [
+      "meetingId",
+      "toUserId",
+      "processed",
+    ]),
 
   // Connection Quality Metrics
   connectionMetrics: defineTable({
@@ -641,6 +649,55 @@ export default defineSchema({
     .index("by_recording_id", ["recordingId"])
     .index("by_provider", ["provider"])
     .index("by_status", ["status"]),
+
+  // Offline Support for Collaborative Notes
+  offlineOperationQueue: defineTable({
+    meetingId: v.id("meetings"),
+    clientId: v.string(),
+    queueId: v.string(),
+    operation: v.object({
+      type: v.union(
+        v.literal("insert"),
+        v.literal("delete"),
+        v.literal("retain"),
+      ),
+      position: v.number(),
+      content: v.optional(v.string()),
+      length: v.optional(v.number()),
+    }),
+    operationId: v.string(),
+    authorId: v.id("users"),
+    clientSequence: v.number(),
+    timestamp: v.number(),
+    queuedAt: v.number(),
+    attempts: v.number(),
+    lastAttempt: v.optional(v.number()),
+    error: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("syncing"),
+      v.literal("synced"),
+      v.literal("failed"),
+    ),
+  })
+    .index("by_meeting_and_client", ["meetingId", "clientId"])
+    .index("by_queue_id", ["queueId"])
+    .index("by_status", ["status"])
+    .index("by_queued_at", ["queuedAt"]),
+
+  offlineCheckpoints: defineTable({
+    checkpointId: v.string(),
+    meetingId: v.id("meetings"),
+    clientId: v.string(),
+    sequence: v.number(),
+    version: v.number(),
+    contentHash: v.string(),
+    timestamp: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_checkpoint_id", ["checkpointId"])
+    .index("by_meeting_and_client", ["meetingId", "clientId"])
+    .index("by_created_at", ["createdAt"]),
 
   // Legacy Support (for migration)
   connections: defineTable({
