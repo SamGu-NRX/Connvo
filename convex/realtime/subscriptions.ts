@@ -162,6 +162,7 @@ export const subscribeTranscriptStream = query({
         confidence: v.number(),
         startMs: v.number(),
         endMs: v.number(),
+        isInterim: v.optional(v.boolean()),
         createdAt: v.number(),
       }),
     ),

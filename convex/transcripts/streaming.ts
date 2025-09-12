@@ -340,6 +340,21 @@ export const cleanupStreamingMetrics = internalMutation({
       await ctx.db.delete(metric._id);
     }
 
+    // Audit log (best-effort)
+    try {
+      await ctx.runMutation(internal.audit.logging.createAuditLog, {
+        actorUserId: undefined,
+        resourceType: "metrics",
+        resourceId: "transcript_streaming",
+        action: "cleanup_metrics",
+        category: "transcription",
+        success: true,
+        metadata: { deleted: oldMetrics.length, olderThanMs },
+      });
+    } catch (e) {
+      console.warn("Failed to log metrics cleanup audit", e);
+    }
+
     return {
       deleted: oldMetrics.length,
     };

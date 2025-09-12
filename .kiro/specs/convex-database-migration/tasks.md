@@ -147,22 +147,22 @@
     - Build operation composition and coalescing for performance optimization
     - _Requirements: 8.3, 8.4, 8.5_
 
-- [ ] 8. AI-Powered Features Foundation
-  - [ ] 8.1 Build Pre-Call Idea Generation System with Idempotency
+- [x] 8. AI-Powered Features Foundation
+  - [x] 8.1 Build Pre-Call Idea Generation System with Idempotency
     - Create generatePreCallIdeas action with hashRequest idempotency using meetingId
     - Implement participant profile analysis for shared interests, complementary skills, and goals
     - Add prompts collection with type=precall, relevance scoring, and tag categorization
     - Build structured AI prompt generation with fallback to heuristic suggestions
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 8.2 Implement In-Call Conversation Prompts with Context Awareness
+  - [x] 8.2 Implement In-Call Conversation Prompts with Context Awareness
     - Create generateContextualPrompts action with lull detection and topic shift triggers
     - Build meetingState tracking for speaking time ratios, last activity, and current topics
     - Implement contextual prompt generation using recent transcript and participant expertise
     - Add prompt feedback tracking (used, dismissed, upvoted) for relevance improvement
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ] 8.3 Build Post-Call Insights Pipeline with Privacy Controls
+  - [x] 8.3 Build Post-Call Insights Pipeline with Privacy Controls
     - Create generateInsights action for transcript and notes analysis per participant
     - Implement insights collection with summary, actionItems, recommendations, and suggestedConnections
     - Add privacy-controlled per-user insight generation with confidence scoring
@@ -170,7 +170,7 @@
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
 - [ ] 9. Intelligent Matching System
-  - [ ] 9.1 Implement Advanced Real-Time Matching Queue
+  - [-] 9.1 Implement Advanced Real-Time Matching Queue
     - Create enterMatchingQueue mutation with availability windows, timezone, and constraint preferences
     - Build matchingQueue collection with interests, roles, experienceLevels, industries, and language preferences
     - Add real-time queue status updates with priority ordering and retry mechanisms

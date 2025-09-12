@@ -29,6 +29,8 @@ type TranscriptDoc = {
   wordCount: number;
   // Optional language field per schema
   language?: string;
+  // Optional interim flag
+  isInterim?: boolean;
   createdAt: number;
 };
 

@@ -19,6 +19,7 @@ import { TranscriptQueryOptimizer } from "../lib/queryOptimization";
 import { assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { RateLimiter, RateLimitConfigs } from "../lib/rateLimit";
+import { metadataRecordV } from "../lib/validators";
 import { Id } from "../_generated/dataModel";
 
 /**
@@ -121,6 +122,7 @@ export const ingestTranscriptChunk = mutation({
       confidence: args.confidence,
       startMs: args.startTime,
       endMs: args.endTime,
+      isInterim: args.isInterim,
       wordCount,
       language: args.language || "en",
       createdAt: Date.now(),
@@ -245,6 +247,7 @@ export const batchIngestTranscriptChunks = internalMutation({
             confidence: chunk.confidence,
             startMs: chunk.startTime,
             endMs: chunk.endTime,
+            isInterim: chunk.isInterim,
             wordCount,
             language: chunk.language || "en",
             createdAt: Date.now(),
@@ -425,7 +428,7 @@ export const createAlertInternal = internalMutation({
     ),
     title: v.string(),
     message: v.string(),
-    metadata: v.any(),
+    metadata: metadataRecordV,
     actionable: v.boolean(),
   },
   returns: v.id("alerts"),
@@ -611,6 +614,21 @@ export const cleanupOldTranscripts = internalMutation({
 
     for (const transcript of oldTranscripts) {
       await ctx.db.delete(transcript._id);
+    }
+
+    // Audit log
+    try {
+      await ctx.runMutation(internal.audit.logging.createAuditLog, {
+        actorUserId: undefined,
+        resourceType: "transcripts",
+        resourceId: meetingId ? String(meetingId) : "*",
+        action: "cleanup_transcripts",
+        category: "transcription",
+        success: true,
+        metadata: { deleted: oldTranscripts.length, olderThanMs },
+      });
+    } catch (e) {
+      console.warn("Failed to log transcript cleanup audit", e);
     }
 
     return {

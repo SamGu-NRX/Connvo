@@ -211,6 +211,8 @@ export default defineSchema({
     confidence: v.number(),
     startMs: v.number(),
     endMs: v.number(),
+    // Whether this chunk is an interim hypothesis from the provider
+    isInterim: v.optional(v.boolean()),
     // Denormalized for performance
     wordCount: v.number(),
     language: v.optional(v.string()),
@@ -222,6 +224,7 @@ export default defineSchema({
     .index("by_created_at", ["createdAt"])
     .index("by_meeting_and_created_at", ["meetingId", "createdAt"])
     .index("by_bucket_global", ["bucketMs"]) // For cleanup jobs
+    .index("by_meeting_and_speaker", ["meetingId", "speakerId"]) // For speaker-specific queries
     .searchIndex("search_text", {
       searchField: "text",
       filterFields: ["meetingId"],
