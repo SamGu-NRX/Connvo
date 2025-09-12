@@ -1,7 +1,12 @@
-import { internalQuery, internalMutation, internalAction } from "../_generated/server";
+import {
+  internalQuery,
+  internalMutation,
+  internalAction,
+} from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { metadataRecordV } from "../lib/validators";
+import type { Id } from "../_generated/dataModel";
 
 export const getKey = internalQuery({
   args: { key: v.string(), scope: v.string() },
@@ -89,19 +94,51 @@ export const resolveResult = internalAction({
     const meta = record.metadata as Record<string, string | number | boolean>;
     const resultType = meta["resultType"];
     if (resultType === "inline") {
-      const inlineValue = meta["resultInline"] as string | number | boolean | undefined;
+      const inlineValue = meta["resultInline"] as
+        | string
+        | number
+        | boolean
+        | undefined;
       return { kind: "inline" as const, inlineValue };
     }
     if (resultType === "storage") {
-      const ref = String(meta["resultRef"] || "");
-      if (!ref) return { kind: "storage" as const, json: "", size: 0 };
-      const blob = await ctx.storage.get(ref as any);
-      const json = await blob?.text();
-      return {
-        kind: "storage" as const,
-        json: json ?? "",
-        size: (meta["resultSize"] as number) || (json ? json.length : 0),
-      };
+      const rawRef = meta["resultRef"];
+      const ref = typeof rawRef === "string" ? rawRef.trim() : "";
+
+      // Validate the reference before attempting to read from storage
+      if (!ref) {
+        return { kind: "storage" as const, json: "", size: 0 };
+      }
+
+      // Narrow to a Convex storage Id after runtime validation
+      const storageId = ref as unknown as Id<"_storage">;
+
+      try {
+        const blob = await ctx.storage.get(storageId);
+        if (!blob) {
+          // Blob was not found; return an empty storage result
+          return { kind: "storage" as const, json: "", size: 0 };
+        }
+        const json = await blob.text();
+
+        // Safely compute size: prefer validated numeric metadata, fallback to json length
+        const sizeMeta = meta["resultSize"];
+        const metaSize =
+          typeof sizeMeta === "number" && Number.isFinite(sizeMeta) && sizeMeta >= 0
+            ? sizeMeta
+            : undefined;
+
+        return {
+          kind: "storage" as const,
+          json: json ?? "",
+          size: metaSize ?? (json ? json.length : 0),
+        };
+      } catch (err) {
+        // Provide a clear error for upstream handling
+        throw new Error(
+          `STORAGE_READ_FAILED: Unable to read stored idempotency result for key='${key}', scope='${scope}', ref='${ref}'.`,
+        );
+      }
     }
     // Unknown type fallback
     return { kind: "inline" as const, inlineValue: undefined };
@@ -121,11 +158,15 @@ export const enforceRateLimit = internalMutation({
   returns: v.object({ remaining: v.number(), resetAt: v.number() }),
   handler: async (ctx, { userId, action, windowMs, maxCount }) => {
     const now = Date.now();
-    const windowStartMs = Math.floor(now / windowMs) * windowMs;
+    // Use integer division to avoid floating-point issues
+    const windowStartMs = now - (now % windowMs);
     const existing = await ctx.db
       .query("rateLimits")
       .withIndex("by_user_action_window", (q) =>
-        q.eq("userId", userId).eq("action", action).eq("windowStartMs", windowStartMs),
+        q
+          .eq("userId", userId)
+          .eq("action", action)
+          .eq("windowStartMs", windowStartMs),
       )
       .unique();
 
@@ -142,12 +183,20 @@ export const enforceRateLimit = internalMutation({
     }
 
     const nextCount = existing.count + 1;
-    await ctx.db.patch(existing._id, { count: nextCount, updatedAt: now });
 
     if (nextCount > maxCount) {
-      throw new Error("RATE_LIMIT_EXCEEDED");
+      const resetAt = windowStartMs + windowMs;
+      const resetIn = Math.ceil((resetAt - now) / 1000);
+      throw new Error(
+        `RATE_LIMIT_EXCEEDED: Rate limit exceeded for action '${action}'. Try again in ${resetIn} seconds.`,
+      );
     }
 
-    return { remaining: maxCount - nextCount, resetAt: windowStartMs + windowMs };
+    await ctx.db.patch(existing._id, { count: nextCount, updatedAt: now });
+
+    return {
+      remaining: maxCount - nextCount,
+      resetAt: windowStartMs + windowMs,
+    };
   },
 });

@@ -443,10 +443,22 @@ export const getOfflineQueueStatus = mutation({
     const now = Date.now();
     const oldestAge = oldestPending ? now - oldestPending : 0;
 
-    if (statusCounts.failed > 10 || oldestAge > 300000) {
+    // Make these configurable via environment or database settings
+    const CRITICAL_AGE_MS = 300000; // 5 minutes
+    const WARNING_AGE_MS = 60000; // 1 minute
+    const CRITICAL_FAILED_COUNT = 10;
+    const WARNING_PENDING_COUNT = 50;
+
+    if (
+      statusCounts.failed > CRITICAL_FAILED_COUNT ||
+      oldestAge > CRITICAL_AGE_MS
+    ) {
       // 5 minutes
       queueHealth = "critical";
-    } else if (statusCounts.pending > 50 || oldestAge > 60000) {
+    } else if (
+      statusCounts.pending > WARNING_PENDING_COUNT ||
+      oldestAge > WARNING_AGE_MS
+    ) {
       // 1 minute
       queueHealth = "warning";
     } else {

@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import { query, mutation, action, internalQuery } from "../_generated/server";
+import { query, mutation, action, internalQuery, internalMutation } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { requireIdentity } from "../auth/guards";
 import {
@@ -105,8 +105,8 @@ export const getPerformanceMetrics = query({
 /**
  * Internal: Ingest a transcript streaming performance metric.
  * Avoids auth requirement for background/internal reporting.
- */
-export const ingestStreamingMetric = mutation({
+*/
+export const ingestStreamingMetric = internalMutation({
   args: {
     meetingId: v.id("meetings"),
     metrics: v.object({
@@ -141,8 +141,8 @@ export const ingestStreamingMetric = mutation({
 
 /**
  * Internal: Create a system alert (no auth requirement).
- */
-export const createAlertInternal = mutation({
+*/
+export const createAlertInternal = internalMutation({
   args: {
     alertId: v.string(),
     severity: v.union(
@@ -162,7 +162,7 @@ export const createAlertInternal = mutation({
     ),
     title: v.string(),
     message: v.string(),
-    metadata: v.optional(metadataRecordV),
+    metadata: v.any(),
     actionable: v.boolean(),
   },
   returns: v.id("alerts"),

@@ -9,7 +9,8 @@
  */
 
 import { v } from "convex/values";
-import { QueryCtx, MutationCtx } from "../_generated/server";
+import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 import { createError } from "./errors";
 
@@ -96,6 +97,13 @@ export class RateLimiter {
       )
       .unique();
 
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "[RateLimiter] check",
+        JSON.stringify({ key, windowStart, existing: !!existingLimit, count: existingLimit?.count ?? 0 }),
+      );
+    }
+
     let currentCount = 0;
     let remaining = config.maxRequests;
 
@@ -157,6 +165,37 @@ export class RateLimiter {
     }
 
     return result;
+  }
+
+  /**
+   * Enforces rate limit from an Action context by calling an internal mutation.
+   */
+  static async enforceFromAction(
+    ctx: ActionCtx,
+    userId: Id<"users">,
+    action: string,
+    config: RateLimitConfig,
+  ): Promise<RateLimitResult> {
+    const key = config.keyPrefix ? `${config.keyPrefix}_${action}` : action;
+    try {
+      const { remaining, resetAt } = await ctx.runMutation(
+        internal.system.rateLimit.enforce,
+        {
+          userId,
+          action: key,
+          windowMs: config.windowMs,
+          maxCount: config.maxRequests,
+        },
+      );
+      return {
+        allowed: true,
+        remaining,
+        resetTime: resetAt,
+        totalHits: config.maxRequests - remaining,
+      };
+    } catch (err) {
+      throw createError.rateLimitExceeded(action, config.maxRequests);
+    }
   }
 
   /**
@@ -256,9 +295,16 @@ export class RateLimiter {
       }
     }
 
-    const topActions = Array.from(actionCounts.entries())
+    const topActions: Array<{ action: string; requests: number }> = Array.from(
+      actionCounts.entries(),
+    )
       .map(([action, requests]) => ({ action, requests }))
-      .sort((a, b) => b.requests - a.requests)
+      .sort(
+        (
+          a: { action: string; requests: number },
+          b: { action: string; requests: number },
+        ) => b.requests - a.requests,
+      )
       .slice(0, 10);
 
     return {
@@ -289,13 +335,43 @@ export function withRateLimit(config: RateLimitConfig) {
         try {
           const identity = await (ctx as any).auth.getUserIdentity();
           if (identity) {
-            const userId = identity.subject as Id<"users">;
-            await RateLimiter.enforceRateLimit(
-              ctx,
-              userId,
-              propertyKey,
-              config,
-            );
+            // Validate and normalize identity to a proper Id<"users">
+            let validatedUserId: Id<"users"> | null = null;
+
+            // Prefer provider-populated identity.userId when available
+            const possibleUserId = (identity as any).userId;
+            if (typeof possibleUserId === "string" && possibleUserId.length > 0) {
+              validatedUserId = possibleUserId as Id<"users">;
+            } else if (
+              typeof identity.subject === "string" &&
+              identity.subject.length > 0
+            ) {
+              // Fallback: try to resolve by external subject (e.g., WorkOS user id)
+              const user = await ctx.db
+                .query("users")
+                .withIndex("by_workos_id", (q) =>
+                  q.eq("workosUserId", identity.subject as string),
+                )
+                .unique();
+              if (user?._id) validatedUserId = user._id;
+            }
+
+            // Only enforce if we have a validated user id
+            if (validatedUserId) {
+              await RateLimiter.enforceRateLimit(
+                ctx,
+                validatedUserId,
+                propertyKey,
+                config,
+              );
+            } else {
+              // No valid user id; skip rate limiting to avoid unsafe casts
+              if (process.env.NODE_ENV !== "production") {
+                console.warn(
+                  "[RateLimiter] Skipping rate limit; invalid identity.userId/subject",
+                );
+              }
+            }
           }
         } catch (error) {
           // If rate limiting fails, log but don't block the operation
@@ -339,10 +415,17 @@ export class BurstRateLimiter {
     const key = `burst_${action}`;
     const existingLimit = await ctx.db
       .query("rateLimits")
-      .filter((q) =>
-        q.and(q.eq(q.field("userId"), userId), q.eq(q.field("action"), key)),
+      .withIndex("by_user_action_window", (q) =>
+        q.eq("userId", userId).eq("action", key),
       )
       .first();
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "[BurstRateLimiter] check",
+        JSON.stringify({ key, exists: !!existingLimit, count: existingLimit?.count ?? 0 }),
+      );
+    }
 
     // Simplified burst logic - would need more sophisticated implementation
     const allowed = !existingLimit || existingLimit.count < config.burstSize;

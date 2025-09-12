@@ -8,10 +8,12 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
-import { internalAction, internalMutation } from "../_generated/server";
+import { internalAction, internalMutation, internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
+
+
 
 /**
  * Streaming transcript processor with intelligent batching
@@ -131,7 +133,9 @@ export const processTranscriptStream = internalAction({
       const averageLatencyPerChunk =
         totalProcessed > 0 ? totalLatencyMs / totalProcessed : 0;
       const throughputChunksPerSecond =
-        totalProcessed > 0 ? (totalProcessed / totalLatencyMs) * 1000 : 0;
+        totalProcessed > 0 && totalLatencyMs > 0
+          ? (totalProcessed / totalLatencyMs) * 1000
+          : 0;
 
       // Update streaming metrics via monitoring module
       await ctx.runMutation(
@@ -364,7 +368,7 @@ export const cleanupStreamingMetrics = internalMutation({
 /**
  * Gets streaming performance statistics
  */
-export const getStreamingStats = internalMutation({
+export const getStreamingStats = internalQuery({
   args: {
     meetingId: v.id("meetings"),
     timeRangeMs: v.optional(v.number()),

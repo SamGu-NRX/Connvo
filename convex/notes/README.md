@@ -240,11 +240,12 @@ function CollaborationStats({ meetingId }) {
 
 ### noteOps
 
-```typescript
+````typescript
 {
   meetingId: Id<"meetings">,
-  sequence: number,          // Global sequence number
-  authorId: Id<"users">,     // Operation author
+  sequence: number,          // Monotonic per-meeting sequence
+  operationId: string,       // Idempotency token (dedupe on retries)
+  authorId: Id<"users">,     // Server-derived from auth; ignore client input
   operation: {
     type: "insert" | "delete" | "retain",
     position: number,
@@ -252,9 +253,8 @@ function CollaborationStats({ meetingId }) {
     length?: number,         // For delete/retain operations
   },
   timestamp: number,         // Operation timestamp
-  applied: boolean,          // Whether operation was applied
+  applied: boolean,          // True if applied post-transform; false only if tombstoned/rolled back
 }
-```
 
 ### offlineOperationQueue
 
@@ -272,7 +272,7 @@ function CollaborationStats({ meetingId }) {
   attempts: number,          // Sync attempts
   status: "pending" | "syncing" | "synced" | "failed",
 }
-```
+````
 
 ## Performance Considerations
 

@@ -194,7 +194,7 @@ export function transformAgainst(opA: Operation, opB: Operation): Operation {
   if (opA.type === "insert" && opB.type === "delete") {
     if (opA.position <= opB.position) {
       return opA; // A comes before B's deletion range
-    } else if (opA.position > opB.position + (opB.length || 0)) {
+    } else if (opA.position >= opB.position + (opB.length || 0)) {
       return {
         ...opA,
         position: opA.position - (opB.length || 0),
@@ -273,10 +273,23 @@ export function transformAgainst(opA: Operation, opB: Operation): Operation {
         };
       }
     } else if (opB.type === "delete") {
-      if (opB.position + (opB.length || 0) <= opA.position) {
+      if (opB.position >= opA.position + (opA.length || 0)) {
+        // Delete is after the retain range
+        return opA;
+      } else if (opB.position + (opB.length || 0) <= opA.position) {
+        // Delete is completely before the retain position
         return {
           ...opA,
           position: opA.position - (opB.length || 0),
+        };
+      } else if (
+        opB.position <= opA.position &&
+        opB.position + (opB.length || 0) > opA.position
+      ) {
+        // Retain position falls within the delete range
+        return {
+          ...opA,
+          position: opB.position,
         };
       }
     }
@@ -388,7 +401,7 @@ export function validateOperation(operation: Operation): boolean {
  * Generates a unique operation ID
  */
 function generateOperationId(): string {
-  return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `op_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**
@@ -398,7 +411,12 @@ function generateOperationId(): string {
 export function getOperationPriority(operation: OperationWithMetadata): number {
   // Priority based on timestamp (earlier operations have higher priority)
   // In case of same timestamp, use author ID for deterministic ordering
-  return operation.timestamp * 1000 + operation.authorId.charCodeAt(0);
+  // Use a hash of the entire authorId for better distribution
+  const authorHash =
+    operation.authorId.split("").reduce((hash, char) => {
+      return (hash << 5) - hash + char.charCodeAt(0);
+    }, 0) & 0x7fffffff; // Ensure positive number
+  return operation.timestamp * 1000000 + (authorHash % 1000000);
 }
 
 /**
@@ -517,6 +535,19 @@ export function deserializeOperation(
   const parsed = JSON.parse(serialized);
   if (!validateOperation(parsed)) {
     throw new Error("Invalid serialized operation");
+  }
+  // Validate metadata fields
+  if (!parsed.id || typeof parsed.id !== "string") {
+    throw new Error("Missing or invalid id in serialized operation");
+  }
+  if (!parsed.authorId || typeof parsed.authorId !== "string") {
+    throw new Error("Missing or invalid authorId in serialized operation");
+  }
+  if (typeof parsed.timestamp !== "number") {
+    throw new Error("Missing or invalid timestamp in serialized operation");
+  }
+  if (typeof parsed.sequence !== "number") {
+    throw new Error("Missing or invalid sequence in serialized operation");
   }
   return parsed as OperationWithMetadata;
 }

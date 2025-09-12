@@ -27,9 +27,18 @@ export const getMeetingNotes = internalQuery({
     v.null(),
   ),
   handler: async (ctx, { meetingId }) => {
-    return await ctx.db
+    const note = await ctx.db
       .query("meetingNotes")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
+    if (!note) return null;
+    return {
+      _id: note._id,
+      meetingId: note.meetingId,
+      content: note.content,
+      version: note.version,
+      lastRebasedAt: note.lastRebasedAt,
+      updatedAt: note.updatedAt,
+    };
   },
 });

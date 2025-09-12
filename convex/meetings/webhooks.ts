@@ -230,7 +230,7 @@ export const handleRecordingStarted = internalMutation({
       category: "meeting",
       success: true,
       metadata: {
-        recordingId: recordingId ?? "",
+        ...(recordingId ? { recordingId } : {}),
         startedAt,
       },
     });
@@ -264,7 +264,20 @@ export const handleRecordingStopped = internalMutation({
       });
     }
 
-    // Log the event with download URL for future access
+    // Compute a safe download URL without query/hash to avoid logging signed tokens
+    const safeDownloadUrl = (() => {
+      if (!downloadUrl) return undefined;
+      try {
+        const u = new URL(downloadUrl);
+        u.search = "";
+        u.hash = "";
+        return `${u.origin}${u.pathname}`;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    // Log the event with sanitized download URL (no tokens) and without empty-string sentinels
     await logAudit(ctx, {
       resourceType: "meeting",
       resourceId: meetingId,
@@ -272,9 +285,9 @@ export const handleRecordingStopped = internalMutation({
       category: "meeting",
       success: true,
       metadata: {
-        recordingId: recordingId ?? "",
+        ...(recordingId ? { recordingId } : {}),
         stoppedAt,
-        downloadUrl: downloadUrl ?? "",
+        ...(safeDownloadUrl ? { downloadUrl: safeDownloadUrl } : {}),
       },
     });
 

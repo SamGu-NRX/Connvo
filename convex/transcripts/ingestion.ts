@@ -82,28 +82,65 @@ export const ingestTranscriptChunk = mutation({
     // Calculate time bucket (5-minute windows) to prevent hot partitions
     const bucketMs = Math.floor(args.startTime / 300000) * 300000;
 
-    // Get next sequence number for this meeting (optimized query)
-    const lastTranscript = await ctx.db
-      .query("transcripts")
-      .withIndex("by_meeting_bucket", (q) =>
-        q.eq("meetingId", args.meetingId).eq("bucketMs", bucketMs),
-      )
-      .order("desc")
-      .first();
+    // Atomically allocate the next global sequence for this meeting using a counter row.
+    // This avoids races between concurrent ingestions.
+    const now = Date.now();
+    const allocateNextSequence = async (): Promise<number> => {
+      // Get or initialize the meeting counter
+      let counter = await ctx.db
+        .query("meetingCounters")
+        .withIndex("by_meeting", (q) => q.eq("meetingId", args.meetingId))
+        .unique();
 
-    // If no transcript in current bucket, check previous buckets for global sequence
-    let globalSequence = 1;
-    if (!lastTranscript) {
-      const globalLast = await ctx.db
+      if (!counter) {
+        // Initialize from the current highest transcript sequence, if any
+        const globalLast = await ctx.db
+          .query("transcripts")
+          .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", args.meetingId))
+          .order("desc")
+          .first();
+
+        await ctx.db.insert("meetingCounters", {
+          meetingId: args.meetingId,
+          lastSequence: globalLast?.sequence ?? 0,
+          updatedAt: now,
+        });
+
+        counter = await ctx.db
+          .query("meetingCounters")
+          .withIndex("by_meeting", (q) => q.eq("meetingId", args.meetingId))
+          .unique();
+      }
+
+      // Increment atomically via transactional patch. If two transactions race,
+      // Convex will retry one to preserve serializability.
+      const next = (counter?.lastSequence ?? 0) + 1;
+      await ctx.db.patch(counter!._id, { lastSequence: next, updatedAt: now });
+      return next;
+    };
+
+    // Allocate a unique sequence, retrying if an unexpected duplicate is detected.
+    let globalSequence = 0;
+    const MAX_RETRIES = 5;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const seq = await allocateNextSequence();
+
+      // Defensive uniqueness check: ensure no transcript already has this sequence
+      const existing = await ctx.db
         .query("transcripts")
-        .withIndex("by_meeting_time_range", (q) =>
-          q.eq("meetingId", args.meetingId),
+        .withIndex("by_meeting_sequence", (q) =>
+          q.eq("meetingId", args.meetingId).eq("sequence", seq),
         )
-        .order("desc")
-        .first();
-      globalSequence = (globalLast?.sequence || 0) + 1;
-    } else {
-      globalSequence = lastTranscript.sequence + 1;
+        .unique();
+
+      if (!existing) {
+        globalSequence = seq;
+        break;
+      }
+      // Otherwise loop to get the next sequence
+    }
+    if (globalSequence === 0) {
+      throw new Error("Failed to allocate unique transcript sequence after retries");
     }
 
     // Calculate word count for analytics
@@ -125,7 +162,7 @@ export const ingestTranscriptChunk = mutation({
       isInterim: args.isInterim,
       wordCount,
       language: args.language || "en",
-      createdAt: Date.now(),
+      createdAt: now,
     });
 
     // Update meeting state with latest activity
@@ -193,14 +230,37 @@ export const batchIngestTranscriptChunks = internalMutation({
       throw new Error(`Meeting ${meetingId} not found`);
     }
 
-    // Get current sequence number with optimized query
-    const lastTranscript = await ctx.db
-      .query("transcripts")
-      .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", meetingId))
-      .order("desc")
-      .first();
+    // Helper to atomically allocate the next sequence for this meeting
+    const allocateNextSequence = async (): Promise<number> => {
+      const now = Date.now();
+      let counter = await ctx.db
+        .query("meetingCounters")
+        .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+        .unique();
 
-    let currentSequence = (lastTranscript?.sequence || 0) + 1;
+      if (!counter) {
+        const globalLast = await ctx.db
+          .query("transcripts")
+          .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", meetingId))
+          .order("desc")
+          .first();
+
+        await ctx.db.insert("meetingCounters", {
+          meetingId,
+          lastSequence: globalLast?.sequence ?? 0,
+          updatedAt: now,
+        });
+
+        counter = await ctx.db
+          .query("meetingCounters")
+          .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+          .unique();
+      }
+
+      const next = (counter?.lastSequence ?? 0) + 1;
+      await ctx.db.patch(counter!._id, { lastSequence: next, updatedAt: now });
+      return next;
+    };
 
     // Sort chunks by start time for proper sequence ordering
     const sortedChunks = chunks
@@ -237,11 +297,30 @@ export const batchIngestTranscriptChunks = internalMutation({
             .split(/\s+/)
             .filter((word) => word.length > 0).length;
 
+          // Allocate a unique sequence, retrying on rare conflicts
+          let sequence = 0;
+          for (let attempt = 0; attempt < 5; attempt++) {
+            const candidate = await allocateNextSequence();
+            const existing = await ctx.db
+              .query("transcripts")
+              .withIndex("by_meeting_sequence", (q) =>
+                q.eq("meetingId", meetingId).eq("sequence", candidate),
+              )
+              .unique();
+            if (!existing) {
+              sequence = candidate;
+              break;
+            }
+          }
+          if (!sequence) {
+            throw new Error("Failed to allocate unique transcript sequence in batch");
+          }
+
           // Insert transcript chunk with batch metadata
           await ctx.db.insert("transcripts", {
             meetingId,
             bucketMs,
-            sequence: currentSequence++,
+            sequence,
             speakerId: chunk.speakerId,
             text: chunk.text.trim(),
             confidence: chunk.confidence,
@@ -263,7 +342,9 @@ export const batchIngestTranscriptChunks = internalMutation({
 
     const processingTimeMs = Date.now() - startTime;
     const chunksPerSecond =
-      processed > 0 ? (processed / processingTimeMs) * 1000 : 0;
+      processed > 0 && processingTimeMs > 0
+        ? (processed / processingTimeMs) * 1000
+        : 0;
 
     // Update meeting state with batch processing info
     const meetingState = await ctx.db
@@ -340,13 +421,7 @@ export const coalescedIngestTranscriptChunks = internalMutation({
     );
 
     // Use batch ingestion for the coalesced chunks via proper function reference
-    const result: {
-      success: boolean;
-      processed: number;
-      failed: number;
-      batchId: string;
-      performance: { processingTimeMs: number; chunksPerSecond: number };
-    } = await ctx.runMutation(
+    const result = await ctx.runMutation(
       internal.transcripts.ingestion.batchIngestTranscriptChunks,
       {
         meetingId,
@@ -387,20 +462,38 @@ export const ingestStreamingMetric = internalMutation({
     }),
   },
   returns: v.null(),
+
   handler: async (ctx, { meetingId, metrics }) => {
-    await ctx.db.insert("performanceMetrics", {
-      name: "transcript_streaming",
-      value: metrics.throughputChunksPerSecond,
-      unit: "chunks_per_second",
-      labels: {
-        meetingId,
-        operation: "transcript_ingestion",
-        batchesProcessed: String(metrics.batchesProcessed),
-      },
-      threshold: { warning: 10, critical: 5 },
-      timestamp: metrics.timestamp,
-      createdAt: Date.now(),
-    });
+    // Validate metrics
+    if (
+      metrics.throughputChunksPerSecond < 0 ||
+      metrics.latencyMs < 0 ||
+      metrics.chunksProcessed < 0
+    ) {
+      throw new Error(
+        "Invalid metric values: all metrics must be non-negative",
+      );
+    }
+
+    try {
+      await ctx.db.insert("performanceMetrics", {
+        name: "transcript_streaming",
+        value: metrics.throughputChunksPerSecond,
+        unit: "chunks_per_second",
+        labels: {
+          meetingId,
+          operation: "transcript_ingestion",
+          batchesProcessed: String(metrics.batchesProcessed),
+        },
+        threshold: { warning: 10, critical: 5 },
+        timestamp: metrics.timestamp,
+        createdAt: Date.now(),
+      });
+    } catch (error) {
+      console.error("Failed to insert performance metrics:", error);
+      throw error;
+    }
+
     return null;
   },
 });
@@ -441,8 +534,12 @@ export const createAlertInternal = internalMutation({
 
     if (existing) {
       await ctx.db.patch(existing._id, {
+        severity: args.severity,
+        category: args.category,
+        title: args.title,
         message: args.message,
         metadata: args.metadata,
+        actionable: args.actionable,
         updatedAt: now,
       });
       return existing._id;

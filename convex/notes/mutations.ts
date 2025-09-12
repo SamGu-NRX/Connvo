@@ -55,7 +55,8 @@ export const applyNoteOperation = mutation({
     // Validate the operation
     if (!validateOperation(operation)) {
       throw createError.validation("Invalid operation format");
-    }
+      // Use crypto.randomUUID() or a proper UUID library for secure ID generation
+      id: `op_${Date.now()}_${crypto.randomUUID()}`,
 
     // Get or create meeting notes document
     let meetingNotes = await ctx.db
@@ -111,15 +112,28 @@ export const applyNoteOperation = mutation({
         type: opType,
         position: concurrentOp.operation.position,
         content: concurrentOp.operation.content,
-      // Track conflicts for client notification
-      const hasPositionConflict = originalOp.position !== transformedOp.position;
-      const hasContentConflict = originalOp.type === "insert" &&
-        transformedOp.type === "insert" &&
-        originalOp.content !== transformedOp.content;
-      const hasLengthConflict = originalOp.length !== transformedOp.length;
-      const hasTypeConflict = originalOp.type !== transformedOp.type;
+        length: concurrentOp.operation.length,
+      };
 
-      if (hasPositionConflict || hasContentConflict || hasLengthConflict || hasTypeConflict) {
+      // Transform against this concurrent operation
+      const beforeOp = transformedOp;
+      transformedOp = transformAgainst(transformedOp, concurrentOperation);
+
+      // Track conflicts for client notification
+      const hasPositionConflict = beforeOp.position !== transformedOp.position;
+      const hasContentConflict =
+        beforeOp.type === "insert" &&
+        transformedOp.type === "insert" &&
+        (beforeOp.content || "") !== (transformedOp.content || "");
+      const hasLengthConflict = (beforeOp.length ?? 0) !== (transformedOp.length ?? 0);
+      const hasTypeConflict = beforeOp.type !== transformedOp.type;
+
+      if (
+        hasPositionConflict ||
+        hasContentConflict ||
+        hasLengthConflict ||
+        hasTypeConflict
+      ) {
         conflicts.push(concurrentOp._id);
       }
     }
