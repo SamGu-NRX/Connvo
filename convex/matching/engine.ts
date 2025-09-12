@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import { action, internalAction, internalMutation } from "../_generated/server";
+import { action, internalAction, internalMutation, internalQuery } from "../_generated/server";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
@@ -341,7 +341,7 @@ export const createMatch = internalMutation({
           metadata: {
             matchedWith: args.matchResult.user2Id,
             score: args.matchResult.score,
-            features: args.matchResult.features,
+            featuresJson: JSON.stringify(args.matchResult.features),
           },
           timestamp: now,
         }),
@@ -353,7 +353,7 @@ export const createMatch = internalMutation({
           metadata: {
             matchedWith: args.matchResult.user1Id,
             score: args.matchResult.score,
-            features: args.matchResult.features,
+            featuresJson: JSON.stringify(args.matchResult.features),
           },
           timestamp: now,
         }),
@@ -466,7 +466,7 @@ export const updateMatchOutcome = internalMutation({
       action: "outcome_updated",
       metadata: {
         outcome: args.outcome,
-        feedback: args.feedback,
+        feedbackJson: JSON.stringify(args.feedback ?? null),
       },
       timestamp: Date.now(),
     });
@@ -505,11 +505,4 @@ function generateMatchId(user1Id: Id<"users">, user2Id: Id<"users">): string {
   return `match_${ids[0]}_${ids[1]}_${timestamp}`;
 }
 
-// Export internal functions
-export const internal = {
-  processMatchingShard,
-  getShardQueueEntries,
-  createMatch,
-  logMatchingMetrics,
-  updateMatchOutcome,
-};
+// Functions are available via generated internal API under internal.matching.engine

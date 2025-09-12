@@ -10,6 +10,7 @@
 
 import { v } from "convex/values";
 import { action, internalQuery } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 
@@ -563,7 +564,4 @@ function generateScoreExplanation(features: any, weights: any): string[] {
   return explanations;
 }
 
-// Export internal functions for testing
-export const internal = {
-  getUserScoringData,
-};
+// Functions are available via generated internal API under internal.matching.scoring

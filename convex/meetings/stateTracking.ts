@@ -36,24 +36,8 @@ export const updateSpeakingStats = mutation({
       .unique();
 
     if (!meetingState) {
-      // Create initial meeting state
-      meetingState = {
-        _id: await ctx.db.insert("meetingState", {
-          meetingId,
-          active: true,
-          speakingStats: {
-            totalMs: 0,
-            byUserMs: {},
-          },
-          lullState: {
-            detected: false,
-            lastActivity: Date.now(),
-            duration: 0,
-          },
-          topics: [],
-          recordingEnabled: false,
-          updatedAt: Date.now(),
-        }),
+      // Create initial meeting state and reload created document for proper typing
+      const createdId = await ctx.db.insert("meetingState", {
         meetingId,
         active: true,
         speakingStats: {
@@ -68,7 +52,11 @@ export const updateSpeakingStats = mutation({
         topics: [],
         recordingEnabled: false,
         updatedAt: Date.now(),
-      };
+      });
+      meetingState = await ctx.db.get(createdId);
+      if (!meetingState) {
+        throw createError.internal("Failed to initialize meeting state");
+      }
     }
 
     const now = Date.now();

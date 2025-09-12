@@ -43,7 +43,9 @@ export const validateSubscriptionPermissions = query({
       const role = normalizeRole(participant.role);
       const permissions = permissionsForResource(resourceType, role);
 
-      const granted = requiredPermissions.every((p) => permissions.includes(p));
+      const granted = requiredPermissions.every((p: string) =>
+        permissions.includes(p),
+      );
       return { granted, permissions, metadata: {} };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

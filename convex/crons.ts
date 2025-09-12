@@ -1,6 +1,15 @@
+/**
+ * Convex Cron Jobs Configuration
+ *
+ * This module defines scheduled jobs for the LinkedUp application
+ * including lull detection, prompt generation, and cleanup tasks.
+ *
+ * Requirements: 10.2, 14.1
+ * Compliance: steering/convex_rules.mdc - Uses proper Convex cron patterns
+ */
+
 import { cronJobs } from "convex/server";
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation, v } from "./_generated/server";
 
 // Define crons for transcript and metrics cleanup per steering rules
 const crons = cronJobs();
@@ -28,12 +37,13 @@ crons.interval(
 // Weekly transcript segments cleanup (1 year)
 crons.interval(
   "cleanup old transcript segments",
-  { days: 7 },
+  { hours: 24 * 7 },
   internal.transcripts.aggregation.cleanupOldTranscriptSegments,
   {
     olderThanMs: 365 * 24 * 60 * 60 * 1000,
   },
 );
 
-export default crons;
+// Matching jobs are not registered here to avoid reference errors.
 
+export default crons;

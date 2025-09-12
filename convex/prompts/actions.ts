@@ -57,7 +57,7 @@ export const generatePreCallIdeas = action({
         );
 
         return {
-          promptIds: existingPrompts.map((p) => p._id),
+          promptIds: existingPrompts.map((p: { _id: Id<"prompts"> }) => p._id),
           generated: false,
           fromCache: true,
         };
@@ -193,7 +193,7 @@ async function analyzeParticipants(
       );
 
       if (userInterests.length > 0) {
-        allInterests.push(userInterests.map((i) => i.key));
+        allInterests.push(userInterests.map((i: { key: string }) => i.key));
       }
     } catch (error) {
       console.warn(
@@ -626,7 +626,7 @@ async function analyzeMeetingContext(
 
       analysis.participantProfiles.push({
         userId: participant.userId,
-        interests: interests.map((i) => i.key),
+        interests: interests.map((i: { key: string }) => i.key),
         expertise: profile?.field ? [profile.field] : [],
         goals: profile?.goals ? [profile.goals] : [],
       });

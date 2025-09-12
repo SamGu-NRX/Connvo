@@ -222,8 +222,7 @@ export const cleanupOldTranscriptSegments = internalMutation({
     const cutoff = Date.now() - olderThanMs;
     const old = await ctx.db
       .query("transcriptSegments")
-      .withIndex("by_meeting_time", (q) => q.gte("startMs", 0))
-      .filter((q) => q.lt(q.field("createdAt"), cutoff))
+      .withIndex("by_created_at", (q) => q.lt("createdAt", cutoff))
       .collect();
     for (const seg of old) {
       await ctx.db.delete(seg._id);

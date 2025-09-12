@@ -29,7 +29,7 @@ export const enterMatchingQueue = mutation({
   },
   returns: v.id("matchingQueue"),
   handler: async (ctx, args) => {
-    const { userId } = requireIdentity(ctx);
+    const { userId } = await requireIdentity(ctx);
 
     // Validate availability window
     const now = Date.now();
@@ -98,7 +98,7 @@ export const cancelQueueEntry = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { userId } = requireIdentity(ctx);
+    const { userId } = await requireIdentity(ctx);
 
     let queueEntry;
     if (args.queueId) {
@@ -169,7 +169,7 @@ export const getQueueStatus = query({
     }),
   ),
   handler: async (ctx, args) => {
-    const { userId } = requireIdentity(ctx);
+    const { userId } = await requireIdentity(ctx);
 
     const queueEntry = await ctx.db
       .query("matchingQueue")
@@ -289,7 +289,7 @@ export const updateQueueStatus = mutation({
       metadata: {
         oldStatus: queueEntry.status,
         newStatus: args.status,
-        matchedWith: args.matchedWith,
+        matchedWith: args.matchedWith ? String(args.matchedWith) : "",
       },
       timestamp: Date.now(),
     });

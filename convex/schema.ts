@@ -266,6 +266,7 @@ export default defineSchema({
   })
     .index("by_meeting", ["meetingId"])
     .index("by_meeting_time", ["meetingId", "startMs"])
+    .index("by_created_at", ["createdAt"]) 
     .searchIndex("search_text", {
       searchField: "text",
       filterFields: ["meetingId"],

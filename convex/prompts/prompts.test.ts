@@ -8,17 +8,17 @@
  * Compliance: steering/convex_rules.mdc - Proper testing patterns
  */
 
-import { describe, it, expect } from "vitest";
-import { ConvexTestingHelper } from "convex-test";
+import { describe, it, expect, beforeEach } from "vitest";
+import { convexTest } from "convex-test";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
 
 describe("Prompts Module", () => {
-  let t: ConvexTestingHelper<typeof schema>;
+let t: ReturnType<typeof convexTest>;
 
-  beforeEach(async () => {
-    t = new ConvexTestingHelper(schema);
-  });
+beforeEach(async () => {
+  t = convexTest();
+});
 
   describe("Pre-call Idea Generation", () => {
     it("should generate pre-call ideas with idempotency", async () => {

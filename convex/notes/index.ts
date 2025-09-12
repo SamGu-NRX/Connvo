@@ -21,17 +21,8 @@ export {
   cleanupOldNoteOperations,
 } from "./mutations";
 
-// Export queries
-export {
-  subscribeMeetingNotes,
-  subscribeNoteOperations,
-  getRecentNoteOperations,
-  getNoteOperationsByAuthor,
-  getNotesCollaborationStats,
-  getNotesSyncStatus,
-  getNotesConflictHistory,
-  getNotesPerformanceMetrics,
-} from "./queries";
+// Export queries (minimal for insights path)
+export { getMeetingNotes } from "./queries";
 
 // Export offline support
 export {

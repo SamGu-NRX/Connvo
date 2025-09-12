@@ -67,7 +67,7 @@ export const generateMeetingInsights = action({
       // Check if insights already exist (unless force regenerate)
       if (!forceRegenerate) {
         const existingInsights = await Promise.all(
-          participants.map((p) =>
+          (participants as Array<{ userId: Id<"users"> }>).map((p) =>
             ctx.runQuery(
               internal.insights.queries.getInsightsByUserAndMeeting,
               {
@@ -78,14 +78,12 @@ export const generateMeetingInsights = action({
           ),
         );
 
-        const hasExistingInsights = existingInsights.some(
-          (insight) => insight !== null,
-        );
+        const hasExistingInsights = existingInsights.some((insight) => insight !== null);
         if (hasExistingInsights) {
           return {
             insightIds: existingInsights
-              .filter(i > i !== null)
-              .map((i) => i!._id),
+              .filter((item): item is { _id: Id<"insights"> } => item !== null)
+              .map((item) => item._id),
             participantsProcessed: participants.length,
             generated: false,
           };
@@ -96,7 +94,7 @@ export const generateMeetingInsights = action({
       const meetingData = await gatherMeetingData(ctx, meetingId);
 
       // Generate insights for each participant
-      const insightPromises = participants.map((participant) =>
+      const insightPromises = (participants as Array<{ userId: Id<"users"> }>).map((participant) =>
         generateParticipantInsights(
           ctx,
           meetingId,
@@ -133,7 +131,7 @@ export const generateMeetingInsights = action({
 /**
  * Generates insights for a specific participant
  */
-export const generateParticipantInsights = internalAction({
+export const generateParticipantInsightsAction = internalAction({
   args: {
     userId: v.id("users"),
     meetingId: v.id("meetings"),
@@ -467,8 +465,8 @@ function extractActionItems(
     actionKeywords.forEach((keyword) => {
       if (text.includes(keyword)) {
         // Extract the sentence containing the action keyword
-        const sentences = segment.text.split(/[.!?]+/);
-        sentences.forEach((sentence) => {
+        const sentences: string[] = segment.text.split(/[.!?]+/);
+        sentences.forEach((sentence: string) => {
           if (
             sentence.toLowerCase().includes(keyword) &&
             sentence.trim().length > 10
@@ -482,8 +480,8 @@ function extractActionItems(
 
   // Look for action items in notes
   if (notes?.content) {
-    const noteLines = notes.content.split("\n");
-    noteLines.forEach((line) => {
+    const noteLines: string[] = notes.content.split("\n");
+    noteLines.forEach((line: string) => {
       const trimmed = line.trim();
       if (
         (trimmed.startsWith("- ") || trimmed.startsWith("* ")) &&
