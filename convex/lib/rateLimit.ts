@@ -100,7 +100,12 @@ export class RateLimiter {
     if (process.env.NODE_ENV !== "production") {
       console.log(
         "[RateLimiter] check",
-        JSON.stringify({ key, windowStart, existing: !!existingLimit, count: existingLimit?.count ?? 0 }),
+        JSON.stringify({
+          key,
+          windowStart,
+          existing: !!existingLimit,
+          count: existingLimit?.count ?? 0,
+        }),
       );
     }
 
@@ -279,10 +284,15 @@ export class RateLimiter {
       0,
     );
     const uniqueUsers = new Set(recentLimits.map((limit) => limit.userId)).size;
-      // Check against actual configured limits to detect rate limit hits
-      // This would require passing config or storing maxRequests with the limit record
-      // For now, this is a limitation that should be documented
-      // TODO: Store maxRequests with rate limit records for accurate detection
+
+    // Initialize counters
+    const actionCounts = new Map<string, number>();
+    let rateLimitHits = 0;
+
+    // Check against actual configured limits to detect rate limit hits
+    // This would require passing config or storing maxRequests with the limit record
+    // For now, this is a limitation that should be documented
+    // TODO: Store maxRequests with rate limit records for accurate detection
 
     for (const limit of recentLimits) {
       const current = actionCounts.get(limit.action) || 0;
@@ -340,7 +350,10 @@ export function withRateLimit(config: RateLimitConfig) {
 
             // Prefer provider-populated identity.userId when available
             const possibleUserId = (identity as any).userId;
-            if (typeof possibleUserId === "string" && possibleUserId.length > 0) {
+            if (
+              typeof possibleUserId === "string" &&
+              possibleUserId.length > 0
+            ) {
               validatedUserId = possibleUserId as Id<"users">;
             } else if (
               typeof identity.subject === "string" &&
@@ -423,7 +436,11 @@ export class BurstRateLimiter {
     if (process.env.NODE_ENV !== "production") {
       console.log(
         "[BurstRateLimiter] check",
-        JSON.stringify({ key, exists: !!existingLimit, count: existingLimit?.count ?? 0 }),
+        JSON.stringify({
+          key,
+          exists: !!existingLimit,
+          count: existingLimit?.count ?? 0,
+        }),
       );
     }
 

@@ -18,7 +18,7 @@ import { v } from "convex/values";
 import { TranscriptQueryOptimizer } from "../lib/queryOptimization";
 import { assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
-import { RateLimiter, RateLimitConfigs } from "../lib/rateLimit";
+import { enforceUserLimit } from "../lib/rateLimiter";
 import { metadataRecordV } from "../lib/validators";
 import { Id } from "../_generated/dataModel";
 
@@ -71,13 +71,10 @@ export const ingestTranscriptChunk = mutation({
       );
     }
 
-    // Check rate limits using the rate limiting utility
-    const rateLimitResult = await RateLimiter.enforceRateLimit(
-      ctx,
-      participant.userId,
-      `meeting_${args.meetingId}`,
-      RateLimitConfigs.TRANSCRIPT_INGESTION,
-    );
+    // Enforce rate limits using shared component-backed limiter
+    await enforceUserLimit(ctx, "transcriptIngestion", participant.userId, {
+      throws: true,
+    });
 
     // Calculate time bucket (5-minute windows) to prevent hot partitions
     const bucketMs = Math.floor(args.startTime / 300000) * 300000;
@@ -181,7 +178,8 @@ export const ingestTranscriptChunk = mutation({
       success: true,
       sequence: globalSequence,
       bucketMs,
-      rateLimitRemaining: rateLimitResult.remaining,
+      // Remaining capacity is not exposed by the component; returning 0 as neutral value.
+      rateLimitRemaining: 0,
     };
   },
 });
@@ -476,6 +474,7 @@ export const ingestStreamingMetric = internalMutation({
     }
 
     try {
+      // Record throughput metric (chunks/sec)
       await ctx.db.insert("performanceMetrics", {
         name: "transcript_streaming",
         value: metrics.throughputChunksPerSecond,
@@ -486,6 +485,19 @@ export const ingestStreamingMetric = internalMutation({
           batchesProcessed: String(metrics.batchesProcessed),
         },
         threshold: { warning: 10, critical: 5 },
+        timestamp: metrics.timestamp,
+        createdAt: Date.now(),
+      });
+
+      // Record latency sample (ms) so we can compute averages later
+      await ctx.db.insert("performanceMetrics", {
+        name: "transcript_streaming_latency",
+        value: metrics.latencyMs, // already in ms
+        unit: "ms",
+        labels: {
+          meetingId,
+          operation: "transcript_ingestion",
+        },
         timestamp: metrics.timestamp,
         createdAt: Date.now(),
       });

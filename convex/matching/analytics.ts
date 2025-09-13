@@ -133,7 +133,7 @@ export const getMatchingStats = query({
     ),
   }),
   handler: async (ctx, args) => {
-    const { userId } = requireIdentity(ctx);
+    const { userId } = await requireIdentity(ctx);
 
     const matches = await ctx.db
       .query("matchingAnalytics")
@@ -445,7 +445,11 @@ export const optimizeMatchingWeights = action({
       roleComplementarity: optimizedWeights["roleComplementarity"] ?? 0,
     };
 
-    return { optimizedWeights: normalized, improvement, sampleSize: matches.length };
+    return {
+      optimizedWeights: normalized,
+      improvement,
+      sampleSize: matches.length,
+    };
   },
 });
 

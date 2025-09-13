@@ -43,9 +43,7 @@ export const validateSubscriptionPermissions = query({
       const role = normalizeRole(participant.role);
       const permissions = permissionsForResource(resourceType, role);
 
-      const granted = requiredPermissions.every((p: string) =>
-        permissions.includes(p),
-      );
+      const granted = requiredPermissions.every((p) => permissions.includes(p));
       return { granted, permissions, metadata: {} };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -87,7 +85,10 @@ export const refreshSubscriptionPermissions = query({
       try {
         const participant = await assertMeetingAccess(ctx, sub.resourceId);
         const role = normalizeRole(participant.role);
-        const updatedPermissions = permissionsForResource(sub.resourceType, role);
+        const updatedPermissions = permissionsForResource(
+          sub.resourceType,
+          role,
+        );
         results.push({
           resourceType: sub.resourceType,
           resourceId: sub.resourceId,

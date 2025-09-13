@@ -27,26 +27,35 @@ export type SubscriptionMetadata = {
   performance?: Record<string, number | boolean>;
 };
 
+// Event payload expected by internal.audit.logging.createAuditLog
 export type AuditEvent = {
   actorUserId?: Id<"users">;
   resourceType: string;
-  // Use string to match schema (auditLogs.resourceId is v.string())
-  resourceId: string;
+  resourceId: string; // matches schema.v.string()
   action: string;
   category: AuditCategory;
   success: boolean;
   metadata?: Record<string, JsonValue>;
-    metadata?: SubscriptionMetadata & Record<string, JsonValue>;
+};
+
+// Helper to build a subscription_management audit event with strong metadata typing
+export function makeSubscriptionAuditEvent(
   base: Omit<AuditEvent, "category" | "success"> & {
-    metadata?: (SubscriptionMetadata & Record<string, JsonValue>) | undefined;
+    metadata?: SubscriptionMetadata & Record<string, JsonValue>;
   },
-  success = true,
+  success: boolean = true,
 ): AuditEvent {
-  return {
-    ...base,
-    category: "subscription_management",
-    success,
-  };
+  return { ...base, category: "subscription_management", success };
+}
+
+// Back-compat builder used by realtime modules
+export function buildSubscriptionAudit(
+  args: Omit<AuditEvent, "category" | "success"> & {
+    metadata?: SubscriptionMetadata & Record<string, JsonValue>;
+    success?: boolean;
+  },
+): AuditEvent {
+  return makeSubscriptionAuditEvent(args, args.success ?? true);
 }
 
 export async function logAudit(

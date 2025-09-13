@@ -92,7 +92,7 @@ export const logMatchingError = internalMutation({
     await ctx.db.insert("alerts", {
       alertId: `matching_error_${args.timestamp}`,
       severity: "error",
-      category: "matching",
+      category: "system",
       title: "Automated Matching Cycle Failed",
       message: args.error,
       metadata: {

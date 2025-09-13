@@ -18,6 +18,7 @@
     "seed": "echo \"No seed script yet\""
   },
   "dependencies": {
+    "@convex-dev/rate-limiter": "^0.2.12",
     "@convex-dev/workos": "^0.0.1",
     "@hookform/resolvers": "^5.2.1",
     "@next/swc-wasm-nodejs": "15.5.2",

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "es2018",
+    "downlevelIteration": true,
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -34,7 +35,8 @@
     "**/*.tsx",
     "convex/**/*.ts",
     "next-env.d.ts",
-    "src/components/page.jsx"
+    "src/components/page.jsx",
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules", "convex/_generated"]
 }

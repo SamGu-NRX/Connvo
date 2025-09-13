@@ -240,6 +240,7 @@ describe("Operational Transform Core Functions", () => {
         position: 10,
         content: " world",
       };
+    });
 
 it("should compose adjacent inserts", () => {
   const opA: Operation = { type: "insert", position: 5, content: "Hello" };
@@ -522,25 +523,34 @@ it("should compose adjacent inserts", () => {
         { type: "insert", position: 9, content: "Y" },
       ];
 
-      // Apply operations in different orders and verify same result
+      // Apply operations in order
       const result1 = applyOperations(doc, operations);
 
-      // Reverse order
+      // Apply operations in reverse order with transformation
       const reversedOps = [...operations].reverse();
       let tempDoc = doc;
-      for (let i = reversedOps.length - 1; i >= 0; i--) {
+      for (let i = 0; i < reversedOps.length; i++) {
         const op = reversedOps[i];
-        // Transform against previously applied operations
         const transformed = transformAgainstOperations(
           op,
-          reversedOps.slice(i + 1),
+          operations.slice(0, operations.indexOf(op)),
         );
         tempDoc = applyToDoc(tempDoc, transformed);
       }
 
-      // Results should be consistent (this is a simplified test)
-      expect(result1).toBeDefined();
-      expect(tempDoc).toBeDefined();
+      // For this specific case, we can also transform against the already applied reversed operations
+      const transformedReversedOps: Operation[] = [];
+      for (let i = 0; i < reversedOps.length; i++) {
+        const op = reversedOps[i];
+        const transformed = transformAgainstOperations(
+          op,
+          transformedReversedOps,
+        );
+        transformedReversedOps.push(transformed);
+      }
+      const result2 = applyOperations(doc, transformedReversedOps);
+
+      expect(result1).toBe(result2);
     });
   });
 });

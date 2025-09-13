@@ -1,8 +1,8 @@
 /**
- * AI-Powered Insights Generation Actions
+ * Insights Generation Actions
  *
- * This module provides actions for generating post-call insights with
- * privacy controls, per-user analysis, and connection recommendations.
+ * This module provides AI-powered post-call insight generation with
+ * privacy controls and per-user analysis.
  *
  * Requirements: 11.1, 11.2, 11.3, 11.4, 11.5
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
@@ -17,110 +17,88 @@ import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
 
 /**
- * Generates post-call insights for all meeting participants
+ * Generates post-call insights for all participants
  */
-export const generateMeetingInsights = action({
+export const generateInsights = action({
   args: {
     meetingId: v.id("meetings"),
     forceRegenerate: v.optional(v.boolean()),
   },
   returns: v.object({
-    insightIds: v.array(v.id("insights")),
-    participantsProcessed: v.number(),
-    generated: v.boolean(),
+    success: v.boolean(),
+    insightsGenerated: v.number(),
+    participantInsights: v.array(v.id("insights")),
   }),
   handler: async (ctx, { meetingId, forceRegenerate = false }) => {
     try {
-      // Get meeting details
+      // Get meeting details and participants
       const meeting = await ctx.runQuery(
         internal.meetings.queries.getMeetingById,
-        {
-          meetingId,
-        },
+        { meetingId },
       );
 
-      if (!meeting) {
-        throw createError.notFound("Meeting", meetingId);
-      }
-
-      // Only generate insights for concluded meetings
-      if (meeting.state !== "concluded") {
+      if (!meeting || meeting.state !== "concluded") {
         throw createError.validation(
           "Meeting must be concluded to generate insights",
         );
       }
 
-      // Get meeting participants
       const participants = await ctx.runQuery(
         internal.meetings.queries.getMeetingParticipants,
         { meetingId },
       );
 
-      if (participants.length === 0) {
-        return {
-          insightIds: [],
-          participantsProcessed: 0,
-          generated: false,
-        };
-      }
+      // Generate insights for each participant
+      const participantInsights: Id<"insights">[] = [];
+      let insightsGenerated = 0;
 
-      // Check if insights already exist (unless force regenerate)
-      if (!forceRegenerate) {
-        const existingInsights = await Promise.all(
-          (participants as Array<{ userId: Id<"users"> }>).map((p) =>
-            ctx.runQuery(
+      for (const participant of participants) {
+        try {
+          // Check if insights already exist
+          if (!forceRegenerate) {
+            const existingInsights = await ctx.runQuery(
               internal.insights.queries.getInsightsByUserAndMeeting,
               {
-                userId: p.userId,
+                userId: participant.userId,
                 meetingId,
               },
-            ),
-          ),
-        );
+            );
 
-        const hasExistingInsights = existingInsights.some((insight) => insight !== null);
-        if (hasExistingInsights) {
-          return {
-            insightIds: existingInsights
-              .filter((item): item is { _id: Id<"insights"> } => item !== null)
-              .map((item) => item._id),
-            participantsProcessed: participants.length,
-            generated: false,
-          };
+            if (existingInsights) {
+              participantInsights.push(existingInsights._id);
+              continue;
+            }
+          }
+
+          // Generate insights for this participant
+          const insightId = await ctx.runAction(
+            internal.insights.generation.generateParticipantInsights,
+            {
+              meetingId,
+              userId: participant.userId,
+            },
+          );
+
+          if (insightId) {
+            participantInsights.push(insightId);
+            insightsGenerated++;
+          }
+        } catch (error) {
+          console.error(
+            `Failed to generate insights for participant ${participant.userId}:`,
+            error,
+          );
         }
       }
 
-      // Gather meeting data for analysis
-      const meetingData = await gatherMeetingData(ctx, meetingId);
-
-      // Generate insights for each participant
-      const insightPromises = (participants as Array<{ userId: Id<"users"> }>).map((participant) =>
-        generateParticipantInsights(
-          ctx,
-          meetingId,
-          participant.userId,
-          meetingData,
-        ),
-      );
-
-      const participantInsights = await Promise.all(insightPromises);
-
-      // Create insights in database
-      const insightIds = await ctx.runMutation(
-        internal.insights.mutations.batchCreateInsights,
-        {
-          insights: participantInsights,
-        },
-      );
-
       return {
-        insightIds,
-        participantsProcessed: participants.length,
-        generated: true,
+        success: true,
+        insightsGenerated,
+        participantInsights,
       };
     } catch (error) {
-      console.error("Failed to generate meeting insights:", error);
-      throw createError.internal("Failed to generate meeting insights", {
+      console.error("Failed to generate insights:", error);
+      throw createError.internal("Failed to generate insights", {
         meetingId,
         error: error instanceof Error ? error.message : String(error),
       });
@@ -131,183 +109,69 @@ export const generateMeetingInsights = action({
 /**
  * Generates insights for a specific participant
  */
-export const generateParticipantInsightsAction = internalAction({
+export const generateParticipantInsights = internalAction({
   args: {
-    userId: v.id("users"),
     meetingId: v.id("meetings"),
+    userId: v.id("users"),
   },
   returns: v.id("insights"),
-  handler: async (ctx, { userId, meetingId }) => {
-    // Gather meeting data
-    const meetingData = await gatherMeetingData(ctx, meetingId);
+  handler: async (ctx, { meetingId, userId }) => {
+    try {
+      // Get transcript segments for analysis
+      const transcriptSegments = await ctx.runQuery(
+        internal.transcripts.queries.getTranscriptSegments,
+        { meetingId, limit: 100 },
+      );
 
-    // Generate insights for this specific participant
-    const insights = await generateParticipantInsights(
-      ctx,
-      meetingId,
-      userId,
-      meetingData,
-    );
+      // Get meeting notes
+      const meetingNotes = await ctx.runQuery(
+        internal.notes.queries.getMeetingNotes,
+        { meetingId },
+      );
 
-    // Create insights in database
-    return await ctx.runMutation(
-      internal.insights.mutations.createInsights,
-      insights,
-    );
+      // Analyze content and generate insights
+      const insights = await analyzeContentForInsights(
+        ctx,
+        meetingId,
+        userId,
+        transcriptSegments,
+        meetingNotes,
+      );
+
+      if (!insights) {
+        return undefined;
+      }
+
+      // Create insights document
+      const insightId = await ctx.runMutation(
+        internal.insights.mutations.createInsights,
+        {
+          userId,
+          meetingId,
+          summary: insights.summary,
+          actionItems: insights.actionItems,
+          recommendations: insights.recommendations,
+          links: insights.links,
+        },
+      );
+
+      return insightId;
+    } catch (error) {
+      console.error("Failed to generate participant insights:", error);
+      return undefined;
+    }
   },
 });
 
 /**
- * Gathers all relevant meeting data for analysis
+ * Analyzes content to generate insights (stubbed implementation)
  */
-async function gatherMeetingData(
-  ctx: any,
-  meetingId: Id<"meetings">,
-): Promise<{
-  meeting: any;
-  participants: any[];
-  transcriptSegments: any[];
-  notes: any;
-  prompts: any[];
-  participantProfiles: Map<Id<"users">, any>;
-}> {
-  // Get meeting details
-  const meeting = await ctx.runQuery(internal.meetings.queries.getMeetingById, {
-    meetingId,
-  });
-
-  // Get participants
-  const participants = await ctx.runQuery(
-    internal.meetings.queries.getMeetingParticipants,
-    {
-      meetingId,
-    },
-  );
-
-  // Get transcript segments
-  const transcriptSegments = await ctx.runQuery(
-    internal.transcripts.queries.getTranscriptSegments,
-    {
-      meetingId,
-      limit: 100,
-    },
-  );
-
-  // Get meeting notes
-  const notes = await ctx.runQuery(internal.notes.queries.getMeetingNotes, {
-    meetingId,
-  });
-
-  // Get prompts used during the meeting
-  const prompts = await ctx.runQuery(
-    internal.prompts.queries.getPromptsByMeetingAndType,
-    {
-      meetingId,
-      type: "incall",
-      limit: 50,
-    },
-  );
-
-  // Get participant profiles
-  const participantProfiles = new Map();
-  for (const participant of participants) {
-    try {
-      const profile = await ctx.runQuery(
-        internal.profiles.queries.getProfileByUserId,
-        {
-          userId: participant.userId,
-        },
-      );
-      const interests = await ctx.runQuery(
-        internal.interests.queries.getUserInterests,
-        {
-          userId: participant.userId,
-        },
-      );
-      participantProfiles.set(participant.userId, { profile, interests });
-    } catch (error) {
-      console.warn(
-        `Failed to get profile for user ${participant.userId}:`,
-        error,
-      );
-    }
-  }
-
-  return {
-    meeting,
-    participants,
-    transcriptSegments,
-    notes,
-    prompts,
-    participantProfiles,
-  };
-}
-
-/**
- * Generates insights for a specific participant using AI or heuristic analysis
- */
-async function generateParticipantInsights(
+async function analyzeContentForInsights(
   ctx: any,
   meetingId: Id<"meetings">,
   userId: Id<"users">,
-  meetingData: {
-    meeting: any;
-    participants: any[];
-    transcriptSegments: any[];
-    notes: any;
-    prompts: any[];
-    participantProfiles: Map<Id<"users">, any>;
-  },
-): Promise<{
-  userId: Id<"users">;
-  meetingId: Id<"meetings">;
-  summary: string;
-  actionItems: string[];
-  recommendations: Array<{
-    type: string;
-    content: string;
-    confidence: number;
-  }>;
-  links: Array<{
-    type: string;
-    url: string;
-    title: string;
-  }>;
-}> {
-  // Try AI generation first (stubbed for now)
-  try {
-    const aiInsights = await generateAIInsights(ctx, userId, meetingData);
-    if (aiInsights) {
-      return {
-        userId,
-        meetingId,
-        ...aiInsights,
-      };
-    }
-  } catch (error) {
-    console.warn(
-      "AI insights generation failed, falling back to heuristics:",
-      error,
-    );
-  }
-
-  // Fallback to heuristic analysis
-  const heuristicInsights = generateHeuristicInsights(userId, meetingData);
-
-  return {
-    userId,
-    meetingId,
-    ...heuristicInsights,
-  };
-}
-
-/**
- * Generates insights using AI (stubbed implementation)
- */
-async function generateAIInsights(
-  ctx: any,
-  userId: Id<"users">,
-  meetingData: any,
+  transcriptSegments: any[],
+  meetingNotes: any,
 ): Promise<{
   summary: string;
   actionItems: string[];
@@ -322,73 +186,42 @@ async function generateAIInsights(
     title: string;
   }>;
 } | null> {
-  // TODO: Implement actual AI integration
-  // For now, return null to trigger fallback
-  return null;
-}
+  // TODO: Implement actual AI analysis
+  // For now, generate heuristic insights
 
-/**
- * Generates insights using heuristic analysis
- */
-function generateHeuristicInsights(
-  userId: Id<"users">,
-  meetingData: {
-    meeting: any;
-    participants: any[];
-    transcriptSegments: any[];
-    notes: any;
-    prompts: any[];
-    participantProfiles: Map<Id<"users">, any>;
-  },
-): {
-  summary: string;
-  actionItems: string[];
-  recommendations: Array<{
-    type: string;
-    content: string;
-    confidence: number;
-  }>;
-  links: Array<{
-    type: string;
-    url: string;
-    title: string;
-  }>;
-} {
-  const {
-    meeting,
-    participants,
-    transcriptSegments,
-    notes,
-    prompts,
-    participantProfiles,
-  } = meetingData;
+  if (transcriptSegments.length === 0 && !meetingNotes?.content) {
+    return null;
+  }
 
-  // Find the current user's participation
-  const userParticipant = participants.find((p) => p.userId === userId);
-  const userProfile = participantProfiles.get(userId);
+  // Extract key topics from transcript
+  const topics = transcriptSegments
+    .flatMap((segment) => segment.topics || [])
+    .filter((topic, index, array) => array.indexOf(topic) === index)
+    .slice(0, 5);
 
   // Generate summary
-  const summary = generateMeetingSummary(
-    meeting,
-    participants,
+  const summary = generateHeuristicSummary(
     transcriptSegments,
-    userParticipant,
+    meetingNotes,
+    topics,
   );
 
-  // Extract action items
-  const actionItems = extractActionItems(transcriptSegments, notes, prompts);
+  // Generate action items
+  const actionItems = generateHeuristicActionItems(
+    transcriptSegments,
+    meetingNotes,
+  );
 
   // Generate recommendations
-  const recommendations = generateRecommendations(
+  const recommendations = await generateHeuristicRecommendations(
+    ctx,
     userId,
-    userProfile,
-    participants,
-    participantProfiles,
-    meeting,
+    topics,
+    transcriptSegments,
   );
 
   // Generate relevant links
-  const links = generateRelevantLinks(userProfile, meeting, recommendations);
+  const links = generateHeuristicLinks(topics);
 
   return {
     summary,
@@ -399,195 +232,176 @@ function generateHeuristicInsights(
 }
 
 /**
- * Generates a personalized meeting summary
+ * Generates a heuristic summary
  */
-function generateMeetingSummary(
-  meeting: any,
-  participants: any[],
+function generateHeuristicSummary(
   transcriptSegments: any[],
-  userParticipant: any,
+  meetingNotes: any,
+  topics: string[],
 ): string {
-  const duration = meeting.duration || "unknown duration";
-  const participantCount = participants.length;
-  const topics = transcriptSegments.flatMap((seg) => seg.topics || []);
-  const uniqueTopics = [...new Set(topics)].slice(0, 3);
+  const duration =
+    transcriptSegments.length > 0
+      ? Math.max(...transcriptSegments.map((s) => s.endMs)) -
+        Math.min(...transcriptSegments.map((s) => s.startMs))
+      : 0;
 
-  let summary = `You participated in "${meeting.title}" with ${participantCount} participants`;
+  const durationMinutes = Math.round(duration / 60000);
+  const speakerCount = new Set(
+    transcriptSegments.flatMap((s) => s.speakers || []),
+  ).size;
 
-  if (userParticipant?.role === "host") {
-    summary += " as the host";
+  let summary = `This ${durationMinutes}-minute meeting involved ${speakerCount} participants`;
+
+  if (topics.length > 0) {
+    summary += ` and covered topics including ${topics.slice(0, 3).join(", ")}`;
   }
 
-  summary += `. The meeting lasted ${duration}`;
-
-  if (uniqueTopics.length > 0) {
-    summary += ` and covered topics including ${uniqueTopics.join(", ")}`;
+  if (meetingNotes?.content) {
+    summary += ". Key points were documented in the shared notes";
   }
 
   summary += ".";
 
-  // Add speaking time analysis if available
-  if (userParticipant?.speakingTime) {
-    const speakingRatio =
-      userParticipant.speakingTime / (meeting.duration || 1);
-    if (speakingRatio > 0.4) {
-      summary += " You were actively engaged in the discussion.";
-    } else if (speakingRatio < 0.1) {
-      summary += " You primarily listened during this meeting.";
-    }
-  }
+//  TODO:  // Add speaking time analysis if available
+//   if (userParticipant?.speakingTime) {
+//     const speakingRatio =
+//       userParticipant.speakingTime / (meeting.duration || 1);
+//     if (speakingRatio > 0.4) {
+//       summary += " You were actively engaged in the discussion.";
+//     } else if (speakingRatio < 0.1) {
+//       summary += " You primarily listened during this meeting.";
+//     }
+//   }
 
   return summary;
 }
 
 /**
- * Extracts action items from meeting content
+ * Generates heuristic action items
  */
-function extractActionItems(
+function generateHeuristicActionItems(
   transcriptSegments: any[],
-  notes: any,
-  prompts: any[],
+  meetingNotes: any,
 ): string[] {
   const actionItems: string[] = [];
 
-  // Look for action-oriented language in transcripts
+  // Look for action-oriented keywords in transcript
   const actionKeywords = [
     "will",
     "should",
     "need to",
-    "action item",
     "follow up",
+    "action item",
     "next step",
+    "todo",
+    "task",
+    "deadline",
   ];
 
   transcriptSegments.forEach((segment) => {
     const text = segment.text.toLowerCase();
     actionKeywords.forEach((keyword) => {
       if (text.includes(keyword)) {
-        // Extract the sentence containing the action keyword
-        const sentences: string[] = segment.text.split(/[.!?]+/);
-        sentences.forEach((sentence: string) => {
-          if (
-            sentence.toLowerCase().includes(keyword) &&
-            sentence.trim().length > 10
-          ) {
-            actionItems.push(sentence.trim());
-          }
-        });
+        // Extract sentence containing the keyword
+        const sentences = segment.text.split(/[.!?]+/);
+        const actionSentence = sentences.find((s) =>
+          s.toLowerCase().includes(keyword),
+        );
+        if (actionSentence && actionSentence.trim().length > 10) {
+          actionItems.push(actionSentence.trim());
+        }
       }
     });
   });
 
   // Look for action items in notes
-  if (notes?.content) {
-    const noteLines: string[] = notes.content.split("\n");
-    noteLines.forEach((line: string) => {
+  if (meetingNotes?.content) {
+    const noteLines = meetingNotes.content.split("\n");
+    noteLines.forEach((line) => {
       const trimmed = line.trim();
       if (
-        (trimmed.startsWith("- ") || trimmed.startsWith("* ")) &&
-        (trimmed.toLowerCase().includes("action") ||
-          trimmed.toLowerCase().includes("todo") ||
-          trimmed.toLowerCase().includes("follow"))
+        trimmed.startsWith("- [ ]") ||
+        trimmed.startsWith("* [ ]") ||
+        trimmed.toLowerCase().includes("action:") ||
+        trimmed.toLowerCase().includes("todo:")
       ) {
-        actionItems.push(trimmed.substring(2));
+        actionItems.push(
+          trimmed
+            .replace(/^[-*]\s*\[\s*\]\s*/, "")
+            .replace(/^(action|todo):\s*/i, ""),
+        );
       }
     });
   }
 
-  // Deduplicate and limit
-  const uniqueActionItems = [...new Set(actionItems)];
-  return uniqueActionItems.slice(0, 5);
+  // Add generic action items if none found
+  if (actionItems.length === 0) {
+    actionItems.push("Follow up on key discussion points from this meeting");
+    actionItems.push(
+      "Share relevant resources mentioned during the conversation",
+    );
+  }
+
+  return actionItems.slice(0, 5); // Limit to 5 action items
 }
 
 /**
- * Generates personalized recommendations
+ * Generates heuristic recommendations
  */
-function generateRecommendations(
+async function generateHeuristicRecommendations(
+  ctx: any,
   userId: Id<"users">,
-  userProfile: any,
-  participants: any[],
-  participantProfiles: Map<Id<"users">, any>,
-  meeting: any,
-): Array<{
-  type: string;
-  content: string;
-  confidence: number;
-}> {
+  topics: string[],
+  transcriptSegments: any[],
+): Promise<
+  Array<{
+    type: string;
+    content: string;
+    confidence: number;
+  }>
+> {
   const recommendations: Array<{
     type: string;
     content: string;
     confidence: number;
   }> = [];
 
-  // Connection recommendations
-  participants.forEach((participant) => {
-    if (participant.userId === userId) return;
-
-    const otherProfile = participantProfiles.get(participant.userId);
-    if (otherProfile?.profile) {
-      const sharedInterests = findSharedInterests(
-        userProfile?.interests || [],
-        otherProfile.interests || [],
-      );
-      const complementarySkills = findComplementarySkills(
-        userProfile?.profile,
-        otherProfile.profile,
-      );
-
-      if (sharedInterests.length > 0) {
-        recommendations.push({
-          type: "connection",
-          content: `Consider connecting with ${otherProfile.profile.displayName} - you share interests in ${sharedInterests.slice(0, 2).join(" and ")}`,
-          confidence: 0.8,
-        });
-      }
-
-      if (complementarySkills) {
-        recommendations.push({
-          type: "collaboration",
-          content: `${otherProfile.profile.displayName}'s expertise in ${otherProfile.profile.field} could complement your background`,
-          confidence: 0.7,
-        });
-      }
-    }
-  });
-
-  // Follow-up recommendations
-  if (
-    meeting.title.toLowerCase().includes("project") ||
-    meeting.title.toLowerCase().includes("collaboration")
-  ) {
-    recommendations.push({
-      type: "follow-up",
-      content:
-        "Schedule a follow-up meeting to discuss next steps and timeline",
-      confidence: 0.9,
-    });
-  }
-
-  // Learning recommendations
-  if (userProfile?.profile?.goals) {
+  // Topic-based recommendations
+  if (topics.length > 0) {
+    const primaryTopic = topics[0];
     recommendations.push({
       type: "learning",
-      content: `Based on your goals, consider exploring resources related to the topics discussed in this meeting`,
-      confidence: 0.6,
+      content: `Consider exploring advanced topics in ${primaryTopic} to deepen your expertise`,
+      confidence: 0.7,
     });
   }
 
-  // Sort by confidence and return top recommendations
-  return recommendations
-    .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, 5);
+  // Connection recommendations based on speakers
+  const speakers = new Set(transcriptSegments.flatMap((s) => s.speakers || []));
+
+  if (speakers.size > 1) {
+    recommendations.push({
+      type: "networking",
+      content:
+        "Consider connecting with other participants to continue the conversation",
+      confidence: 0.8,
+    });
+  }
+
+  // Generic recommendations
+  recommendations.push({
+    type: "follow-up",
+    content: "Schedule a follow-up meeting to track progress on action items",
+    confidence: 0.6,
+  });
+
+  return recommendations;
 }
 
 /**
- * Generates relevant links based on meeting content and user profile
+ * Generates heuristic links
  */
-function generateRelevantLinks(
-  userProfile: any,
-  meeting: any,
-  recommendations: any[],
-): Array<{
+function generateHeuristicLinks(topics: string[]): Array<{
   type: string;
   url: string;
   title: string;
@@ -598,61 +412,51 @@ function generateRelevantLinks(
     title: string;
   }> = [];
 
-  // Add meeting-related links
-  links.push({
-    type: "meeting",
-    url: `/app/call/${meeting._id}`,
-    title: "View Meeting Details",
-  });
-
-  // Add profile links for connection recommendations
-  recommendations
-    .filter((rec) => rec.type === "connection")
-    .slice(0, 2)
-    .forEach((rec, index) => {
-      links.push({
-        type: "profile",
-        url: `/app/profile/${index}`, // This would be the actual user ID in a real implementation
-        title: "View Profile",
-      });
+  // Generate topic-based resource links
+  topics.slice(0, 3).forEach((topic) => {
+    links.push({
+      type: "resource",
+      url: `https://example.com/resources/${encodeURIComponent(topic.toLowerCase())}`,
+      title: `Learn more about ${topic}`,
     });
+  });
 
   return links;
 }
 
-/**
- * Finds shared interests between two users
- */
-function findSharedInterests(interests1: any[], interests2: any[]): string[] {
-  const keys1 = new Set(interests1.map((i) => i.key));
-  const keys2 = new Set(interests2.map((i) => i.key));
-  const shared = [...keys1].filter((key) => keys2.has(key));
-  return shared.map(
-    (key) => interests1.find((i) => i.key === key)?.label || key,
-  );
-}
+// /**
+//  * Finds shared interests between two users
+//  */
+// function findSharedInterests(interests1: any[], interests2: any[]): string[] {
+//   const keys1 = new Set(interests1.map((i) => i.key));
+//   const keys2 = new Set(interests2.map((i) => i.key));
+//   const shared = [...keys1].filter((key) => keys2.has(key));
+//   return shared.map(
+//     (key) => interests1.find((i) => i.key === key)?.label || key,
+//   );
+// }
 
-/**
- * Determines if two profiles have complementary skills
- */
-function findComplementarySkills(profile1: any, profile2: any): boolean {
-  if (!profile1?.field || !profile2?.field) return false;
+// /**
+//  * Determines if two profiles have complementary skills
+//  */
+// function findComplementarySkills(profile1: any, profile2: any): boolean {
+//   if (!profile1?.field || !profile2?.field) return false;
 
-  // Simple heuristic: different fields are potentially complementary
-  const complementaryPairs = [
-    ["engineering", "design"],
-    ["engineering", "product"],
-    ["design", "marketing"],
-    ["sales", "engineering"],
-    ["finance", "operations"],
-  ];
+//   // Simple heuristic: different fields are potentially complementary
+//   const complementaryPairs = [
+//     ["engineering", "design"],
+//     ["engineering", "product"],
+//     ["design", "marketing"],
+//     ["sales", "engineering"],
+//     ["finance", "operations"],
+//   ];
 
-  const field1 = profile1.field.toLowerCase();
-  const field2 = profile2.field.toLowerCase();
+//   const field1 = profile1.field.toLowerCase();
+//   const field2 = profile2.field.toLowerCase();
 
-  return complementaryPairs.some(
-    ([a, b]) =>
-      (field1.includes(a) && field2.includes(b)) ||
-      (field1.includes(b) && field2.includes(a)),
-  );
-}
+//   return complementaryPairs.some(
+//     ([a, b]) =>
+//       (field1.includes(a) && field2.includes(b)) ||
+//       (field1.includes(b) && field2.includes(a)),
+//   );
+// }

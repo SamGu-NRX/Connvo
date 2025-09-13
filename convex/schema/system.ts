@@ -67,7 +67,13 @@ export const systemTables = {
   })
     .index("by_name", ["name"])
     .index("by_timestamp", ["timestamp"])
-    .index("by_name_and_timestamp", ["name", "timestamp"]),
+    .index("by_name_and_timestamp", ["name", "timestamp"])
+    // Optimized index for transcript streaming stats lookups by meeting
+    .index("by_name_meetingId_timestamp", [
+      "name",
+      "labels.meetingId",
+      "timestamp",
+    ]),
 
   rateLimits: defineTable({
     userId: v.id("users"),
@@ -106,4 +112,3 @@ export const systemTables = {
     .index("by_environment", ["environment"])
     .index("by_key_env", ["key", "environment"]),
 };
-

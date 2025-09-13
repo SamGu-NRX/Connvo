@@ -55,8 +55,7 @@ export const applyNoteOperation = mutation({
     // Validate the operation
     if (!validateOperation(operation)) {
       throw createError.validation("Invalid operation format");
-      // Use crypto.randomUUID() or a proper UUID library for secure ID generation
-      id: `op_${Date.now()}_${crypto.randomUUID()}`,
+    }
 
     // Get or create meeting notes document
     let meetingNotes = await ctx.db
@@ -150,7 +149,7 @@ export const applyNoteOperation = mutation({
     // Create operation with metadata
     const operationWithMetadata: OperationWithMetadata = {
       ...transformedOp,
-      id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `op_${Date.now()}_${crypto.randomUUID()}`,
       authorId: participant.userId,
       timestamp: Date.now(),
       sequence: serverSequence,
@@ -325,8 +324,14 @@ export const batchApplyNoteOperations = mutation({
             length: concurrentOp.operation.length,
           };
 
-          transformedOp = transformAgainst(transformedOp, concurrentOperation);
-          conflicts.push(concurrentOp._id);
+          // Attempt to transform against the concurrent operation. Only
+          // overwrite transformedOp on success; otherwise record a conflict.
+          const maybeTransformed = transformAgainst(transformedOp, concurrentOperation);
+          if (maybeTransformed) {
+            transformedOp = maybeTransformed;
+          } else {
+            conflicts.push(concurrentOp._id);
+          }
         }
 
         // Apply to current content

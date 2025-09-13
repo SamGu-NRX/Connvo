@@ -137,9 +137,9 @@ export const processTranscriptStream = internalAction({
           ? (totalProcessed / totalLatencyMs) * 1000
           : 0;
 
-      // Update streaming metrics via monitoring module
+      // Update streaming metrics via streaming module (records throughput and latency aggregates)
       await ctx.runMutation(
-        internal.transcripts.ingestion.ingestStreamingMetric,
+        internal.transcripts.streaming.updateStreamingMetrics,
         {
           meetingId,
           metrics: {
@@ -194,7 +194,7 @@ export const updateStreamingMetrics = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, { meetingId, metrics }) => {
-    // Store performance metrics for monitoring
+    // Store throughput metric (chunks/sec)
     await ctx.db.insert("performanceMetrics", {
       name: "transcript_streaming",
       value: metrics.throughputChunksPerSecond,
@@ -208,6 +208,82 @@ export const updateStreamingMetrics = internalMutation({
         warning: 10, // chunks per second
         critical: 5,
       },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+
+    // Store latency sample (ms)
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming_latency",
+      value: metrics.latencyMs, // ensure ms
+      unit: "ms",
+      labels: {
+        meetingId: meetingId,
+        operation: "transcript_ingestion",
+      },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+
+    // Maintain aggregates: rolling sum and count per meeting
+    // Fetch latest sum
+    const sumRecords = await ctx.db
+      .query("performanceMetrics")
+      .withIndex("by_name_meetingId_timestamp", (q) =>
+        q
+          .eq("name", "transcript_streaming_latency_sum")
+          .eq(q.field("labels.meetingId"), meetingId),
+      )
+      .collect();
+    const latestSum = sumRecords.reduce(
+      (acc, r) => (r.timestamp > acc.timestamp ? r : acc),
+      sumRecords[0] ?? { value: 0, timestamp: 0 },
+    ) as { value: number; timestamp: number };
+
+    // Fetch latest count
+    const countRecords = await ctx.db
+      .query("performanceMetrics")
+      .withIndex("by_name_meetingId_timestamp", (q) =>
+        q
+          .eq("name", "transcript_streaming_latency_count")
+          .eq(q.field("labels.meetingId"), meetingId),
+      )
+      .collect();
+    const latestCount = countRecords.reduce(
+      (acc, r) => (r.timestamp > acc.timestamp ? r : acc),
+      countRecords[0] ?? { value: 0, timestamp: 0 },
+    ) as { value: number; timestamp: number };
+
+    const newSum = (latestSum?.value ?? 0) + metrics.latencyMs;
+    const newCount = (latestCount?.value ?? 0) + 1;
+    const newAvg = newCount > 0 ? newSum / newCount : 0;
+
+    // Persist updated sum
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming_latency_sum",
+      value: newSum,
+      unit: "ms_sum",
+      labels: { meetingId: meetingId, operation: "transcript_ingestion" },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+
+    // Persist updated count
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming_latency_count",
+      value: newCount,
+      unit: "samples",
+      labels: { meetingId: meetingId, operation: "transcript_ingestion" },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+
+    // Persist updated average for convenience
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming_latency_avg",
+      value: newAvg,
+      unit: "ms",
+      labels: { meetingId: meetingId, operation: "transcript_ingestion" },
       timestamp: metrics.timestamp,
       createdAt: Date.now(),
     });
@@ -392,10 +468,12 @@ export const getStreamingStats = internalQuery({
 
     const metrics = await ctx.db
       .query("performanceMetrics")
-      .withIndex("by_name_and_timestamp", (q) =>
-        q.eq("name", "transcript_streaming").gte("timestamp", since),
+      .withIndex("by_name_meetingId_timestamp", (q) =>
+        q
+          .eq("name", "transcript_streaming")
+          .eq(q.field("labels.meetingId"), meetingId)
+          .gte("timestamp", since),
       )
-      .filter((q) => q.eq(q.field("labels.meetingId"), meetingId))
       .collect();
 
     if (metrics.length === 0) {
@@ -432,10 +510,24 @@ export const getStreamingStats = internalQuery({
     );
     const totalBatches = metrics.length;
 
+    // Compute average latency from recorded latency samples in the same window (ms)
+    const latencyMetrics = await ctx.db
+      .query("performanceMetrics")
+      .withIndex("by_name_meetingId_timestamp", (q) =>
+        q
+          .eq("name", "transcript_streaming_latency")
+          .eq(q.field("labels.meetingId"), meetingId)
+          .gte("timestamp", since),
+      )
+      .collect();
+    const latencyCount = latencyMetrics.length;
+    const latencySum = latencyMetrics.reduce((sum, m) => sum + m.value, 0);
+    const averageLatency = latencyCount > 0 ? latencySum / latencyCount : 0;
+
     return {
       averageThroughput,
       peakThroughput,
-      averageLatency: 0, // Would need separate latency metrics
+      averageLatency, // ms
       totalChunksProcessed,
       totalBatches,
       performanceGrade,

@@ -15,7 +15,6 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
-import crypto from "crypto";
 
 /**
  * Generates pre-call ideas with idempotency using meetingId hash

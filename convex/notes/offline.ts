@@ -29,6 +29,64 @@ import {
 } from "./operations";
 
 /**
+ * Generate a robust UUID.
+ * - Prefer crypto.randomUUID when available.
+ * - Fallback to a RFC4122 v4 generator using crypto.getRandomValues.
+ */
+function generateUUID(): string {
+  // Prefer the Web/Node global crypto.randomUUID when available
+  try {
+    const g: any = globalThis as any;
+    if (g?.crypto?.randomUUID) {
+      return g.crypto.randomUUID();
+    }
+  } catch {
+    // ignore and try fallbacks
+  }
+
+  // Fallback: build a v4 UUID from secure random bytes if possible
+  try {
+    const g: any = globalThis as any;
+    if (g?.crypto?.getRandomValues) {
+      const bytes = new Uint8Array(16);
+      g.crypto.getRandomValues(bytes);
+      // Per RFC4122 set version (4) and variant (10xx)
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      return (
+        hex.slice(0, 8) +
+        "-" +
+        hex.slice(8, 12) +
+        "-" +
+        hex.slice(12, 16) +
+        "-" +
+        hex.slice(16, 20) +
+        "-" +
+        hex.slice(20)
+      );
+    }
+  } catch {
+    // ignore and fall through
+  }
+
+  // Last resort (very unlikely path): combine timestamp with a large random segment
+  // This is still far more robust than a short Math.random substring.
+  const rand = Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+  return (
+    rand.slice(0, 8) +
+    "-" +
+    rand.slice(8, 12).padEnd(4, "0") +
+    "-4" + rand.slice(13, 16).padEnd(3, "0") +
+    "-" +
+    ((parseInt(rand.slice(16, 18) || "0", 16) & 0x3f) | 0x80).toString(16).padStart(2, "0") +
+    rand.slice(18, 20).padEnd(2, "0") +
+    "-" +
+    Date.now().toString(16).padStart(12, "0")
+  );
+}
+
+/**
  * Queued operation for offline scenarios
  */
 export interface QueuedOperation extends OperationWithMetadata {
@@ -103,7 +161,7 @@ export const queueOfflineOperations = mutation({
       }
     }
 
-    const queueId = `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const queueId = `queue_${Date.now()}_${generateUUID()}`;
     let queued = 0;
 
     // Store operations in offline queue
@@ -604,7 +662,7 @@ export const createOfflineCheckpoint = mutation({
     // Verify user is a participant
     await assertMeetingAccess(ctx, meetingId);
 
-    const checkpointId = `checkpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const checkpointId = `checkpoint_${Date.now()}_${crypto.randomUUID()}`;
 
     await ctx.db.insert("offlineCheckpoints", {
       checkpointId,
