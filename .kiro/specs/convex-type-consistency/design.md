@@ -82,12 +82,13 @@ graph TB
 ## Design Principles
 
 1. **Single Source of Truth**: All entity types defined in one centralized location
-2. **Type Derivation**: Derive Convex validators from TypeScript types, not vice versa
+2. **Type-First + Validator Alignment**: Define TypeScript types as the single source of truth. Implement Convex validators in centralized modules and enforce alignment via type tests (no ad-hoc inline validators)
 3. **Layered Types**: Base types, partial views, extended joins, domain-specific, and API responses
 4. **Compile-Time Safety**: Full TypeScript checking with no runtime overhead
 5. **Incremental Migration**: Safe, step-by-step refactoring without breaking changes
 6. **Developer Experience**: Excellent autocomplete, error messages, and documentation
 7. **Domain Modeling**: Proper types for complex domains (OT, WebRTC, Vector Search, etc.)
+8. **Convex Compliance**: All functions use new function syntax with args and returns validators; index-first queries; clear public vs internal API boundaries
 
 ## Implementation Strategy
 
@@ -184,10 +185,13 @@ export interface AuthIdentity {
 }
 
 // Derived types for different use cases
+// Public-safe: No email by default for privacy unless explicitly needed
 export type UserPublic = Pick<
   User,
-  "_id" | "displayName" | "email" | "avatarUrl" | "isActive"
+  "_id" | "displayName" | "avatarUrl" | "isActive"
 >;
+// Public with email (opt-in, e.g., admin/internal UIs)
+export type UserPublicWithEmail = UserPublic & Pick<User, "email">;
 export type UserWithProfile = User & { profile?: UserProfile };
 export type UserSummary = Pick<User, "_id" | "displayName" | "avatarUrl">;
 export type UserWithOrgInfo = UserPublic & Pick<User, "orgId" | "orgRole">;
@@ -200,7 +204,11 @@ export type UserWithOrgInfo = UserPublic & Pick<User, "orgId" | "orgRole">;
 import type { Id } from "../../_generated/dataModel";
 import type { UserSummary } from "./user";
 
-export type MeetingState = "scheduled" | "active" | "concluded" | "cancelled";
+export type MeetingLifecycleState =
+  | "scheduled"
+  | "active"
+  | "concluded"
+  | "cancelled";
 export type ParticipantRole = "host" | "participant" | "observer";
 export type ParticipantPresence = "invited" | "joined" | "left";
 
@@ -213,7 +221,7 @@ export interface Meeting {
   duration?: number;
   webrtcEnabled?: boolean;
   streamRoomId?: string;
-  state: MeetingState;
+  state: MeetingLifecycleState;
   participantCount?: number;
   averageRating?: number;
   createdAt: number;
@@ -231,7 +239,7 @@ export interface MeetingParticipant {
   createdAt: number;
 }
 
-export interface MeetingState {
+export interface MeetingRuntimeState {
   _id: Id<"meetingState">;
   meetingId: Id<"meetings">;
   active: boolean;
@@ -282,7 +290,7 @@ export interface MeetingListItem
   userPresence: ParticipantPresence;
 }
 
-export interface MeetingStateWithMetrics extends MeetingState {
+export interface MeetingRuntimeStateWithMetrics extends MeetingRuntimeState {
   totalWebRTCSessions: number;
   connectedWebRTCSessions: number;
 }
@@ -562,7 +570,8 @@ export interface Embedding {
   _id: Id<"embeddings">;
   sourceType: EmbeddingSourceType;
   sourceId: string;
-  vector: number[];
+  // Use ArrayBuffer (v.bytes) with Float32Array for performance & size
+  vector: ArrayBuffer;
   model: string;
   dimensions: number;
   version: string;
@@ -593,18 +602,18 @@ export interface SimilaritySearchResult {
 Create a comprehensive validator generation system:
 
 ```typescript
+// Pattern: type-first + validators + type tests (no custom ConvexValidator<T> magic)
 // convex/types/validators/user.ts
 import { v } from "convex/values";
 import type {
   User,
   UserProfile,
   UserPublic,
+  UserPublicWithEmail,
   UserSummary,
-  AuthIdentity,
 } from "../entities/user";
 
-export const UserValidators = {
-  // Full user object
+export const UserV = {
   full: v.object({
     _id: v.id("users"),
     workosUserId: v.string(),
@@ -620,25 +629,29 @@ export const UserValidators = {
     onboardingCompletedAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }) satisfies ConvexValidator<User>,
+  }),
 
-  // Public user info
   public: v.object({
+    _id: v.id("users"),
+    displayName: v.optional(v.string()),
+    avatarUrl: v.optional(v.string()),
+    isActive: v.boolean(),
+  }),
+
+  publicWithEmail: v.object({
     _id: v.id("users"),
     displayName: v.optional(v.string()),
     email: v.string(),
     avatarUrl: v.optional(v.string()),
     isActive: v.boolean(),
-  }) satisfies ConvexValidator<UserPublic>,
+  }),
 
-  // User summary for lists
   summary: v.object({
     _id: v.id("users"),
     displayName: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
-  }) satisfies ConvexValidator<UserSummary>,
+  }),
 
-  // Profile object
   profile: v.object({
     _id: v.id("profiles"),
     userId: v.id("users"),
@@ -662,8 +675,11 @@ export const UserValidators = {
     linkedinUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }) satisfies ConvexValidator<UserProfile>,
-};
+  }),
+} as const;
+
+// In tests (tsd or vitest's expectTypeOf), assert equivalence between TS types and Infer<typeof validator>
+// This enforces type-first alignment without runtime overhead.
 ```
 
 ### Phase 4: Function Refactoring Strategy
@@ -689,12 +705,12 @@ export const getUserById = query({
 });
 
 // After (centralized types)
-import { UserValidators } from "../types/validators/user";
+import { UserV } from "../types/validators/user";
 import type { User } from "../types/entities/user";
 
 export const getUserById = query({
   args: { userId: v.id("users") },
-  returns: v.union(UserValidators.full, v.null()),
+  returns: v.union(UserV.full, v.null()),
   handler: async (ctx, { userId }): Promise<User | null> => {
     return await ctx.db.get(userId);
   },
@@ -780,7 +796,7 @@ export const getUserById = query({
 ### Runtime Performance
 
 - Convex validators have minimal overhead across all functions
-- No additional serialization/deserialization cost
+- No additional serialization/deserialization cost; embeddings should use v.bytes (ArrayBuffer) not number[] for performance & cost
 - Type definitions are compile-time only
 - No impact on function execution speed
 
@@ -822,6 +838,7 @@ export const getUserById = query({
 - Client SDK generation with full type safety
 - API documentation generation from types
 - Mock data generation for testing complex domains
+  - Generator should prefer ArrayBuffer (v.bytes) for numeric vectors and provide helpers to/from Float32Array
 
 ### Advanced Type Features
 
@@ -836,3 +853,82 @@ export const getUserById = query({
 - OpenAPI specification generation
 - Database migration type validation
 - Real-time type checking in development for complex domains
+
+## Additional Standards
+
+- PaginationResult: a shared validator and TS type for paginated responses to ensure consistent shape:
+  - page: T[]
+  - isDone: boolean
+  - continueCursor: string | null
+- Result<T, E>: standardized API response envelope for public endpoints (optional for internal), with success flag and optional error.
+- Index-first queries: All list/lookup queries specify a withIndex per convex_rules.mdc; do not use q.filter.
+- Public vs internal types: Public shapes must not include sensitive fields by default (e.g., email); internal/admin endpoints may use UserPublicWithEmail where needed.
+
+Finally, here is an example:
+```typescript
+// Example of a fully compliant Convex function following all guidelines
+import { query } from "../_generated/server";
+import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
+import { PaginationResultV } from "../types/api/responses";
+import { UserV } from "../types/validators/user";
+import type { UserSummary } from "../types/entities/user";
+
+// ✅ Uses new function syntax with args and returns validators
+// ✅ Index-first query pattern (no q.filter)
+// ✅ Proper pagination with standardized return shape
+// ✅ Centralized types and validators
+export const listActiveUsers = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    activeOnly: v.boolean(),
+  },
+  returns: PaginationResultV(UserV.summary),
+  handler: async (
+    ctx,
+    { paginationOpts, activeOnly },
+  ): Promise<{
+    page: UserSummary[];
+    isDone: boolean;
+    continueCursor: string | null;
+  }> => {
+    // ✅ Index-first query - assumes "by_isActive" index exists in schema
+    const q = ctx.db
+      .query("users")
+      .withIndex("by_isActive", (q) => q.eq("isActive", activeOnly))
+      .order("desc");
+
+    // ✅ Proper pagination usage
+    const page = await q.paginate(paginationOpts);
+
+    return page;
+  },
+});
+
+// ✅ Internal function example - not exposed to client
+export const getUserByIdInternal = query({
+  args: { userId: v.id("users") },
+  returns: v.union(UserV.full, v.null()),
+  handler: async (ctx, { userId }) => {
+    return await ctx.db.get(userId);
+  },
+});
+
+// ✅ Public function that doesn't expose sensitive data by default
+export const getPublicUserProfile = query({
+  args: { userId: v.id("users") },
+  returns: v.union(UserV.public, v.null()),
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) return null;
+
+    // ✅ Return only public-safe fields
+    return {
+      _id: user._id,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      isActive: user.isActive,
+    };
+  },
+});
+```
