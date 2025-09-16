@@ -33,6 +33,7 @@ export const updateRecordingState = internalMutation({
         recordingUrl,
         provider: "getstream",
         status: recordingEnabled ? "recording" : "ready",
+        attempts: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

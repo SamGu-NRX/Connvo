@@ -93,7 +93,9 @@ export const ingestTranscriptChunk = mutation({
         // Initialize from the current highest transcript sequence, if any
         const globalLast = await ctx.db
           .query("transcripts")
-          .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", args.meetingId))
+          .withIndex("by_meeting_time_range", (q) =>
+            q.eq("meetingId", args.meetingId),
+          )
           .order("desc")
           .first();
 
@@ -137,7 +139,9 @@ export const ingestTranscriptChunk = mutation({
       // Otherwise loop to get the next sequence
     }
     if (globalSequence === 0) {
-      throw new Error("Failed to allocate unique transcript sequence after retries");
+      throw new Error(
+        "Failed to allocate unique transcript sequence after retries",
+      );
     }
 
     // Calculate word count for analytics
@@ -239,7 +243,9 @@ export const batchIngestTranscriptChunks = internalMutation({
       if (!counter) {
         const globalLast = await ctx.db
           .query("transcripts")
-          .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", meetingId))
+          .withIndex("by_meeting_time_range", (q) =>
+            q.eq("meetingId", meetingId),
+          )
           .order("desc")
           .first();
 
@@ -311,7 +317,9 @@ export const batchIngestTranscriptChunks = internalMutation({
             }
           }
           if (!sequence) {
-            throw new Error("Failed to allocate unique transcript sequence in batch");
+            throw new Error(
+              "Failed to allocate unique transcript sequence in batch",
+            );
           }
 
           // Insert transcript chunk with batch metadata
@@ -484,6 +492,7 @@ export const ingestStreamingMetric = internalMutation({
           operation: "transcript_ingestion",
           batchesProcessed: String(metrics.batchesProcessed),
         },
+        meetingId, // Denormalized for indexing
         threshold: { warning: 10, critical: 5 },
         timestamp: metrics.timestamp,
         createdAt: Date.now(),
@@ -498,6 +507,7 @@ export const ingestStreamingMetric = internalMutation({
           meetingId,
           operation: "transcript_ingestion",
         },
+        meetingId, // Denormalized for indexing
         timestamp: metrics.timestamp,
         createdAt: Date.now(),
       });

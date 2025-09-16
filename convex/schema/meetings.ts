@@ -133,6 +133,31 @@ export const meetingTables = {
     .index("by_timestamp", ["timestamp"])
     .index("by_meeting_and_event", ["meetingId", "event"]),
 
+  // Meeting Recordings
+  meetingRecordings: defineTable({
+    meetingId: v.id("meetings"),
+    recordingId: v.string(),
+    recordingUrl: v.optional(v.string()),
+    provider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("recording"),
+      v.literal("syncing"),
+      v.literal("synced"),
+      v.literal("failed"),
+      v.literal("ready"),
+    ),
+    error: v.optional(v.string()),
+    lastAttempt: v.optional(v.number()),
+    attempts: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_meeting", ["meetingId"])
+    .index("by_recording_id", ["recordingId"])
+    .index("by_status", ["status"])
+    .index("by_provider", ["provider"]),
+
   // Video Room Configuration (Hybrid Architecture)
   videoRoomConfigs: defineTable({
     meetingId: v.id("meetings"),
@@ -161,4 +186,3 @@ export const meetingTables = {
     .index("by_room_id", ["roomId"])
     .index("by_provider", ["provider"]),
 };
-

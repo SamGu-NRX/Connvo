@@ -381,6 +381,7 @@ export const handleRecordingReady = internalMutation({
         recordingUrl,
         provider: "getstream",
         status: "ready",
+        attempts: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -482,4 +483,3 @@ export const handleTranscriptionStopped = internalMutation({
     }
   },
 });
-

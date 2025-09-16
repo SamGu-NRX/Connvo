@@ -131,6 +131,7 @@ export async function recordPerformanceMetric(
     value: metric.value,
     unit: metric.unit,
     labels: metric.labels || {},
+    meetingId: metric.labels?.meetingId, // Denormalized for indexing if present
     threshold: metric.threshold,
     timestamp: metric.timestamp,
     createdAt: Date.now(),

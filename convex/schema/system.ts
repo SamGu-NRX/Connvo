@@ -1,6 +1,10 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { featureFlagValueV, labelsRecordV, metadataRecordV } from "../lib/validators";
+import {
+  featureFlagValueV,
+  labelsRecordV,
+  metadataRecordV,
+} from "../lib/validators";
 
 export const systemTables = {
   // System Collections
@@ -56,6 +60,8 @@ export const systemTables = {
     value: v.number(),
     unit: v.string(),
     labels: labelsRecordV,
+    // Denormalized meetingId for efficient indexing
+    meetingId: v.optional(v.string()),
     threshold: v.optional(
       v.object({
         warning: v.number(),
@@ -69,11 +75,8 @@ export const systemTables = {
     .index("by_timestamp", ["timestamp"])
     .index("by_name_and_timestamp", ["name", "timestamp"])
     // Optimized index for transcript streaming stats lookups by meeting
-    .index("by_name_meetingId_timestamp", [
-      "name",
-      "labels.meetingId",
-      "timestamp",
-    ]),
+    .index("by_name_meetingId_timestamp", ["name", "meetingId", "timestamp"])
+    .index("by_meetingId", ["meetingId"]),
 
   rateLimits: defineTable({
     userId: v.id("users"),

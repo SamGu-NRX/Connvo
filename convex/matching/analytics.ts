@@ -14,11 +14,12 @@ import { requireIdentity } from "../auth/guards";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
+import { FEATURE_KEYS, Features, FeatureKey } from ".";
 
 /**
  * Submit feedback for a match
  */
-export const submitMatchFeedback = mutation({
+export const submitMatchFeedback: ReturnType<typeof mutation> = mutation({
   args: {
     matchId: v.string(),
     outcome: v.union(
@@ -34,7 +35,7 @@ export const submitMatchFeedback = mutation({
     ),
   },
   returns: v.null(),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<null> => {
     const { userId } = await requireIdentity(ctx);
 
     // Validate rating if provided
@@ -65,7 +66,7 @@ export const submitMatchFeedback = mutation({
 /**
  * Get match history for a user
  */
-export const getMatchHistory = query({
+export const getMatchHistory: ReturnType<typeof query> = query({
   args: {
     limit: v.optional(v.number()),
     offset: v.optional(v.number()),
@@ -98,25 +99,64 @@ export const getMatchHistory = query({
       createdAt: v.number(),
     }),
   ),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<
+    Array<{
+      _id: Id<"matchingAnalytics">;
+      matchId: string;
+      outcome: "accepted" | "declined" | "completed";
+      feedback?: { rating: number; comments?: string };
+      features: Features;
+      createdAt: number;
+    }>
+  > => {
     const { userId } = await requireIdentity(ctx);
     const limit = args.limit ?? 20;
     const offset = args.offset ?? 0;
 
-    const matches = await ctx.db
+    const rows = await ctx.db
       .query("matchingAnalytics")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(limit + offset);
 
-    return matches.slice(offset);
+    const mapped = rows.map((doc) => {
+      const f = doc.features as Record<string, number | undefined>;
+
+      const features: Features = {
+        interestOverlap: f.interestOverlap ?? 0,
+        experienceGap: f.experienceGap ?? 0,
+        industryMatch: f.industryMatch ?? 0,
+        timezoneCompatibility: f.timezoneCompatibility ?? 0,
+        vectorSimilarity:
+          typeof f.vectorSimilarity === "number"
+            ? f.vectorSimilarity
+            : undefined,
+        orgConstraintMatch: f.orgConstraintMatch ?? 0,
+        languageOverlap: f.languageOverlap ?? 0,
+        roleComplementarity: f.roleComplementarity ?? 0,
+      };
+
+      return {
+        _id: doc._id,
+        matchId: doc.matchId,
+        outcome: doc.outcome,
+        feedback: doc.feedback,
+        features,
+        createdAt: doc.createdAt,
+      };
+    });
+
+    return mapped.slice(offset);
   },
 });
 
 /**
  * Get matching statistics for a user
  */
-export const getMatchingStats = query({
+export const getMatchingStats: ReturnType<typeof query> = query({
   args: {},
   returns: v.object({
     totalMatches: v.number(),
@@ -162,27 +202,39 @@ export const getMatchingStats = query({
     const successRate =
       acceptedMatches > 0 ? completedMatches / acceptedMatches : 0;
 
-    // Calculate top features
-    const featureStats: Record<string, { sum: number; count: number }> = {};
+    // Calculate top features (use FEATURE_KEYS to keep typing safe)
+    const featureStats: Partial<
+      Record<FeatureKey, { sum: number; count: number }>
+    > = {};
 
     matches.forEach((match) => {
-      Object.entries(match.features).forEach(([feature, value]) => {
+      const f = match.features as Record<string, number | undefined>;
+      FEATURE_KEYS.forEach((feature) => {
+        const value = f[feature];
         if (typeof value === "number") {
           if (!featureStats[feature]) {
             featureStats[feature] = { sum: 0, count: 0 };
           }
-          featureStats[feature].sum += value;
-          featureStats[feature].count += 1;
+          featureStats[feature]!.sum += value;
+          featureStats[feature]!.count += 1;
         }
       });
     });
 
-    const topFeatures = Object.entries(featureStats)
-      .map(([feature, stats]) => ({
-        feature,
-        averageScore: stats.sum / stats.count,
-        count: stats.count,
-      }))
+    type TopFeature = {
+      feature: FeatureKey;
+      averageScore: number;
+      count: number;
+    };
+
+    const topFeatures: TopFeature[] = FEATURE_KEYS.map((feature) => {
+      const stats = featureStats[feature];
+      if (!stats || stats.count <= 0) return null;
+      const averageScore = stats.sum / stats.count;
+      if (!Number.isFinite(averageScore)) return null;
+      return { feature, averageScore, count: stats.count };
+    })
+      .filter((x): x is TopFeature => x !== null)
       .sort((a, b) => b.averageScore - a.averageScore)
       .slice(0, 5);
 
@@ -200,7 +252,7 @@ export const getMatchingStats = query({
 /**
  * Get global matching analytics (admin only)
  */
-export const getGlobalMatchingAnalytics = query({
+export const getGlobalMatchingAnalytics: ReturnType<typeof query> = query({
   args: {
     timeRange: v.optional(v.number()), // milliseconds
   },
@@ -247,11 +299,13 @@ export const getGlobalMatchingAnalytics = query({
     const averageScore =
       matches.length > 0
         ? matches.reduce((sum, m) => {
-            const featureSum = Object.values(m.features).reduce(
-              (s: number, v) => s + (typeof v === "number" ? v : 0),
+            const f = m.features as Record<string, number | undefined>;
+            const featureSum = FEATURE_KEYS.reduce(
+              (s, key) =>
+                s + (typeof f[key] === "number" ? (f[key] as number) : 0),
               0,
             );
-            return sum + featureSum / Object.keys(m.features).length;
+            return sum + featureSum / FEATURE_KEYS.length;
           }, 0) / matches.length
         : 0;
 
@@ -263,61 +317,92 @@ export const getGlobalMatchingAnalytics = query({
     };
 
     // Feature importance analysis
-    const featureStats: Record<
-      string,
-      { scores: number[]; outcomes: string[] }
+    const featureStats: Partial<
+      Record<FeatureKey, { scores: number[]; outcomes: string[] }>
     > = {};
 
     matches.forEach((match) => {
-      Object.entries(match.features).forEach(([feature, value]) => {
-        if (typeof value === "number") {
+      const f = match.features as Record<string, number | undefined>;
+      FEATURE_KEYS.forEach((feature) => {
+        const val = f[feature];
+        if (typeof val === "number") {
           if (!featureStats[feature]) {
             featureStats[feature] = { scores: [], outcomes: [] };
           }
-          featureStats[feature].scores.push(value);
-          featureStats[feature].outcomes.push(match.outcome);
+          featureStats[feature]!.scores.push(val);
+          featureStats[feature]!.outcomes.push(match.outcome);
         }
       });
     });
 
-    const featureImportance = Object.entries(featureStats)
-      .map(([feature, stats]) => {
-        const averageScore =
-          stats.scores.reduce((sum, score) => sum + score, 0) /
-          stats.scores.length;
+    type FeatureImportance = {
+      feature: FeatureKey;
+      averageScore: number;
+      correlation: number;
+    };
 
-        // Simple correlation with successful outcomes
-        const successfulOutcomes = stats.outcomes.filter(
-          (o) => o === "completed",
-        ).length;
-        const correlation = successfulOutcomes / stats.outcomes.length;
+    const featureImportance: FeatureImportance[] = FEATURE_KEYS.reduce<
+      FeatureImportance[]
+    >((acc, feature) => {
+      const stats = featureStats[feature];
+      if (!stats || stats.scores.length === 0 || stats.outcomes.length === 0) {
+        return acc;
+      }
 
-        return {
-          feature,
-          averageScore,
-          correlation,
-        };
-      })
-      .sort((a, b) => b.correlation - a.correlation);
+      const total = stats.scores.reduce((s, score) => s + score, 0);
+      const averageScore = total / stats.scores.length;
+      if (!Number.isFinite(averageScore)) return acc;
+
+      const successfulOutcomes = stats.outcomes.filter(
+        (o) => o === "completed",
+      ).length;
+      const outcomesLen = stats.outcomes.length;
+      const correlation =
+        outcomesLen > 0 ? successfulOutcomes / outcomesLen : 0;
+      if (!Number.isFinite(correlation)) return acc;
+
+      acc.push({ feature, averageScore, correlation });
+      return acc;
+    }, []).sort((a, b) => b.correlation - a.correlation);
 
     // Matching trends (daily aggregation)
     const dailyStats: Record<string, { count: number; totalScore: number }> =
       {};
 
-    matches.forEach((match) => {
-      const date = new Date(match.createdAt).toISOString().split("T")[0];
+    for (const match of matches) {
+      // Prefer explicit createdAt; fall back to system _creationTime or now.
+      const ts =
+        typeof match.createdAt === "number"
+          ? match.createdAt
+          : typeof (match)._creationTime === "number"
+            ? (match)._creationTime
+            : Date.now();
+
+      const date = new Date(ts).toISOString().split("T")[0];
+
       if (!dailyStats[date]) {
         dailyStats[date] = { count: 0, totalScore: 0 };
       }
       dailyStats[date].count += 1;
 
-      const featureSum = Object.values(match.features).reduce(
-        (s: number, v) => s + (typeof v === "number" ? v : 0),
-        0,
-      );
-      dailyStats[date].totalScore +=
-        featureSum / Object.keys(match.features).length;
-    });
+      const f = match.features as Partial<Features>;
+      let featureSum = 0;
+      let numericCount = 0;
+
+      // Iterate FEATURE_KEYS so indexing is typed (FeatureKey), not a plain string
+      for (const key of FEATURE_KEYS) {
+        const val = f[key];
+        if (typeof val === "number" && Number.isFinite(val)) {
+          featureSum += val;
+          numericCount += 1;
+        }
+      }
+
+      const avgForMatch = numericCount > 0 ? featureSum / numericCount : 0;
+      dailyStats[date].totalScore += Number.isFinite(avgForMatch)
+        ? avgForMatch
+        : 0;
+    }
 
     const matchingTrends = Object.entries(dailyStats)
       .map(([date, stats]) => ({
@@ -340,7 +425,7 @@ export const getGlobalMatchingAnalytics = query({
 /**
  * Optimize matching weights based on feedback
  */
-export const optimizeMatchingWeights = action({
+export const optimizeMatchingWeights: ReturnType<typeof action> = action({
   args: {
     minSamples: v.optional(v.number()),
   },
@@ -358,11 +443,31 @@ export const optimizeMatchingWeights = action({
     improvement: v.number(),
     sampleSize: v.number(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    optimizedWeights: {
+      interestOverlap: number;
+      experienceGap: number;
+      industryMatch: number;
+      timezoneCompatibility: number;
+      vectorSimilarity: number;
+      orgConstraintMatch: number;
+      languageOverlap: number;
+      roleComplementarity: number;
+    };
+    improvement: number;
+    sampleSize: number;
+  }> => {
     const minSamples = args.minSamples ?? 100;
 
     // Get recent match data with feedback
-    const matches = await ctx.runQuery(
+    const matches: Array<{
+      features: Features;
+      outcome: "accepted" | "declined" | "completed";
+      feedback?: { rating: number; comments?: string };
+    }> = await ctx.runQuery(
       internal.matching.analytics.getMatchesForOptimization,
       { minSamples },
     );
@@ -374,23 +479,15 @@ export const optimizeMatchingWeights = action({
     }
 
     // Simple weight optimization using success correlation
-    const features = [
-      "interestOverlap",
-      "experienceGap",
-      "industryMatch",
-      "timezoneCompatibility",
-      "vectorSimilarity",
-      "orgConstraintMatch",
-      "languageOverlap",
-      "roleComplementarity",
-    ];
-
-    const optimizedWeights: Record<string, number> = {};
+    const featuresList = FEATURE_KEYS;
+    const optimizedWeights: Partial<Record<FeatureKey, number>> = {};
     let totalWeight = 0;
 
     // Calculate correlation between each feature and successful outcomes
-    features.forEach((feature) => {
-      const featureValues = matches.map((m) => m.features[feature] || 0);
+    featuresList.forEach((feature) => {
+      const featureValues = matches.map(
+        (m) => (m.features as any)[feature] || 0,
+      );
       const successValues = matches.map((m) =>
         m.outcome === "completed" ? 1 : 0,
       );
@@ -403,12 +500,13 @@ export const optimizeMatchingWeights = action({
     });
 
     // Normalize weights to sum to 1
-    Object.keys(optimizedWeights).forEach((feature) => {
-      optimizedWeights[feature] /= totalWeight;
+    Object.keys(optimizedWeights).forEach((f) => {
+      const k = f as FeatureKey;
+      optimizedWeights[k] = (optimizedWeights[k] ?? 0) / totalWeight;
     });
 
     // Calculate improvement estimate
-    const currentWeights = {
+    const currentWeights: Record<FeatureKey, number> = {
       interestOverlap: 0.25,
       experienceGap: 0.15,
       industryMatch: 0.1,
@@ -419,30 +517,30 @@ export const optimizeMatchingWeights = action({
       roleComplementarity: 0.05,
     };
 
+    // coerce partial optimizedWeights into full record with defaults
+    const optimizedFull: Record<FeatureKey, number> = FEATURE_KEYS.reduce(
+      (acc, key) => {
+        acc[key] = optimizedWeights[key] ?? 0;
+        return acc;
+      },
+      {} as Record<FeatureKey, number>,
+    );
+
     const improvement = calculateWeightImprovement(
       matches,
       currentWeights,
-      optimizedWeights,
+      optimizedFull,
     );
 
-    const normalized: {
-      interestOverlap: number;
-      experienceGap: number;
-      industryMatch: number;
-      timezoneCompatibility: number;
-      vectorSimilarity: number;
-      orgConstraintMatch: number;
-      languageOverlap: number;
-      roleComplementarity: number;
-    } = {
-      interestOverlap: optimizedWeights["interestOverlap"] ?? 0,
-      experienceGap: optimizedWeights["experienceGap"] ?? 0,
-      industryMatch: optimizedWeights["industryMatch"] ?? 0,
-      timezoneCompatibility: optimizedWeights["timezoneCompatibility"] ?? 0,
-      vectorSimilarity: optimizedWeights["vectorSimilarity"] ?? 0,
-      orgConstraintMatch: optimizedWeights["orgConstraintMatch"] ?? 0,
-      languageOverlap: optimizedWeights["languageOverlap"] ?? 0,
-      roleComplementarity: optimizedWeights["roleComplementarity"] ?? 0,
+    const normalized = {
+      interestOverlap: optimizedFull.interestOverlap,
+      experienceGap: optimizedFull.experienceGap,
+      industryMatch: optimizedFull.industryMatch,
+      timezoneCompatibility: optimizedFull.timezoneCompatibility,
+      vectorSimilarity: optimizedFull.vectorSimilarity,
+      orgConstraintMatch: optimizedFull.orgConstraintMatch,
+      languageOverlap: optimizedFull.languageOverlap,
+      roleComplementarity: optimizedFull.roleComplementarity,
     };
 
     return {
@@ -484,29 +582,33 @@ export const getMatchesForOptimization = internalQuery({
   ),
   handler: async (ctx, args) => {
     // Get recent matches with feedback
-    const matches = await ctx.db
+    const rows = await ctx.db
       .query("matchingAnalytics")
       .filter((q) => q.neq(q.field("outcome"), "accepted")) // Only declined or completed
       .order("desc")
       .take(args.minSamples * 2); // Get more to ensure we have enough good samples
 
-    return matches
+    // Map DB documents to the exact return shape the validator expects.
+    return rows
       .filter((m) => m.outcome === "completed" || m.outcome === "declined")
       .slice(0, args.minSamples)
-      .map((m) => ({
-        features: m.features as {
-          interestOverlap: number;
-          experienceGap: number;
-          industryMatch: number;
-          timezoneCompatibility: number;
-          vectorSimilarity?: number;
-          orgConstraintMatch: number;
-          languageOverlap: number;
-          roleComplementarity: number;
-        },
-        outcome: m.outcome,
-        feedback: m.feedback,
-      }));
+      .map((m) => {
+        const f = m.features as Record<string, number | undefined>;
+        return {
+          features: {
+            interestOverlap: f.interestOverlap ?? 0,
+            experienceGap: f.experienceGap ?? 0,
+            industryMatch: f.industryMatch ?? 0,
+            timezoneCompatibility: f.timezoneCompatibility ?? 0,
+            vectorSimilarity: f.vectorSimilarity,
+            orgConstraintMatch: f.orgConstraintMatch ?? 0,
+            languageOverlap: f.languageOverlap ?? 0,
+            roleComplementarity: f.roleComplementarity ?? 0,
+          },
+          outcome: m.outcome as "completed" | "declined",
+          feedback: m.feedback,
+        };
+      });
   },
 });
 

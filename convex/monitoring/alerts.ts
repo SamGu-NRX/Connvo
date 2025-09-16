@@ -53,7 +53,7 @@ export const createAlert = internalMutation({
       // Update existing alert
       await ctx.db.patch(existingAlert._id, {
         message: args.message,
-        metadata: args.metadata,
+        metadata: args.metadata || {},
         updatedAt: now,
       });
       return existingAlert._id;
@@ -66,7 +66,7 @@ export const createAlert = internalMutation({
       category: args.category,
       title: args.title,
       message: args.message,
-      metadata: args.metadata,
+      metadata: args.metadata || {},
       actionable: args.actionable,
       status: "active",
       escalationTime: args.severity === "critical" ? now + 300000 : undefined, // 5 min for critical

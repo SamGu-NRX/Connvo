@@ -29,7 +29,14 @@ export const generatePreCallIdeas = action({
     generated: v.boolean(),
     fromCache: v.boolean(),
   }),
-  handler: async (ctx, { meetingId, forceRegenerate = false }) => {
+  handler: async (
+    ctx,
+    { meetingId, forceRegenerate = false },
+  ): Promise<{
+    promptIds: Id<"prompts">[];
+    generated: boolean;
+    fromCache: boolean;
+  }> => {
     // Create idempotency key based on meetingId
     const idempotencyKey = `precall_ideas_${meetingId}`;
     const scope = "prompt_generation";
@@ -46,17 +53,18 @@ export const generatePreCallIdeas = action({
 
       if (existingKey) {
         // Return existing prompts
-        const existingPrompts = await ctx.runQuery(
-          internal.prompts.queries.getPromptsByMeetingAndType,
-          {
-            meetingId,
-            type: "precall",
-            limit: 10,
-          },
-        );
+        const existingPrompts: Array<{ _id: Id<"prompts"> }> =
+          await ctx.runQuery(
+            internal.prompts.queries.getPromptsByMeetingAndType,
+            {
+              meetingId,
+              type: "precall",
+              limit: 10,
+            },
+          );
 
         return {
-          promptIds: existingPrompts.map((p: { _id: Id<"prompts"> }) => p._id),
+          promptIds: existingPrompts.map((p) => p._id),
           generated: false,
           fromCache: true,
         };
@@ -400,7 +408,7 @@ export const generateContextualPrompts = internalAction({
     }),
   },
   returns: v.array(v.id("prompts")),
-  handler: async (ctx, { meetingId, context }) => {
+  handler: async (ctx, { meetingId, context }): Promise<Id<"prompts">[]> => {
     try {
       // Get meeting details and participants
       const meeting = await ctx.runQuery(
@@ -480,10 +488,17 @@ export const detectLullAndGeneratePrompts = action({
     promptsGenerated: v.number(),
     promptIds: v.array(v.id("prompts")),
   }),
-  handler: async (ctx, { meetingId }) => {
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<{
+    lullDetected: boolean;
+    promptsGenerated: number;
+    promptIds: Id<"prompts">[];
+  }> => {
     try {
       // Get current meeting state
-      const meetingState = await ctx.runQuery(
+      const meetingState: any = await ctx.runQuery(
         internal.meetings.queries.getMeetingState,
         {
           meetingId,
@@ -513,7 +528,7 @@ export const detectLullAndGeneratePrompts = action({
       }
 
       // Generate contextual prompts for the lull
-      const promptIds = await ctx.runAction(
+      const promptIds: Id<"prompts">[] = await ctx.runAction(
         internal.prompts.actions.generateContextualPrompts,
         {
           meetingId,

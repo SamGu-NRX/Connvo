@@ -2,30 +2,6 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export const offlineTables = {
-  // Meeting Recordings
-  meetingRecordings: defineTable({
-    meetingId: v.id("meetings"),
-    recordingId: v.string(),
-    clientId: v.string(),
-    queueId: v.string(),
-    clientSequence: v.number(),
-    timestamp: v.number(),
-    queuedAt: v.number(),
-    attempts: v.number(),
-    lastAttempt: v.optional(v.number()),
-    error: v.optional(v.string()),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("syncing"),
-      v.literal("synced"),
-      v.literal("failed"),
-    ),
-  })
-    .index("by_meeting_and_client", ["meetingId", "clientId"])
-    .index("by_queue_id", ["queueId"])
-    .index("by_status", ["status"])
-    .index("by_queued_at", ["queuedAt"]),
-
   // Offline Support for Collaborative Notes
   offlineOperationQueue: defineTable({
     meetingId: v.id("meetings"),

@@ -8,12 +8,14 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
-import { internalAction, internalMutation, internalQuery } from "../_generated/server";
+import {
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
-
-
 
 /**
  * Streaming transcript processor with intelligent batching
@@ -204,6 +206,7 @@ export const updateStreamingMetrics = internalMutation({
         operation: "transcript_ingestion",
         batchesProcessed: metrics.batchesProcessed.toString(),
       },
+      meetingId, // Denormalized for indexing
       threshold: {
         warning: 10, // chunks per second
         critical: 5,
@@ -221,6 +224,7 @@ export const updateStreamingMetrics = internalMutation({
         meetingId: meetingId,
         operation: "transcript_ingestion",
       },
+      meetingId, // Denormalized for indexing
       timestamp: metrics.timestamp,
       createdAt: Date.now(),
     });
@@ -232,7 +236,7 @@ export const updateStreamingMetrics = internalMutation({
       .withIndex("by_name_meetingId_timestamp", (q) =>
         q
           .eq("name", "transcript_streaming_latency_sum")
-          .eq(q.field("labels.meetingId"), meetingId),
+          .eq("meetingId", meetingId),
       )
       .collect();
     const latestSum = sumRecords.reduce(
@@ -246,7 +250,7 @@ export const updateStreamingMetrics = internalMutation({
       .withIndex("by_name_meetingId_timestamp", (q) =>
         q
           .eq("name", "transcript_streaming_latency_count")
-          .eq(q.field("labels.meetingId"), meetingId),
+          .eq("meetingId", meetingId),
       )
       .collect();
     const latestCount = countRecords.reduce(
@@ -264,6 +268,7 @@ export const updateStreamingMetrics = internalMutation({
       value: newSum,
       unit: "ms_sum",
       labels: { meetingId: meetingId, operation: "transcript_ingestion" },
+      meetingId, // Denormalized for indexing
       timestamp: metrics.timestamp,
       createdAt: Date.now(),
     });
@@ -274,6 +279,7 @@ export const updateStreamingMetrics = internalMutation({
       value: newCount,
       unit: "samples",
       labels: { meetingId: meetingId, operation: "transcript_ingestion" },
+      meetingId, // Denormalized for indexing
       timestamp: metrics.timestamp,
       createdAt: Date.now(),
     });
@@ -284,6 +290,7 @@ export const updateStreamingMetrics = internalMutation({
       value: newAvg,
       unit: "ms",
       labels: { meetingId: meetingId, operation: "transcript_ingestion" },
+      meetingId, // Denormalized for indexing
       timestamp: metrics.timestamp,
       createdAt: Date.now(),
     });
@@ -471,7 +478,7 @@ export const getStreamingStats = internalQuery({
       .withIndex("by_name_meetingId_timestamp", (q) =>
         q
           .eq("name", "transcript_streaming")
-          .eq(q.field("labels.meetingId"), meetingId)
+          .eq("meetingId", meetingId)
           .gte("timestamp", since),
       )
       .collect();
@@ -516,7 +523,7 @@ export const getStreamingStats = internalQuery({
       .withIndex("by_name_meetingId_timestamp", (q) =>
         q
           .eq("name", "transcript_streaming_latency")
-          .eq(q.field("labels.meetingId"), meetingId)
+          .eq("meetingId", meetingId)
           .gte("timestamp", since),
       )
       .collect();

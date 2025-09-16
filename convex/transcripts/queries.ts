@@ -64,43 +64,43 @@ export const listTranscriptsAfterSequence = internalQuery({
   returns: v.array(
     v.object({
       _id: v.id("transcripts"),
-      handler: async (ctx, { meetingId, fromSequence, limit }) => {
-        const take = Math.max(1, Math.min(Math.floor(limit), 1000));
-        const docs = await ctx.db
-          .query("transcripts")
-          .withIndex("by_meeting_sequence", (q) =>
-            q.eq("meetingId", meetingId).gt("sequence", fromSequence),
-          )
-          .order("asc")
-          .take(take);
-        return docs.map((d) => ({
-          _id: d._id,
-          meetingId: d.meetingId,
-          bucketMs: d.bucketMs,
-          sequence: d.sequence,
-          speakerId: d.speakerId,
-          text: d.text,
-          confidence: d.confidence,
-          startMs: d.startMs,
-          endMs: d.endMs,
-          isInterim: d.isInterim,
-          wordCount: d.wordCount,
-          language: d.language,
-          createdAt: d.createdAt ?? d._creationTime,
-        }));
-      },
+      meetingId: v.id("meetings"),
+      bucketMs: v.number(),
+      sequence: v.number(),
+      speakerId: v.optional(v.string()),
+      text: v.string(),
+      confidence: v.number(),
+      startMs: v.number(),
+      endMs: v.number(),
+      isInterim: v.optional(v.boolean()),
       wordCount: v.number(),
       language: v.optional(v.string()),
       createdAt: v.number(),
     }),
   ),
   handler: async (ctx, { meetingId, fromSequence, limit }) => {
-    const results = await ctx.db
+    const take = Math.max(1, Math.min(Math.floor(limit), 1000));
+    const docs = await ctx.db
       .query("transcripts")
-      .withIndex("by_meeting_time_range", (q) => q.eq("meetingId", meetingId))
-      .filter((q) => q.gt(q.field("sequence"), fromSequence))
+      .withIndex("by_meeting_sequence", (q) =>
+        q.eq("meetingId", meetingId).gt("sequence", fromSequence),
+      )
       .order("asc")
-      .take(Math.min(limit, 1000));
-    return results;
+      .take(take);
+    return docs.map((d) => ({
+      _id: d._id,
+      meetingId: d.meetingId,
+      bucketMs: d.bucketMs,
+      sequence: d.sequence,
+      speakerId: d.speakerId,
+      text: d.text,
+      confidence: d.confidence,
+      startMs: d.startMs,
+      endMs: d.endMs,
+      isInterim: d.isInterim,
+      wordCount: d.wordCount,
+      language: d.language,
+      createdAt: d.createdAt ?? d._creationTime,
+    }));
   },
 });

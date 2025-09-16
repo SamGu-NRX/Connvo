@@ -20,3 +20,27 @@ export { calculateCompatibilityScore } from "./scoring";
 // Export types for client use
 export type {} from // Add type exports if needed
 "./engine";
+
+export const FEATURE_KEYS = [
+  "interestOverlap",
+  "experienceGap",
+  "industryMatch",
+  "timezoneCompatibility",
+  "vectorSimilarity",
+  "orgConstraintMatch",
+  "languageOverlap",
+  "roleComplementarity",
+] as const;
+
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+export type Features = {
+  interestOverlap: number;
+  experienceGap: number;
+  industryMatch: number;
+  timezoneCompatibility: number;
+  vectorSimilarity?: number;
+  orgConstraintMatch: number;
+  languageOverlap: number;
+  roleComplementarity: number;
+};

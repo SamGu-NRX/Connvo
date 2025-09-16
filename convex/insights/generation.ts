@@ -17,9 +17,39 @@ import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
 
 /**
+ * Types used locally to avoid implicit any on callback params
+ */
+type TranscriptSegment = {
+  startMs: number;
+  endMs: number;
+  speakers?: string[];
+  text: string;
+  topics?: string[];
+};
+
+type MeetingNotes = {
+  content?: string;
+};
+
+type InsightResult = {
+  summary: string;
+  actionItems: string[];
+  recommendations: Array<{
+    type: string;
+    content: string;
+    confidence: number;
+  }>;
+  links: Array<{
+    type: string;
+    url: string;
+    title: string;
+  }>;
+};
+
+/**
  * Generates post-call insights for all participants
  */
-export const generateInsights = action({
+export const generateInsights: ReturnType<typeof action> = action({
   args: {
     meetingId: v.id("meetings"),
     forceRegenerate: v.optional(v.boolean()),
@@ -29,7 +59,14 @@ export const generateInsights = action({
     insightsGenerated: v.number(),
     participantInsights: v.array(v.id("insights")),
   }),
-  handler: async (ctx, { meetingId, forceRegenerate = false }) => {
+  handler: async (
+    ctx,
+    { meetingId, forceRegenerate = false },
+  ): Promise<{
+    success: boolean;
+    insightsGenerated: number;
+    participantInsights: Id<"insights">[];
+  }> => {
     try {
       // Get meeting details and participants
       const meeting = await ctx.runQuery(
@@ -47,12 +84,15 @@ export const generateInsights = action({
         internal.meetings.queries.getMeetingParticipants,
         { meetingId },
       );
+      const participantsTyped = participants as unknown as Array<{
+        userId: Id<"users">;
+      }>;
 
       // Generate insights for each participant
       const participantInsights: Id<"insights">[] = [];
       let insightsGenerated = 0;
 
-      for (const participant of participants) {
+      for (const participant of participantsTyped) {
         try {
           // Check if insights already exist
           if (!forceRegenerate) {
@@ -65,19 +105,20 @@ export const generateInsights = action({
             );
 
             if (existingInsights) {
-              participantInsights.push(existingInsights._id);
+              // existingInsights is expected to be a document with _id
+              participantInsights.push((existingInsights as any)._id);
               continue;
             }
           }
 
           // Generate insights for this participant
-          const insightId = await ctx.runAction(
+          const insightId: Id<"insights"> | null = (await ctx.runAction(
             internal.insights.generation.generateParticipantInsights,
             {
               meetingId,
               userId: participant.userId,
             },
-          );
+          )) as Id<"insights"> | null;
 
           if (insightId) {
             participantInsights.push(insightId);
@@ -108,60 +149,66 @@ export const generateInsights = action({
 
 /**
  * Generates insights for a specific participant
+ *
+ * NOTE: return is optional id (null when no insight was created)
  */
-export const generateParticipantInsights = internalAction({
-  args: {
-    meetingId: v.id("meetings"),
-    userId: v.id("users"),
-  },
-  returns: v.id("insights"),
-  handler: async (ctx, { meetingId, userId }) => {
-    try {
-      // Get transcript segments for analysis
-      const transcriptSegments = await ctx.runQuery(
-        internal.transcripts.queries.getTranscriptSegments,
-        { meetingId, limit: 100 },
-      );
+export const generateParticipantInsights: ReturnType<typeof internalAction> =
+  internalAction({
+    args: {
+      meetingId: v.id("meetings"),
+      userId: v.id("users"),
+    },
+    returns: v.union(v.null(), v.id("insights")),
+    handler: async (
+      ctx,
+      { meetingId, userId },
+    ): Promise<Id<"insights"> | null> => {
+      try {
+        // Get transcript segments for analysis
+        const transcriptSegments = (await ctx.runQuery(
+          internal.transcripts.queries.getTranscriptSegments,
+          { meetingId, limit: 100 },
+        )) as TranscriptSegment[];
 
-      // Get meeting notes
-      const meetingNotes = await ctx.runQuery(
-        internal.notes.queries.getMeetingNotes,
-        { meetingId },
-      );
+        // Get meeting notes
+        const meetingNotes = (await ctx.runQuery(
+          internal.notes.queries.getMeetingNotes,
+          { meetingId },
+        )) as MeetingNotes | null;
 
-      // Analyze content and generate insights
-      const insights = await analyzeContentForInsights(
-        ctx,
-        meetingId,
-        userId,
-        transcriptSegments,
-        meetingNotes,
-      );
-
-      if (!insights) {
-        return undefined;
-      }
-
-      // Create insights document
-      const insightId = await ctx.runMutation(
-        internal.insights.mutations.createInsights,
-        {
-          userId,
+        // Analyze content and generate insights
+        const insights = await analyzeContentForInsights(
+          ctx,
           meetingId,
-          summary: insights.summary,
-          actionItems: insights.actionItems,
-          recommendations: insights.recommendations,
-          links: insights.links,
-        },
-      );
+          userId,
+          transcriptSegments,
+          meetingNotes,
+        );
 
-      return insightId;
-    } catch (error) {
-      console.error("Failed to generate participant insights:", error);
-      return undefined;
-    }
-  },
-});
+        if (!insights) {
+          return null;
+        }
+
+        // Create insights document
+        const insightId: Id<"insights"> = (await ctx.runMutation(
+          internal.insights.mutations.createInsights,
+          {
+            userId,
+            meetingId,
+            summary: insights.summary,
+            actionItems: insights.actionItems,
+            recommendations: insights.recommendations,
+            links: insights.links,
+          },
+        )) as Id<"insights">;
+
+        return insightId;
+      } catch (error) {
+        console.error("Failed to generate participant insights:", error);
+        return null;
+      }
+    },
+  });
 
 /**
  * Analyzes content to generate insights (stubbed implementation)
@@ -170,22 +217,9 @@ async function analyzeContentForInsights(
   ctx: any,
   meetingId: Id<"meetings">,
   userId: Id<"users">,
-  transcriptSegments: any[],
-  meetingNotes: any,
-): Promise<{
-  summary: string;
-  actionItems: string[];
-  recommendations: Array<{
-    type: string;
-    content: string;
-    confidence: number;
-  }>;
-  links: Array<{
-    type: string;
-    url: string;
-    title: string;
-  }>;
-} | null> {
+  transcriptSegments: TranscriptSegment[],
+  meetingNotes: MeetingNotes | null,
+): Promise<InsightResult | null> {
   // TODO: Implement actual AI analysis
   // For now, generate heuristic insights
 
@@ -194,7 +228,7 @@ async function analyzeContentForInsights(
   }
 
   // Extract key topics from transcript
-  const topics = transcriptSegments
+  const topics: string[] = transcriptSegments
     .flatMap((segment) => segment.topics || [])
     .filter((topic, index, array) => array.indexOf(topic) === index)
     .slice(0, 5);
@@ -235,19 +269,19 @@ async function analyzeContentForInsights(
  * Generates a heuristic summary
  */
 function generateHeuristicSummary(
-  transcriptSegments: any[],
-  meetingNotes: any,
+  transcriptSegments: TranscriptSegment[],
+  meetingNotes: MeetingNotes | null,
   topics: string[],
 ): string {
   const duration =
     transcriptSegments.length > 0
-      ? Math.max(...transcriptSegments.map((s) => s.endMs)) -
-        Math.min(...transcriptSegments.map((s) => s.startMs))
+      ? Math.max(...transcriptSegments.map((s: TranscriptSegment) => s.endMs)) -
+        Math.min(...transcriptSegments.map((s: TranscriptSegment) => s.startMs))
       : 0;
 
   const durationMinutes = Math.round(duration / 60000);
   const speakerCount = new Set(
-    transcriptSegments.flatMap((s) => s.speakers || []),
+    transcriptSegments.flatMap((s: TranscriptSegment) => s.speakers || []),
   ).size;
 
   let summary = `This ${durationMinutes}-minute meeting involved ${speakerCount} participants`;
@@ -262,16 +296,7 @@ function generateHeuristicSummary(
 
   summary += ".";
 
-//  TODO:  // Add speaking time analysis if available
-//   if (userParticipant?.speakingTime) {
-//     const speakingRatio =
-//       userParticipant.speakingTime / (meeting.duration || 1);
-//     if (speakingRatio > 0.4) {
-//       summary += " You were actively engaged in the discussion.";
-//     } else if (speakingRatio < 0.1) {
-//       summary += " You primarily listened during this meeting.";
-//     }
-//   }
+  // TODO: Add speaking time analysis if available
 
   return summary;
 }
@@ -280,8 +305,8 @@ function generateHeuristicSummary(
  * Generates heuristic action items
  */
 function generateHeuristicActionItems(
-  transcriptSegments: any[],
-  meetingNotes: any,
+  transcriptSegments: TranscriptSegment[],
+  meetingNotes: MeetingNotes | null,
 ): string[] {
   const actionItems: string[] = [];
 
@@ -298,8 +323,8 @@ function generateHeuristicActionItems(
     "deadline",
   ];
 
-  transcriptSegments.forEach((segment) => {
-    const text = segment.text.toLowerCase();
+  transcriptSegments.forEach((segment: TranscriptSegment) => {
+    const text = (segment.text || "").toLowerCase();
     actionKeywords.forEach((keyword) => {
       if (text.includes(keyword)) {
         // Extract sentence containing the keyword
@@ -317,7 +342,7 @@ function generateHeuristicActionItems(
   // Look for action items in notes
   if (meetingNotes?.content) {
     const noteLines = meetingNotes.content.split("\n");
-    noteLines.forEach((line) => {
+    noteLines.forEach((line: string) => {
       const trimmed = line.trim();
       if (
         trimmed.startsWith("- [ ]") ||
@@ -352,7 +377,7 @@ async function generateHeuristicRecommendations(
   ctx: any,
   userId: Id<"users">,
   topics: string[],
-  transcriptSegments: any[],
+  transcriptSegments: TranscriptSegment[],
 ): Promise<
   Array<{
     type: string;
@@ -416,47 +441,12 @@ function generateHeuristicLinks(topics: string[]): Array<{
   topics.slice(0, 3).forEach((topic) => {
     links.push({
       type: "resource",
-      url: `https://example.com/resources/${encodeURIComponent(topic.toLowerCase())}`,
+      url: `https://example.com/resources/${encodeURIComponent(
+        topic.toLowerCase(),
+      )}`,
       title: `Learn more about ${topic}`,
     });
   });
 
   return links;
 }
-
-// /**
-//  * Finds shared interests between two users
-//  */
-// function findSharedInterests(interests1: any[], interests2: any[]): string[] {
-//   const keys1 = new Set(interests1.map((i) => i.key));
-//   const keys2 = new Set(interests2.map((i) => i.key));
-//   const shared = [...keys1].filter((key) => keys2.has(key));
-//   return shared.map(
-//     (key) => interests1.find((i) => i.key === key)?.label || key,
-//   );
-// }
-
-// /**
-//  * Determines if two profiles have complementary skills
-//  */
-// function findComplementarySkills(profile1: any, profile2: any): boolean {
-//   if (!profile1?.field || !profile2?.field) return false;
-
-//   // Simple heuristic: different fields are potentially complementary
-//   const complementaryPairs = [
-//     ["engineering", "design"],
-//     ["engineering", "product"],
-//     ["design", "marketing"],
-//     ["sales", "engineering"],
-//     ["finance", "operations"],
-//   ];
-
-//   const field1 = profile1.field.toLowerCase();
-//   const field2 = profile2.field.toLowerCase();
-
-//   return complementaryPairs.some(
-//     ([a, b]) =>
-//       (field1.includes(a) && field2.includes(b)) ||
-//       (field1.includes(b) && field2.includes(a)),
-//   );
-// }

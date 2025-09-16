@@ -8,9 +8,16 @@ import { internal } from "../_generated/api";
 
 // JSON value helpers
 export type JSONPrimitive = string | number | boolean | null;
-export type JsonValue = JSONPrimitive | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue =
+  | JSONPrimitive
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
-export type AuditCategory = "subscription_management" | "auth" | "data_access" | "meeting";
+export type AuditCategory =
+  | "subscription_management"
+  | "auth"
+  | "data_access"
+  | "meeting";
 
 export type SubscriptionEventAction =
   | "subscription_established"
@@ -35,13 +42,13 @@ export type AuditEvent = {
   action: string;
   category: AuditCategory;
   success: boolean;
-  metadata?: Record<string, JsonValue>;
+  metadata?: Record<string, string | number | boolean>;
 };
 
 // Helper to build a subscription_management audit event with strong metadata typing
 export function makeSubscriptionAuditEvent(
   base: Omit<AuditEvent, "category" | "success"> & {
-    metadata?: SubscriptionMetadata & Record<string, JsonValue>;
+    metadata?: Record<string, string | number | boolean>;
   },
   success: boolean = true,
 ): AuditEvent {
@@ -51,7 +58,7 @@ export function makeSubscriptionAuditEvent(
 // Back-compat builder used by realtime modules
 export function buildSubscriptionAudit(
   args: Omit<AuditEvent, "category" | "success"> & {
-    metadata?: SubscriptionMetadata & Record<string, JsonValue>;
+    metadata?: Record<string, string | number | boolean>;
     success?: boolean;
   },
 ): AuditEvent {

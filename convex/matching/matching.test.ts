@@ -12,11 +12,13 @@ import { convexTest } from "convex-test";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
 
-describe("Intelligent Matching System", () => {
-let t: ReturnType<typeof convexTest>;
+type ConvexTestingHelper<T> = ReturnType<typeof convexTest>;
 
-beforeEach(async () => {
-  t = convexTest();
+describe("Intelligent Matching System", () => {
+  let t: ConvexTestingHelper<typeof schema>;
+
+  beforeEach(async () => {
+    t = convexTest();
 
     // Set up test users
     await t.mutation(internal.users.mutations.createTestUser, {
@@ -247,8 +249,8 @@ beforeEach(async () => {
       });
 
       // Switch to user 2
-      await t.withIdentity({ subject: "test_user_2" }, async () => {
-        await t.mutation(api.matching.queue.enterMatchingQueue, {
+      await t.withIdentity({ subject: "test_user_2" }, async (ctx) => {
+        await ctx.mutation(api.matching.queue.enterMatchingQueue, {
           availableFrom: now,
           availableTo: now + 3600000,
           constraints: {
@@ -291,8 +293,8 @@ beforeEach(async () => {
         },
       });
 
-      await t.withIdentity({ subject: "test_user_2" }, async () => {
-        await t.mutation(api.matching.queue.enterMatchingQueue, {
+      await t.withIdentity({ subject: "test_user_2" }, async (ctx) => {
+        await ctx.mutation(api.matching.queue.enterMatchingQueue, {
           availableFrom: now,
           availableTo: now + 3600000,
           constraints: {

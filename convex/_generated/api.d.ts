@@ -8,11 +8,6 @@
  * @module
  */
 
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from "convex/server";
 import type * as analytics_meetings from "../analytics/meetings.js";
 import type * as audit_logging from "../audit/logging.js";
 import type * as auth_guards from "../auth/guards.js";
@@ -41,7 +36,9 @@ import type * as lib_performance from "../lib/performance.js";
 import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_queryOptimization from "../lib/queryOptimization.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
+import type * as lib_rateLimiter from "../lib/rateLimiter.js";
 import type * as lib_resilience from "../lib/resilience.js";
+import type * as lib_utils from "../lib/utils.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_videoProviders from "../lib/videoProviders.js";
 import type * as matching_analytics from "../matching/analytics.js";
@@ -79,6 +76,17 @@ import type * as realtime_batchedOperations from "../realtime/batchedOperations.
 import type * as realtime_subscriptionActions from "../realtime/subscriptionActions.js";
 import type * as realtime_subscriptionManager from "../realtime/subscriptionManager.js";
 import type * as realtime_subscriptions from "../realtime/subscriptions.js";
+import type * as schema_ai from "../schema/ai.js";
+import type * as schema_interests from "../schema/interests.js";
+import type * as schema_legacy from "../schema/legacy.js";
+import type * as schema_matching from "../schema/matching.js";
+import type * as schema_meetings from "../schema/meetings.js";
+import type * as schema_messaging from "../schema/messaging.js";
+import type * as schema_offline from "../schema/offline.js";
+import type * as schema_system from "../schema/system.js";
+import type * as schema_transcripts from "../schema/transcripts.js";
+import type * as schema_users from "../schema/users.js";
+import type * as schema_webrtc from "../schema/webrtc.js";
 import type * as system_idempotency from "../system/idempotency.js";
 import type * as system_rateLimit from "../system/rateLimit.js";
 import type * as transcripts_aggregation from "../transcripts/aggregation.js";
@@ -88,6 +96,12 @@ import type * as transcripts_queries from "../transcripts/queries.js";
 import type * as transcripts_streaming from "../transcripts/streaming.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
+
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from "convex/server";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -126,7 +140,9 @@ declare const fullApi: ApiFromModules<{
   "lib/permissions": typeof lib_permissions;
   "lib/queryOptimization": typeof lib_queryOptimization;
   "lib/rateLimit": typeof lib_rateLimit;
+  "lib/rateLimiter": typeof lib_rateLimiter;
   "lib/resilience": typeof lib_resilience;
+  "lib/utils": typeof lib_utils;
   "lib/validators": typeof lib_validators;
   "lib/videoProviders": typeof lib_videoProviders;
   "matching/analytics": typeof matching_analytics;
@@ -164,6 +180,17 @@ declare const fullApi: ApiFromModules<{
   "realtime/subscriptionActions": typeof realtime_subscriptionActions;
   "realtime/subscriptionManager": typeof realtime_subscriptionManager;
   "realtime/subscriptions": typeof realtime_subscriptions;
+  "schema/ai": typeof schema_ai;
+  "schema/interests": typeof schema_interests;
+  "schema/legacy": typeof schema_legacy;
+  "schema/matching": typeof schema_matching;
+  "schema/meetings": typeof schema_meetings;
+  "schema/messaging": typeof schema_messaging;
+  "schema/offline": typeof schema_offline;
+  "schema/system": typeof schema_system;
+  "schema/transcripts": typeof schema_transcripts;
+  "schema/users": typeof schema_users;
+  "schema/webrtc": typeof schema_webrtc;
   "system/idempotency": typeof system_idempotency;
   "system/rateLimit": typeof system_rateLimit;
   "transcripts/aggregation": typeof transcripts_aggregation;
@@ -174,11 +201,150 @@ declare const fullApi: ApiFromModules<{
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
 }>;
+declare const fullApiWithMounts: typeof fullApi;
+
 export declare const api: FilterApi<
-  typeof fullApi,
+  typeof fullApiWithMounts,
   FunctionReference<any, "public">
 >;
 export declare const internal: FilterApi<
-  typeof fullApi,
+  typeof fullApiWithMounts,
   FunctionReference<any, "internal">
 >;
+
+export declare const components: {
+  rateLimiter: {
+    lib: {
+      checkRateLimit: FunctionReference<
+        "query",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: null;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          count?: number;
+          key?: string;
+          name: string;
+          reserve?: boolean;
+          throws?: boolean;
+        },
+        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
+      >;
+      clearAll: FunctionReference<
+        "mutation",
+        "internal",
+        { before?: number },
+        null
+      >;
+      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
+      getValue: FunctionReference<
+        "query",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: null;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          key?: string;
+          name: string;
+          sampleShards?: number;
+        },
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: null;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          shard: number;
+          ts: number;
+          value: number;
+        }
+      >;
+      rateLimit: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: null;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          count?: number;
+          key?: string;
+          name: string;
+          reserve?: boolean;
+          throws?: boolean;
+        },
+        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
+      >;
+      resetRateLimit: FunctionReference<
+        "mutation",
+        "internal",
+        { key?: string; name: string },
+        null
+      >;
+    };
+    time: {
+      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
+    };
+  };
+};

@@ -162,7 +162,7 @@
     - Add prompt feedback tracking (used, dismissed, upvoted) for relevance improvement
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [x] 8.3 Build Post-Call Insights Pipeline with Privacy Controls
+  - [ ] 8.3 Build Post-Call Insights Pipeline with Privacy Controls
     - Create generateInsights action for transcript and notes analysis per participant
     - Implement insights collection with summary, actionItems, recommendations, and suggestedConnections
     - Add privacy-controlled per-user insight generation with confidence scoring

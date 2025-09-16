@@ -87,7 +87,10 @@ export const generatePromptsForTopicShifts = internalAction({
     previousTopics: v.array(v.string()),
   },
   returns: v.array(v.id("prompts")),
-  handler: async (ctx, { meetingId, newTopics, previousTopics }) => {
+  handler: async (
+    ctx,
+    { meetingId, newTopics, previousTopics },
+  ): Promise<Id<"prompts">[]> => {
     try {
       // Detect if there's been a significant topic shift
       const topicShift = detectTopicShift(newTopics, previousTopics);
@@ -97,7 +100,7 @@ export const generatePromptsForTopicShifts = internalAction({
       }
 
       // Get current meeting state for context
-      const meetingState = await ctx.runQuery(
+      const meetingState: any = await ctx.runQuery(
         internal.meetings.queries.getMeetingState,
         {
           meetingId,
@@ -109,7 +112,7 @@ export const generatePromptsForTopicShifts = internalAction({
       }
 
       // Generate contextual prompts for the topic shift
-      const promptIds = await ctx.runAction(
+      const promptIds: Id<"prompts">[] = await ctx.runAction(
         internal.prompts.actions.generateContextualPrompts,
         {
           meetingId,
