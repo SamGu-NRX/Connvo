@@ -17,6 +17,15 @@ export { runMatchingCycle } from "./engine";
 // Re-export public functions from scoring
 export { calculateCompatibilityScore } from "./scoring";
 
+// Re-export public functions from analytics
+export {
+  submitMatchFeedback,
+  getMatchHistory,
+  getMatchingStats,
+  getGlobalMatchingAnalytics,
+  optimizeMatchingWeights,
+} from "./analytics";
+
 // Export centralized types for client use
 export type {
   MatchingQueueEntry,

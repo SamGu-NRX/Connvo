@@ -18,12 +18,8 @@ import {
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
-import { MatchResultV } from "../types/validators/matching";
-import type {
-  MatchResult,
-  CompatibilityFeatures,
-  MatchingQueueEntry,
-} from "../types/entities/matching";
+import { MatchResultV, constraintsV } from "../types/validators/matching";
+import type { CompatibilityFeatures } from "../types/entities/matching";
 
 /**
  * Run matching cycle with shard-based processing for scalability
@@ -163,7 +159,7 @@ export const processMatchingShard = internalAction({
 
         // Calculate compatibility score
         const scoreResult = await ctx.runAction(
-          internal.matching.scoring.calculateCompatibilityScore,
+          internal.matching.scoring.calculateCompatibilityScoreInternal,
           {
             user1Id: user1Entry.userId,
             user2Id: user2Entry.userId,
@@ -233,11 +229,7 @@ export const getShardQueueEntries = internalQuery({
       userId: v.id("users"),
       availableFrom: v.number(),
       availableTo: v.number(),
-      constraints: v.object({
-        interests: v.array(v.string()),
-        roles: v.array(v.string()),
-        orgConstraints: v.optional(v.string()),
-      }),
+      constraints: constraintsV,
       createdAt: v.number(),
     }),
   ),

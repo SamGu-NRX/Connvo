@@ -269,6 +269,35 @@ export const MatchingEventV = {
   }),
 } as const;
 
+// User Scoring Data validators
+export const UserScoringDataV = {
+  full: v.object({
+    user: v.object({
+      _id: v.id("users"),
+      displayName: v.optional(v.string()),
+      orgId: v.optional(v.string()),
+      orgRole: v.optional(v.string()),
+    }),
+    profile: v.union(
+      v.null(),
+      v.object({
+        experience: v.optional(v.string()),
+        languages: v.array(v.string()),
+        field: v.optional(v.string()),
+        company: v.optional(v.string()),
+      }),
+    ),
+    interests: v.array(v.string()),
+    embedding: v.union(
+      v.null(),
+      v.object({
+        vector: v.bytes(), // Use ArrayBuffer for embeddings per design
+        model: v.string(),
+      }),
+    ),
+  }),
+} as const;
+
 // Advanced ML-powered matching validators
 
 // ML Model Config validators

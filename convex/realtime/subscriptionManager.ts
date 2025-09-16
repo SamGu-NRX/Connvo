@@ -19,7 +19,6 @@ import { internal } from "../_generated/api";
 import { buildSubscriptionAudit } from "../lib/audit";
 import { normalizeRole, permissionsForResource } from "../lib/permissions";
 import {
-  ActiveSubscriptionV,
   SubscriptionEstablishmentResultV,
   SubscriptionValidationResultV,
   BulkTerminationResultV,
@@ -192,7 +191,7 @@ export const establishSubscription = mutation({
         action: "subscription_established",
         metadata: {
           subscriptionId,
-          permissions,
+          permissions: permissions.join(","),
           priority,
         },
       }),
@@ -217,7 +216,7 @@ export const validateAndUpdateSubscription = query({
     lastValidated: v.number(),
   },
   returns: SubscriptionValidationResultV.full,
-  handler: async (ctx, { subscriptionId, lastValidated }) => {
+  handler: async (ctx, { subscriptionId }) => {
     const identity = await requireIdentity(ctx);
     const subscription = SubscriptionRegistry.get(subscriptionId);
 

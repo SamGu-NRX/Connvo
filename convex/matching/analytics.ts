@@ -16,13 +16,10 @@ import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
 import {
   MatchingAnalyticsV,
-  MatchingStatsV,
   compatibilityFeaturesV,
 } from "../types/validators/matching";
 import type {
-  MatchingAnalytics,
   CompatibilityFeatures,
-  MatchingStats,
   MatchOutcome,
 } from "../types/entities/matching";
 import { FEATURE_KEYS } from ".";
@@ -32,7 +29,7 @@ type FeatureKey = keyof CompatibilityFeatures;
 /**
  * Submit feedback for a match
  */
-export const submitMatchFeedback: ReturnType<typeof mutation> = mutation({
+export const submitMatchFeedback = mutation({
   args: {
     matchId: v.string(),
     outcome: v.union(
@@ -79,7 +76,7 @@ export const submitMatchFeedback: ReturnType<typeof mutation> = mutation({
 /**
  * Get match history for a user
  */
-export const getMatchHistory: ReturnType<typeof query> = query({
+export const getMatchHistory = query({
   args: {
     limit: v.optional(v.number()),
     offset: v.optional(v.number()),
@@ -160,7 +157,7 @@ export const getMatchHistory: ReturnType<typeof query> = query({
 /**
  * Get matching statistics for a user
  */
-export const getMatchingStats: ReturnType<typeof query> = query({
+export const getMatchingStats = query({
   args: {},
   returns: v.object({
     totalMatches: v.number(),
@@ -270,7 +267,7 @@ export const getMatchingStats: ReturnType<typeof query> = query({
 /**
  * Get global matching analytics (admin only)
  */
-export const getGlobalMatchingAnalytics: ReturnType<typeof query> = query({
+export const getGlobalMatchingAnalytics = query({
   args: {
     timeRange: v.optional(v.number()), // milliseconds
   },
@@ -443,7 +440,7 @@ export const getGlobalMatchingAnalytics: ReturnType<typeof query> = query({
 /**
  * Optimize matching weights based on feedback
  */
-export const optimizeMatchingWeights: ReturnType<typeof action> = action({
+export const optimizeMatchingWeights = action({
   args: {
     minSamples: v.optional(v.number()),
   },

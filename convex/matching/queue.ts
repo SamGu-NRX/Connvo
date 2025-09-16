@@ -9,11 +9,11 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query } from "../_generated/server";
+import { mutation, query, internalMutation } from "../_generated/server";
 import { requireIdentity } from "../auth/guards";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
-import { MatchingQueueV } from "../types/validators/matching";
+import { MatchingQueueV, constraintsV } from "../types/validators/matching";
 import type { QueueStatus } from "../types/entities/matching";
 
 /**
@@ -23,11 +23,7 @@ export const enterMatchingQueue = mutation({
   args: {
     availableFrom: v.number(),
     availableTo: v.number(),
-    constraints: v.object({
-      interests: v.array(v.string()),
-      roles: v.array(v.string()),
-      orgConstraints: v.optional(v.string()),
-    }),
+    constraints: constraintsV,
   },
   returns: v.id("matchingQueue"),
   handler: async (ctx, args) => {
@@ -283,9 +279,9 @@ export const updateQueueStatus = mutation({
 });
 
 /**
- * Clean up expired queue entries
+ * Clean up expired queue entries (internal)
  */
-export const cleanupExpiredEntries = mutation({
+export const cleanupExpiredEntries = internalMutation({
   args: {},
   returns: v.object({
     expiredCount: v.number(),

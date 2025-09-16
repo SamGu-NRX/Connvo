@@ -107,6 +107,7 @@ export const MeetingV = {
   // Full meeting entity
   full: v.object({
     _id: v.id("meetings"),
+    _creationTime: v.number(), // Convex system field
     organizerId: v.id("users"),
     title: v.string(),
     description: v.optional(v.string()),

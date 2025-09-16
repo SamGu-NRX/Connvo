@@ -267,3 +267,15 @@ export const BatchStatsResultV = {
     }),
   }),
 } as const;
+
+// Batch presence update validator
+export const BatchPresenceUpdateV = {
+  update: v.object({
+    userId: v.id("users"),
+    presence: v.union(v.literal("joined"), v.literal("left")),
+    metadata: v.optional(
+      v.record(v.string(), v.union(v.string(), v.number(), v.boolean())),
+    ),
+    timestamp: v.number(),
+  }),
+} as const;

@@ -13,8 +13,11 @@ import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
-import { AIInsightV } from "../types/validators/prompt";
-import type { AIInsight, AIInsightWithUser } from "../types/entities/prompt";
+import {
+  AIInsightV,
+  ConnectionRecommendationV,
+} from "../types/validators/prompt";
+import type { AIInsight } from "../types/entities/prompt";
 
 /**
  * Gets insights for a user and meeting (internal use)
@@ -144,24 +147,7 @@ export const getUserInsights = query({
     limit: v.optional(v.number()),
     offset: v.optional(v.number()),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("insights"),
-      meetingId: v.id("meetings"),
-      summary: v.string(),
-      actionItems: v.array(v.string()),
-      recommendations: v.array(
-        v.object({
-          type: v.string(),
-          content: v.string(),
-          confidence: v.number(),
-        }),
-      ),
-      createdAt: v.number(),
-      meetingTitle: v.string(),
-      meetingDate: v.number(),
-    }),
-  ),
+  returns: v.array(AIInsightV.listItem),
   handler: async (ctx, { limit = 20, offset = 0 }) => {
     const identity = await requireIdentity(ctx);
 
@@ -204,32 +190,7 @@ export const getInsightById = query({
   args: {
     insightId: v.id("insights"),
   },
-  returns: v.union(
-    v.object({
-      _id: v.id("insights"),
-      meetingId: v.id("meetings"),
-      summary: v.string(),
-      actionItems: v.array(v.string()),
-      recommendations: v.array(
-        v.object({
-          type: v.string(),
-          content: v.string(),
-          confidence: v.number(),
-        }),
-      ),
-      links: v.array(
-        v.object({
-          type: v.string(),
-          url: v.string(),
-          title: v.string(),
-        }),
-      ),
-      createdAt: v.number(),
-      meetingTitle: v.string(),
-      meetingDate: v.number(),
-    }),
-    v.null(),
-  ),
+  returns: v.union(AIInsightV.withMeeting, v.null()),
   handler: async (ctx, { insightId }) => {
     const identity = await requireIdentity(ctx);
 
@@ -268,16 +229,7 @@ export const getConnectionRecommendations = query({
   args: {
     limit: v.optional(v.number()),
   },
-  returns: v.array(
-    v.object({
-      type: v.string(),
-      content: v.string(),
-      confidence: v.number(),
-      meetingId: v.id("meetings"),
-      meetingTitle: v.string(),
-      createdAt: v.number(),
-    }),
-  ),
+  returns: v.array(ConnectionRecommendationV),
   handler: async (ctx, { limit = 10 }) => {
     const identity = await requireIdentity(ctx);
 

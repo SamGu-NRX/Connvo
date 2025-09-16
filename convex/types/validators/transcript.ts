@@ -83,6 +83,17 @@ export const TranscriptV = {
     createdAt: v.number(),
   }),
 
+  // Transcript chunk for batch processing (input format)
+  batchChunk: v.object({
+    speakerId: v.optional(v.string()),
+    text: v.string(),
+    confidence: v.number(),
+    startMs: v.number(),
+    endMs: v.number(),
+    userId: v.id("users"),
+    timestamp: v.number(),
+  }),
+
   // Transcript statistics
   stats: v.object({
     totalChunks: v.number(),

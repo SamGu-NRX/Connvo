@@ -95,6 +95,16 @@ export const NoteV = {
     newVersion: v.number(),
     conflicts: v.array(v.string()),
   }),
+
+  // Batch note operation (for batch processing)
+  batchOperation: v.object({
+    authorId: v.id("users"),
+    operation: operationV,
+    clientSequence: v.number(),
+    serverSequence: v.number(),
+    expectedVersion: v.number(),
+    timestamp: v.number(),
+  }),
 } as const;
 
 // Offline Operation Queue validators (matches schema exactly)

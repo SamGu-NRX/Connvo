@@ -15,12 +15,7 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
-import { AIInsightV, AIContentGenerationV } from "../types/validators/prompt";
-import type {
-  AIInsight,
-  AIContentGenerationRequest,
-  AIContentGenerationResult,
-} from "../types/entities/prompt";
+// Types are imported locally to avoid unused import warnings
 
 /**
  * Types used locally to avoid implicit any on callback params

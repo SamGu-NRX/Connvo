@@ -25,6 +25,7 @@ export type ParticipantPresence = "invited" | "joined" | "left";
 // Core Meeting entity (matches convex/schema/meetings.ts exactly)
 export interface Meeting {
   _id: Id<"meetings">;
+  _creationTime: number; // Convex system field
   organizerId: Id<"users">;
   title: string;
   description?: string;

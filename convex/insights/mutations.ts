@@ -13,8 +13,7 @@ import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
-import { AIInsightV } from "../types/validators/prompt";
-import type { AIInsight } from "../types/entities/prompt";
+import { RecommendationV, LinkV } from "../types/validators/prompt";
 
 /**
  * Creates insights for a user and meeting (internal use)
@@ -25,22 +24,8 @@ export const createInsights = internalMutation({
     meetingId: v.id("meetings"),
     summary: v.string(),
     actionItems: v.array(v.string()),
-    recommendations: v.array(
-      v.object({
-        type: v.string(),
-        content: v.string(),
-        confidence: v.number(),
-      }),
-    ),
-    links: v.optional(
-      v.array(
-        v.object({
-          type: v.string(),
-          url: v.string(),
-          title: v.string(),
-        }),
-      ),
-    ),
+    recommendations: v.array(RecommendationV),
+    links: v.optional(v.array(LinkV)),
   },
   returns: v.id("insights"),
   handler: async (
@@ -92,22 +77,8 @@ export const batchCreateInsights = internalMutation({
         meetingId: v.id("meetings"),
         summary: v.string(),
         actionItems: v.array(v.string()),
-        recommendations: v.array(
-          v.object({
-            type: v.string(),
-            content: v.string(),
-            confidence: v.number(),
-          }),
-        ),
-        links: v.optional(
-          v.array(
-            v.object({
-              type: v.string(),
-              url: v.string(),
-              title: v.string(),
-            }),
-          ),
-        ),
+        recommendations: v.array(RecommendationV),
+        links: v.optional(v.array(LinkV)),
       }),
     ),
   },

@@ -13,6 +13,7 @@ import type { Id } from "../../_generated/dataModel";
 // Core User entity (matches convex/schema/users.ts exactly)
 export interface User {
   _id: Id<"users">;
+  _creationTime: number; // Convex system field
   workosUserId: string;
   email: string;
   orgId?: string;

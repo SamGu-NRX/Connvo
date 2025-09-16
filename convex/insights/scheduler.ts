@@ -40,14 +40,14 @@ export const processCompletedMeetings = internalAction({
       for (const meeting of recentlyCompletedMeetings) {
         try {
           const result = await ctx.runAction(
-            internal.insights.generation.generateMeetingInsights,
+            internal.insights.generation.generateInsights,
             {
               meetingId: meeting._id,
             },
           );
 
           meetingsProcessed++;
-          insightsGenerated += result.insightIds.length;
+          insightsGenerated += result.participantInsights.length;
         } catch (error) {
           console.error(
             `Failed to generate insights for meeting ${meeting._id}:`,

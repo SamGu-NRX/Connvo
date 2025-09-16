@@ -9,19 +9,6 @@
  */
 
 import { v } from "convex/values";
-import type {
-  WebRTCSession,
-  WebRTCSignal,
-  ConnectionMetrics,
-  WebRTCSessionWithUser,
-  WebRTCSignalWithUsers,
-  ConnectionMetricsSummary,
-  WebRTCRoomStatus,
-  WebRTCEvent,
-  WebRTCDiagnostics,
-  SDPData,
-  ICEData,
-} from "../entities/webrtc";
 
 // WebRTC session state validator
 export const webrtcSessionStateV = v.union(
@@ -709,4 +696,154 @@ export const WebRTCErrorV = {
     }),
     metadata: v.record(v.string(), v.any()),
   }),
+} as const;
+
+// WebRTC API Response validators for function return types
+export const WebRTCApiResponseV = {
+  // Initialize WebRTC room response
+  initializeRoom: v.object({
+    roomId: v.string(),
+    provider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    iceServers: v.optional(
+      v.array(
+        v.object({
+          urls: v.union(v.string(), v.array(v.string())),
+          username: v.optional(v.string()),
+          credential: v.optional(v.string()),
+        }),
+      ),
+    ),
+    features: v.object({
+      recording: v.boolean(),
+      transcription: v.boolean(),
+      maxParticipants: v.number(),
+      screenSharing: v.boolean(),
+      chat: v.boolean(),
+    }),
+    success: v.boolean(),
+  }),
+
+  // Create session response
+  createSession: v.object({
+    sessionId: v.string(),
+    success: v.boolean(),
+  }),
+
+  // Pending signals response
+  pendingSignals: v.array(
+    v.object({
+      _id: v.id("webrtcSignals"),
+      sessionId: v.string(),
+      fromUserId: v.id("users"),
+      type: v.union(v.literal("sdp"), v.literal("ice")),
+      data: v.union(sdpDataV, iceDataV),
+      timestamp: v.number(),
+    }),
+  ),
+
+  // Participant access token response
+  participantToken: v.object({
+    token: v.string(),
+    provider: v.union(v.literal("webrtc"), v.literal("getstream")),
+    roomId: v.string(),
+    participantId: v.string(),
+    permissions: v.object({
+      canRecord: v.boolean(),
+      canMute: v.boolean(),
+      canKick: v.boolean(),
+      canShare: v.boolean(),
+    }),
+    success: v.boolean(),
+  }),
+
+  // Connection failure response
+  connectionFailure: v.object({
+    success: v.boolean(),
+    fallbackProvider: v.optional(
+      v.union(v.literal("webrtc"), v.literal("getstream")),
+    ),
+    retryRecommended: v.boolean(),
+  }),
+
+  // Connection quality monitoring response
+  connectionQuality: v.object({
+    quality: connectionQualityV,
+    recommendations: v.array(v.string()),
+    shouldFallback: v.boolean(),
+  }),
+
+  // Cleanup response
+  cleanup: v.object({
+    signalsDeleted: v.number(),
+    sessionsDeleted: v.number(),
+  }),
+
+  // Internal helper responses
+  participantAccess: v.object({
+    _id: v.id("meetingParticipants"),
+    meetingId: v.id("meetings"),
+    userId: v.id("users"),
+    role: v.union(
+      v.literal("host"),
+      v.literal("participant"),
+      v.literal("observer"),
+    ),
+    presence: v.union(
+      v.literal("invited"),
+      v.literal("joined"),
+      v.literal("left"),
+    ),
+    createdAt: v.number(),
+  }),
+
+  meetingDoc: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("meetings"),
+      organizerId: v.id("users"),
+      title: v.string(),
+      description: v.optional(v.string()),
+      scheduledAt: v.optional(v.number()),
+      duration: v.optional(v.number()),
+      webrtcEnabled: v.optional(v.boolean()),
+      streamRoomId: v.optional(v.string()),
+      state: v.union(
+        v.literal("scheduled"),
+        v.literal("active"),
+        v.literal("concluded"),
+        v.literal("cancelled"),
+      ),
+      participantCount: v.optional(v.number()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
+
+  videoRoomConfig: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("videoRoomConfigs"),
+      meetingId: v.id("meetings"),
+      roomId: v.string(),
+      provider: v.union(v.literal("webrtc"), v.literal("getstream")),
+      iceServers: v.optional(
+        v.array(
+          v.object({
+            urls: v.union(v.string(), v.array(v.string())),
+            username: v.optional(v.string()),
+            credential: v.optional(v.string()),
+          }),
+        ),
+      ),
+      features: v.object({
+        recording: v.boolean(),
+        transcription: v.boolean(),
+        maxParticipants: v.number(),
+        screenSharing: v.boolean(),
+        chat: v.boolean(),
+      }),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+  ),
 } as const;

@@ -34,7 +34,10 @@ import {
   BatchNoteProcessResultV,
   BatchPresenceProcessResultV,
   BatchStatsResultV,
+  BatchPresenceUpdateV,
 } from "../types/validators/real-time";
+import { NoteV } from "../types/validators/note";
+import { TranscriptV } from "../types/validators/transcript";
 
 /**
  * Global batch processors for different operation types
@@ -255,16 +258,7 @@ export const batchIngestTranscriptChunk = mutation({
 export const batchApplyNoteOperation = mutation({
   args: {
     meetingId: v.id("meetings"),
-    operation: v.object({
-      type: v.union(
-        v.literal("insert"),
-        v.literal("delete"),
-        v.literal("retain"),
-      ),
-      position: v.number(),
-      content: v.optional(v.string()),
-      length: v.optional(v.number()),
-    }),
+    operation: NoteV.operation,
     clientSequence: v.number(),
     expectedVersion: v.number(),
   },
@@ -348,17 +342,7 @@ export const batchUpdatePresence = mutation({
 export const processBatchedTranscriptChunks = internalMutation({
   args: {
     meetingId: v.id("meetings"),
-    chunks: v.array(
-      v.object({
-        speakerId: v.optional(v.string()),
-        text: v.string(),
-        confidence: v.number(),
-        startMs: v.number(),
-        endMs: v.number(),
-        userId: v.id("users"),
-        timestamp: v.number(),
-      }),
-    ),
+    chunks: v.array(TranscriptV.batchChunk),
   },
   returns: BatchTranscriptProcessResultV.full,
   handler: async (ctx, { meetingId, chunks }) => {
@@ -411,25 +395,7 @@ export const processBatchedTranscriptChunks = internalMutation({
 export const processBatchedNoteOperations = internalMutation({
   args: {
     meetingId: v.id("meetings"),
-    operations: v.array(
-      v.object({
-        authorId: v.id("users"),
-        operation: v.object({
-          type: v.union(
-            v.literal("insert"),
-            v.literal("delete"),
-            v.literal("retain"),
-          ),
-          position: v.number(),
-          content: v.optional(v.string()),
-          length: v.optional(v.number()),
-        }),
-        clientSequence: v.number(),
-        serverSequence: v.number(),
-        expectedVersion: v.number(),
-        timestamp: v.number(),
-      }),
-    ),
+    operations: v.array(NoteV.batchOperation),
   },
   returns: BatchNoteProcessResultV.full,
   handler: async (ctx, { meetingId, operations }) => {
@@ -503,14 +469,7 @@ export const processBatchedNoteOperations = internalMutation({
 export const processBatchedPresenceUpdates = internalMutation({
   args: {
     meetingId: v.id("meetings"),
-    updates: v.array(
-      v.object({
-        userId: v.id("users"),
-        presence: v.union(v.literal("joined"), v.literal("left")),
-        metadata: v.optional(metadataRecordV),
-        timestamp: v.number(),
-      }),
-    ),
+    updates: v.array(BatchPresenceUpdateV.update),
   },
   returns: BatchPresenceProcessResultV.full,
   handler: async (ctx, { meetingId, updates }) => {

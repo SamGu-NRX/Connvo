@@ -48,6 +48,27 @@ export interface MatchingAnalytics {
   createdAt: number;
 }
 
+// User scoring data for compatibility calculations
+export interface UserScoringData {
+  user: {
+    _id: Id<"users">;
+    displayName?: string;
+    orgId?: string;
+    orgRole?: string;
+  };
+  profile: {
+    experience?: string;
+    languages: string[];
+    field?: string;
+    company?: string;
+  } | null;
+  interests: string[];
+  embedding: {
+    vector: ArrayBuffer;
+    model: string;
+  } | null;
+}
+
 // Compatibility features for matching algorithm
 export interface CompatibilityFeatures {
   interestOverlap: number;

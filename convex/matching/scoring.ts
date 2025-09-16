@@ -9,25 +9,19 @@
  */
 
 import { v } from "convex/values";
-import { action, internalQuery } from "../_generated/server";
+import { action, internalAction, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { ConvexError } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import type { CompatibilityFeatures } from "../types/entities/matching";
 
-/**
- * Compatibility features validator (using centralized types)
- */
-const compatibilityFeaturesV = v.object({
-  interestOverlap: v.number(),
-  experienceGap: v.number(),
-  industryMatch: v.number(),
-  timezoneCompatibility: v.number(),
-  vectorSimilarity: v.optional(v.number()),
-  orgConstraintMatch: v.number(),
-  languageOverlap: v.number(),
-  roleComplementarity: v.number(),
-});
+import {
+  compatibilityFeaturesV,
+  constraintsV,
+  UserScoringDataV,
+} from "../types/validators/matching";
+import type {
+  CompatibilityFeatures,
+  UserScoringData,
+} from "../types/entities/matching";
 
 /**
  * Scoring weights validator (matches CompatibilityFeatures)
@@ -58,22 +52,76 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
 };
 
 /**
- * Calculate compatibility score between two users
+ * Calculate compatibility score between two users (public API)
  */
 export const calculateCompatibilityScore = action({
   args: {
     user1Id: v.id("users"),
     user2Id: v.id("users"),
-    user1Constraints: v.object({
-      interests: v.array(v.string()),
-      roles: v.array(v.string()),
-      orgConstraints: v.optional(v.string()),
-    }),
-    user2Constraints: v.object({
-      interests: v.array(v.string()),
-      roles: v.array(v.string()),
-      orgConstraints: v.optional(v.string()),
-    }),
+    user1Constraints: constraintsV,
+    user2Constraints: constraintsV,
+    customWeights: v.optional(scoringWeightsV),
+  },
+  returns: v.object({
+    score: v.number(),
+    features: compatibilityFeaturesV,
+    explanation: v.array(v.string()),
+  }),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    score: number;
+    features: CompatibilityFeatures;
+    explanation: string[];
+  }> => {
+    // Get user profiles and data
+    const [user1Data, user2Data] = await Promise.all([
+      ctx.runQuery(internal.matching.scoring.getUserScoringData, {
+        userId: args.user1Id,
+      }),
+      ctx.runQuery(internal.matching.scoring.getUserScoringData, {
+        userId: args.user2Id,
+      }),
+    ]);
+
+    if (!user1Data || !user2Data) {
+      throw new ConvexError("User data not found for scoring");
+    }
+
+    // Calculate individual features
+    const features = await calculateCompatibilityFeatures(
+      ctx,
+      user1Data,
+      user2Data,
+      args.user1Constraints,
+      args.user2Constraints,
+    );
+
+    // Apply weights and calculate final score
+    const weights = args.customWeights ?? DEFAULT_WEIGHTS;
+    const score = calculateWeightedScore(features, weights);
+
+    // Generate explanation
+    const explanation = generateScoreExplanation(features, weights);
+
+    return {
+      score,
+      features,
+      explanation,
+    };
+  },
+});
+
+/**
+ * Calculate compatibility score between two users (internal)
+ */
+export const calculateCompatibilityScoreInternal = internalAction({
+  args: {
+    user1Id: v.id("users"),
+    user2Id: v.id("users"),
+    user1Constraints: constraintsV,
+    user2Constraints: constraintsV,
     customWeights: v.optional(scoringWeightsV),
   },
   returns: v.object({
@@ -125,35 +173,8 @@ export const calculateCompatibilityScore = action({
  */
 export const getUserScoringData = internalQuery({
   args: { userId: v.id("users") },
-  returns: v.union(
-    v.null(),
-    v.object({
-      user: v.object({
-        _id: v.id("users"),
-        displayName: v.optional(v.string()),
-        orgId: v.optional(v.string()),
-        orgRole: v.optional(v.string()),
-      }),
-      profile: v.union(
-        v.null(),
-        v.object({
-          experience: v.optional(v.string()),
-          languages: v.array(v.string()),
-          field: v.optional(v.string()),
-          company: v.optional(v.string()),
-        }),
-      ),
-      interests: v.array(v.string()),
-      embedding: v.union(
-        v.null(),
-        v.object({
-          vector: v.array(v.float64()),
-          model: v.string(),
-        }),
-      ),
-    }),
-  ),
-  handler: async (ctx, args) => {
+  returns: v.union(v.null(), UserScoringDataV.full),
+  handler: async (ctx, args): Promise<UserScoringData | null> => {
     const user = await ctx.db.get(args.userId);
     if (!user) return null;
 
@@ -196,7 +217,7 @@ export const getUserScoringData = internalQuery({
       interests,
       embedding: embedding
         ? {
-            vector: embedding.vector,
+            vector: embedding.vector, // Already ArrayBuffer from schema
             model: embedding.model,
           }
         : null,
@@ -208,11 +229,19 @@ export const getUserScoringData = internalQuery({
  * Calculate all compatibility features between two users
  */
 async function calculateCompatibilityFeatures(
-  ctx: any,
-  user1Data: any,
-  user2Data: any,
-  user1Constraints: any,
-  user2Constraints: any,
+  ctx: any, // Convex action context - keeping as any for simplicity
+  user1Data: UserScoringData,
+  user2Data: UserScoringData,
+  user1Constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  },
+  user2Constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  },
 ): Promise<CompatibilityFeatures> {
   // Interest overlap calculation
   const interestOverlap = calculateInterestOverlap(
@@ -266,10 +295,13 @@ async function calculateCompatibilityFeatures(
     user2Data.embedding &&
     user1Data.embedding.model === user2Data.embedding.model
   ) {
+    // Convert ArrayBuffer to Float32Array for calculation
+    const vector1 = new Float32Array(user1Data.embedding.vector);
+    const vector2 = new Float32Array(user2Data.embedding.vector);
     vectorSimilarity = await calculateVectorSimilarity(
       ctx,
-      user1Data.embedding.vector,
-      user2Data.embedding.vector,
+      Array.from(vector1),
+      Array.from(vector2),
     );
   }
 
@@ -305,11 +337,6 @@ function calculateInterestOverlap(
   ).length;
 
   // Weight actual interests more heavily than constraints
-  const totalInterests = Math.max(
-    user1Interests.length + user2Interests.length,
-    user1ConstraintInterests.length + user2ConstraintInterests.length,
-    1,
-  );
 
   const actualWeight = 0.7;
   const constraintWeight = 0.3;
@@ -385,7 +412,7 @@ function calculateIndustryMatch(
     design: ["ux", "ui", "product", "creative"],
   };
 
-  for (const [category, fields] of Object.entries(relatedFields)) {
+  for (const [, fields] of Object.entries(relatedFields)) {
     if (
       fields.some((f) => field1.toLowerCase().includes(f)) &&
       fields.some((f) => field2.toLowerCase().includes(f))
@@ -487,7 +514,7 @@ function calculateOrgConstraintMatch(
  * Calculate vector similarity using cosine similarity
  */
 async function calculateVectorSimilarity(
-  ctx: any,
+  _ctx: any, // Convex context - not used in this function but kept for consistency
   vector1: number[],
   vector2: number[],
 ): Promise<number> {
@@ -521,10 +548,24 @@ function calculateWeightedScore(
   let totalScore = 0;
   let totalWeight = 0;
 
-  for (const [feature, value] of Object.entries(features)) {
-    if (typeof value === "number" && weights[feature]) {
-      totalScore += value * weights[feature];
-      totalWeight += weights[feature];
+  // Use typed iteration to avoid index signature issues
+  const featureKeys: (keyof CompatibilityFeatures)[] = [
+    "interestOverlap",
+    "experienceGap",
+    "industryMatch",
+    "timezoneCompatibility",
+    "vectorSimilarity",
+    "orgConstraintMatch",
+    "languageOverlap",
+    "roleComplementarity",
+  ];
+
+  for (const feature of featureKeys) {
+    const value = features[feature];
+    const weight = weights[feature];
+    if (typeof value === "number" && typeof weight === "number") {
+      totalScore += value * weight;
+      totalWeight += weight;
     }
   }
 
@@ -536,7 +577,7 @@ function calculateWeightedScore(
  */
 function generateScoreExplanation(
   features: CompatibilityFeatures,
-  weights: CompatibilityFeatures,
+  _weights: CompatibilityFeatures,
 ): string[] {
   const explanations: string[] = [];
 

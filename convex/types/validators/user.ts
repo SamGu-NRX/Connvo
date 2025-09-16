@@ -34,6 +34,7 @@ export const UserV = {
   // Full user entity
   full: v.object({
     _id: v.id("users"),
+    _creationTime: v.number(), // Convex system field
     workosUserId: v.string(),
     email: v.string(),
     orgId: v.optional(v.string()),

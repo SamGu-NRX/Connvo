@@ -54,7 +54,7 @@ export const aiTables = {
       v.literal("transcriptSegment"),
     ),
     sourceId: v.string(),
-    vector: v.array(v.float64()),
+    vector: v.bytes(), // Use ArrayBuffer for performance and size optimization
     model: v.string(),
     dimensions: v.number(),
     version: v.string(),

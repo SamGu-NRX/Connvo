@@ -77,21 +77,34 @@ export const AIInsightV = {
     meetingId: v.id("meetings"),
     summary: v.string(),
     actionItems: v.array(v.string()),
-    recommendations: v.array(
-      v.object({
-        type: v.string(),
-        content: v.string(),
-        confidence: v.number(),
-      }),
-    ),
-    links: v.array(
-      v.object({
-        type: v.string(),
-        url: v.string(),
-        title: v.string(),
-      }),
-    ),
+    recommendations: v.array(RecommendationV),
+    links: v.array(LinkV),
     createdAt: v.number(),
+  }),
+
+  // Insight list item (for getUserInsights)
+  listItem: v.object({
+    _id: v.id("insights"),
+    meetingId: v.id("meetings"),
+    summary: v.string(),
+    actionItems: v.array(v.string()),
+    recommendations: v.array(RecommendationV),
+    createdAt: v.number(),
+    meetingTitle: v.string(),
+    meetingDate: v.number(),
+  }),
+
+  // Insight with meeting details (for getInsightById)
+  withMeeting: v.object({
+    _id: v.id("insights"),
+    meetingId: v.id("meetings"),
+    summary: v.string(),
+    actionItems: v.array(v.string()),
+    recommendations: v.array(RecommendationV),
+    links: v.array(LinkV),
+    createdAt: v.number(),
+    meetingTitle: v.string(),
+    meetingDate: v.number(),
   }),
 
   // Insight with user details
@@ -101,20 +114,8 @@ export const AIInsightV = {
     meetingId: v.id("meetings"),
     summary: v.string(),
     actionItems: v.array(v.string()),
-    recommendations: v.array(
-      v.object({
-        type: v.string(),
-        content: v.string(),
-        confidence: v.number(),
-      }),
-    ),
-    links: v.array(
-      v.object({
-        type: v.string(),
-        url: v.string(),
-        title: v.string(),
-      }),
-    ),
+    recommendations: v.array(RecommendationV),
+    links: v.array(LinkV),
     createdAt: v.number(),
     user: v.object({
       _id: v.id("users"),
@@ -179,6 +180,30 @@ export const AIContentGenerationV = {
     error: v.optional(v.string()),
   }),
 } as const;
+
+// Recommendation validator (for insights)
+export const RecommendationV = v.object({
+  type: v.string(),
+  content: v.string(),
+  confidence: v.number(),
+});
+
+// Link validator (for insights)
+export const LinkV = v.object({
+  type: v.string(),
+  url: v.string(),
+  title: v.string(),
+});
+
+// Connection recommendation validator
+export const ConnectionRecommendationV = v.object({
+  type: v.string(),
+  content: v.string(),
+  confidence: v.number(),
+  meetingId: v.id("meetings"),
+  meetingTitle: v.string(),
+  createdAt: v.number(),
+});
 
 // AI Model Config validators
 export const AIModelConfigV = {
