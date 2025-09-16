@@ -14,7 +14,20 @@ import { requireIdentity } from "../auth/guards";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
-import { FEATURE_KEYS, Features, FeatureKey } from ".";
+import {
+  MatchingAnalyticsV,
+  MatchingStatsV,
+  compatibilityFeaturesV,
+} from "../types/validators/matching";
+import type {
+  MatchingAnalytics,
+  CompatibilityFeatures,
+  MatchingStats,
+  MatchOutcome,
+} from "../types/entities/matching";
+import { FEATURE_KEYS } from ".";
+
+type FeatureKey = keyof CompatibilityFeatures;
 
 /**
  * Submit feedback for a match
@@ -86,16 +99,7 @@ export const getMatchHistory: ReturnType<typeof query> = query({
           comments: v.optional(v.string()),
         }),
       ),
-      features: v.object({
-        interestOverlap: v.number(),
-        experienceGap: v.number(),
-        industryMatch: v.number(),
-        timezoneCompatibility: v.number(),
-        vectorSimilarity: v.optional(v.number()),
-        orgConstraintMatch: v.number(),
-        languageOverlap: v.number(),
-        roleComplementarity: v.number(),
-      }),
+      features: compatibilityFeaturesV,
       createdAt: v.number(),
     }),
   ),
@@ -106,9 +110,9 @@ export const getMatchHistory: ReturnType<typeof query> = query({
     Array<{
       _id: Id<"matchingAnalytics">;
       matchId: string;
-      outcome: "accepted" | "declined" | "completed";
+      outcome: MatchOutcome;
       feedback?: { rating: number; comments?: string };
-      features: Features;
+      features: CompatibilityFeatures;
       createdAt: number;
     }>
   > => {
@@ -125,7 +129,7 @@ export const getMatchHistory: ReturnType<typeof query> = query({
     const mapped = rows.map((doc) => {
       const f = doc.features as Record<string, number | undefined>;
 
-      const features: Features = {
+      const features: CompatibilityFeatures = {
         interestOverlap: f.interestOverlap ?? 0,
         experienceGap: f.experienceGap ?? 0,
         industryMatch: f.industryMatch ?? 0,
@@ -172,7 +176,21 @@ export const getMatchingStats: ReturnType<typeof query> = query({
       }),
     ),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    totalMatches: number;
+    acceptedMatches: number;
+    completedMatches: number;
+    averageRating?: number;
+    successRate: number;
+    topFeatures: Array<{
+      feature: string;
+      averageScore: number;
+      count: number;
+    }>;
+  }> => {
     const { userId } = await requireIdentity(ctx);
 
     const matches = await ctx.db
@@ -385,7 +403,7 @@ export const getGlobalMatchingAnalytics: ReturnType<typeof query> = query({
       }
       dailyStats[date].count += 1;
 
-      const f = match.features as Partial<Features>;
+      const f = match.features as Partial<CompatibilityFeatures>;
       let featureSum = 0;
       let numericCount = 0;
 
@@ -430,16 +448,7 @@ export const optimizeMatchingWeights: ReturnType<typeof action> = action({
     minSamples: v.optional(v.number()),
   },
   returns: v.object({
-    optimizedWeights: v.object({
-      interestOverlap: v.number(),
-      experienceGap: v.number(),
-      industryMatch: v.number(),
-      timezoneCompatibility: v.number(),
-      vectorSimilarity: v.number(),
-      orgConstraintMatch: v.number(),
-      languageOverlap: v.number(),
-      roleComplementarity: v.number(),
-    }),
+    optimizedWeights: compatibilityFeaturesV,
     improvement: v.number(),
     sampleSize: v.number(),
   }),
@@ -447,16 +456,7 @@ export const optimizeMatchingWeights: ReturnType<typeof action> = action({
     ctx,
     args,
   ): Promise<{
-    optimizedWeights: {
-      interestOverlap: number;
-      experienceGap: number;
-      industryMatch: number;
-      timezoneCompatibility: number;
-      vectorSimilarity: number;
-      orgConstraintMatch: number;
-      languageOverlap: number;
-      roleComplementarity: number;
-    };
+    optimizedWeights: CompatibilityFeatures;
     improvement: number;
     sampleSize: number;
   }> => {
@@ -464,8 +464,8 @@ export const optimizeMatchingWeights: ReturnType<typeof action> = action({
 
     // Get recent match data with feedback
     const matches: Array<{
-      features: Features;
-      outcome: "accepted" | "declined" | "completed";
+      features: CompatibilityFeatures;
+      outcome: MatchOutcome;
       feedback?: { rating: number; comments?: string };
     }> = await ctx.runQuery(
       internal.matching.analytics.getMatchesForOptimization,
@@ -506,7 +506,7 @@ export const optimizeMatchingWeights: ReturnType<typeof action> = action({
     });
 
     // Calculate improvement estimate
-    const currentWeights: Record<FeatureKey, number> = {
+    const currentWeights: CompatibilityFeatures = {
       interestOverlap: 0.25,
       experienceGap: 0.15,
       industryMatch: 0.1,
@@ -518,12 +518,12 @@ export const optimizeMatchingWeights: ReturnType<typeof action> = action({
     };
 
     // coerce partial optimizedWeights into full record with defaults
-    const optimizedFull: Record<FeatureKey, number> = FEATURE_KEYS.reduce(
+    const optimizedFull: CompatibilityFeatures = FEATURE_KEYS.reduce(
       (acc, key) => {
         acc[key] = optimizedWeights[key] ?? 0;
         return acc;
       },
-      {} as Record<FeatureKey, number>,
+      {} as CompatibilityFeatures,
     );
 
     const improvement = calculateWeightImprovement(
@@ -532,7 +532,7 @@ export const optimizeMatchingWeights: ReturnType<typeof action> = action({
       optimizedFull,
     );
 
-    const normalized = {
+    const normalized: CompatibilityFeatures = {
       interestOverlap: optimizedFull.interestOverlap,
       experienceGap: optimizedFull.experienceGap,
       industryMatch: optimizedFull.industryMatch,
@@ -560,16 +560,7 @@ export const getMatchesForOptimization = internalQuery({
   },
   returns: v.array(
     v.object({
-      features: v.object({
-        interestOverlap: v.number(),
-        experienceGap: v.number(),
-        industryMatch: v.number(),
-        timezoneCompatibility: v.number(),
-        vectorSimilarity: v.optional(v.number()),
-        orgConstraintMatch: v.number(),
-        languageOverlap: v.number(),
-        roleComplementarity: v.number(),
-      }),
+      features: compatibilityFeaturesV,
       outcome: v.union(
         v.literal("accepted"),
         v.literal("declined"),

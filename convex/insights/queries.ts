@@ -13,6 +13,8 @@ import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
+import { AIInsightV } from "../types/validators/prompt";
+import type { AIInsight, AIInsightWithUser } from "../types/entities/prompt";
 
 /**
  * Gets insights for a user and meeting (internal use)
@@ -22,32 +24,8 @@ export const getInsightsByUserAndMeeting = internalQuery({
     userId: v.id("users"),
     meetingId: v.id("meetings"),
   },
-  returns: v.union(
-    v.object({
-      _id: v.id("insights"),
-      userId: v.id("users"),
-      meetingId: v.id("meetings"),
-      summary: v.string(),
-      actionItems: v.array(v.string()),
-      recommendations: v.array(
-        v.object({
-          type: v.string(),
-          content: v.string(),
-          confidence: v.number(),
-        }),
-      ),
-      links: v.array(
-        v.object({
-          type: v.string(),
-          url: v.string(),
-          title: v.string(),
-        }),
-      ),
-      createdAt: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { userId, meetingId }) => {
+  returns: v.union(AIInsightV.full, v.null()),
+  handler: async (ctx, { userId, meetingId }): Promise<AIInsight | null> => {
     return await ctx.db
       .query("insights")
       .withIndex("by_user_meeting", (q) =>
@@ -89,7 +67,27 @@ export const getMeetingInsights = query({
     }),
     v.null(),
   ),
-  handler: async (ctx, { meetingId }) => {
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<{
+    _id: Id<"insights">;
+    summary: string;
+    actionItems: string[];
+    recommendations: Array<{
+      type: string;
+      content: string;
+      confidence: number;
+    }>;
+    links: Array<{
+      type: string;
+      url: string;
+      title: string;
+    }>;
+    createdAt: number;
+    meetingTitle: string;
+    meetingDate: number;
+  } | null> => {
     const identity = await requireIdentity(ctx);
 
     // Get the meeting to verify access and get basic info

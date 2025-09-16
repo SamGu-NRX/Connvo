@@ -14,6 +14,8 @@ import { requireIdentity, assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
+import { MeetingRuntimeStateV } from "../types/validators/meeting";
+import type { SpeakingStats, LullState } from "../types/entities/meeting";
 
 /**
  * Updates speaking statistics for a meeting
@@ -67,7 +69,7 @@ export const updateSpeakingStats = mutation({
     const userIdStr = userId.toString();
 
     // Update speaking statistics
-    const updatedStats = {
+    const updatedStats: SpeakingStats = {
       totalMs: currentStats.totalMs + speakingDurationMs,
       byUserMs: {
         ...currentStats.byUserMs,
@@ -77,7 +79,7 @@ export const updateSpeakingStats = mutation({
     };
 
     // Update lull state (reset since there's activity)
-    const updatedLullState = {
+    const updatedLullState: LullState = {
       detected: false,
       lastActivity: now,
       duration: 0,
@@ -114,12 +116,14 @@ export const updateLullState = internalMutation({
       throw createError.notFound("Meeting state", meetingId);
     }
 
+    const lullState: LullState = {
+      detected: lullDetected,
+      lastActivity,
+      duration,
+    };
+
     await ctx.db.patch(meetingState._id, {
-      lullState: {
-        detected: lullDetected,
-        lastActivity,
-        duration,
-      },
+      lullState,
       updatedAt: Date.now(),
     });
 
@@ -191,12 +195,14 @@ export const detectLull = internalMutation({
     const lullDetected = duration > lullThresholdMs;
 
     // Update lull state
+    const lullState: LullState = {
+      detected: lullDetected,
+      lastActivity,
+      duration,
+    };
+
     await ctx.db.patch(meetingState._id, {
-      lullState: {
-        detected: lullDetected,
-        lastActivity,
-        duration,
-      },
+      lullState,
       updatedAt: currentTime,
     });
 
@@ -240,12 +246,14 @@ export const recordActivity = mutation({
       .unique();
 
     if (meetingState) {
+      const lullState: LullState = {
+        detected: false,
+        lastActivity: now,
+        duration: 0,
+      };
+
       await ctx.db.patch(meetingState._id, {
-        lullState: {
-          detected: false,
-          lastActivity: now,
-          duration: 0,
-        },
+        lullState,
         updatedAt: now,
       });
     }

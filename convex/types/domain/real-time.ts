@@ -31,5 +31,31 @@ export interface UserPresence {
   metadata?: Record<string, any>;
 }
 
+// Active subscription metadata for tracking connections
+export interface ActiveSubscription {
+  subscriptionId: string;
+  userId: Id<"users">;
+  resourceType: string;
+  resourceId: string;
+  permissions: string[];
+  establishedAt: number;
+  lastValidated: number;
+  validUntil?: number;
+  priority: "critical" | "high" | "normal" | "low";
+}
+
+// Subscription context for tracking active connections
+export interface SubscriptionContext {
+  subscriptionId: string;
+  userId: Id<"users">;
+  resourceType: string;
+  resourceId: string;
+  permissions: string[];
+  connectionId: string;
+  establishedAt: number;
+  lastValidated: number;
+  validUntil?: number;
+}
+
 // Re-export WebRTC types for convenience
 export * from "../entities/webrtc";

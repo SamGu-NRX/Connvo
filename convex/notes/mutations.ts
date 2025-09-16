@@ -5,7 +5,7 @@
  * optimistic updates, and comprehensive audit logging.
  *
  * Requirements: 8.1, 8.2, 8.4, 8.5
- * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
+ * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns with centralized types
  */
 
 import { mutation, internalMutation } from "../_generated/server";
@@ -14,9 +14,13 @@ import { v } from "convex/values";
 import { assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
-import {
+import { NoteV } from "../types/validators/note";
+import type {
   Operation,
   OperationWithMetadata,
+  NoteOperationResult,
+} from "../types/entities/note";
+import {
   operationValidator,
   operationWithMetadataValidator,
   applyToDoc,
@@ -34,21 +38,15 @@ import {
 export const applyNoteOperation = mutation({
   args: {
     meetingId: v.id("meetings"),
-    operation: operationValidator,
+    operation: NoteV.operation,
     clientSequence: v.number(),
     expectedVersion: v.optional(v.number()),
   },
-  returns: v.object({
-    success: v.boolean(),
-    serverSequence: v.number(),
-    transformedOperation: operationValidator,
-    newVersion: v.number(),
-    conflicts: v.array(v.string()),
-  }),
+  returns: NoteV.operationResult,
   handler: async (
     ctx,
     { meetingId, operation, clientSequence, expectedVersion },
-  ) => {
+  ): Promise<NoteOperationResult> => {
     // Verify user is a participant with write access
     const participant = await assertMeetingAccess(ctx, meetingId);
 
@@ -222,7 +220,7 @@ export const batchApplyNoteOperations = mutation({
     meetingId: v.id("meetings"),
     operations: v.array(
       v.object({
-        operation: operationValidator,
+        operation: NoteV.operation,
         clientSequence: v.number(),
       }),
     ),
@@ -235,7 +233,7 @@ export const batchApplyNoteOperations = mutation({
     results: v.array(
       v.object({
         serverSequence: v.number(),
-        transformedOperation: operationValidator,
+        transformedOperation: NoteV.operation,
         conflicts: v.array(v.string()),
       }),
     ),

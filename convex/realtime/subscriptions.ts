@@ -36,21 +36,14 @@ import {
 import { normalizeRole, permissionsForResource } from "../lib/permissions";
 import { buildSubscriptionAudit } from "../lib/audit";
 import { internal } from "../_generated/api";
-
-/**
- * Subscription context for tracking active connections
- */
-export interface SubscriptionContext {
-  subscriptionId: string;
-  userId: Id<"users">;
-  resourceType: string;
-  resourceId: string;
-  permissions: string[];
-  connectionId: string;
-  establishedAt: number;
-  lastValidated: number;
-  validUntil?: number;
-}
+import {
+  SubscriptionContextV,
+  MeetingNotesSubscriptionResultV,
+  TranscriptStreamSubscriptionResultV,
+  MeetingParticipantsSubscriptionResultV,
+  SubscriptionValidationResultV,
+} from "../types/validators/real-time";
+import type { SubscriptionContext } from "../types/domain/real-time";
 
 /**
  * Real-time meeting notes subscription with permission validation and bandwidth management
@@ -61,18 +54,7 @@ export const subscribeMeetingNotes = query({
     subscriptionId: v.optional(v.string()),
     cursor: v.optional(v.string()),
   },
-  returns: v.union(
-    v.object({
-      content: v.string(),
-      version: v.number(),
-      lastUpdated: v.number(),
-      subscriptionValid: v.boolean(),
-      permissions: v.array(v.string()),
-      cursor: v.string(),
-      rateLimited: v.boolean(),
-    }),
-    v.null(),
-  ),
+  returns: MeetingNotesSubscriptionResultV.full,
   handler: async (ctx, { meetingId, subscriptionId, cursor }) => {
     const startTime = Date.now();
 
@@ -162,25 +144,7 @@ export const subscribeTranscriptStream = query({
     limit: v.optional(v.number()),
     subscriptionId: v.optional(v.string()),
   },
-  returns: v.object({
-    transcripts: v.array(
-      v.object({
-        _id: v.id("transcripts"),
-        sequence: v.number(),
-        speakerId: v.optional(v.string()),
-        text: v.string(),
-        confidence: v.number(),
-        startMs: v.number(),
-        endMs: v.number(),
-        isInterim: v.optional(v.boolean()),
-        createdAt: v.number(),
-      }),
-    ),
-    nextSequence: v.number(),
-    subscriptionValid: v.boolean(),
-    permissions: v.array(v.string()),
-    validUntil: v.optional(v.number()),
-  }),
+  returns: TranscriptStreamSubscriptionResultV.full,
   handler: async (
     ctx,
     { meetingId, fromSequence = 0, limit = 50, subscriptionId },
@@ -264,33 +228,7 @@ export const subscribeMeetingParticipants = query({
     meetingId: v.id("meetings"),
     subscriptionId: v.optional(v.string()),
   },
-  returns: v.object({
-    participants: v.array(
-      v.object({
-        _id: v.id("meetingParticipants"),
-        userId: v.id("users"),
-        role: v.union(
-          v.literal("host"),
-          v.literal("participant"),
-          v.literal("observer"),
-        ),
-        presence: v.union(
-          v.literal("invited"),
-          v.literal("joined"),
-          v.literal("left"),
-        ),
-        joinedAt: v.optional(v.number()),
-        leftAt: v.optional(v.number()),
-        user: v.object({
-          displayName: v.optional(v.string()),
-          email: v.string(),
-          avatarUrl: v.optional(v.string()),
-        }),
-      }),
-    ),
-    subscriptionValid: v.boolean(),
-    permissions: v.array(v.string()),
-  }),
+  returns: MeetingParticipantsSubscriptionResultV.full,
   handler: async (ctx, { meetingId, subscriptionId }) => {
     // Validate meeting access
     const participant = await assertMeetingAccess(ctx, meetingId);
@@ -344,13 +282,7 @@ export const validateSubscription = query({
     resourceId: v.id("meetings"),
     lastValidated: v.number(),
   },
-  returns: v.object({
-    valid: v.boolean(),
-    permissions: v.array(v.string()),
-    reason: v.optional(v.string()),
-    shouldReconnect: v.boolean(),
-    validUntil: v.optional(v.number()),
-  }),
+  returns: SubscriptionValidationResultV.simple,
   handler: async (
     ctx,
     { subscriptionId, resourceType, resourceId, lastValidated },

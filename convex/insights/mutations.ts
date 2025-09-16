@@ -13,6 +13,8 @@ import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
+import { AIInsightV } from "../types/validators/prompt";
+import type { AIInsight } from "../types/entities/prompt";
 
 /**
  * Creates insights for a user and meeting (internal use)
@@ -44,7 +46,7 @@ export const createInsights = internalMutation({
   handler: async (
     ctx,
     { userId, meetingId, summary, actionItems, recommendations, links = [] },
-  ) => {
+  ): Promise<Id<"insights">> => {
     const now = Date.now();
 
     // Check if insights already exist for this user and meeting

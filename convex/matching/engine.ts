@@ -18,27 +18,12 @@ import {
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
-
-/**
- * Match result structure
- */
-export const matchResultV = v.object({
-  user1Id: v.id("users"),
-  user2Id: v.id("users"),
-  score: v.number(),
-  features: v.object({
-    interestOverlap: v.number(),
-    experienceGap: v.number(),
-    industryMatch: v.number(),
-    timezoneCompatibility: v.number(),
-    vectorSimilarity: v.optional(v.number()),
-    orgConstraintMatch: v.number(),
-    languageOverlap: v.number(),
-    roleComplementarity: v.number(),
-  }),
-  explanation: v.array(v.string()),
-  matchId: v.string(),
-});
+import { MatchResultV } from "../types/validators/matching";
+import type {
+  MatchResult,
+  CompatibilityFeatures,
+  MatchingQueueEntry,
+} from "../types/entities/matching";
 
 /**
  * Run matching cycle with shard-based processing for scalability
@@ -55,7 +40,15 @@ export const runMatchingCycle = action({
     averageScore: v.number(),
     processingTimeMs: v.number(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    processedShards: number;
+    totalMatches: number;
+    averageScore: number;
+    processingTimeMs: number;
+  }> => {
     const startTime = Date.now();
     const shardCount = args.shardCount ?? 4;
     const minScore = args.minScore ?? 0.6;
@@ -248,7 +241,23 @@ export const getShardQueueEntries = internalQuery({
       createdAt: v.number(),
     }),
   ),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<
+    Array<{
+      _id: Id<"matchingQueue">;
+      userId: Id<"users">;
+      availableFrom: number;
+      availableTo: number;
+      constraints: {
+        interests: string[];
+        roles: string[];
+        orgConstraints?: string;
+      };
+      createdAt: number;
+    }>
+  > => {
     const now = Date.now();
 
     // Get all waiting entries
@@ -283,10 +292,10 @@ export const createMatch = internalMutation({
   args: {
     user1QueueId: v.id("matchingQueue"),
     user2QueueId: v.id("matchingQueue"),
-    matchResult: matchResultV,
+    matchResult: MatchResultV.basic,
   },
   returns: v.boolean(),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<boolean> => {
     // Check if both queue entries are still available
     const [entry1, entry2] = await Promise.all([
       ctx.db.get(args.user1QueueId),
@@ -484,10 +493,26 @@ export const updateMatchOutcome = internalMutation({
 });
 
 /**
- * Helper functions
+ * Local helper types to break deep type inference
  */
+type ShardProcessResult = { matchCount: number; totalScore: number };
+type ShardQueueEntry = {
+  _id: Id<"matchingQueue">;
+  userId: Id<"users">;
+  availableFrom: number;
+  availableTo: number;
+  constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  };
+  createdAt: number;
+};
 
-function hasTimeOverlap(entry1: any, entry2: any): boolean {
+function hasTimeOverlap(
+  entry1: ShardQueueEntry,
+  entry2: ShardQueueEntry,
+): boolean {
   return (
     entry1.availableFrom < entry2.availableTo &&
     entry2.availableFrom < entry1.availableTo
@@ -512,19 +537,3 @@ function generateMatchId(user1Id: Id<"users">, user2Id: Id<"users">): string {
   const timestamp = Date.now();
   return `match_${ids[0]}_${ids[1]}_${timestamp}`;
 }
-/**
- * Local helper types to break deep type inference
- */
-type ShardProcessResult = { matchCount: number; totalScore: number };
-type ShardQueueEntry = {
-  _id: Id<"matchingQueue">;
-  userId: Id<"users">;
-  availableFrom: number;
-  availableTo: number;
-  constraints: {
-    interests: string[];
-    roles: string[];
-    orgConstraints?: string;
-  };
-  createdAt: number;
-};

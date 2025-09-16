@@ -7,6 +7,14 @@
 
 import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
+import {
+  TranscriptV,
+  TranscriptSegmentV,
+} from "../types/validators/transcript";
+import type {
+  TranscriptSegment,
+  TranscriptChunk,
+} from "../types/entities/transcript";
 
 /**
  * Gets transcript segments for a meeting (internal use)
@@ -16,20 +24,11 @@ export const getTranscriptSegments = internalQuery({
     meetingId: v.id("meetings"),
     limit: v.optional(v.number()),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("transcriptSegments"),
-      meetingId: v.id("meetings"),
-      startMs: v.number(),
-      endMs: v.number(),
-      speakers: v.array(v.string()),
-      text: v.string(),
-      topics: v.array(v.string()),
-      sentiment: v.optional(v.number()),
-      createdAt: v.number(),
-    }),
-  ),
-  handler: async (ctx, { meetingId, limit = 100 }) => {
+  returns: v.array(TranscriptSegmentV.full),
+  handler: async (
+    ctx,
+    { meetingId, limit = 100 },
+  ): Promise<TranscriptSegment[]> => {
     const take = Math.max(1, Math.min(Math.floor(limit ?? 100), 1000));
     const docs = await ctx.db
       .query("transcriptSegments")
@@ -61,23 +60,7 @@ export const listTranscriptsAfterSequence = internalQuery({
     fromSequence: v.number(),
     limit: v.number(),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("transcripts"),
-      meetingId: v.id("meetings"),
-      bucketMs: v.number(),
-      sequence: v.number(),
-      speakerId: v.optional(v.string()),
-      text: v.string(),
-      confidence: v.number(),
-      startMs: v.number(),
-      endMs: v.number(),
-      isInterim: v.optional(v.boolean()),
-      wordCount: v.number(),
-      language: v.optional(v.string()),
-      createdAt: v.number(),
-    }),
-  ),
+  returns: v.array(TranscriptV.full),
   handler: async (ctx, { meetingId, fromSequence, limit }) => {
     const take = Math.max(1, Math.min(Math.floor(limit), 1000));
     const docs = await ctx.db
@@ -87,20 +70,8 @@ export const listTranscriptsAfterSequence = internalQuery({
       )
       .order("asc")
       .take(take);
-    return docs.map((d) => ({
-      _id: d._id,
-      meetingId: d.meetingId,
-      bucketMs: d.bucketMs,
-      sequence: d.sequence,
-      speakerId: d.speakerId,
-      text: d.text,
-      confidence: d.confidence,
-      startMs: d.startMs,
-      endMs: d.endMs,
-      isInterim: d.isInterim,
-      wordCount: d.wordCount,
-      language: d.language,
-      createdAt: d.createdAt ?? d._creationTime,
-    }));
+
+    // Return full transcript entities with proper type safety
+    return docs;
   },
 });

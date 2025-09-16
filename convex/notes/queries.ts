@@ -7,6 +7,8 @@
 
 import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
+import { NoteV } from "../types/validators/note";
+import type { MeetingNote } from "../types/entities/note";
 
 /**
  * Gets meeting notes (internal use)
@@ -15,30 +17,14 @@ export const getMeetingNotes = internalQuery({
   args: {
     meetingId: v.id("meetings"),
   },
-  returns: v.union(
-    v.object({
-      _id: v.id("meetingNotes"),
-      meetingId: v.id("meetings"),
-      content: v.string(),
-      version: v.number(),
-      lastRebasedAt: v.number(),
-      updatedAt: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { meetingId }) => {
+  returns: v.union(NoteV.meetingNote, v.null()),
+  handler: async (ctx, { meetingId }): Promise<MeetingNote | null> => {
     const note = await ctx.db
       .query("meetingNotes")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
-    if (!note) return null;
-    return {
-      _id: note._id,
-      meetingId: note.meetingId,
-      content: note.content,
-      version: note.version,
-      lastRebasedAt: note.lastRebasedAt,
-      updatedAt: note.updatedAt,
-    };
+
+    // Return the note directly - it already matches the MeetingNote type
+    return note;
   },
 });

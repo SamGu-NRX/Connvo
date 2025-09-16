@@ -22,6 +22,7 @@ export * from "./system";
 
 // Domain-specific validators
 export * from "./operational-transform";
+export * from "./real-time";
 
 // API response validators
 export * from "./responses";

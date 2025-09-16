@@ -27,6 +27,14 @@ import {
 } from "../lib/batching";
 import { withTrace } from "../lib/performance";
 import { metadataRecordV } from "../lib/validators";
+import {
+  BatchQueueResultV,
+  BatchNoteOperationResultV,
+  BatchTranscriptProcessResultV,
+  BatchNoteProcessResultV,
+  BatchPresenceProcessResultV,
+  BatchStatsResultV,
+} from "../types/validators/real-time";
 
 /**
  * Global batch processors for different operation types
@@ -201,10 +209,7 @@ export const batchIngestTranscriptChunk = mutation({
     endMs: v.number(),
     interim: v.optional(v.boolean()),
   },
-  returns: v.object({
-    queued: v.boolean(),
-    batchSize: v.number(),
-  }),
+  returns: BatchQueueResultV.full,
   handler: withTrace("batchIngestTranscriptChunk", async (ctx, args) => {
     // Validate meeting access
     await assertMeetingAccess(ctx, args.meetingId, "participant");
@@ -263,11 +268,7 @@ export const batchApplyNoteOperation = mutation({
     clientSequence: v.number(),
     expectedVersion: v.number(),
   },
-  returns: v.object({
-    queued: v.boolean(),
-    batchSize: v.number(),
-    serverSequence: v.number(),
-  }),
+  returns: BatchNoteOperationResultV.full,
   handler: withTrace("batchApplyNoteOperation", async (ctx, args) => {
     // Validate meeting access
     await assertMeetingAccess(ctx, args.meetingId, "participant");
@@ -315,10 +316,7 @@ export const batchUpdatePresence = mutation({
     presence: v.union(v.literal("joined"), v.literal("left")),
     metadata: v.optional(metadataRecordV),
   },
-  returns: v.object({
-    queued: v.boolean(),
-    batchSize: v.number(),
-  }),
+  returns: BatchQueueResultV.full,
   handler: withTrace("batchUpdatePresence", async (ctx, args) => {
     // Validate meeting access
     await assertMeetingAccess(ctx, args.meetingId, "participant");
@@ -362,10 +360,7 @@ export const processBatchedTranscriptChunks = internalMutation({
       }),
     ),
   },
-  returns: v.object({
-    inserted: v.number(),
-    sequences: v.array(v.number()),
-  }),
+  returns: BatchTranscriptProcessResultV.full,
   handler: async (ctx, { meetingId, chunks }) => {
     const sequences: number[] = [];
 
@@ -436,11 +431,7 @@ export const processBatchedNoteOperations = internalMutation({
       }),
     ),
   },
-  returns: v.object({
-    processed: v.number(),
-    newVersion: v.number(),
-    conflicts: v.array(v.number()),
-  }),
+  returns: BatchNoteProcessResultV.full,
   handler: async (ctx, { meetingId, operations }) => {
     const conflicts: number[] = [];
 
@@ -521,9 +512,7 @@ export const processBatchedPresenceUpdates = internalMutation({
       }),
     ),
   },
-  returns: v.object({
-    updated: v.number(),
-  }),
+  returns: BatchPresenceProcessResultV.full,
   handler: async (ctx, { meetingId, updates }) => {
     let updatedCount = 0;
 
@@ -586,17 +575,7 @@ export const flushAllBatches = action({
  */
 export const getBatchStats = action({
   args: {},
-  returns: v.object({
-    transcripts: v.object({
-      queueSize: v.number(),
-    }),
-    noteOps: v.object({
-      queueSize: v.number(),
-    }),
-    presence: v.object({
-      queueSize: v.number(),
-    }),
-  }),
+  returns: BatchStatsResultV.full,
   handler: async (ctx, {}) => {
     return {
       transcripts: {

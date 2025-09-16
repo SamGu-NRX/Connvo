@@ -17,10 +17,21 @@ export { runMatchingCycle } from "./engine";
 // Re-export public functions from scoring
 export { calculateCompatibilityScore } from "./scoring";
 
-// Export types for client use
-export type {} from // Add type exports if needed
-"./engine";
+// Export centralized types for client use
+export type {
+  MatchingQueueEntry,
+  MatchingAnalytics,
+  CompatibilityFeatures,
+  MatchResult,
+  QueueStatus,
+  MatchResultWithUsers,
+  MatchingPreferences,
+  MatchingStats,
+  MatchFeedback,
+  MatchingEvent,
+} from "../types/entities/matching";
 
+// Feature keys constant for type safety
 export const FEATURE_KEYS = [
   "interestOverlap",
   "experienceGap",
@@ -33,14 +44,3 @@ export const FEATURE_KEYS = [
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
-
-export type Features = {
-  interestOverlap: number;
-  experienceGap: number;
-  industryMatch: number;
-  timezoneCompatibility: number;
-  vectorSimilarity?: number;
-  orgConstraintMatch: number;
-  languageOverlap: number;
-  roleComplementarity: number;
-};

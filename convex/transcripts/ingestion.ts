@@ -5,7 +5,7 @@
  * time-bucketed storage and rate limiting for scalability.
  *
  * Requirements: 7.1, 7.3
- * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
+ * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns with centralized types
  */
 
 import {
@@ -21,6 +21,11 @@ import { createError } from "../lib/errors";
 import { enforceUserLimit } from "../lib/rateLimiter";
 import { metadataRecordV } from "../lib/validators";
 import { Id } from "../_generated/dataModel";
+import { TranscriptV } from "../types/validators/transcript";
+import type {
+  TranscriptChunk,
+  TranscriptStats,
+} from "../types/entities/transcript";
 
 /**
  * Ingests a transcription chunk with validation, sharding, and rate limiting
@@ -654,24 +659,11 @@ export const getTranscriptChunks = mutation({
     limit: v.optional(v.number()),
     bucketMs: v.optional(v.number()),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("transcripts"),
-      sequence: v.number(),
-      speakerId: v.optional(v.string()),
-      text: v.string(),
-      confidence: v.number(),
-      startMs: v.number(),
-      endMs: v.number(),
-      wordCount: v.number(),
-      language: v.optional(v.string()),
-      createdAt: v.number(),
-    }),
-  ),
+  returns: v.array(TranscriptV.chunk),
   handler: async (
     ctx,
     { meetingId, fromSequence = 0, limit = 100, bucketMs },
-  ) => {
+  ): Promise<TranscriptChunk[]> => {
     // Verify user is a participant
     await assertMeetingAccess(ctx, meetingId);
 
@@ -697,7 +689,19 @@ export const getTranscriptChunks = mutation({
       results = optimized.transcripts;
     }
 
-    return results;
+    // Transform to TranscriptChunk format
+    return results.map((t) => ({
+      _id: t._id,
+      sequence: t.sequence,
+      speakerId: t.speakerId,
+      text: t.text,
+      confidence: t.confidence,
+      startMs: t.startMs,
+      endMs: t.endMs,
+      wordCount: t.wordCount,
+      language: t.language,
+      createdAt: t.createdAt,
+    }));
   },
 });
 
@@ -761,15 +765,8 @@ export const cleanupOldTranscripts = internalMutation({
  */
 export const getTranscriptStats = mutation({
   args: { meetingId: v.id("meetings") },
-  returns: v.object({
-    totalChunks: v.number(),
-    totalWords: v.number(),
-    averageConfidence: v.number(),
-    duration: v.number(),
-    speakers: v.array(v.string()),
-    languages: v.array(v.string()),
-  }),
-  handler: async (ctx, { meetingId }) => {
+  returns: TranscriptV.stats,
+  handler: async (ctx, { meetingId }): Promise<TranscriptStats> => {
     // Verify user is a participant
     await assertMeetingAccess(ctx, meetingId);
 
@@ -786,6 +783,7 @@ export const getTranscriptStats = mutation({
         duration: 0,
         speakers: [],
         languages: [],
+        bucketCount: 0,
       };
     }
 
@@ -813,6 +811,10 @@ export const getTranscriptStats = mutation({
     const endTime = Math.max(...transcripts.map((t) => t.endMs));
     const duration = endTime - startTime;
 
+    // Calculate unique bucket count for sharding metrics
+    const uniqueBuckets = new Set(transcripts.map((t) => t.bucketMs));
+    const bucketCount = uniqueBuckets.size;
+
     return {
       totalChunks: transcripts.length,
       totalWords,
@@ -820,6 +822,7 @@ export const getTranscriptStats = mutation({
       duration,
       speakers,
       languages,
+      bucketCount,
     };
   },
 });

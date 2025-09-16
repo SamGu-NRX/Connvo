@@ -26,40 +26,38 @@ import {
   VideoProviderUtils,
 } from "../lib/videoProviders";
 import { metadataRecordV } from "../lib/validators";
-
-/**
- * WebRTC session state types
- */
-export const WebRTCSessionState = v.union(
-  v.literal("connecting"),
-  v.literal("connected"),
-  v.literal("disconnected"),
-  v.literal("failed"),
-  v.literal("closed"),
-);
-
-/**
- * ICE candidate structure
- */
-export const ICECandidate = v.object({
-  candidate: v.string(),
-  sdpMLineIndex: v.optional(v.number()),
-  sdpMid: v.optional(v.string()),
-  usernameFragment: v.optional(v.string()),
-});
-
-/**
- * SDP offer/answer structure
- */
-export const SessionDescription = v.object({
-  type: v.union(
-    v.literal("offer"),
-    v.literal("answer"),
-    v.literal("pranswer"),
-    v.literal("rollback"),
-  ),
-  sdp: v.string(),
-});
+import {
+  MeetingV,
+  MeetingParticipantV,
+  VideoRoomConfigV,
+} from "../types/validators/meeting";
+import {
+  WebRTCSessionV,
+  WebRTCSignalV,
+  ConnectionMetricsV,
+  webrtcSessionStateV,
+  sdpDataV,
+  iceDataV,
+  connectionQualityV,
+  connectionStatsV,
+} from "../types/validators/webrtc";
+import type {
+  Meeting,
+  MeetingParticipant,
+  VideoRoomConfig,
+  ICEServer,
+  VideoRoomFeatures,
+} from "../types/entities/meeting";
+import type {
+  WebRTCSession,
+  WebRTCSignal,
+  WebRTCSessionState,
+  WebRTCSignalType,
+  ConnectionQuality,
+  ConnectionMetrics,
+  SDPData,
+  ICEData,
+} from "../types/entities/webrtc";
 
 /**
  * Initializes WebRTC room for a meeting using the provider abstraction
@@ -285,7 +283,7 @@ export const exchangeSessionDescription = mutation({
   args: {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
-    description: SessionDescription,
+    description: sdpDataV,
     targetUserId: v.optional(v.id("users")),
   },
   returns: v.null(),
@@ -320,7 +318,7 @@ export const exchangeICECandidate = mutation({
   args: {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
-    candidate: ICECandidate,
+    candidate: iceDataV,
     targetUserId: v.optional(v.id("users")),
   },
   returns: v.null(),
@@ -364,23 +362,7 @@ export const getPendingSignals = query({
       sessionId: v.string(),
       fromUserId: v.id("users"),
       type: v.union(v.literal("sdp"), v.literal("ice")),
-      data: v.union(
-        v.object({
-          type: v.union(
-            v.literal("offer"),
-            v.literal("answer"),
-            v.literal("pranswer"),
-            v.literal("rollback"),
-          ),
-          sdp: v.string(),
-        }),
-        v.object({
-          candidate: v.string(),
-          sdpMLineIndex: v.optional(v.number()),
-          sdpMid: v.optional(v.string()),
-          usernameFragment: v.optional(v.string()),
-        }),
-      ),
+      data: v.union(sdpDataV, iceDataV),
       timestamp: v.number(),
     }),
   ),
@@ -450,7 +432,7 @@ export const updateSessionState = mutation({
   args: {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
-    state: WebRTCSessionState,
+    state: webrtcSessionStateV,
     metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
@@ -487,22 +469,7 @@ export const updateSessionState = mutation({
  */
 export const getActiveSessions = query({
   args: { meetingId: v.id("meetings") },
-  returns: v.array(
-    v.object({
-      _id: v.id("webrtcSessions"),
-      sessionId: v.string(),
-      userId: v.id("users"),
-      state: WebRTCSessionState,
-      metadata: v.optional(metadataRecordV),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-      user: v.object({
-        displayName: v.optional(v.string()),
-        email: v.string(),
-        avatarUrl: v.optional(v.string()),
-      }),
-    }),
-  ),
+  returns: v.array(WebRTCSessionV.withUser),
   handler: async (ctx, { meetingId }) => {
     // Verify user is a participant
     await assertMeetingAccess(ctx, meetingId);
@@ -533,10 +500,12 @@ export const getActiveSessions = query({
         enrichedSessions.push({
           ...session,
           user: {
+            _id: user._id,
             displayName: user.displayName,
-            email: user.email,
             avatarUrl: user.avatarUrl,
           },
+          connectionQuality: undefined, // Will be populated by metrics if available
+          lastMetricsAt: undefined,
         });
       }
     }
@@ -797,7 +766,7 @@ export const updateSessionStateInternal = internalMutation({
   args: {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
-    state: WebRTCSessionState,
+    state: webrtcSessionStateV,
     metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
@@ -828,20 +797,10 @@ export const monitorConnectionQuality = action({
   args: {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
-    stats: v.object({
-      bitrate: v.number(),
-      packetLoss: v.number(),
-      latency: v.number(),
-      jitter: v.number(),
-    }),
+    stats: connectionStatsV,
   },
   returns: v.object({
-    quality: v.union(
-      v.literal("excellent"),
-      v.literal("good"),
-      v.literal("fair"),
-      v.literal("poor"),
-    ),
+    quality: connectionQualityV,
     recommendations: v.array(v.string()),
     shouldFallback: v.boolean(),
   }),
@@ -1018,18 +977,8 @@ export const storeConnectionMetrics = internalMutation({
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     userId: v.id("users"),
-    quality: v.union(
-      v.literal("excellent"),
-      v.literal("good"),
-      v.literal("fair"),
-      v.literal("poor"),
-    ),
-    stats: v.object({
-      bitrate: v.number(),
-      packetLoss: v.number(),
-      latency: v.number(),
-      jitter: v.number(),
-    }),
+    quality: connectionQualityV,
+    stats: connectionStatsV,
     timestamp: v.number(),
   },
   returns: v.null(),

@@ -42,14 +42,14 @@ const matchOutcomeV = v.union(
 const numericMapV = v.record(v.string(), v.number());
 
 // Constraints validator
-const constraintsV = v.object({
+export const constraintsV = v.object({
   interests: v.array(v.string()),
   roles: v.array(v.string()),
   orgConstraints: v.optional(v.string()),
 });
 
 // Compatibility features validator
-const compatibilityFeaturesV = v.object({
+export const compatibilityFeaturesV = v.object({
   interestOverlap: v.number(),
   experienceGap: v.number(),
   industryMatch: v.number(),

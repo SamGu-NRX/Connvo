@@ -22,6 +22,12 @@ import { Id } from "../_generated/dataModel";
 import { withIdempotency, IdempotencyUtils } from "../lib/idempotency";
 import { sendAlert, trackMeetingEvent, AlertTemplates } from "../lib/alerting";
 import { withRetry, RetryPolicies, ResilienceUtils } from "../lib/resilience";
+import type {
+  Meeting,
+  VideoRoomConfig,
+  ICEServer,
+  VideoRoomFeatures,
+} from "../types/entities/meeting";
 
 /**
  * Creates a new meeting with comprehensive setup and hybrid video provider support
@@ -655,21 +661,23 @@ export const startMeeting = mutation({
       webrtcReady = true;
 
       // Provide STUN/TURN server configuration for WebRTC
+      const iceServers: ICEServer[] = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        // Add TURN servers if configured
+        ...(process.env.TURN_SERVER_URL
+          ? [
+              {
+                urls: process.env.TURN_SERVER_URL,
+                username: process.env.TURN_USERNAME || "",
+                credential: process.env.TURN_CREDENTIAL || "",
+              },
+            ]
+          : []),
+      ];
+
       roomInfo = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          // Add TURN servers if configured
-          ...(process.env.TURN_SERVER_URL
-            ? [
-                {
-                  urls: process.env.TURN_SERVER_URL,
-                  username: process.env.TURN_USERNAME || "",
-                  credential: process.env.TURN_CREDENTIAL || "",
-                },
-              ]
-            : []),
-        ],
+        iceServers,
       };
     } else {
       // GetStream provider - create room if not exists
@@ -689,11 +697,12 @@ export const startMeeting = mutation({
           updatedAt: now,
         });
         webrtcReady = true;
+        const fallbackIceServers: ICEServer[] = [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ];
         roomInfo = {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-          ],
+          iceServers: fallbackIceServers,
         };
       }
     }
@@ -840,22 +849,24 @@ export const getMeetingConnectionInfo = mutation({
 
     if (videoProvider === "webrtc") {
       // WebRTC connection info
+      const iceServers: ICEServer[] = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        // Add TURN servers if configured
+        ...(process.env.TURN_SERVER_URL
+          ? [
+              {
+                urls: process.env.TURN_SERVER_URL,
+                username: process.env.TURN_USERNAME || "",
+                credential: process.env.TURN_CREDENTIAL || "",
+              },
+            ]
+          : []),
+      ];
+
       connectionInfo = {
         roomId: `webrtc_${meetingId}`,
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          // Add TURN servers if configured
-          ...(process.env.TURN_SERVER_URL
-            ? [
-                {
-                  urls: process.env.TURN_SERVER_URL,
-                  username: process.env.TURN_USERNAME || "",
-                  credential: process.env.TURN_CREDENTIAL || "",
-                },
-              ]
-            : []),
-        ],
+        iceServers,
       };
     } else {
       // GetStream connection info
@@ -989,7 +1000,7 @@ export const updateStreamRoomId = internalMutation({
     streamRoomId: v.string(),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, streamRoomId }) => {
+  handler: async (ctx, { meetingId, streamRoomId }): Promise<null> => {
     await ctx.db.patch(meetingId, {
       streamRoomId,
       updatedAt: Date.now(),

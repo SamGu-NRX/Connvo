@@ -5,61 +5,33 @@
  * real-time collaborative text editing with conflict resolution.
  *
  * Requirements: 8.2
- * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns and types
+ * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns and centralized types
  */
 
 import { v } from "convex/values";
+import type {
+  Operation,
+  OperationWithMetadata,
+  OperationType,
+} from "../types/entities/note";
+import { NoteV } from "../types/validators/note";
+
+// Re-export types from centralized location for backward compatibility
+export type {
+  Operation,
+  OperationWithMetadata,
+  OperationType,
+} from "../types/entities/note";
 
 /**
- * Operation types for text editing
+ * Validator for Operation objects (use centralized validator)
  */
-export type OperationType = "insert" | "delete" | "retain";
+export const operationValidator = NoteV.operation;
 
 /**
- * Core operation interface for operational transform
+ * Validator for OperationWithMetadata (use centralized validator)
  */
-export interface Operation {
-  type: OperationType;
-  position: number;
-  content?: string; // Required for insert operations
-  length?: number; // Required for delete and retain operations
-}
-
-/**
- * Validator for Operation objects
- */
-export const operationValidator = v.object({
-  type: v.union(v.literal("insert"), v.literal("delete"), v.literal("retain")),
-  position: v.number(),
-  content: v.optional(v.string()),
-  length: v.optional(v.number()),
-});
-
-/**
- * Operation with metadata for tracking and conflict resolution
- */
-export interface OperationWithMetadata extends Operation {
-  id: string;
-  authorId: string;
-  timestamp: number;
-  sequence: number;
-  transformedFrom?: string[]; // IDs of operations this was transformed from
-}
-
-/**
- * Validator for OperationWithMetadata
- */
-export const operationWithMetadataValidator = v.object({
-  type: v.union(v.literal("insert"), v.literal("delete"), v.literal("retain")),
-  position: v.number(),
-  content: v.optional(v.string()),
-  length: v.optional(v.number()),
-  id: v.string(),
-  authorId: v.string(),
-  timestamp: v.number(),
-  sequence: v.number(),
-  transformedFrom: v.optional(v.array(v.string())),
-});
+export const operationWithMetadataValidator = NoteV.operationWithMetadata;
 
 /**
  * Document state with version tracking

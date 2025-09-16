@@ -13,6 +13,8 @@ import { mutation, query } from "../_generated/server";
 import { requireIdentity } from "../auth/guards";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
+import { MatchingQueueV } from "../types/validators/matching";
+import type { QueueStatus } from "../types/entities/matching";
 
 /**
  * Enter the matching queue with availability window and constraints
@@ -144,31 +146,8 @@ export const cancelQueueEntry = mutation({
  */
 export const getQueueStatus = query({
   args: {},
-  returns: v.union(
-    v.null(),
-    v.object({
-      _id: v.id("matchingQueue"),
-      status: v.union(
-        v.literal("waiting"),
-        v.literal("matched"),
-        v.literal("expired"),
-        v.literal("cancelled"),
-      ),
-      availableFrom: v.number(),
-      availableTo: v.number(),
-      constraints: v.object({
-        interests: v.array(v.string()),
-        roles: v.array(v.string()),
-        orgConstraints: v.optional(v.string()),
-      }),
-      matchedWith: v.optional(v.id("users")),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-      estimatedWaitTime: v.optional(v.number()),
-      queuePosition: v.optional(v.number()),
-    }),
-  ),
-  handler: async (ctx, args) => {
+  returns: v.union(v.null(), MatchingQueueV.status),
+  handler: async (ctx, args): Promise<QueueStatus | null> => {
     const { userId } = await requireIdentity(ctx);
 
     const queueEntry = await ctx.db
@@ -216,22 +195,27 @@ export const getActiveQueueEntries = query({
     limit: v.optional(v.number()),
     timeWindow: v.optional(v.number()),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("matchingQueue"),
-      userId: v.id("users"),
-      availableFrom: v.number(),
-      availableTo: v.number(),
-      constraints: v.object({
-        interests: v.array(v.string()),
-        roles: v.array(v.string()),
-        orgConstraints: v.optional(v.string()),
-      }),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    }),
-  ),
-  handler: async (ctx, args) => {
+  returns: v.array(MatchingQueueV.full),
+  handler: async (
+    ctx,
+    args,
+  ): Promise<
+    Array<{
+      _id: Id<"matchingQueue">;
+      userId: Id<"users">;
+      availableFrom: number;
+      availableTo: number;
+      constraints: {
+        interests: string[];
+        roles: string[];
+        orgConstraints?: string;
+      };
+      status: "waiting" | "matched" | "expired" | "cancelled";
+      matchedWith?: Id<"users">;
+      createdAt: number;
+      updatedAt: number;
+    }>
+  > => {
     const now = Date.now();
     const timeWindow = args.timeWindow ?? 3600000; // 1 hour default
     const limit = args.limit ?? 100;
@@ -268,7 +252,7 @@ export const updateQueueStatus = mutation({
     matchedWith: v.optional(v.id("users")),
   },
   returns: v.null(),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<null> => {
     const queueEntry = await ctx.db.get(args.queueId);
     if (!queueEntry) {
       throw new ConvexError("Queue entry not found");

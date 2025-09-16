@@ -81,57 +81,57 @@
   - Ensure consistent return types across all user mutations
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 6. Refactor meeting-related functions to use centralized types
-- [ ] 6.1 Update meeting queries to use centralized types
+- [x] 6. Refactor meeting-related functions to use centralized types
+- [x] 6.1 Update meeting queries to use centralized types
   - Refactor `convex/meetings/queries.ts` to import and use MeetingValidators
   - Replace inline Meeting type definitions with centralized types
   - Update participant-related functions to use consistent types
   - Add/verify indexes for common lookup patterns (by_organizer, by_state, by_meeting_and_user)
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 6.2 Update meeting mutations to use centralized types
+- [x] 6.2 Update meeting mutations to use centralized types
   - Refactor `convex/meetings/mutations.ts` to use centralized validators
   - Replace duplicate Meeting and Participant type definitions
   - Ensure consistent state management types across meeting lifecycle
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 7. Refactor transcript and notes functions to use centralized types
-- [ ] 7.1 Update transcript ingestion functions
+- [x] 7. Refactor transcript and notes functions to use centralized types
+- [x] 7.1 Update transcript ingestion functions
   - Refactor `convex/transcripts/ingestion.ts` to use TranscriptValidators
   - Replace inline transcript type definitions with centralized types
   - Update streaming and batch processing functions to use consistent types
   - Use index-first ingestion and retrieval (by_meeting_and_sequence) to prevent scans
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 7.2 Update operational transform functions
+- [x] 7.2 Update operational transform functions
   - Refactor `convex/notes/operations.ts` to use OT domain types
   - Replace inline Operation type definitions with centralized types
   - Update note collaboration functions to use consistent OT types
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 8. Refactor WebRTC and real-time functions to use centralized types
-- [ ] 8.1 Update WebRTC signaling functions
+- [x] 8. Refactor WebRTC and real-time functions to use centralized types
+- [x] 8.1 Update WebRTC signaling functions
   - Refactor WebRTC session management to use centralized WebRTC types
   - Replace inline signal type definitions with centralized validators
   - Update connection metrics functions to use consistent types
   - Ensure actions (for signaling via external services) do not access ctx.db
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 8.2 Update real-time subscription functions
+- [x] 8.2 Update real-time subscription functions
   - Refactor `convex/realtime/subscriptionManager.ts` to use centralized types
   - Replace inline subscription type definitions with shared types
   - Update presence and notification functions to use consistent types
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 9. Refactor matching and analytics functions to use centralized types
-- [ ] 9.1 Update matching algorithm functions
+- [x] 9. Refactor matching and analytics functions to use centralized types
+- [x] 9.1 Update matching algorithm functions
   - Refactor `convex/matching/index.ts` to use MatchingValidators
   - Replace inline compatibility scoring types with centralized types
   - Update queue management functions to use consistent types
   - Ensure necessary indexes (e.g., by_status, by_user, by_available_window) exist for index-first queries
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 9.2 Update analytics and insights functions
+- [x] 9.2 Update analytics and insights functions
   - Refactor `convex/insights/generation.ts` to use centralized types
   - Replace inline analytics type definitions with shared types
   - Update ML feature extraction functions to use consistent types

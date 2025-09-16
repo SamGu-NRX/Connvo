@@ -24,7 +24,7 @@ import type {
 } from "../entities/webrtc";
 
 // WebRTC session state validator
-const webrtcSessionStateV = v.union(
+export const webrtcSessionStateV = v.union(
   v.literal("connecting"),
   v.literal("connected"),
   v.literal("disconnected"),
@@ -33,10 +33,10 @@ const webrtcSessionStateV = v.union(
 );
 
 // WebRTC signal type validator
-const webrtcSignalTypeV = v.union(v.literal("sdp"), v.literal("ice"));
+export const webrtcSignalTypeV = v.union(v.literal("sdp"), v.literal("ice"));
 
 // Connection quality validator
-const connectionQualityV = v.union(
+export const connectionQualityV = v.union(
   v.literal("excellent"),
   v.literal("good"),
   v.literal("fair"),
@@ -50,7 +50,7 @@ const metadataRecordV = v.record(
 );
 
 // SDP data validator
-const sdpDataV = v.object({
+export const sdpDataV = v.object({
   type: v.union(
     v.literal("offer"),
     v.literal("answer"),
@@ -61,7 +61,7 @@ const sdpDataV = v.object({
 });
 
 // ICE data validator
-const iceDataV = v.object({
+export const iceDataV = v.object({
   candidate: v.string(),
   sdpMLineIndex: v.optional(v.number()),
   sdpMid: v.optional(v.string()),
@@ -69,7 +69,7 @@ const iceDataV = v.object({
 });
 
 // Connection stats validator
-const connectionStatsV = v.object({
+export const connectionStatsV = v.object({
   bitrate: v.number(),
   packetLoss: v.number(),
   latency: v.number(),

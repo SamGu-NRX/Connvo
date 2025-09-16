@@ -13,11 +13,12 @@ import { action, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
+import type { CompatibilityFeatures } from "../types/entities/matching";
 
 /**
- * Compatibility features for scoring
+ * Compatibility features validator (using centralized types)
  */
-export const compatibilityFeaturesV = v.object({
+const compatibilityFeaturesV = v.object({
   interestOverlap: v.number(),
   experienceGap: v.number(),
   industryMatch: v.number(),
@@ -29,9 +30,9 @@ export const compatibilityFeaturesV = v.object({
 });
 
 /**
- * Scoring weights for different factors
+ * Scoring weights validator (matches CompatibilityFeatures)
  */
-export const scoringWeightsV = v.object({
+const scoringWeightsV = v.object({
   interestOverlap: v.number(),
   experienceGap: v.number(),
   industryMatch: v.number(),
@@ -45,7 +46,7 @@ export const scoringWeightsV = v.object({
 /**
  * Default scoring weights (can be adjusted based on analytics)
  */
-const DEFAULT_WEIGHTS = {
+const DEFAULT_WEIGHTS: CompatibilityFeatures = {
   interestOverlap: 0.25,
   experienceGap: 0.15,
   industryMatch: 0.1,
@@ -212,7 +213,7 @@ async function calculateCompatibilityFeatures(
   user2Data: any,
   user1Constraints: any,
   user2Constraints: any,
-): Promise<any> {
+): Promise<CompatibilityFeatures> {
   // Interest overlap calculation
   const interestOverlap = calculateInterestOverlap(
     user1Data.interests,
@@ -513,7 +514,10 @@ async function calculateVectorSimilarity(
 /**
  * Calculate weighted final score
  */
-function calculateWeightedScore(features: any, weights: any): number {
+function calculateWeightedScore(
+  features: CompatibilityFeatures,
+  weights: CompatibilityFeatures,
+): number {
   let totalScore = 0;
   let totalWeight = 0;
 
@@ -530,7 +534,10 @@ function calculateWeightedScore(features: any, weights: any): number {
 /**
  * Generate human-readable explanation of the score
  */
-function generateScoreExplanation(features: any, weights: any): string[] {
+function generateScoreExplanation(
+  features: CompatibilityFeatures,
+  weights: CompatibilityFeatures,
+): string[] {
   const explanations: string[] = [];
 
   if (features.interestOverlap > 0.7) {

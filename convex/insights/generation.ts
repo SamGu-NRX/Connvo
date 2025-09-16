@@ -15,6 +15,12 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
+import { AIInsightV, AIContentGenerationV } from "../types/validators/prompt";
+import type {
+  AIInsight,
+  AIContentGenerationRequest,
+  AIContentGenerationResult,
+} from "../types/entities/prompt";
 
 /**
  * Types used locally to avoid implicit any on callback params
@@ -49,7 +55,7 @@ type InsightResult = {
 /**
  * Generates post-call insights for all participants
  */
-export const generateInsights: ReturnType<typeof action> = action({
+export const generateInsights = action({
   args: {
     meetingId: v.id("meetings"),
     forceRegenerate: v.optional(v.boolean()),
@@ -152,63 +158,62 @@ export const generateInsights: ReturnType<typeof action> = action({
  *
  * NOTE: return is optional id (null when no insight was created)
  */
-export const generateParticipantInsights: ReturnType<typeof internalAction> =
-  internalAction({
-    args: {
-      meetingId: v.id("meetings"),
-      userId: v.id("users"),
-    },
-    returns: v.union(v.null(), v.id("insights")),
-    handler: async (
-      ctx,
-      { meetingId, userId },
-    ): Promise<Id<"insights"> | null> => {
-      try {
-        // Get transcript segments for analysis
-        const transcriptSegments = (await ctx.runQuery(
-          internal.transcripts.queries.getTranscriptSegments,
-          { meetingId, limit: 100 },
-        )) as TranscriptSegment[];
+export const generateParticipantInsights = internalAction({
+  args: {
+    meetingId: v.id("meetings"),
+    userId: v.id("users"),
+  },
+  returns: v.union(v.null(), v.id("insights")),
+  handler: async (
+    ctx,
+    { meetingId, userId },
+  ): Promise<Id<"insights"> | null> => {
+    try {
+      // Get transcript segments for analysis
+      const transcriptSegments = (await ctx.runQuery(
+        internal.transcripts.queries.getTranscriptSegments,
+        { meetingId, limit: 100 },
+      )) as TranscriptSegment[];
 
-        // Get meeting notes
-        const meetingNotes = (await ctx.runQuery(
-          internal.notes.queries.getMeetingNotes,
-          { meetingId },
-        )) as MeetingNotes | null;
+      // Get meeting notes
+      const meetingNotes = (await ctx.runQuery(
+        internal.notes.queries.getMeetingNotes,
+        { meetingId },
+      )) as MeetingNotes | null;
 
-        // Analyze content and generate insights
-        const insights = await analyzeContentForInsights(
-          ctx,
-          meetingId,
-          userId,
-          transcriptSegments,
-          meetingNotes,
-        );
+      // Analyze content and generate insights
+      const insights = await analyzeContentForInsights(
+        ctx,
+        meetingId,
+        userId,
+        transcriptSegments,
+        meetingNotes,
+      );
 
-        if (!insights) {
-          return null;
-        }
-
-        // Create insights document
-        const insightId: Id<"insights"> = (await ctx.runMutation(
-          internal.insights.mutations.createInsights,
-          {
-            userId,
-            meetingId,
-            summary: insights.summary,
-            actionItems: insights.actionItems,
-            recommendations: insights.recommendations,
-            links: insights.links,
-          },
-        )) as Id<"insights">;
-
-        return insightId;
-      } catch (error) {
-        console.error("Failed to generate participant insights:", error);
+      if (!insights) {
         return null;
       }
-    },
-  });
+
+      // Create insights document
+      const insightId: Id<"insights"> = (await ctx.runMutation(
+        internal.insights.mutations.createInsights,
+        {
+          userId,
+          meetingId,
+          summary: insights.summary,
+          actionItems: insights.actionItems,
+          recommendations: insights.recommendations,
+          links: insights.links,
+        },
+      )) as Id<"insights">;
+
+      return insightId;
+    } catch (error) {
+      console.error("Failed to generate participant insights:", error);
+      return null;
+    }
+  },
+});
 
 /**
  * Analyzes content to generate insights (stubbed implementation)
