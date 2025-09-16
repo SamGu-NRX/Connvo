@@ -124,7 +124,8 @@ export const applyNoteOperation = mutation({
         beforeOp.type === "insert" &&
         transformedOp.type === "insert" &&
         (beforeOp.content || "") !== (transformedOp.content || "");
-      const hasLengthConflict = (beforeOp.length ?? 0) !== (transformedOp.length ?? 0);
+      const hasLengthConflict =
+        (beforeOp.length ?? 0) !== (transformedOp.length ?? 0);
       const hasTypeConflict = beforeOp.type !== transformedOp.type;
 
       if (
@@ -326,7 +327,10 @@ export const batchApplyNoteOperations = mutation({
 
           // Attempt to transform against the concurrent operation. Only
           // overwrite transformedOp on success; otherwise record a conflict.
-          const maybeTransformed = transformAgainst(transformedOp, concurrentOperation);
+          const maybeTransformed = transformAgainst(
+            transformedOp,
+            concurrentOperation,
+          );
           if (maybeTransformed) {
             transformedOp = maybeTransformed;
           } else {
@@ -632,13 +636,10 @@ export const rollbackToSequence = mutation({
       newVersion: number;
       operationsProcessed: number;
       contentLength: number;
-    } = await ctx.runMutation(
-      internal.notes.mutations.rebaseNotesDocument,
-      {
-        meetingId,
-        fromSequence: 0, // Rebuild from scratch
-      },
-    );
+    } = await ctx.runMutation(internal.notes.mutations.rebaseNotesDocument, {
+      meetingId,
+      fromSequence: 0, // Rebuild from scratch
+    });
 
     // Log the rollback
     await ctx.db.insert("auditLogs", {

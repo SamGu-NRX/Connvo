@@ -10,7 +10,13 @@
  */
 
 import { v } from "convex/values";
-import { query, mutation, internalMutation, internalQuery, QueryCtx } from "../_generated/server";
+import {
+  query,
+  mutation,
+  internalMutation,
+  internalQuery,
+  QueryCtx,
+} from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 import { requireIdentity, assertMeetingAccess } from "../auth/guards";
 import { createError } from "../lib/errors";
@@ -98,7 +104,11 @@ export const subscribeMeetingNotes = query({
 
     // Try cache first for frequently accessed notes
     const cacheKey = `notes_${meetingId}`;
-    type NotesMaterialized = { content: string; version: number; lastUpdated: number };
+    type NotesMaterialized = {
+      content: string;
+      version: number;
+      lastUpdated: number;
+    };
     let notes = QueryCache.get<NotesMaterialized>(cacheKey);
 
     if (!notes) {
@@ -310,7 +320,10 @@ export const subscribeMeetingParticipants = query({
     );
 
     const roleForPerms3 = normalizeRole(participant.role);
-    const permissions = permissionsForResource("meetingParticipants", roleForPerms3);
+    const permissions = permissionsForResource(
+      "meetingParticipants",
+      roleForPerms3,
+    );
 
     return {
       participants: enrichedParticipants,

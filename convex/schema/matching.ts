@@ -49,4 +49,3 @@ export const matchingTables = {
     .index("by_match", ["matchId"])
     .index("by_outcome", ["outcome"]),
 };
-

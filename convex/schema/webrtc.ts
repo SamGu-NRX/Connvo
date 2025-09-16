@@ -93,4 +93,3 @@ export const webrtcTables = {
     .index("by_quality", ["quality"])
     .index("by_timestamp", ["timestamp"]),
 };
-

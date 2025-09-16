@@ -9,7 +9,12 @@
  */
 
 import { v } from "convex/values";
-import { action, internalAction, internalMutation, internalQuery } from "../_generated/server";
+import {
+  action,
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "../_generated/server";
 import { ConvexError } from "convex/values";
 import { Id } from "../_generated/dataModel";
 import { internal } from "../_generated/api";
@@ -88,13 +93,16 @@ export const runMatchingCycle = action({
     const processingTimeMs = Date.now() - startTime;
 
     // Log matching cycle metrics
-    const _logged: null = await ctx.runMutation(internal.matching.engine.logMatchingMetrics, {
-      shardCount,
-      totalMatches,
-      averageScore,
-      processingTimeMs,
-      minScore,
-    });
+    const _logged: null = await ctx.runMutation(
+      internal.matching.engine.logMatchingMetrics,
+      {
+        shardCount,
+        totalMatches,
+        averageScore,
+        processingTimeMs,
+        minScore,
+      },
+    );
 
     return {
       processedShards: shardCount,
@@ -513,6 +521,10 @@ type ShardQueueEntry = {
   userId: Id<"users">;
   availableFrom: number;
   availableTo: number;
-  constraints: { interests: string[]; roles: string[]; orgConstraints?: string };
+  constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  };
   createdAt: number;
 };

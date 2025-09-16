@@ -14,11 +14,11 @@ import { api, internal } from "../_generated/api";
 import schema from "../schema";
 
 describe("Insights Module", () => {
-let t: ReturnType<typeof convexTest>;
+  let t: ReturnType<typeof convexTest>;
 
-beforeEach(async () => {
-  t = convexTest();
-});
+  beforeEach(async () => {
+    t = convexTest();
+  });
 
   describe("Post-Call Insights Generation", () => {
     it("should generate insights for concluded meetings", async () => {

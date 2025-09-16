@@ -18,4 +18,3 @@ export const legacyTables = {
     .index("by_addressee", ["addresseeId"])
     .index("by_status", ["status"]),
 };
-

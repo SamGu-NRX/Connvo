@@ -13,7 +13,6 @@ import { convexTest } from "convex-test";
 import { api, internal } from "../_generated/api";
 import { Id } from "../_generated/dataModel";
 
-
 describe("Transcript Ingestion Pipeline", () => {
   let t: ReturnType<typeof convexTest>;
   let testMeetingId: Id<"meetings">;
@@ -280,9 +279,12 @@ describe("Transcript Ingestion Pipeline", () => {
       });
     }
 
-    const stats = await t.mutation(api.transcripts.ingestion.getTranscriptStats, {
-      meetingId: testMeetingId,
-    });
+    const stats = await t.mutation(
+      api.transcripts.ingestion.getTranscriptStats,
+      {
+        meetingId: testMeetingId,
+      },
+    );
 
     expect(stats.totalChunks).toBe(3);
     expect(stats.totalWords).toBeGreaterThan(0);
@@ -335,9 +337,12 @@ describe("Transcript Ingestion Pipeline", () => {
     expect(result.deleted).toBe(1);
 
     // Verify recent transcript still exists
-    const stats = await t.mutation(api.transcripts.ingestion.getTranscriptStats, {
-      meetingId: testMeetingId,
-    });
+    const stats = await t.mutation(
+      api.transcripts.ingestion.getTranscriptStats,
+      {
+        meetingId: testMeetingId,
+      },
+    );
     expect(stats.totalChunks).toBe(1);
   });
 

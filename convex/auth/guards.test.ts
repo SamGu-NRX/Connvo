@@ -214,7 +214,9 @@ describe("Authentication Guards", () => {
         resourceId: testMeetingId,
         limit: 10,
       });
-      const failedAccess = auditPage2.logs.find((log: any) => log.action === "access_denied");
+      const failedAccess = auditPage2.logs.find(
+        (log: any) => log.action === "access_denied",
+      );
       expect(failedAccess).toBeDefined();
       expect(failedAccess?.actorUserId).toBe(testUserId);
     });

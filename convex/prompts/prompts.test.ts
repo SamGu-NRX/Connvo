@@ -14,11 +14,11 @@ import { api, internal } from "../_generated/api";
 import schema from "../schema";
 
 describe("Prompts Module", () => {
-let t: ReturnType<typeof convexTest>;
+  let t: ReturnType<typeof convexTest>;
 
-beforeEach(async () => {
-  t = convexTest();
-});
+  beforeEach(async () => {
+    t = convexTest();
+  });
 
   describe("Pre-call Idea Generation", () => {
     it("should generate pre-call ideas with idempotency", async () => {

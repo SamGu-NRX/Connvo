@@ -113,7 +113,8 @@ export default function InterestsSection({
   }, [byCategory, searchTerm]);
 
   const filteredCategories = useMemo(
-    () => Array.from(filteredByCategory.keys()).sort((a, b) => a.localeCompare(b)),
+    () =>
+      Array.from(filteredByCategory.keys()).sort((a, b) => a.localeCompare(b)),
     [filteredByCategory],
   );
 
@@ -239,54 +240,53 @@ export default function InterestsSection({
                 </div>
               </div>
             )}
-            {catalog !== undefined && filteredCategories.map((category) => (
-              <div key={category} className="space-y-2">
-                <Label>{category}</Label>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                  {Array.from(filteredByCategory.get(category) || []).map(
-                    (interest) => {
-                      const isSelected = currentInterests.some(
-                        (i) => i.id === interest.id,
-                      );
-                      const Icon = interest.iconName
-                        ? iconMap[interest.iconName]
-                        : undefined;
-                      // Fallback icon by category if none provided
-                      const FallbackIcon =
-                        Icon ||
-                        (category === "industry"
-                          ? Briefcase
-                          : category === "academic"
-                            ? Book
-                            : category === "skill"
-                              ? Palette
-                              : Rocket);
-                      return (
-                        <motion.button
-                          key={interest.id}
-                          type="button"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleToggleInterest(interest)}
-                          className={`flex items-center space-x-2 rounded-md border p-2 transition-colors ${
-                            isSelected
-                              ? "bg-primary text-primary-foreground"
-                              : "hover:bg-secondary"
-                          }`}
-                        >
-                          <FallbackIcon className="h-4 w-4" />
-                          <span>{interest.name}</span>
-                        </motion.button>
-                      );
-                    },
-                  )}
+            {catalog !== undefined &&
+              filteredCategories.map((category) => (
+                <div key={category} className="space-y-2">
+                  <Label>{category}</Label>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                    {Array.from(filteredByCategory.get(category) || []).map(
+                      (interest) => {
+                        const isSelected = currentInterests.some(
+                          (i) => i.id === interest.id,
+                        );
+                        const Icon = interest.iconName
+                          ? iconMap[interest.iconName]
+                          : undefined;
+                        // Fallback icon by category if none provided
+                        const FallbackIcon =
+                          Icon ||
+                          (category === "industry"
+                            ? Briefcase
+                            : category === "academic"
+                              ? Book
+                              : category === "skill"
+                                ? Palette
+                                : Rocket);
+                        return (
+                          <motion.button
+                            key={interest.id}
+                            type="button"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleToggleInterest(interest)}
+                            className={`flex items-center space-x-2 rounded-md border p-2 transition-colors ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-secondary"
+                            }`}
+                          >
+                            <FallbackIcon className="h-4 w-4" />
+                            <span>{interest.name}</span>
+                          </motion.button>
+                        );
+                      },
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             {catalog !== undefined && filteredCategories.length === 0 && (
-              <div className="text-muted-foreground text-sm">
-                No results.
-              </div>
+              <div className="text-muted-foreground text-sm">No results.</div>
             )}
           </div>
         </ScrollArea>

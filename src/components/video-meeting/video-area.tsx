@@ -33,7 +33,10 @@ function VideoContainerComp({
 }: VideoContainerProps) {
   const user = users[userId];
   const isSpeaking = speakingStates[userId];
-  const connection = connectionStates[userId] ?? { status: "offline", latency: 0 };
+  const connection = connectionStates[userId] ?? {
+    status: "offline",
+    latency: 0,
+  };
   const isLocal = userId === "you";
   const showVideoOff = isLocal ? isVideoOff : false;
   const displayName = user?.name ?? (isLocal ? "You" : "Unknown");
@@ -50,7 +53,10 @@ function VideoContainerComp({
         const win = window as any;
         let stream: MediaStream | undefined = win.__localMediaStream;
         if (!stream) {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
           // cache globally to avoid multiple prompts / duplicate streams
           win.__localMediaStream = stream;
           // attach a one-time cleanup on unload
@@ -58,7 +64,9 @@ function VideoContainerComp({
             win.__localMediaCleanupAttached = true;
             window.addEventListener("beforeunload", () => {
               try {
-                win.__localMediaStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+                win.__localMediaStream
+                  ?.getTracks()
+                  .forEach((t: MediaStreamTrack) => t.stop());
                 win.__localMediaStream = undefined;
               } catch {}
             });
@@ -109,8 +117,9 @@ function VideoContainerComp({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl ${isMain ? "h-full" : "h-full"} cursor-pointer shadow-lg transition-colors duration-300 ${isSpeaking ? "ring-2 ring-green-500" : ""
-        }`}
+      className={`relative overflow-hidden rounded-xl ${isMain ? "h-full" : "h-full"} cursor-pointer shadow-lg transition-colors duration-300 ${
+        isSpeaking ? "ring-2 ring-green-500" : ""
+      }`}
       onClick={() => onVideoClick(userId)}
     >
       <div
@@ -121,7 +130,9 @@ function VideoContainerComp({
             <div className="mb-2">
               <VideoOff className="h-12 w-12 text-zinc-400" />
             </div>
-            <div className="text-sm font-medium text-zinc-300">{isLocal ? "Your video is off" : displayName}</div>
+            <div className="text-sm font-medium text-zinc-300">
+              {isLocal ? "Your video is off" : displayName}
+            </div>
           </div>
         ) : (
           <div className="relative h-full w-full">
@@ -134,9 +145,11 @@ function VideoContainerComp({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-700 to-zinc-900">
                 <div className="text-center">
-                  <div className="mb-2 text-lg font-semibold text-zinc-100">{displayName}</div>
+                  <div className="mb-2 text-lg font-semibold text-zinc-100">
+                    {displayName}
+                  </div>
                   <div className="text-xs text-zinc-400">Simulated video</div>
                 </div>
               </div>

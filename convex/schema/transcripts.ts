@@ -21,12 +21,12 @@ export const transcriptTables = {
     language: v.optional(v.string()),
     createdAt: v.number(),
   })
-    .index("by_meeting_bucket", ["meetingId", "bucketMs"]) 
-    .index("by_meeting_sequence", ["meetingId", "sequence"]) 
+    .index("by_meeting_bucket", ["meetingId", "bucketMs"])
+    .index("by_meeting_sequence", ["meetingId", "sequence"])
     .index("by_meeting_bucket_seq", ["meetingId", "bucketMs", "sequence"])
     .index("by_meeting_time_range", ["meetingId", "startMs"])
-    .index("by_created_at", ["createdAt"]) 
-    .index("by_meeting_and_created_at", ["meetingId", "createdAt"]) 
+    .index("by_created_at", ["createdAt"])
+    .index("by_meeting_and_created_at", ["meetingId", "createdAt"])
     .index("by_bucket_global", ["bucketMs"]) // For cleanup jobs
     .index("by_meeting_and_speaker", ["meetingId", "speakerId"]) // For speaker-specific queries
     .searchIndex("search_text", {
@@ -76,4 +76,3 @@ export const transcriptTables = {
       filterFields: ["meetingId"],
     }),
 };
-

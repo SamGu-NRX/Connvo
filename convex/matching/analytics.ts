@@ -374,8 +374,8 @@ export const getGlobalMatchingAnalytics: ReturnType<typeof query> = query({
       const ts =
         typeof match.createdAt === "number"
           ? match.createdAt
-          : typeof (match)._creationTime === "number"
-            ? (match)._creationTime
+          : typeof match._creationTime === "number"
+            ? match._creationTime
             : Date.now();
 
       const date = new Date(ts).toISOString().split("T")[0];

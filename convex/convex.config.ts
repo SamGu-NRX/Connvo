@@ -5,4 +5,3 @@ const app = defineApp();
 app.use(rateLimiter);
 
 export default app;
-

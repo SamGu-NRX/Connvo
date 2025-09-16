@@ -14,4 +14,3 @@ export const messagingTables = {
     .index("by_meeting", ["meetingId"])
     .index("by_meeting_time", ["meetingId", "timestamp"]),
 };
-

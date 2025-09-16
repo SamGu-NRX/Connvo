@@ -127,12 +127,16 @@ export default function OnboardingPage() {
       company: data.company,
       linkedinUrl: data.linkedinUrl || "",
       bio: data.bio,
-      interests: data.interests.map((i) => ({ id: i.id, name: i.name, category: i.category })),
+      interests: data.interests.map((i) => ({
+        id: i.id,
+        name: i.name,
+        category: i.category,
+      })),
     });
     // djb2 hash
     let hash = 5381;
     for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = (hash << 5) + hash + str.charCodeAt(i);
       hash = hash & 0xffffffff;
     }
     return `onboarding:${hash >>> 0}`;

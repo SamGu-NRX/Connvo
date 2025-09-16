@@ -124,7 +124,9 @@ export const resolveResult = internalAction({
         // Safely compute size: prefer validated numeric metadata, fallback to json length
         const sizeMeta = meta["resultSize"];
         const metaSize =
-          typeof sizeMeta === "number" && Number.isFinite(sizeMeta) && sizeMeta >= 0
+          typeof sizeMeta === "number" &&
+          Number.isFinite(sizeMeta) &&
+          sizeMeta >= 0
             ? sizeMeta
             : undefined;
 

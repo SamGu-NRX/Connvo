@@ -9,7 +9,9 @@ import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 const API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 
 const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
-  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(null);
+  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(
+    null,
+  );
   const { user, loading } = useWorkOSAuth();
 
   useEffect(() => {
@@ -43,7 +45,8 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
       try {
         // StreamVideoClient may have a disconnect/close method depending on SDK version
         // @ts-ignore
-        if (client && typeof client.disconnect === "function") client.disconnect();
+        if (client && typeof client.disconnect === "function")
+          client.disconnect();
       } catch {
         // ignore cleanup errors
       }

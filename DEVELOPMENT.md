@@ -578,7 +578,6 @@ export const updateMeeting = mutation({
 - [Project Specifications](./.kiro/specs/convex-database-migration/)
 - [Deployment Guide](./DEPLOYMENT.md)
 
-
 Onboarding Flow (WorkOS + Convex)
 
 - Client auth via WorkOS AuthKit → Convex. User is upserted on auth by `UpsertUserOnAuth` in `src/providers/ConvexClientProvider.tsx` calling `api.users.mutations.upsertUser`.

@@ -325,9 +325,10 @@ describe("Dynamic Permission Management", () => {
       };
 
       expect(auditLogs.logs.length).toBeGreaterThan(0);
-      const subscriptionLog = auditLogs.logs.find((log) =>
-        (log.metadata as { subscriptionId?: string }).subscriptionId ===
-        "test-audit-sub",
+      const subscriptionLog = auditLogs.logs.find(
+        (log) =>
+          (log.metadata as { subscriptionId?: string }).subscriptionId ===
+          "test-audit-sub",
       );
       expect(subscriptionLog).toBeDefined();
       expect(subscriptionLog?.action).toBe("subscription_established");
@@ -359,9 +360,10 @@ describe("Dynamic Permission Management", () => {
       };
 
       expect(auditLogs.logs.length).toBeGreaterThan(0);
-      const revocationLog = auditLogs.logs.find((log) =>
-        (log.metadata as { removedUserId?: unknown }).removedUserId ===
-        participantUserId,
+      const revocationLog = auditLogs.logs.find(
+        (log) =>
+          (log.metadata as { removedUserId?: unknown }).removedUserId ===
+          participantUserId,
       );
       expect(revocationLog).toBeDefined();
     });
@@ -397,7 +399,9 @@ describe("Dynamic Permission Management", () => {
           targetUserId?: unknown;
           newRole?: unknown;
         };
-        return meta.targetUserId === participantUserId && meta.newRole === "host";
+        return (
+          meta.targetUserId === participantUserId && meta.newRole === "host"
+        );
       });
       expect(roleChangeLog).toBeDefined();
     });
@@ -414,18 +418,15 @@ describe("Dynamic Permission Management", () => {
       );
 
       const start = Date.now();
-      const subscriptions = (await Promise.all(subscriptionPromises)) as Array<
-        | {
-            content: string;
-            version: number;
-            lastUpdated: number;
-            subscriptionValid: boolean;
-            permissions: string[];
-            cursor: string;
-            rateLimited: boolean;
-          }
-        | null
-      >;
+      const subscriptions = (await Promise.all(subscriptionPromises)) as Array<{
+        content: string;
+        version: number;
+        lastUpdated: number;
+        subscriptionValid: boolean;
+        permissions: string[];
+        cursor: string;
+        rateLimited: boolean;
+      } | null>;
       const duration = Date.now() - start;
 
       // All should succeed

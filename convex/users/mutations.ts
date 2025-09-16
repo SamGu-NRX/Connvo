@@ -305,7 +305,9 @@ export const saveOnboarding = mutation({
       throw createError.validation("Invalid age");
     }
     if (args.bio.length < 10 || args.bio.length > 1000) {
-      throw createError.validation("Bio must be between 10 and 1000 characters");
+      throw createError.validation(
+        "Bio must be between 10 and 1000 characters",
+      );
     }
 
     const scope = "users.onboarding.saveOnboarding" as const;
@@ -314,15 +316,13 @@ export const saveOnboarding = mutation({
       args.idempotencyKey ||
       JSON.stringify({ userId: identity.userId, ...args }).slice(0, 512);
 
-    type IdempotencyKeyReturn =
-      | {
-          _id: Id<"idempotencyKeys">;
-          key: string;
-          scope: string;
-          createdAt: number;
-          metadata?: unknown;
-        }
-      | null;
+    type IdempotencyKeyReturn = {
+      _id: Id<"idempotencyKeys">;
+      key: string;
+      scope: string;
+      createdAt: number;
+      metadata?: unknown;
+    } | null;
 
     const { internal } = await import("../_generated/api");
     const existingKey: IdempotencyKeyReturn = await ctx.runQuery(
@@ -342,7 +342,11 @@ export const saveOnboarding = mutation({
     const isCompletedMeta = (m: unknown): m is CompletedMeta => {
       if (!m || typeof m !== "object") return false;
       const mm = m as Record<string, unknown>;
-      return mm["status"] === "completed" && typeof mm["userId"] === "string" && typeof mm["profileId"] === "string";
+      return (
+        mm["status"] === "completed" &&
+        typeof mm["userId"] === "string" &&
+        typeof mm["profileId"] === "string"
+      );
     };
     if (existingKey && isCompletedMeta(existingKey.metadata)) {
       return {
@@ -377,13 +381,22 @@ export const saveOnboarding = mutation({
       }
       if (item.category === "personal") {
         if (customCount >= perUserCustomLimit) {
-          throw createError.validation(`Too many custom interests (max ${perUserCustomLimit})`, "interests");
+          throw createError.validation(
+            `Too many custom interests (max ${perUserCustomLimit})`,
+            "interests",
+          );
         }
         const label = item.name.trim().slice(0, 48);
         if (label.length < 2) {
-          throw createError.validation("Custom interest too short", "interests");
+          throw createError.validation(
+            "Custom interest too short",
+            "interests",
+          );
         }
-        const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        const slug = label
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
         const customKey = `custom:${slug}`;
         const existingCustom = await ctx.db
           .query("interests")
@@ -402,7 +415,10 @@ export const saveOnboarding = mutation({
         customCount += 1;
         continue;
       }
-      throw createError.validation(`Invalid interest key: ${candidateKey}`, "interests");
+      throw createError.validation(
+        `Invalid interest key: ${candidateKey}`,
+        "interests",
+      );
     }
 
     // Upsert profile
@@ -424,7 +440,8 @@ export const saveOnboarding = mutation({
       });
       profileId = existingProfile._id;
     } else {
-      const displayName = (await ctx.db.get(identity.userId))?.displayName || args.jobTitle;
+      const displayName =
+        (await ctx.db.get(identity.userId))?.displayName || args.jobTitle;
       profileId = await ctx.db.insert("profiles", {
         userId: identity.userId,
         displayName,
@@ -450,14 +467,19 @@ export const saveOnboarding = mutation({
       .collect();
     for (const row of existingInterests) await ctx.db.delete(row._id);
     for (const key of interestKeys) {
-      await ctx.db.insert("userInterests", { userId: identity.userId, interestKey: key, createdAt: now });
+      await ctx.db.insert("userInterests", {
+        userId: identity.userId,
+        interestKey: key,
+        createdAt: now,
+      });
     }
 
     // Mark onboarding complete
     await ctx.db.patch(identity.userId, {
       onboardingComplete: true,
       onboardingCompletedAt: now,
-      onboardingStartedAt: (await ctx.db.get(identity.userId))?.onboardingStartedAt ?? now,
+      onboardingStartedAt:
+        (await ctx.db.get(identity.userId))?.onboardingStartedAt ?? now,
       updatedAt: now,
     });
 
@@ -467,7 +489,10 @@ export const saveOnboarding = mutation({
         .query("interests")
         .withIndex("by_key", (q) => q.eq("key", key))
         .unique();
-      if (entry) await ctx.db.patch(entry._id, { usageCount: (entry.usageCount || 0) + 1 });
+      if (entry)
+        await ctx.db.patch(entry._id, {
+          usageCount: (entry.usageCount || 0) + 1,
+        });
     }
 
     // Audit
@@ -499,6 +524,11 @@ export const saveOnboarding = mutation({
         metadata: doneMeta,
       });
 
-    return { userId: identity.userId, profileId: profileId!, interestsCount: interestKeys.length, onboardingCompleted: true };
+    return {
+      userId: identity.userId,
+      profileId: profileId!,
+      interestsCount: interestKeys.length,
+      onboardingCompleted: true,
+    };
   },
 });

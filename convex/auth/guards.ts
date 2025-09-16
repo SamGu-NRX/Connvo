@@ -52,9 +52,13 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
 
   // Load the corresponding Convex user document (no writes here).
   // Queries/Mutations have ctx.db; Actions must use ctx.runQuery.
-  let userDoc:
-    | { _id: Id<"users">; email: string; displayName?: string | undefined; orgId?: string; orgRole?: string }
-    | null = null;
+  let userDoc: {
+    _id: Id<"users">;
+    email: string;
+    displayName?: string | undefined;
+    orgId?: string;
+    orgRole?: string;
+  } | null = null;
   const hasDb = (ctx as any).db && typeof (ctx as any).db.query === "function";
   if (hasDb) {
     userDoc = await (ctx as QueryCtx).db
@@ -270,7 +274,9 @@ export async function hasMeetingAccess(
  * @param ctx - Convex context
  * @returns AuthIdentity if authenticated, null otherwise
  */
-export async function getCurrentUser(ctx: AuthContext): Promise<AuthIdentity | null> {
+export async function getCurrentUser(
+  ctx: AuthContext,
+): Promise<AuthIdentity | null> {
   try {
     return await requireIdentity(ctx);
   } catch {

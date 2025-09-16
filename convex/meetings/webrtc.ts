@@ -100,10 +100,9 @@ export const initializeWebRTCRoom = action({
       userId: Id<"users">;
       role: "host" | "participant" | "observer";
       presence: "invited" | "joined" | "left";
-    } = await ctx.runQuery(
-      internal.meetings.webrtc.getParticipantForAccess,
-      { meetingId },
-    );
+    } = await ctx.runQuery(internal.meetings.webrtc.getParticipantForAccess, {
+      meetingId,
+    });
     // Fetch meeting via internal query
     const meeting: {
       _id: Id<"meetings">;
@@ -117,10 +116,9 @@ export const initializeWebRTCRoom = action({
       state: "scheduled" | "active" | "concluded" | "cancelled";
       createdAt: number;
       updatedAt: number;
-    } | null = await ctx.runQuery(
-      internal.meetings.webrtc.getMeetingDoc,
-      { meetingId },
-    );
+    } | null = await ctx.runQuery(internal.meetings.webrtc.getMeetingDoc, {
+      meetingId,
+    });
     if (!meeting) {
       throw createError.notFound("Meeting", meetingId);
     }
@@ -146,15 +144,18 @@ export const initializeWebRTCRoom = action({
     });
 
     // Store room configuration in database
-    const _storedRoom: null = await ctx.runMutation(internal.meetings.webrtc.storeRoomConfiguration, {
-      meetingId,
-      roomConfig: {
-        roomId: roomConfig.roomId,
-        provider: roomConfig.provider,
-        iceServers: roomConfig.iceServers,
-        features: roomConfig.features,
+    const _storedRoom: null = await ctx.runMutation(
+      internal.meetings.webrtc.storeRoomConfiguration,
+      {
+        meetingId,
+        roomConfig: {
+          roomId: roomConfig.roomId,
+          provider: roomConfig.provider,
+          iceServers: roomConfig.iceServers,
+          features: roomConfig.features,
+        },
       },
-    });
+    );
 
     return {
       roomId: roomConfig.roomId,
@@ -390,7 +391,8 @@ export const getPendingSignals = query({
     let baseQuery = ctx.db
       .query("webrtcSignals")
       .withIndex("by_meeting_target_and_processed", (q) =>
-        q.eq("meetingId", meetingId)
+        q
+          .eq("meetingId", meetingId)
           .eq("toUserId", participant.userId)
           .eq("processed", false),
       );
@@ -463,7 +465,8 @@ export const updateSessionState = mutation({
         q.eq("userId", participant.userId).eq("meetingId", meetingId),
       )
       .collect();
-    const session = candidateSessions.find((s) => s.sessionId === sessionId) || null;
+    const session =
+      candidateSessions.find((s) => s.sessionId === sessionId) || null;
 
     if (!session) {
       throw createError.notFound("WebRTC session not found");
@@ -550,7 +553,12 @@ type ParticipantAccessTokenResult = {
   provider: "webrtc" | "getstream";
   roomId: string;
   participantId: string;
-  permissions: { canRecord: boolean; canMute: boolean; canKick: boolean; canShare: boolean };
+  permissions: {
+    canRecord: boolean;
+    canMute: boolean;
+    canKick: boolean;
+    canShare: boolean;
+  };
   success: boolean;
 };
 
@@ -584,10 +592,9 @@ export const generateParticipantAccessToken = action({
       { meetingId },
     );
 
-    const meeting = await ctx.runQuery(
-      internal.meetings.webrtc.getMeetingDoc,
-      { meetingId },
-    );
+    const meeting = await ctx.runQuery(internal.meetings.webrtc.getMeetingDoc, {
+      meetingId,
+    });
     if (!meeting) {
       throw createError.notFound("Meeting", meetingId);
     }
@@ -662,7 +669,8 @@ export const closeSession = mutation({
         q.eq("userId", participant.userId).eq("meetingId", meetingId),
       )
       .collect();
-    const session = candidateSessions2.find((s) => s.sessionId === sessionId) || null;
+    const session =
+      candidateSessions2.find((s) => s.sessionId === sessionId) || null;
 
     if (session) {
       await ctx.db.patch(session._id, {
@@ -719,16 +727,19 @@ export const handleConnectionFailure = action({
     });
 
     // Update session state to failed
-    const _updated0: null = await ctx.runMutation(internal.meetings.webrtc.updateSessionStateInternal, {
-      meetingId,
-      sessionId,
-      state: "failed",
-      metadata: {
-        errorType,
-        errorDetails: errorDetails ?? "",
-        failedAt: Date.now(),
+    const _updated0: null = await ctx.runMutation(
+      internal.meetings.webrtc.updateSessionStateInternal,
+      {
+        meetingId,
+        sessionId,
+        state: "failed",
+        metadata: {
+          errorType,
+          errorDetails: errorDetails ?? "",
+          failedAt: Date.now(),
+        },
       },
-    });
+    );
 
     // Determine if fallback is available
     const roomConfig: {
@@ -736,8 +747,18 @@ export const handleConnectionFailure = action({
       meetingId: Id<"meetings">;
       roomId: string;
       provider: "webrtc" | "getstream";
-      iceServers?: Array<{ urls: string | string[]; username?: string; credential?: string }>;
-      features: { recording: boolean; transcription: boolean; maxParticipants: number; screenSharing: boolean; chat: boolean };
+      iceServers?: Array<{
+        urls: string | string[];
+        username?: string;
+        credential?: string;
+      }>;
+      features: {
+        recording: boolean;
+        transcription: boolean;
+        maxParticipants: number;
+        screenSharing: boolean;
+        chat: boolean;
+      };
       createdAt: number;
       updatedAt: number;
     } | null = await ctx.runQuery(
@@ -870,14 +891,17 @@ export const monitorConnectionQuality = action({
     }
 
     // Store quality metrics for analytics
-    const _stored: null = await ctx.runMutation(internal.meetings.webrtc.storeConnectionMetrics, {
-      meetingId,
-      sessionId,
-      userId: identity.userId as Id<"users">,
-      quality,
-      stats,
-      timestamp: Date.now(),
-    });
+    const _stored: null = await ctx.runMutation(
+      internal.meetings.webrtc.storeConnectionMetrics,
+      {
+        meetingId,
+        sessionId,
+        userId: identity.userId as Id<"users">,
+        quality,
+        stats,
+        timestamp: Date.now(),
+      },
+    );
 
     return {
       quality,
@@ -896,7 +920,11 @@ export const getParticipantForAccess = internalQuery({
     _id: v.id("meetingParticipants"),
     meetingId: v.id("meetings"),
     userId: v.id("users"),
-    role: v.union(v.literal("host"), v.literal("participant"), v.literal("observer")),
+    role: v.union(
+      v.literal("host"),
+      v.literal("participant"),
+      v.literal("observer"),
+    ),
     presence: v.union(
       v.literal("invited"),
       v.literal("joined"),

@@ -122,9 +122,7 @@ export const getCurrentUser = query({
 
     return await ctx.db
       .query("users")
-      .withIndex("by_workos_id", (q) =>
-        q.eq("workosUserId", workosUserId),
-      )
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
       .unique();
   },
 });

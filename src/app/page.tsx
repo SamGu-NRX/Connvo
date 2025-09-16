@@ -245,7 +245,13 @@ const FloatingShapes = () => {
   );
 };
 
-function StartCta({ className, children }: { className?: string; children: React.ReactNode }) {
+function StartCta({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const { user, loading } = useAuth();
   return (

@@ -62,43 +62,42 @@ async function persistResultMutation(
       resultJson: json,
     },
   };
-
 }
 
-  async function persistResultAction(
-    ctx: ActionCtx,
-    result: unknown,
-  ): Promise<{ meta: Record<string, string | number | boolean> }> {
-    if (
-      typeof result === "string" ||
-      typeof result === "number" ||
-      typeof result === "boolean"
-    ) {
-      return { meta: { resultType: "inline", resultInline: result } };
-    }
-    const json = JSON.stringify(result);
-    try {
-      const blob = new Blob([json], { type: "application/json" });
-      const storageId = await ctx.storage.store(blob);
-      return {
-        meta: {
-          resultType: "storage",
-          resultRef: String(storageId),
-          resultSize: json.length,
-        },
-      };
-    } catch (error) {
-      // Log error and fall back to storing a summary
-      console.error("Failed to store result in storage:", error);
-      return {
-        meta: {
-          resultType: "error",
-          resultError: "Failed to persist result",
-          resultSize: json.length,
-        },
-      };
-    }
-  };
+async function persistResultAction(
+  ctx: ActionCtx,
+  result: unknown,
+): Promise<{ meta: Record<string, string | number | boolean> }> {
+  if (
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean"
+  ) {
+    return { meta: { resultType: "inline", resultInline: result } };
+  }
+  const json = JSON.stringify(result);
+  try {
+    const blob = new Blob([json], { type: "application/json" });
+    const storageId = await ctx.storage.store(blob);
+    return {
+      meta: {
+        resultType: "storage",
+        resultRef: String(storageId),
+        resultSize: json.length,
+      },
+    };
+  } catch (error) {
+    // Log error and fall back to storing a summary
+    console.error("Failed to store result in storage:", error);
+    return {
+      meta: {
+        resultType: "error",
+        resultError: "Failed to persist result",
+        resultSize: json.length,
+      },
+    };
+  }
+}
 
 /**
  * Ensures idempotent execution of mutations

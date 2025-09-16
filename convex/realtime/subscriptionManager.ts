@@ -306,10 +306,7 @@ export const validateAndUpdateSubscription = query({
           const meetingState = await ctx.db
             .query("meetingState")
             .withIndex("by_meeting", (q) =>
-              q.eq(
-                "meetingId",
-                subscription.resourceId as Id<"meetings">,
-              ),
+              q.eq("meetingId", subscription.resourceId as Id<"meetings">),
             )
             .unique();
 

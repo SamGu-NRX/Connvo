@@ -54,4 +54,3 @@ export const userTables = {
     .index("by_user", ["userId"])
     .index("by_updated", ["updatedAt"]),
 };
-

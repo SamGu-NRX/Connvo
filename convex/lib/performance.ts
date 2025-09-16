@@ -131,7 +131,7 @@ export class PerformanceTracker {
       p99: percentile(executionTimes, 0.99),
       avgExecutionTime:
         executionTimes.reduce((a: number, b: number) => a + b, 0) /
-          executionTimes.length,
+        executionTimes.length,
       sloBreaches,
     };
   }

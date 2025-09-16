@@ -5,6 +5,7 @@ Date: 2025-09-11
 Compliance: Must comply with steering/convex_rules.mdc. Use the context7 MCP tool for up-to-date Convex guidance and patterns.
 
 What changed since 2024 (validated 2025-09-11):
+
 - Convex now documents full-text search searchIndex and vector search vectorIndex; vector
   search must be run from actions via ctx.vectorSearch (docs.convex.dev/search/vector-search).
 - Convex full-text search is prefix-only (no fuzzy) as of 2025-01-15 (docs.convex.dev/search/text-search).

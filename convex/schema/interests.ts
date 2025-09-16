@@ -24,4 +24,3 @@ export const interestTables = {
     .index("by_user", ["userId"])
     .index("by_interest", ["interestKey"]),
 };
-

@@ -51,9 +51,8 @@ export const initializeTranscription = internalAction({
       }
 
       // Determine transcription provider based on meeting configuration
-      const transcriptionProvider: "whisper" | "getstream" = meeting.webrtcEnabled
-        ? "whisper"
-        : "getstream";
+      const transcriptionProvider: "whisper" | "getstream" =
+        meeting.webrtcEnabled ? "whisper" : "getstream";
 
       // Create transcription session record
       await ctx.runMutation(
@@ -195,7 +194,10 @@ export const finalizeTranscription = internalAction({
     success: v.boolean(),
     totalChunks: v.number(),
   }),
-  handler: async (ctx, { meetingId }): Promise<{ success: boolean; totalChunks: number }> => {
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<{ success: boolean; totalChunks: number }> => {
     try {
       // Update session status
       await ctx.runMutation(

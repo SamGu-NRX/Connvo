@@ -37,7 +37,12 @@ import {
 // Import UserInfo type from our centralized type definition
 import { UserInfo } from "@/types/user";
 // Import utility functions
-import { generateAvatarColor, getInitials, formatTime, getStatusColor } from "@/data/avatar-utils";
+import {
+  generateAvatarColor,
+  getInitials,
+  formatTime,
+  getStatusColor,
+} from "@/data/avatar-utils";
 import { mockUsers } from "@/data/mock-users";
 
 // Define Message type compatible with UserInfo
@@ -268,12 +273,12 @@ const ChatArea: React.FC<ChatAppProps> = ({
             </Avatar>
           </Button>
           <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-medium">{activeProfile.name}</h3>
-                <div
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium">{activeProfile.name}</h3>
+              <div
                 className={`h-2 w-2 rounded-full ${getStatusColor(activeProfile.status)}`}
-                />
-              </div>
+              />
+            </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {activeProfile.profession} at {activeProfile.company}
             </p>
@@ -467,7 +472,8 @@ const ModernChatApp: React.FC = () => {
   useEffect(() => {
     // Simulate receiving new messages from random users
     const interval = setInterval(() => {
-      const randomProfileId = mockUsers[Math.floor(Math.random() * mockUsers.length)].id;
+      const randomProfileId =
+        mockUsers[Math.floor(Math.random() * mockUsers.length)].id;
 
       // Don't mark messages as unread for the active chat
       if (randomProfileId !== activeProfile.id) {
@@ -569,7 +575,7 @@ const ModernChatApp: React.FC = () => {
       <Dialog open={showUserProfile} onOpenChange={setShowUserProfile}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-          <DialogTitle>{activeProfile.name}&apos;s Profile</DialogTitle>
+            <DialogTitle>{activeProfile.name}&apos;s Profile</DialogTitle>
           </DialogHeader>
           <UserCard user={activeProfile} /> {/* Updated to pass user prop */}
         </DialogContent>

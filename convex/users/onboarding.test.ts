@@ -16,15 +16,27 @@ describe("Onboarding Mutation", () => {
     await t.run(async (ctx) => {
       const now = Date.now();
       const defaults = [
-        { key: "software-engineering", label: "Software Engineering", category: "industry" },
+        {
+          key: "software-engineering",
+          label: "Software Engineering",
+          category: "industry",
+        },
         { key: "data-science", label: "Data Science", category: "industry" },
-        { key: "product-management", label: "Product Management", category: "industry" },
+        {
+          key: "product-management",
+          label: "Product Management",
+          category: "industry",
+        },
         { key: "ai-ml", label: "AI / ML", category: "academic" },
         { key: "startups", label: "Startups", category: "personal" },
         { key: "design", label: "Design", category: "skill" },
       ];
       for (const d of defaults) {
-        await ctx.db.insert("interests", { ...d, usageCount: 0, createdAt: now });
+        await ctx.db.insert("interests", {
+          ...d,
+          usageCount: 0,
+          createdAt: now,
+        });
       }
     });
 
@@ -44,7 +56,11 @@ describe("Onboarding Mutation", () => {
       linkedinUrl: "https://linkedin.com/in/test",
       bio: "Hello, I build things.",
       interests: [
-        { id: "software-engineering", name: "Software Engineering", category: "industry" },
+        {
+          id: "software-engineering",
+          name: "Software Engineering",
+          category: "industry",
+        },
         { id: "startups", name: "Startups", category: "personal" },
       ],
       idempotencyKey: "fixed-key-1",
@@ -80,14 +96,27 @@ describe("Onboarding Mutation", () => {
     await t.run(async (ctx) => {
       const now = Date.now();
       const defaults = [
-        { key: "software-engineering", label: "Software Engineering", category: "industry" },
+        {
+          key: "software-engineering",
+          label: "Software Engineering",
+          category: "industry",
+        },
         { key: "data-science", label: "Data Science", category: "industry" },
-        { key: "product-management", label: "Product Management", category: "industry" },
+        {
+          key: "product-management",
+          label: "Product Management",
+          category: "industry",
+        },
         { key: "ai-ml", label: "AI / ML", category: "academic" },
         { key: "startups", label: "Startups", category: "personal" },
         { key: "design", label: "Design", category: "skill" },
       ];
-      for (const d of defaults) await ctx.db.insert("interests", { ...d, usageCount: 0, createdAt: now });
+      for (const d of defaults)
+        await ctx.db.insert("interests", {
+          ...d,
+          usageCount: 0,
+          createdAt: now,
+        });
     });
     const userId = await t.mutation(api.users.mutations.upsertUser, {
       workosUserId: "workos_2",
@@ -103,9 +132,7 @@ describe("Onboarding Mutation", () => {
         jobTitle: "Scientist",
         company: "Beta",
         bio: "I love data.",
-        interests: [
-          { id: "nonexistent", name: "Bad", category: "industry" },
-        ],
+        interests: [{ id: "nonexistent", name: "Bad", category: "industry" }],
       });
       expect.fail("Expected validation error");
     } catch (e) {
@@ -117,7 +144,13 @@ describe("Onboarding Mutation", () => {
   test("idempotent by idempotencyKey", async () => {
     await t.run(async (ctx) => {
       const now = Date.now();
-      await ctx.db.insert("interests", { key: "design", label: "Design", category: "skill", usageCount: 0, createdAt: now });
+      await ctx.db.insert("interests", {
+        key: "design",
+        label: "Design",
+        category: "skill",
+        usageCount: 0,
+        createdAt: now,
+      });
     });
     const userId = await t.mutation(api.users.mutations.upsertUser, {
       workosUserId: "workos_3",
@@ -132,14 +165,15 @@ describe("Onboarding Mutation", () => {
       jobTitle: "PM",
       company: "Gamma",
       bio: "Ship it.",
-      interests: [
-        { id: "design", name: "Design", category: "skill" as const },
-      ],
+      interests: [{ id: "design", name: "Design", category: "skill" as const }],
       idempotencyKey: "same-key",
     };
 
     const first = await t.mutation(api.users.mutations.saveOnboarding, payload);
-    const second = await t.mutation(api.users.mutations.saveOnboarding, payload);
+    const second = await t.mutation(
+      api.users.mutations.saveOnboarding,
+      payload,
+    );
 
     expect(first.userId).toBe(second.userId);
     expect(first.profileId).toBe(second.profileId);

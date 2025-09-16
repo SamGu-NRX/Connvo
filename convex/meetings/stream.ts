@@ -637,19 +637,19 @@ export const startRecording = action({
 
       // Track successful recording start
       const duration = Date.now() - startTime;
-          const _result4: null = await ctx.runMutation(
-            internal.meetings.streamHelpers.trackStreamEvent,
-            {
-              meetingId,
-              event: "recording_started",
-              success: true,
-              duration,
-              metadata: {
-                recordingId: result.recordingId ?? "",
-                config: JSON.stringify(recordingConfig),
-              },
-            },
-          );
+      const _result4: null = await ctx.runMutation(
+        internal.meetings.streamHelpers.trackStreamEvent,
+        {
+          meetingId,
+          event: "recording_started",
+          success: true,
+          duration,
+          metadata: {
+            recordingId: result.recordingId ?? "",
+            config: JSON.stringify(recordingConfig),
+          },
+        },
+      );
 
       console.log(
         `Started recording ${result.recordingId} for meeting ${meetingId}`,

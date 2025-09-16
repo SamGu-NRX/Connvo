@@ -85,4 +85,3 @@ export const aiTables = {
     .index("by_provider", ["provider"])
     .index("by_status", ["status"]),
 };
-
