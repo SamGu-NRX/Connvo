@@ -8,8 +8,8 @@
  */
 
 import { cronJobs } from "convex/server";
-import { api, internal } from "../_generated/api";
-import { internalAction, internalMutation } from "../_generated/server";
+import { api, internal } from "@convex/_generated/api";
+import { internalAction, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -21,14 +21,11 @@ export const runAutomatedMatchingCycle = internalAction({
   handler: async (ctx, args) => {
     try {
       // Run the matching cycle with default parameters
-      const result = await ctx.runAction(
-        api.matching.engine.runMatchingCycle,
-        {
-          shardCount: 4,
-          minScore: 0.6,
-          maxMatches: 100,
-        },
-      );
+      const result = await ctx.runAction(api.matching.engine.runMatchingCycle, {
+        shardCount: 4,
+        minScore: 0.6,
+        maxMatches: 100,
+      });
 
       console.log("Automated matching cycle completed:", result);
 

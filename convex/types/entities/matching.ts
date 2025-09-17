@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling for ML systems
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Matching status types (matches schema exactly)
 export type MatchingStatus = "waiting" | "matched" | "expired" | "cancelled";

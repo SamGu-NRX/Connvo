@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling for AI systems
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // AI prompt types (matches schema exactly)
 export type PromptType = "precall" | "incall";

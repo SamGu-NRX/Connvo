@@ -7,7 +7,7 @@
 
 import { convexTest } from "convex-test";
 import { expect, test, describe } from "vitest";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 import schema from "../schema";
 
 describe("Real-World Scenario Tests", () => {

@@ -16,8 +16,8 @@ import {
   User as StreamUser,
 } from "@stream-io/video-react-sdk";
 import { ConvexReactClient } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * GetStream call configuration

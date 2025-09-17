@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Type safety and performance
  */
 
-import type { Id } from "../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Branded time types for enhanced type safety
 export type EpochMs = number & { readonly __brand: "EpochMs" };

@@ -9,22 +9,25 @@
  */
 
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { globalBandwidthManager } from "../lib/batching";
-import { SubscriptionPerformanceTracker } from "../lib/performance";
-import { SubscriptionStateManager, QueryCache } from "../lib/queryOptimization";
-import { internal } from "../_generated/api";
-import { buildSubscriptionAudit } from "../lib/audit";
-import { normalizeRole, permissionsForResource } from "../lib/permissions";
+import { query, mutation, internalMutation } from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { globalBandwidthManager } from "@convex/lib/batching";
+import { SubscriptionPerformanceTracker } from "@convex/lib/performance";
+import {
+  SubscriptionStateManager,
+  QueryCache,
+} from "@convex/lib/queryOptimization";
+import { internal } from "@convex/_generated/api";
+import { buildSubscriptionAudit } from "@convex/lib/audit";
+import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
 import {
   SubscriptionEstablishmentResultV,
   SubscriptionValidationResultV,
   BulkTerminationResultV,
   SubscriptionStatsV,
-} from "../types/validators/real-time";
-import type { ActiveSubscription } from "../types/domain/real-time";
+} from "@convex/types/validators/real-time";
+import type { ActiveSubscription } from "@convex/types/domain/real-time";
 
 /**
  * Global subscription registry
@@ -490,7 +493,7 @@ export const getSubscriptionStats = query({
 /**
  * Helper function to get permissions for a resource type and role
  */
-// Permission helpers moved to ../lib/permissions for consistency
+// Permission helpers moved to @convex/lib/permissions for consistency
 
 /**
  * Cleanup function to be called periodically

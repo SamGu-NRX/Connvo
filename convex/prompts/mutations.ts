@@ -8,11 +8,11 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
  */
 
-import { mutation, internalMutation } from "../_generated/server";
+import { mutation, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Creates a new prompt (internal use)

@@ -313,8 +313,8 @@ describe("Dynamic Permission Management", () => {
         limit: 10,
       })) as {
         logs: Array<{
-          _id: import("../_generated/dataModel").Id<"auditLogs">;
-          actorUserId?: import("../_generated/dataModel").Id<"users">;
+          _id: import("@convex/_generated/dataModel").Id<"auditLogs">;
+          actorUserId?: import("@convex/_generated/dataModel").Id<"users">;
           resourceType: string;
           resourceId: string;
           action: string;
@@ -348,8 +348,8 @@ describe("Dynamic Permission Management", () => {
         limit: 10,
       })) as {
         logs: Array<{
-          _id: import("../_generated/dataModel").Id<"auditLogs">;
-          actorUserId?: import("../_generated/dataModel").Id<"users">;
+          _id: import("@convex/_generated/dataModel").Id<"auditLogs">;
+          actorUserId?: import("@convex/_generated/dataModel").Id<"users">;
           resourceType: string;
           resourceId: string;
           action: string;
@@ -382,8 +382,8 @@ describe("Dynamic Permission Management", () => {
         limit: 10,
       })) as {
         logs: Array<{
-          _id: import("../_generated/dataModel").Id<"auditLogs">;
-          actorUserId?: import("../_generated/dataModel").Id<"users">;
+          _id: import("@convex/_generated/dataModel").Id<"auditLogs">;
+          actorUserId?: import("@convex/_generated/dataModel").Id<"users">;
           resourceType: string;
           resourceId: string;
           action: string;

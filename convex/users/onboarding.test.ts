@@ -1,8 +1,8 @@
 import { convexTest } from "convex-test";
 import { expect, test, describe, beforeEach } from "vitest";
 import schema from "../schema";
-import { api } from "../_generated/api";
-import { Doc, Id } from "../_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Doc, Id } from "@convex/_generated/dataModel";
 
 describe("Onboarding Mutation", () => {
   let t = convexTest(schema);

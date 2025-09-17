@@ -3,7 +3,7 @@
 import { useAuth, useAccessToken } from "@workos-inc/authkit-nextjs/components";
 import { useConvexAuth } from "convex/react";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 import { useEffect } from "react";
 
 export interface WorkOSUser {

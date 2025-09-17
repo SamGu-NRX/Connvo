@@ -14,9 +14,9 @@ import {
   action,
   internalMutation,
   internalAction,
-} from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
+} from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 import {
   BatchProcessor,
   CoalescingBatchProcessor,
@@ -24,9 +24,9 @@ import {
   transcriptCoalescing,
   noteOpsCoalescing,
   presenceCoalescing,
-} from "../lib/batching";
-import { withTrace } from "../lib/performance";
-import { metadataRecordV } from "../lib/validators";
+} from "@convex/lib/batching";
+import { withTrace } from "@convex/lib/performance";
+import { metadataRecordV } from "@convex/lib/validators";
 import {
   BatchQueueResultV,
   BatchNoteOperationResultV,
@@ -35,9 +35,9 @@ import {
   BatchPresenceProcessResultV,
   BatchStatsResultV,
   BatchPresenceUpdateV,
-} from "../types/validators/real-time";
-import { NoteV } from "../types/validators/note";
-import { TranscriptV } from "../types/validators/transcript";
+} from "@convex/types/validators/real-time";
+import { NoteV } from "@convex/types/validators/note";
+import { TranscriptV } from "@convex/types/validators/transcript";
 
 /**
  * Global batch processors for different operation types

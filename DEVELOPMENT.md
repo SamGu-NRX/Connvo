@@ -147,7 +147,7 @@ export const sendEmail = action({
 **Always validate authentication:**
 
 ```typescript
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 
 export const getMeeting = query({
   args: { meetingId: v.id("meetings") },

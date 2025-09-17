@@ -8,10 +8,10 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { internalMutation } from "../_generated/server";
+import { internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { metadataRecordV } from "../lib/validators";
+import { Id } from "@convex/_generated/dataModel";
+import { metadataRecordV } from "@convex/lib/validators";
 
 /**
  * Creates a system alert

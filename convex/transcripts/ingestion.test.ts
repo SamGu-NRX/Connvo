@@ -10,8 +10,8 @@
 
 import { expect, test, describe, beforeEach } from "vitest";
 import { convexTest } from "convex-test";
-import { api, internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
+import { api, internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 describe("Transcript Ingestion Pipeline", () => {
   let t: ReturnType<typeof convexTest>;

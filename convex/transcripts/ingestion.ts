@@ -12,20 +12,20 @@ import {
   mutation,
   internalMutation,
   internalQuery,
-} from "../_generated/server";
-import { internal } from "../_generated/api";
+} from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { TranscriptQueryOptimizer } from "../lib/queryOptimization";
-import { assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { enforceUserLimit } from "../lib/rateLimiter";
-import { metadataRecordV } from "../lib/validators";
-import { Id } from "../_generated/dataModel";
-import { TranscriptV } from "../types/validators/transcript";
+import { TranscriptQueryOptimizer } from "@convex/lib/queryOptimization";
+import { assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { enforceUserLimit } from "@convex/lib/rateLimiter";
+import { metadataRecordV } from "@convex/lib/validators";
+import { Id } from "@convex/_generated/dataModel";
+import { TranscriptV } from "@convex/types/validators/transcript";
 import type {
   TranscriptChunk,
   TranscriptStats,
-} from "../types/entities/transcript";
+} from "@convex/types/entities/transcript";
 
 /**
  * Ingests a transcription chunk with validation, sharding, and rate limiting

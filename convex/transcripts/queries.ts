@@ -5,16 +5,16 @@
  * Full transcript functionality is implemented in other tasks.
  */
 
-import { internalQuery } from "../_generated/server";
+import { internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
 import {
   TranscriptV,
   TranscriptSegmentV,
-} from "../types/validators/transcript";
+} from "@convex/types/validators/transcript";
 import type {
   TranscriptSegment,
   TranscriptChunk,
-} from "../types/entities/transcript";
+} from "@convex/types/entities/transcript";
 
 /**
  * Gets transcript segments for a meeting (internal use)

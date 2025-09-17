@@ -9,7 +9,7 @@
  * Compliance: steering/convex_rules.mdc - Complex domain modeling for OT
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Re-export basic types from entities
 export * from "../entities/note";

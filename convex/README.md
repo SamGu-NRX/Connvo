@@ -155,9 +155,9 @@ npx convex deploy --cmd-url-env-var-name CONVEX_URL
 ### Query Example
 
 ```typescript
-import { query } from "../_generated/server";
+import { query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
+import { assertMeetingAccess } from "@convex/auth/guards";
 
 export const getMeeting = query({
   args: { meetingId: v.id("meetings") },
@@ -172,9 +172,9 @@ export const getMeeting = query({
 ### Mutation Example
 
 ```typescript
-import { mutation } from "../_generated/server";
+import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity } from "../auth/guards";
+import { requireIdentity } from "@convex/auth/guards";
 
 export const createMeeting = mutation({
   args: {
@@ -192,7 +192,7 @@ export const createMeeting = mutation({
 ### Action Example (for external APIs)
 
 ```typescript
-import { action } from "../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 export const generateInsights = action({

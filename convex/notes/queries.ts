@@ -5,10 +5,10 @@
  * Full notes functionality is implemented in other tasks.
  */
 
-import { internalQuery } from "../_generated/server";
+import { internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { NoteV } from "../types/validators/note";
-import type { MeetingNote } from "../types/entities/note";
+import { NoteV } from "@convex/types/validators/note";
+import type { MeetingNote } from "@convex/types/entities/note";
 
 /**
  * Gets meeting notes (internal use)

@@ -15,10 +15,10 @@ import {
   internalMutation,
   action,
   internalAction,
-} from "../_generated/server";
+} from "@convex/_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { api, internal } from "../_generated/api";
+import { api, internal } from "@convex/_generated/api";
 import { PaginationResultV, UserV } from "./validators";
 import type { User, UserPublic, PaginationResult } from "./entities";
 

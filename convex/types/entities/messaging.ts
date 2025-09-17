@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling for messaging systems
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Attachment types (matches lib/validators.ts exactly)
 export type AttachmentKind = "file" | "url" | "image";

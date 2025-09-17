@@ -138,7 +138,7 @@ Based on the codebase analysis, here are the complete entity type definitions:
 
 ```typescript
 // convex/types/entities/user.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export interface User {
   _id: Id<"users">;
@@ -201,7 +201,7 @@ export type UserWithOrgInfo = UserPublic & Pick<User, "orgId" | "orgRole">;
 
 ```typescript
 // convex/types/entities/meeting.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 import type { UserSummary } from "./user";
 
 export type MeetingLifecycleState =
@@ -300,7 +300,7 @@ export interface MeetingRuntimeStateWithMetrics extends MeetingRuntimeState {
 
 ```typescript
 // convex/types/entities/transcript.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export interface Transcript {
   _id: Id<"transcripts">;
@@ -371,7 +371,7 @@ export interface TranscriptStats {
 
 ```typescript
 // convex/types/domain/operational-transform.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export type OperationType = "insert" | "delete" | "retain";
 
@@ -423,7 +423,7 @@ export interface NoteOperationResult {
 
 ```typescript
 // convex/types/entities/webrtc.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export type WebRTCSessionState =
   | "connecting"
@@ -490,7 +490,7 @@ export interface ConnectionMetrics {
 
 ```typescript
 // convex/types/entities/matching.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export type MatchingStatus = "waiting" | "matched" | "expired" | "cancelled";
 export type MatchOutcome = "accepted" | "declined" | "completed";
@@ -556,7 +556,7 @@ export interface QueueStatus extends MatchingQueueEntry {
 
 ```typescript
 // convex/types/entities/embedding.ts
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 export type EmbeddingSourceType =
   | "user"
@@ -705,8 +705,8 @@ export const getUserById = query({
 });
 
 // After (centralized types)
-import { UserV } from "../types/validators/user";
-import type { User } from "../types/entities/user";
+import { UserV } from "@convex/types/validators/user";
+import type { User } from "@convex/types/entities/user";
 
 export const getUserById = query({
   args: { userId: v.id("users") },
@@ -865,14 +865,15 @@ export const getUserById = query({
 - Public vs internal types: Public shapes must not include sensitive fields by default (e.g., email); internal/admin endpoints may use UserPublicWithEmail where needed.
 
 Finally, here is an example:
+
 ```typescript
 // Example of a fully compliant Convex function following all guidelines
-import { query } from "../_generated/server";
+import { query } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { PaginationResultV } from "../types/api/responses";
-import { UserV } from "../types/validators/user";
-import type { UserSummary } from "../types/entities/user";
+import { PaginationResultV } from "@convex/types/api/responses";
+import { UserV } from "@convex/types/validators/user";
+import type { UserSummary } from "@convex/types/entities/user";
 
 // ✅ Uses new function syntax with args and returns validators
 // ✅ Index-first query pattern (no q.filter)

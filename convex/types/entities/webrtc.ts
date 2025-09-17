@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling for real-time systems
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // WebRTC session states (matches schema exactly)
 export type WebRTCSessionState =

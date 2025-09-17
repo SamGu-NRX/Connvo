@@ -10,11 +10,11 @@
 
 "use node";
 
-import { action, internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { action, internalAction } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Generates pre-call ideas with idempotency using meetingId hash

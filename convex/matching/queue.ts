@@ -9,12 +9,15 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "../_generated/server";
-import { requireIdentity } from "../auth/guards";
+import { mutation, query, internalMutation } from "@convex/_generated/server";
+import { requireIdentity } from "@convex/auth/guards";
 import { ConvexError } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { MatchingQueueV, constraintsV } from "../types/validators/matching";
-import type { QueueStatus } from "../types/entities/matching";
+import { Id } from "@convex/_generated/dataModel";
+import {
+  MatchingQueueV,
+  constraintsV,
+} from "@convex/types/validators/matching";
+import type { QueueStatus } from "@convex/types/entities/matching";
 
 /**
  * Enter the matching queue with availability window and constraints

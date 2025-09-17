@@ -2,11 +2,11 @@
  * Subscription Actions: Orchestrate validation + audit logging
  */
 
-import { action } from "../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { api, internal } from "../_generated/api";
-import { requireIdentity } from "../auth/guards";
-import { SubscriptionValidationResultV } from "../types/validators/real-time";
+import { api, internal } from "@convex/_generated/api";
+import { requireIdentity } from "@convex/auth/guards";
+import { SubscriptionValidationResultV } from "@convex/types/validators/real-time";
 
 type ValidateResult = {
   valid: boolean;

@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { speakingStatsV, metadataRecordV } from "../lib/validators";
+import { speakingStatsV, metadataRecordV } from "@convex/lib/validators";
 
 export const meetingTables = {
   // Meeting System

@@ -13,15 +13,15 @@ import type {
   Operation,
   OperationWithMetadata,
   OperationType,
-} from "../types/entities/note";
-import { NoteV } from "../types/validators/note";
+} from "@convex/types/entities/note";
+import { NoteV } from "@convex/types/validators/note";
 
 // Re-export types from centralized location for backward compatibility
 export type {
   Operation,
   OperationWithMetadata,
   OperationType,
-} from "../types/entities/note";
+} from "@convex/types/entities/note";
 
 /**
  * Validator for Operation objects (use centralized validator)

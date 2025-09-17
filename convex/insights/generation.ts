@@ -10,15 +10,15 @@
 
 "use node";
 
-import { action, internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { action, internalAction } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
-import type { TranscriptSegment } from "../types/entities/transcript";
-import type { MeetingNote } from "../types/entities/note";
-import type { AIInsight } from "../types/entities/prompt";
-import type { MeetingParticipant } from "../types/entities/meeting";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
+import type { TranscriptSegment } from "@convex/types/entities/transcript";
+import type { MeetingNote } from "@convex/types/entities/note";
+import type { AIInsight } from "@convex/types/entities/prompt";
+import type { MeetingParticipant } from "@convex/types/entities/meeting";
 
 type InsightResult = {
   summary: string;

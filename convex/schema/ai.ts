@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { metadataRecordV } from "../lib/validators";
+import { metadataRecordV } from "@convex/lib/validators";
 
 export const aiTables = {
   // AI Prompts and Insights

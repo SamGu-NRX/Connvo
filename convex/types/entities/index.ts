@@ -22,4 +22,4 @@ export * from "./system";
 export * from "./stream";
 
 // Re-export common types for convenience
-export type { Id } from "../../_generated/dataModel";
+export type { Id } from "@convex/_generated/dataModel";

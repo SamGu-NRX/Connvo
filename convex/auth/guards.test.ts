@@ -241,8 +241,8 @@ describe("Authentication Guards", () => {
       const start = Date.now();
       const results = await Promise.all(promises);
       type GetMeetingReturn = {
-        _id: import("../_generated/dataModel").Id<"meetings">;
-        organizerId: import("../_generated/dataModel").Id<"users">;
+        _id: import("@convex/_generated/dataModel").Id<"meetings">;
+        organizerId: import("@convex/_generated/dataModel").Id<"users">;
         title: string;
         description?: string;
         scheduledAt?: number;

@@ -25,7 +25,7 @@ import {
   Plane,
 } from "lucide-react";
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@convex/../convex/_generated/api";
 import type { OnboardingFormData } from "@/schemas/onboarding";
 
 // Load canonical interests catalog from Convex

@@ -12,11 +12,11 @@ import {
   mutation,
   internalMutation,
   internalQuery,
-} from "../_generated/server";
-import { api, internal } from "../_generated/api";
+} from "@convex/_generated/server";
+import { api, internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
+import { assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
 import {
   Operation,
   OperationWithMetadata,
@@ -24,7 +24,7 @@ import {
   applyOperations,
   validateOperation,
 } from "./operations";
-import { generateUUID } from "../lib/utils";
+import { generateUUID } from "@convex/lib/utils";
 
 /**
  * Queued operation for offline scenarios

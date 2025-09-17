@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { numericMapV } from "../lib/validators";
+import { numericMapV } from "@convex/lib/validators";
 
 export const matchingTables = {
   // Matching System

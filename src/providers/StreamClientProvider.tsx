@@ -46,7 +46,7 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
         // StreamVideoClient may have a disconnect/close method depending on SDK version
         // @ts-ignore
         if (client && typeof client.disconnect === "function")
-          client.disconnect();
+          client.disconnect(); //disconnectUser?
       } catch {
         // ignore cleanup errors
       }

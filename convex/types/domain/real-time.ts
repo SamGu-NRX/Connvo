@@ -6,7 +6,7 @@
  * Requirements: 1.1, 2.1, 2.2, 4.1, 4.2
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 import type { EpochMs } from "../utils";
 
 // Real-time subscription types

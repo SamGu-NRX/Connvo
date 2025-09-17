@@ -12,10 +12,10 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
-} from "../_generated/server";
+} from "@convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Streaming transcript processor with intelligent batching

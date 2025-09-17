@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling with time-bucketed sharding
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Core Transcript entity (matches convex/schema/transcripts.ts exactly)
 export interface Transcript {

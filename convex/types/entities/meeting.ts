@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling with state machines
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 import type { UserSummary } from "./user";
 
 // Meeting lifecycle states (matches schema exactly)

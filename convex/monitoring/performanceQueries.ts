@@ -15,16 +15,16 @@ import {
   action,
   internalQuery,
   internalMutation,
-} from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity } from "../auth/guards";
+} from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity } from "@convex/auth/guards";
 import {
   PerformanceTracker,
   SubscriptionPerformanceTracker,
   SLO_TARGETS,
-} from "../lib/performance";
-import { globalBandwidthManager } from "../lib/batching";
-import { metadataRecordV } from "../lib/validators";
+} from "@convex/lib/performance";
+import { globalBandwidthManager } from "@convex/lib/batching";
+import { metadataRecordV } from "@convex/lib/validators";
 
 /**
  * Real-time performance metrics query
@@ -674,7 +674,7 @@ export const recordCustomMetric = mutation({
   handler: async (ctx, { metricName, value, tags, timestamp }) => {
     const identity = await requireIdentity(ctx);
 
-    const { logAudit } = await import("../lib/audit");
+    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       actorUserId: identity.userId as Id<"users">,
       resourceType: "performance_metric",

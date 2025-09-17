@@ -8,10 +8,10 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex query patterns
  */
 
-import { query, internalQuery } from "../_generated/server";
+import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
-import { Id } from "../_generated/dataModel";
+import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Gets profile by user ID (internal use)

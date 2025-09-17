@@ -1,4 +1,4 @@
-import { internalMutation } from "../_generated/server";
+import { internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 export const enforce = internalMutation({

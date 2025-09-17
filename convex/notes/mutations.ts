@@ -8,18 +8,18 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns with centralized types
  */
 
-import { mutation, internalMutation } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { mutation, internalMutation } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
-import { NoteV } from "../types/validators/note";
+import { assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
+import { NoteV } from "@convex/types/validators/note";
 import type {
   Operation,
   OperationWithMetadata,
   NoteOperationResult,
-} from "../types/entities/note";
+} from "@convex/types/entities/note";
 import {
   operationValidator,
   operationWithMetadataValidator,

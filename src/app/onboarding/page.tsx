@@ -17,7 +17,7 @@ import ProfileSummary from "@/components/onboarding/ProfileSummary";
 import BasicInfo from "@/components/onboarding/BasicInfo";
 import Congratulations from "@/components/onboarding/Congratulations";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@convex/../convex/_generated/api";
 import { onboardingSchema, OnboardingFormData } from "@/schemas/onboarding";
 import {
   Briefcase,
@@ -143,7 +143,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="from-background to-secondary/20 min-h-screen bg-linear-to-b">
+    <div className="from-background to-secondary/20 bg-linear-to-b min-h-screen">
       <AnimatePresence mode="wait">
         {showCongrats ? (
           <Congratulations

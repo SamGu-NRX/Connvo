@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Use ArrayBuffer (v.bytes) for performance
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Embedding source types (matches schema exactly)
 export type EmbeddingSourceType =

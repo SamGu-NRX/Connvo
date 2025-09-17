@@ -8,13 +8,13 @@
  * Compliance: steering/convex_rules.mdc - Uses new function syntax with proper validators and centralized types
  */
 
-import { mutation } from "../_generated/server";
+import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
-import { UserV, UserProfileV, InterestV } from "../types/validators/user";
-import type { User, UserProfile } from "../types/entities/user";
+import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
+import { UserV, UserProfileV, InterestV } from "@convex/types/validators/user";
+import type { User, UserProfile } from "@convex/types/entities/user";
 
 // Interest input validator for onboarding
 const interestInputV = v.object({
@@ -330,7 +330,7 @@ export const saveOnboarding = mutation({
       metadata?: unknown;
     } | null;
 
-    const { internal } = await import("../_generated/api");
+    const { internal } = await import("@convex/_generated/api");
     const existingKey: IdempotencyKeyReturn = await ctx.runQuery(
       internal.system.idempotency.getKey,
       {

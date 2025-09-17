@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Complex domain modeling for collaborative editing
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Operational Transform types (matches schema exactly)
 export type OperationType = "insert" | "delete" | "retain";

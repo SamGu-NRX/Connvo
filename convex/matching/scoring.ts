@@ -9,19 +9,23 @@
  */
 
 import { v } from "convex/values";
-import { action, internalAction, internalQuery } from "../_generated/server";
-import { internal } from "../_generated/api";
+import {
+  action,
+  internalAction,
+  internalQuery,
+} from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { ConvexError } from "convex/values";
 
 import {
   compatibilityFeaturesV,
   constraintsV,
   UserScoringDataV,
-} from "../types/validators/matching";
+} from "@convex/types/validators/matching";
 import type {
   CompatibilityFeatures,
   UserScoringData,
-} from "../types/entities/matching";
+} from "@convex/types/entities/matching";
 
 /**
  * Scoring weights validator (matches CompatibilityFeatures)

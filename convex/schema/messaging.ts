@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { attachmentV } from "../lib/validators";
+import { attachmentV } from "@convex/lib/validators";
 
 export const messagingTables = {
   // Messages and Chat

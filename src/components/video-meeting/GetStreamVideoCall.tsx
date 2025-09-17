@@ -46,7 +46,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useGetStreamCall } from "@/lib/getstream-client";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@convex/../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 interface GetStreamVideoCallProps {

@@ -8,10 +8,10 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
-import { internalAction, internalMutation } from "../_generated/server";
+import { internalAction, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../_generated/api";
-import { metadataRecordV } from "../lib/validators";
+import { internal } from "@convex/_generated/api";
+import { metadataRecordV } from "@convex/lib/validators";
 
 /**
  * Internal: Clears existing segments for a meeting (idempotent pre-aggregation)

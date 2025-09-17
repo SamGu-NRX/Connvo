@@ -2,11 +2,11 @@ import {
   internalQuery,
   internalMutation,
   internalAction,
-} from "../_generated/server";
-import { internal } from "../_generated/api";
+} from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { metadataRecordV } from "../lib/validators";
-import type { Id } from "../_generated/dataModel";
+import { metadataRecordV } from "@convex/lib/validators";
+import type { Id } from "@convex/_generated/dataModel";
 
 export const getKey = internalQuery({
   args: { key: v.string(), scope: v.string() },

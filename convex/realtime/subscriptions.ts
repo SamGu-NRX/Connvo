@@ -16,34 +16,37 @@ import {
   internalMutation,
   internalQuery,
   QueryCtx,
-} from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
+} from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
 import {
   globalBandwidthManager,
   CircuitBreaker,
   debounce,
   throttle,
-} from "../lib/batching";
-import { withTrace, SubscriptionPerformanceTracker } from "../lib/performance";
+} from "@convex/lib/batching";
+import {
+  withTrace,
+  SubscriptionPerformanceTracker,
+} from "@convex/lib/performance";
 import {
   TranscriptQueryOptimizer,
   NotesQueryOptimizer,
   SubscriptionStateManager,
   QueryCache,
-} from "../lib/queryOptimization";
-import { normalizeRole, permissionsForResource } from "../lib/permissions";
-import { buildSubscriptionAudit } from "../lib/audit";
-import { internal } from "../_generated/api";
+} from "@convex/lib/queryOptimization";
+import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
+import { buildSubscriptionAudit } from "@convex/lib/audit";
+import { internal } from "@convex/_generated/api";
 import {
   SubscriptionContextV,
   MeetingNotesSubscriptionResultV,
   TranscriptStreamSubscriptionResultV,
   MeetingParticipantsSubscriptionResultV,
   SubscriptionValidationResultV,
-} from "../types/validators/real-time";
-import type { SubscriptionContext } from "../types/domain/real-time";
+} from "@convex/types/validators/real-time";
+import type { SubscriptionContext } from "@convex/types/domain/real-time";
 
 /**
  * Real-time meeting notes subscription with permission validation and bandwidth management
@@ -405,6 +408,6 @@ async function getMeetingState(ctx: QueryCtx, meetingId: Id<"meetings">) {
     .unique();
 }
 
-// Permission helpers moved to ../lib/permissions for consistency
+// Permission helpers moved to @convex/lib/permissions for consistency
 
 // Intentionally no logging writes from queries

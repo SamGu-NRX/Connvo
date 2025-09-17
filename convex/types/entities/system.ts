@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Proper entity modeling for system operations
  */
 
-import type { Id } from "../../_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 
 // Alert severity levels (matches schema exactly)
 export type AlertSeverity = "critical" | "error" | "warning" | "info";
