@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Uses proper TypeScript patterns
  */
 
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Video provider types

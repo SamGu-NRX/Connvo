@@ -65,7 +65,7 @@ export const handleMeetingEnd = internalAction({
       // 4. Schedule cleanup tasks
       await ctx.scheduler.runAfter(
         300000, // 5 minutes delay
-        internal.meetings.cleanup.cleanupMeetingResources,
+        internal.meetings.stream.cleanup.cleanupMeetingResources,
         { meetingId },
       );
       tasksScheduled.push("resource_cleanup");

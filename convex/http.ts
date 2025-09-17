@@ -89,7 +89,7 @@ const handleStreamWebhookAction = httpAction(async (ctx, request) => {
         break;
       case "call.member_left":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleMemberLeft,
+          internal.meetings.stream.streamHandlers.handleMemberLeft,
           { data: eventData },
         );
         break;

@@ -9,13 +9,13 @@
  */
 
 // Re-export public functions from queue management
-export { enterMatchingQueue, cancelQueueEntry, getQueueStatus } from "./queue";
+export { enterMatchingQueue, cancelQueueEntry, getQueueStatus } from "@convex/matching/queue";
 
 // Re-export public functions from matching engine
-export { runMatchingCycle } from "./engine";
+export { runMatchingCycle } from "@convex/matching/engine";
 
 // Re-export public functions from scoring
-export { calculateCompatibilityScore } from "./scoring";
+export { calculateCompatibilityScore } from "@convex/matching/scoring";
 
 // Re-export public functions from analytics
 export {
@@ -24,7 +24,7 @@ export {
   getMatchingStats,
   getGlobalMatchingAnalytics,
   optimizeMatchingWeights,
-} from "./analytics";
+} from "@convex/matching/analytics";
 
 // Export centralized types for client use
 export type {
@@ -38,7 +38,7 @@ export type {
   MatchingStats,
   MatchFeedback,
   MatchingEvent,
-} from "../types/entities/matching";
+} from "@convex/types/entities/matching";
 
 // Feature keys constant for type safety
 export const FEATURE_KEYS = [

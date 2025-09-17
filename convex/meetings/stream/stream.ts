@@ -12,21 +12,21 @@
 
 "use node";
 
-import { action, internalAction } from "../../_generated/server";
+import { action, internalAction } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../_generated/api";
-import { createError } from "../../lib/errors";
-import { Id, Doc } from "../../_generated/dataModel";
-import { requireIdentity } from "../../auth/guards";
-import { withActionIdempotency, IdempotencyUtils } from "../../lib/idempotency";
+import { internal } from "@convex/_generated/api";
+import { createError } from "@convex/lib/errors";
+import { Id, Doc } from "@convex/_generated/dataModel";
+import { requireIdentity } from "@convex/auth/guards";
+import { withActionIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
 // Alerting helpers are invoked through internal mutations in streamHelpers.
 import {
   withRetry,
   RetryPolicies,
   CircuitBreakers,
-} from "../../lib/resilience";
-import { User } from "../../types/entities/user";
-import { Meeting } from "../../types/entities/meeting";
+} from "@convex/lib/resilience";
+import { User } from "@convex/types/entities/user";
+import { Meeting } from "@convex/types/entities/meeting";
 
 // Result type aliases to avoid recursive inference and keep return types consistent.
 type CreateStreamRoomResult = {
@@ -636,7 +636,7 @@ export const startRecording = action({
 
       // Update meeting state to indicate recording is active
       const _result3: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.updateRecordingState,
+        internal.meetings.stream.streamHelpers.updateRecordingState,
         {
           meetingId,
           recordingEnabled: true,
@@ -799,7 +799,7 @@ export const stopRecording = action({
 
       // Update meeting state to indicate recording is stopped
       const _result7: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.updateRecordingState,
+        internal.meetings.stream.streamHelpers.updateRecordingState,
         {
           meetingId,
           recordingEnabled: false,

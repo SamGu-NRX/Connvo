@@ -9,20 +9,20 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query, action, internalQuery } from "../_generated/server";
-import { requireIdentity } from "../auth/guards";
+import { mutation, query, action, internalQuery } from "@convex/_generated/server";
+import { requireIdentity } from "@convex/auth/guards";
 import { ConvexError } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { internal } from "../_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { internal } from "@convex/_generated/api";
 import {
   MatchingAnalyticsV,
   compatibilityFeaturesV,
-} from "../types/validators/matching";
+} from "@convex/types/validators/matching";
 import type {
   CompatibilityFeatures,
   MatchOutcome,
-} from "../types/entities/matching";
-import { FEATURE_KEYS } from ".";
+} from "@convex/types/entities/matching";
+import { FEATURE_KEYS } from "@convex/matching/index";
 
 type FeatureKey = keyof CompatibilityFeatures;
 

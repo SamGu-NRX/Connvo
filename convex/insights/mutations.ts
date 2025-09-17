@@ -8,12 +8,12 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
  */
 
-import { mutation, internalMutation } from "../_generated/server";
+import { mutation, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
-import { RecommendationV, LinkV } from "../types/validators/prompt";
+import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
+import { RecommendationV, LinkV } from "@convex/types/validators/prompt";
 
 /**
  * Creates insights for a user and meeting (internal use)

@@ -8,12 +8,12 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { internalMutation, query } from "../_generated/server";
+import { internalMutation, query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { assertMeetingAccess } from "./guards";
-import { normalizeRole, permissionsForResource } from "../lib/permissions";
-import { logAudit } from "../lib/audit";
+import { Id } from "@convex/_generated/dataModel";
+import { assertMeetingAccess } from "@convex/auth/guards";
+import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
+import { logAudit } from "@convex/lib/audit";
 
 export const validateSubscriptionPermissions = query({
   args: {

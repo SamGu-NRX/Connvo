@@ -9,10 +9,10 @@
  */
 
 import { v } from "convex/values";
-import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { createError } from "../lib/errors";
+import { QueryCtx, MutationCtx, ActionCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Authenticated user identity with WorkOS context
@@ -230,7 +230,7 @@ async function logAuditEvent(
   const dbAny = (ctx as any).db;
   if (dbAny && typeof dbAny.insert === "function") {
     try {
-      const { logAudit } = await import("../lib/audit");
+      const { logAudit } = await import("@convex/lib/audit");
       await logAudit(ctx as any, {
         actorUserId: event.actorUserId,
         resourceType: event.resourceType,

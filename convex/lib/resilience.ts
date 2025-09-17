@@ -8,8 +8,8 @@
  * Compliance: steering/convex_rules.mdc - Uses proper error handling patterns
  */
 
-import { ActionCtx, MutationCtx } from "../_generated/server";
-import { createError } from "./errors";
+import { ActionCtx, MutationCtx } from "@convex/_generated/server";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Retry policy configuration

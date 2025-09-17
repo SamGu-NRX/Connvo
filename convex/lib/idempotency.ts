@@ -8,10 +8,10 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { MutationCtx, ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { MutationCtx, ActionCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { createError } from "./errors";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Idempotency key configuration

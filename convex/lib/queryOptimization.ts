@@ -9,8 +9,8 @@
  */
 
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { QueryCtx, MutationCtx } from "../_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { QueryCtx, MutationCtx } from "@convex/_generated/server";
 
 type DbCtx = QueryCtx | MutationCtx;
 

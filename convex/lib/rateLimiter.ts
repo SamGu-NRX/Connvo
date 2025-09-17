@@ -7,9 +7,9 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { MutationCtx, QueryCtx } from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { createError } from "./errors";
+import { MutationCtx, QueryCtx } from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Rate limit configuration

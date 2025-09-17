@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { MutationCtx, ActionCtx } from "../_generated/server";
+import { MutationCtx, ActionCtx } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 /**
@@ -60,7 +60,7 @@ export async function recordMetric(
   );
 
   try {
-    const { logAudit } = await import("./audit");
+    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       resourceType: "system",
       resourceId: "metrics",
@@ -91,7 +91,7 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
   );
 
   try {
-    const { logAudit } = await import("./audit");
+    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       resourceType: "system",
       resourceId: "alerts",

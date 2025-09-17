@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
-import { internalAction } from "../_generated/server";
+import { internalAction } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 /**

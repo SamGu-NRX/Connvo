@@ -7,10 +7,9 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { internalMutation } from "../_generated/server";
+import { internalMutation, query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { metadataRecordV } from "../lib/validators";
-import { query } from "../_generated/server";
+import { metadataRecordV } from "@convex/lib/validators";
 
 /**
  * Logs data access events for audit trail

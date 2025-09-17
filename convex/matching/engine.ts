@@ -14,12 +14,12 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
-} from "../_generated/server";
+} from "@convex/_generated/server";
 import { ConvexError } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { internal } from "../_generated/api";
-import { MatchResultV, constraintsV } from "../types/validators/matching";
-import type { CompatibilityFeatures } from "../types/entities/matching";
+import { Id } from "@convex/_generated/dataModel";
+import { internal } from "@convex/_generated/api";
+import { MatchResultV, constraintsV } from "@convex/types/validators/matching";
+import type { CompatibilityFeatures } from "@convex/types/entities/matching";
 
 /**
  * Run matching cycle with shard-based processing for scalability

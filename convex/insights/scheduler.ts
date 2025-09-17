@@ -8,8 +8,8 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex scheduling patterns
  */
 
-import { internalAction, internalMutation } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { internalAction, internalMutation } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
 
 /**

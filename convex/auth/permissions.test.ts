@@ -9,9 +9,9 @@
  */
 
 import { convexTest } from "convex-test";
-import { api, internal } from "../_generated/api";
+import { api, internal } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach } from "vitest";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 describe("Dynamic Permission Management", () => {
   let t: ReturnType<typeof convexTest>;

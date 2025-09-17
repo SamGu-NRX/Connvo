@@ -10,8 +10,8 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { convexTest } from "convex-test";
-import { api, internal } from "../_generated/api";
-import schema from "../schema";
+import { api, internal } from "@convex/_generated/api";
+import schema from "@convex/schema";
 
 describe("Insights Module", () => {
   let t: ReturnType<typeof convexTest>;

@@ -9,25 +9,25 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex function patterns
  */
 
-import { mutation, internalMutation } from "../_generated/server";
+import { mutation, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 import {
   requireIdentity,
   assertMeetingAccess,
   assertOwnershipOrAdmin,
-} from "../auth/guards";
-import { createError } from "../lib/errors";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { withIdempotency, IdempotencyUtils } from "../lib/idempotency";
-import { sendAlert, trackMeetingEvent, AlertTemplates } from "../lib/alerting";
-import { withRetry, RetryPolicies, ResilienceUtils } from "../lib/resilience";
+} from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { withIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
+import { sendAlert, trackMeetingEvent, AlertTemplates } from "@convex/lib/alerting";
+import { withRetry, RetryPolicies, ResilienceUtils } from "@convex/lib/resilience";
 import type {
   Meeting,
   VideoRoomConfig,
   ICEServer,
   VideoRoomFeatures,
-} from "../types/entities/meeting";
+} from "@convex/types/entities/meeting";
 
 /**
  * Creates a new meeting with comprehensive setup and hybrid video provider support

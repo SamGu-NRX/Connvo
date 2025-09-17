@@ -8,16 +8,16 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex query patterns
  */
 
-import { query, internalQuery } from "../_generated/server";
+import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertOwnershipOrAdmin } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
+import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
 import {
   AIInsightV,
   ConnectionRecommendationV,
-} from "../types/validators/prompt";
-import type { AIInsight } from "../types/entities/prompt";
+} from "@convex/types/validators/prompt";
+import type { AIInsight } from "@convex/types/entities/prompt";
 
 /**
  * Gets insights for a user and meeting (internal use)

@@ -378,12 +378,12 @@ async function generateHeuristicRecommendations(
   userId: Id<"users">,
   topics: string[],
   transcriptSegments: TranscriptSegment[],
-): Promise<
+): Promise< 
   Array<{
     type: string;
     content: string;
     confidence: number;
-  }>
+  }> 
 > {
   const recommendations: Array<{
     type: string;

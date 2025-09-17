@@ -6,10 +6,10 @@
  * the "use node" directive so that mutations can run in Convex's V8 runtime.
  */
 
-import { internalMutation } from "../_generated/server";
+import { internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../_generated/api";
-import { createError } from "../lib/errors";
+import { internal } from "@convex/_generated/api";
+import { createError } from "@convex/lib/errors";
 
 // Shared validator for webhook event payloads covering only the fields we read.
 const streamEventDataV = v.object({

@@ -8,9 +8,9 @@
  * Compliance: steering/convex_rules.mdc - Uses proper error handling patterns
  */
 
-import { MutationCtx, ActionCtx } from "../_generated/server";
+import { MutationCtx, ActionCtx } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Alert severity levels

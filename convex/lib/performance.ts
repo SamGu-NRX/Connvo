@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Performance metrics collection

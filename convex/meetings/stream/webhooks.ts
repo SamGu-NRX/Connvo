@@ -8,10 +8,10 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
  */
 
-import { internalMutation } from "../_generated/server";
+import { internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { logAudit } from "../lib/audit";
+import { Id } from "@convex/_generated/dataModel";
+import { logAudit } from "@convex/lib/audit";
 
 /**
  * Handles call session started event

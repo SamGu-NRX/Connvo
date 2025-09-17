@@ -8,16 +8,16 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex query patterns
  */
 
-import { query, internalQuery } from "../_generated/server";
+import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
 import {
   MeetingV,
   MeetingParticipantV,
   MeetingRuntimeStateV,
-} from "../types/validators/meeting";
+} from "@convex/types/validators/meeting";
 import type {
   Meeting,
   MeetingParticipant,
@@ -25,8 +25,8 @@ import type {
   MeetingParticipantWithUser,
   MeetingListItem,
   MeetingRuntimeStateWithMetrics,
-} from "../types/entities/meeting";
-import type { UserSummary } from "../types/entities/user";
+} from "@convex/types/entities/meeting";
+import type { UserSummary } from "@convex/types/entities/user";
 
 /**
  * Gets meeting by ID (internal use)

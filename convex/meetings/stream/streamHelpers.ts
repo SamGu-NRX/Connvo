@@ -1,6 +1,6 @@
-import { internalMutation } from "../_generated/server";
+import { internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { metadataRecordV } from "../lib/validators";
+import { metadataRecordV } from "@convex/lib/validators";
 
 export const updateRecordingState = internalMutation({
   args: {

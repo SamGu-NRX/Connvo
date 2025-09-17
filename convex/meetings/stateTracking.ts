@@ -8,14 +8,14 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex mutation patterns
  */
 
-import { mutation, internalMutation } from "../_generated/server";
+import { mutation, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { MeetingRuntimeStateV } from "../types/validators/meeting";
-import type { SpeakingStats, LullState } from "../types/entities/meeting";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { MeetingRuntimeStateV } from "@convex/types/validators/meeting";
+import type { SpeakingStats, LullState } from "@convex/types/entities/meeting";
 
 /**
  * Updates speaking statistics for a meeting

@@ -2,9 +2,9 @@
  * Typed helpers for audit logging metadata across categories.
  */
 
-import { Id } from "../_generated/dataModel";
-import { ActionCtx, MutationCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { ActionCtx, MutationCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 
 // JSON value helpers
 export type JSONPrimitive = string | number | boolean | null;

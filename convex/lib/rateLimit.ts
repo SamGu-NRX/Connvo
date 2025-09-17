@@ -9,10 +9,10 @@
  */
 
 import { v } from "convex/values";
-import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { createError } from "./errors";
+import { QueryCtx, MutationCtx, ActionCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { createError } from "@convex/lib/errors";
 
 // Note: Writes must occur in a MutationCtx. Avoid unsafe casts.
 
