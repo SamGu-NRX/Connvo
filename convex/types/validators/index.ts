@@ -19,6 +19,7 @@ export * from "./webrtc";
 export * from "./embedding";
 export * from "./messaging";
 export * from "./system";
+export * from "./stream";
 
 // Domain-specific validators
 export * from "./operational-transform";

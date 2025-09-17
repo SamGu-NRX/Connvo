@@ -12,25 +12,24 @@ import {
   action,
   internalMutation,
   internalQuery,
-} from "../../_generated/server";
+} from "@convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../../_generated/api";
-import { requireIdentity, assertMeetingAccess } from "../../auth/guards";
-import { createError } from "../../lib/errors";
+import { internal } from "@convex/_generated/api";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
 import {
   VideoProviderFactory,
   VideoProviderUtils,
-} from "../../lib/videoProviders";
-import { WebRTCApiResponseV } from "../../types/validators/webrtc";
+} from "@convex/lib/videoProviders";
+import { WebRTCApiResponseV, connectionStatsV } from "@convex/types/validators/webrtc";
 import type {
   Meeting,
   VideoRoomConfig,
   ICEServer,
   VideoRoomFeatures,
   MeetingParticipant,
-} from "../../types/entities/meeting";
-import { Id } from "../../_generated/dataModel";
-import { connectionStatsV } from "../../types/validators/webrtc";
+} from "@convex/types/entities/meeting";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Initializes WebRTC room for a meeting using the provider abstraction

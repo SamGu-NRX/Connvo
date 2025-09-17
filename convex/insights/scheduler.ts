@@ -8,9 +8,11 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex scheduling patterns
  */
 
-import { internalAction, internalMutation } from "@convex/_generated/server";
-import { internal } from "@convex/_generated/api";
+import { internalAction, internalQuery } from "@convex/_generated/server";
+import { api, internal } from "@convex/_generated/api";
 import { v } from "convex/values";
+import { Id } from "@convex/_generated/dataModel";
+import { Meeting } from "@convex/types";
 
 /**
  * Processes concluded meetings and generates insights
@@ -40,7 +42,7 @@ export const processCompletedMeetings = internalAction({
       for (const meeting of recentlyCompletedMeetings) {
         try {
           const result = await ctx.runAction(
-            internal.insights.generation.generateInsights,
+            api.insights.generation.generateInsights,
             {
               meetingId: meeting._id,
             },
@@ -76,7 +78,7 @@ export const processCompletedMeetings = internalAction({
 /**
  * Gets recently completed meetings without insights (internal query)
  */
-export const getRecentlyCompletedMeetingsWithoutInsights = internalMutation({
+export const getRecentlyCompletedMeetingsWithoutInsights = internalQuery({
   args: {
     hoursAgo: v.number(),
     limit: v.number(),
@@ -92,16 +94,25 @@ export const getRecentlyCompletedMeetingsWithoutInsights = internalMutation({
   handler: async (ctx, { hoursAgo, limit }) => {
     const cutoffTime = Date.now() - hoursAgo * 60 * 60 * 1000;
 
-    // Get concluded meetings from the specified time period
-    const concludedMeetings = await ctx.db
+    // Query concluded meetings using index; additional filtering happens in JS
+    const candidateMeetings = await ctx.db
       .query("meetings")
       .withIndex("by_state", (q) => q.eq("state", "concluded"))
-      .filter((q) => q.gt(q.field("updatedAt"), cutoffTime))
-      .take(limit * 2); // Get more than needed to filter
+      .order("desc")
+      .take(limit * 4);
 
-    // Filter out meetings that already have insights
-    const meetingsWithoutInsights = [];
-    for (const meeting of concludedMeetings) {
+    const meetingsWithoutInsights: Array<{
+      _id: Id<"meetings">;
+      title: string;
+      organizerId: Id<"users">;
+      updatedAt: number;
+    }> = [];
+
+    for (const meeting of candidateMeetings) {
+      if (meeting.updatedAt <= cutoffTime) {
+        continue;
+      }
+
       const existingInsights = await ctx.db
         .query("insights")
         .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))

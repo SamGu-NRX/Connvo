@@ -1,5 +1,0 @@
----
-description: Guidelines that applies to all code generated
-globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
----
-

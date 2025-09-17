@@ -10,17 +10,21 @@
 import { internalAction } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { internal } from "@convex/_generated/api";
+import {
+  StreamApiResponseV,
+} from "@convex/types/validators/stream";
+import type { StreamCleanupResult } from "@convex/types/entities/stream";
 
 /**
  * Cleans up meeting resources after conclusion
  */
 export const cleanupMeetingResources = internalAction({
   args: { meetingId: v.id("meetings") },
-  returns: v.object({
-    success: v.boolean(),
-    tasksCompleted: v.array(v.string()),
-  }),
-  handler: async (ctx, { meetingId }) => {
+  returns: StreamApiResponseV.cleanupResult,
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<StreamCleanupResult> => {
     const tasksCompleted: string[] = [];
 
     try {

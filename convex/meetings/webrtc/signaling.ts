@@ -9,11 +9,11 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex function patterns
  */
 
-import { mutation, query, internalMutation } from "../../_generated/server";
+import { mutation, query, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertMeetingAccess } from "../../auth/guards";
-import { createError } from "../../lib/errors";
-import { metadataRecordV } from "../../lib/validators";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { metadataRecordV } from "@convex/lib/validators";
 import {
   WebRTCSessionV,
   WebRTCApiResponseV,
@@ -22,7 +22,7 @@ import {
   iceDataV,
   connectionQualityV,
   connectionStatsV,
-} from "../../types/validators/webrtc";
+} from "@convex/types/validators/webrtc";
 import type {
   WebRTCSession,
   WebRTCSignal,
@@ -31,7 +31,7 @@ import type {
   ConnectionMetrics,
   SDPData,
   ICEData,
-} from "../../types/entities/webrtc";
+} from "@convex/types/entities/webrtc";
 
 /**
  * Creates a WebRTC session for a meeting

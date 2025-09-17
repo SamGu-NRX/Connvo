@@ -26,48 +26,21 @@ import {
   CircuitBreakers,
 } from "@convex/lib/resilience";
 import { User } from "@convex/types/entities/user";
-import { Meeting } from "@convex/types/entities/meeting";
-
-// Result type aliases to avoid recursive inference and keep return types consistent.
-type CreateStreamRoomResult = {
-  roomId: string;
-  callId: string;
-  success: boolean;
-  features: {
-    recording: boolean;
-    transcription: boolean;
-    screensharing: boolean;
-    chat: boolean;
-  };
-};
-
-type ParticipantTokenPublicResult = {
-  token: string;
-  userId: string;
-  user: { id: string; name: string; image?: string };
-  expiresAt: number;
-  success: boolean;
-};
-
-type GenerateParticipantTokenResult = {
-  token: string;
-  userId: string;
-  callId: string;
-  expiresAt: number;
-  success: boolean;
-};
-
-type StartRecordingResult = {
-  recordingId: string;
-  recordingUrl?: string;
-  success: boolean;
-};
-type StopRecordingResult = {
-  success: boolean;
-  recordingUrl?: string;
-  recordingId?: string;
-  duration?: number;
-};
+import {
+  Meeting,
+  VideoRoomFeatures,
+} from "@convex/types/entities/meeting";
+import {
+  StreamApiResponseV,
+} from "@convex/types/validators/stream";
+import type {
+  StreamParticipantTokenInternal,
+  StreamParticipantTokenPublic,
+  StreamRecordingStartResult,
+  StreamRecordingStopResult,
+  StreamSimpleSuccess,
+  StreamRoomCreationResponse,
+} from "@convex/types/entities/stream";
 
 /**
  * Minimal types for GetStream Video client to avoid any.
@@ -95,6 +68,7 @@ type StreamVideoClient = {
  * GetStream Video Client singleton for server-side operations
  */
 let streamVideoClient: StreamVideoClient | null = null;
+const PAID_TIER_MAX_PARTICIPANTS = 100;
 
 function getStreamVideoClient(): StreamVideoClient {
   if (!streamVideoClient) {
@@ -127,18 +101,11 @@ function getStreamVideoClient(): StreamVideoClient {
  */
 export const createStreamRoom = internalAction({
   args: { meetingId: v.id("meetings") },
-  returns: v.object({
-    roomId: v.string(),
-    callId: v.string(),
-    success: v.boolean(),
-    features: v.object({
-      recording: v.boolean(),
-      transcription: v.boolean(),
-      screensharing: v.boolean(),
-      chat: v.boolean(),
-    }),
-  }),
-  handler: async (ctx, { meetingId }): Promise<CreateStreamRoomResult> => {
+  returns: StreamApiResponseV.createRoom,
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<StreamRoomCreationResponse> => {
     const startTime = Date.now();
 
     const idem1 = await withActionIdempotency(
@@ -160,16 +127,19 @@ export const createStreamRoom = internalAction({
 
           if (meeting.streamRoomId) {
             // Room already exists - return existing configuration
+            const features: VideoRoomFeatures = {
+              recording: true,
+              transcription: true,
+              maxParticipants: PAID_TIER_MAX_PARTICIPANTS,
+              screenSharing: true,
+              chat: true,
+            };
+
             return {
               roomId: meeting.streamRoomId,
               callId: meeting.streamRoomId,
               success: true,
-              features: {
-                recording: true,
-                transcription: true,
-                screensharing: true,
-                chat: true,
-              },
+              features,
             };
           }
 
@@ -219,7 +189,7 @@ export const createStreamRoom = internalAction({
                         names: [], // No geo-restrictions for now
                       },
                       limits: {
-                        max_participants: 100, // Paid tier limit
+                        max_participants: PAID_TIER_MAX_PARTICIPANTS, // Paid tier limit
                         max_duration_seconds: 14400, // 4 hours max
                       },
                     },
@@ -269,16 +239,19 @@ export const createStreamRoom = internalAction({
             `Created GetStream call ${result.callId} for meeting ${meetingId}`,
           );
 
+          const features: VideoRoomFeatures = {
+            recording: true,
+            transcription: true,
+            maxParticipants: PAID_TIER_MAX_PARTICIPANTS,
+            screenSharing: true,
+            chat: true,
+          };
+
           return {
             roomId: result.callId,
             callId: result.callId,
             success: true,
-            features: {
-              recording: true,
-              transcription: true,
-              screensharing: true,
-              chat: true,
-            },
+            features,
           };
         } catch (error) {
           // Track failed room creation
@@ -327,21 +300,11 @@ export const generateParticipantTokenPublic = action({
     meetingId: v.id("meetings"),
     role: v.optional(v.string()),
   },
-  returns: v.object({
-    token: v.string(),
-    userId: v.string(),
-    user: v.object({
-      id: v.string(),
-      name: v.string(),
-      image: v.optional(v.string()),
-    }),
-    expiresAt: v.number(),
-    success: v.boolean(),
-  }),
+  returns: StreamApiResponseV.participantTokenPublic,
   handler: async (
     ctx,
     { meetingId },
-  ): Promise<ParticipantTokenPublicResult> => {
+  ): Promise<StreamParticipantTokenPublic> => {
     // Get current user identity and resolve Convex user id
     const identity = await requireIdentity(ctx);
     const user: User | null = await ctx.runQuery(
@@ -355,15 +318,13 @@ export const generateParticipantTokenPublic = action({
     }
     const userId = user._id;
 
-    const result: {
-      token: string;
-      userId: string;
-      expiresAt: number;
-      success: boolean;
-    } = await ctx.runAction(internal.meetings.stream.generateParticipantToken, {
-      meetingId,
-      userId,
-    });
+    const result: StreamParticipantTokenInternal = await ctx.runAction(
+      internal.meetings.stream.generateParticipantToken,
+      {
+        meetingId,
+        userId,
+      },
+    );
 
     // Get user details for the response
     const freshUser: User | null = await ctx.runQuery(
@@ -399,18 +360,12 @@ export const generateParticipantToken = internalAction({
     userId: v.id("users"),
     role: v.optional(v.union(v.literal("host"), v.literal("participant"))),
   },
-  returns: v.object({
-    token: v.string(),
-    userId: v.string(),
-    callId: v.string(),
-    expiresAt: v.number(),
-    success: v.boolean(),
-  }),
+  returns: StreamApiResponseV.participantTokenInternal,
   handler: async (
     ctx,
     { meetingId, userId, role = "participant" },
-  ): Promise<GenerateParticipantTokenResult> => {
-    const idem2 = await withActionIdempotency(
+  ): Promise<StreamParticipantTokenInternal> => {
+    const idem2 = await withActionIdempotency<StreamParticipantTokenInternal>(
       ctx,
       IdempotencyUtils.externalService(
         "getstream",
@@ -535,15 +490,11 @@ export const startRecording = action({
       }),
     ),
   },
-  returns: v.object({
-    recordingId: v.string(),
-    recordingUrl: v.optional(v.string()),
-    success: v.boolean(),
-  }),
+  returns: StreamApiResponseV.startRecording,
   handler: async (
     ctx,
     { meetingId, recordingConfig },
-  ): Promise<StartRecordingResult> => {
+  ): Promise<StreamRecordingStartResult> => {
     const startTime = Date.now();
 
     try {
@@ -710,16 +661,11 @@ export const stopRecording = action({
     meetingId: v.id("meetings"),
     recordingId: v.optional(v.string()),
   },
-  returns: v.object({
-    success: v.boolean(),
-    recordingUrl: v.optional(v.string()),
-    recordingId: v.optional(v.string()),
-    duration: v.optional(v.number()),
-  }),
+  returns: StreamApiResponseV.stopRecording,
   handler: async (
     ctx,
     { meetingId, recordingId },
-  ): Promise<StopRecordingResult> => {
+  ): Promise<StreamRecordingStopResult> => {
     const startTime = Date.now();
 
     try {
@@ -863,10 +809,11 @@ export const deleteStreamRoom = internalAction({
     meetingId: v.id("meetings"),
     roomId: v.string(),
   },
-  returns: v.object({
-    success: v.boolean(),
-  }),
-  handler: async (ctx, { meetingId, roomId }) => {
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { meetingId, roomId },
+  ): Promise<StreamSimpleSuccess> => {
     try {
       // TODO: Delete actual GetStream room
       const streamApiKey = process.env.STREAM_API_KEY;

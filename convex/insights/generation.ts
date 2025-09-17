@@ -15,22 +15,10 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { createError } from "../lib/errors";
 import { Id } from "../_generated/dataModel";
-// Types are imported locally to avoid unused import warnings
-
-/**
- * Types used locally to avoid implicit any on callback params
- */
-type TranscriptSegment = {
-  startMs: number;
-  endMs: number;
-  speakers?: string[];
-  text: string;
-  topics?: string[];
-};
-
-type MeetingNotes = {
-  content?: string;
-};
+import type { TranscriptSegment } from "../types/entities/transcript";
+import type { MeetingNote } from "../types/entities/note";
+import type { AIInsight } from "../types/entities/prompt";
+import type { MeetingParticipant } from "../types/entities/meeting";
 
 type InsightResult = {
   summary: string;
@@ -85,15 +73,12 @@ export const generateInsights = action({
         internal.meetings.queries.getMeetingParticipants,
         { meetingId },
       );
-      const participantsTyped = participants as unknown as Array<{
-        userId: Id<"users">;
-      }>;
 
       // Generate insights for each participant
       const participantInsights: Id<"insights">[] = [];
       let insightsGenerated = 0;
 
-      for (const participant of participantsTyped) {
+      for (const participant of participants as MeetingParticipant[]) {
         try {
           // Check if insights already exist
           if (!forceRegenerate) {
@@ -106,8 +91,7 @@ export const generateInsights = action({
             );
 
             if (existingInsights) {
-              // existingInsights is expected to be a document with _id
-              participantInsights.push((existingInsights as any)._id);
+              participantInsights.push(existingInsights._id);
               continue;
             }
           }
@@ -165,20 +149,19 @@ export const generateParticipantInsights = internalAction({
   ): Promise<Id<"insights"> | null> => {
     try {
       // Get transcript segments for analysis
-      const transcriptSegments = (await ctx.runQuery(
+      const transcriptSegments: TranscriptSegment[] = await ctx.runQuery(
         internal.transcripts.queries.getTranscriptSegments,
         { meetingId, limit: 100 },
-      )) as TranscriptSegment[];
+      );
 
       // Get meeting notes
-      const meetingNotes = (await ctx.runQuery(
+      const meetingNotes: MeetingNote | null = await ctx.runQuery(
         internal.notes.queries.getMeetingNotes,
         { meetingId },
-      )) as MeetingNotes | null;
+      );
 
       // Analyze content and generate insights
       const insights = await analyzeContentForInsights(
-        ctx,
         meetingId,
         userId,
         transcriptSegments,
@@ -214,11 +197,10 @@ export const generateParticipantInsights = internalAction({
  * Analyzes content to generate insights (stubbed implementation)
  */
 async function analyzeContentForInsights(
-  ctx: any,
   meetingId: Id<"meetings">,
-  userId: Id<"users">,
+  _userId: Id<"users">,
   transcriptSegments: TranscriptSegment[],
-  meetingNotes: MeetingNotes | null,
+  meetingNotes: MeetingNote | null,
 ): Promise<InsightResult | null> {
   // TODO: Implement actual AI analysis
   // For now, generate heuristic insights
@@ -247,9 +229,7 @@ async function analyzeContentForInsights(
   );
 
   // Generate recommendations
-  const recommendations = await generateHeuristicRecommendations(
-    ctx,
-    userId,
+  const recommendations = generateHeuristicRecommendations(
     topics,
     transcriptSegments,
   );
@@ -270,7 +250,7 @@ async function analyzeContentForInsights(
  */
 function generateHeuristicSummary(
   transcriptSegments: TranscriptSegment[],
-  meetingNotes: MeetingNotes | null,
+  meetingNotes: MeetingNote | null,
   topics: string[],
 ): string {
   const duration =
@@ -306,7 +286,7 @@ function generateHeuristicSummary(
  */
 function generateHeuristicActionItems(
   transcriptSegments: TranscriptSegment[],
-  meetingNotes: MeetingNotes | null,
+  meetingNotes: MeetingNote | null,
 ): string[] {
   const actionItems: string[] = [];
 
@@ -373,18 +353,14 @@ function generateHeuristicActionItems(
 /**
  * Generates heuristic recommendations
  */
-async function generateHeuristicRecommendations(
-  ctx: any,
-  userId: Id<"users">,
+function generateHeuristicRecommendations(
   topics: string[],
   transcriptSegments: TranscriptSegment[],
-): Promise< 
-  Array<{
-    type: string;
-    content: string;
-    confidence: number;
-  }> 
-> {
+): Array<{
+  type: string;
+  content: string;
+  confidence: number;
+}> {
   const recommendations: Array<{
     type: string;
     content: string;

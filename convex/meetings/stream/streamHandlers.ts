@@ -7,40 +7,25 @@
  */
 
 import { internalMutation } from "@convex/_generated/server";
-import { v } from "convex/values";
 import { internal } from "@convex/_generated/api";
-import { createError } from "@convex/lib/errors";
+import {
+  StreamApiResponseV,
+  StreamWebhookPayloadV,
+} from "@convex/types/validators/stream";
+import type {
+  StreamSimpleSuccess,
+  StreamWebhookPayload,
+} from "@convex/types/entities/stream";
 
-// Shared validator for webhook event payloads covering only the fields we read.
-const streamEventDataV = v.object({
-  call: v.optional(
-    v.object({
-      id: v.string(),
-    }),
-  ),
-  call_session: v.optional(
-    v.object({
-      id: v.string(),
-      duration_ms: v.optional(v.number()),
-    }),
-  ),
-  user: v.optional(
-    v.object({
-      id: v.string(),
-    }),
-  ),
-  call_recording: v.optional(
-    v.object({
-      id: v.string(),
-      url: v.optional(v.string()),
-    }),
-  ),
-});
+type StreamWebhookArgs = { data: StreamWebhookPayload };
 
 export const handleCallSessionStarted = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const sessionId = data.call_session?.id;
@@ -88,9 +73,12 @@ export const handleCallSessionStarted = internalMutation({
 });
 
 export const handleCallSessionEnded = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const sessionId = data.call_session?.id;
@@ -147,9 +135,12 @@ export const handleCallSessionEnded = internalMutation({
 });
 
 export const handleMemberJoined = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const userId = data.user?.id;
@@ -202,9 +193,12 @@ export const handleMemberJoined = internalMutation({
 });
 
 export const handleMemberLeft = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const userId = data.user?.id;
@@ -256,9 +250,12 @@ export const handleMemberLeft = internalMutation({
 });
 
 export const handleRecordingStarted = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const recordingId = data.call_recording?.id;
@@ -304,9 +301,12 @@ export const handleRecordingStarted = internalMutation({
 });
 
 export const handleRecordingStopped = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const recordingId = data.call_recording?.id;
@@ -352,9 +352,12 @@ export const handleRecordingStopped = internalMutation({
 });
 
 export const handleRecordingReady = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
       const recordingId = data.call_recording?.id;
@@ -398,9 +401,12 @@ export const handleRecordingReady = internalMutation({
 });
 
 export const handleTranscriptionStarted = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: StreamWebhookArgs,
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
 
@@ -441,9 +447,12 @@ export const handleTranscriptionStarted = internalMutation({
 });
 
 export const handleTranscriptionStopped = internalMutation({
-  args: { data: streamEventDataV },
-  returns: v.object({ success: v.boolean() }),
-  handler: async (ctx, { data }) => {
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data },
+  ): Promise<StreamSimpleSuccess> => {
     try {
       const callId = data.call?.id;
 

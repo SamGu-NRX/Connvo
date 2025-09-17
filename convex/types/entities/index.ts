@@ -19,6 +19,7 @@ export * from "./webrtc";
 export * from "./embedding";
 export * from "./messaging";
 export * from "./system";
+export * from "./stream";
 
 // Re-export common types for convenience
 export type { Id } from "../../_generated/dataModel";

@@ -1,210 +1,257 @@
 /**
  * Insights Module Tests
  *
- * This module provides unit tests for the insights functionality
- * including post-call analysis and privacy controls.
- *
- * Requirements: 18.1, 18.3
- * Compliance: steering/convex_rules.mdc - Proper testing patterns
+ * Verifies post-call insight generation, querying, and maintenance.
+ * The tests operate directly on the Convex test harness to avoid relying on
+ * legacy helper mutations that no longer exist after centralizing types.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { convexTest } from "convex-test";
+import { beforeEach, describe, expect, it } from "vitest";
+import { convexTest, type TestConvex } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
 import schema from "@convex/schema";
+import type { Id } from "@convex/_generated/dataModel";
+
+type TestServer = TestConvex<typeof schema>;
 
 describe("Insights Module", () => {
-  let t: ReturnType<typeof convexTest>;
+  let t: TestServer;
 
-  beforeEach(async () => {
-    t = convexTest();
+  beforeEach(() => {
+    t = convexTest(schema);
   });
 
-  describe("Post-Call Insights Generation", () => {
-    it("should generate insights for concluded meetings", async () => {
-      // Create test users
-      const userId1 = await t.mutation(internal.users.mutations.createUser, {
-        workosUserId: "test-workos-user-1",
-        email: "user1@example.com",
-        displayName: "User One",
-        isActive: true,
+  describe("Post-call insight generation", () => {
+    it("generates insights for each participant in a concluded meeting", async () => {
+      const organizerId = await createTestUser(t, "workos-user-1", {
+        displayName: "Organizer",
+      });
+      const participantId = await createTestUser(t, "workos-user-2", {
+        displayName: "Participant",
       });
 
-      const userId2 = await t.mutation(internal.users.mutations.createUser, {
-        workosUserId: "test-workos-user-2",
-        email: "user2@example.com",
-        displayName: "User Two",
-        isActive: true,
-      });
+      const meetingId = await createConcludedMeeting(t, organizerId, [participantId]);
+      await seedInsightsContext(t, meetingId);
 
-      // Create test meeting
-      const meetingId = await t.mutation(
-        internal.meetings.mutations.createMeeting,
-        {
-          organizerId: userId1,
-          title: "Test Meeting for Insights",
-          description: "A concluded meeting for testing insights generation",
-          state: "concluded",
-        },
-      );
-
-      // Add participants
-      await t.mutation(internal.meetings.mutations.addParticipant, {
+      const result = await t.action(api.insights.generation.generateInsights, {
         meetingId,
-        userId: userId1,
-        role: "host",
       });
 
-      await t.mutation(internal.meetings.mutations.addParticipant, {
-        meetingId,
-        userId: userId2,
-        role: "participant",
-      });
+      expect(result.success).toBe(true);
+      expect(result.insightsGenerated).toBe(2);
+      expect(result.participantInsights).toHaveLength(2);
 
-      // Generate insights
-      const result = await t.action(
-        api.insights.generation.generateMeetingInsights,
-        {
-          meetingId,
-        },
+      const organizerInsight = await t.query(
+        internal.insights.queries.getInsightsByUserAndMeeting,
+        { userId: organizerId, meetingId },
       );
-
-      expect(result.generated).toBe(true);
-      expect(result.participantsProcessed).toBe(2);
-      expect(result.insightIds.length).toBe(2);
+      expect(organizerInsight?.summary).toContain("meeting");
     });
 
-    it("should not regenerate insights unless forced", async () => {
-      // Create test setup (similar to above)
-      const userId = await t.mutation(internal.users.mutations.createUser, {
-        workosUserId: "test-workos-user-3",
-        email: "user3@example.com",
-        displayName: "User Three",
-        isActive: true,
-      });
+    it("skips regeneration unless forced", async () => {
+      const organizerId = await createTestUser(t, "workos-user-3");
+      const meetingId = await createConcludedMeeting(t, organizerId, []);
+      await seedInsightsContext(t, meetingId);
 
-      const meetingId = await t.mutation(
-        internal.meetings.mutations.createMeeting,
-        {
-          organizerId: userId,
-          title: "Test Meeting 2",
-          description: "Another test meeting",
-          state: "concluded",
-        },
-      );
-
-      await t.mutation(internal.meetings.mutations.addParticipant, {
+      const first = await t.action(api.insights.generation.generateInsights, {
         meetingId,
-        userId,
-        role: "host",
       });
+      expect(first.insightsGenerated).toBeGreaterThan(0);
 
-      // Generate initial insights
-      const result1 = await t.action(
-        api.insights.generation.generateMeetingInsights,
-        {
-          meetingId,
-        },
-      );
+      const second = await t.action(api.insights.generation.generateInsights, {
+        meetingId,
+      });
+      expect(second.insightsGenerated).toBe(0);
+      expect(second.participantInsights).toEqual(first.participantInsights);
 
-      // Try to generate again without force
-      const result2 = await t.action(
-        api.insights.generation.generateMeetingInsights,
-        {
-          meetingId,
-        },
-      );
-
-      expect(result1.generated).toBe(true);
-      expect(result2.generated).toBe(false);
-      expect(result2.insightIds).toEqual(result1.insightIds);
+      const forced = await t.action(api.insights.generation.generateInsights, {
+        meetingId,
+        forceRegenerate: true,
+      });
+      expect(forced.insightsGenerated).toBeGreaterThan(0);
     });
   });
 
-  describe("Privacy Controls", () => {
-    it("should only allow users to access their own insights", async () => {
-      // Create test insight
-      const userId = "test-user-id" as any;
-      const meetingId = "test-meeting-id" as any;
+  describe("Insight queries and maintenance", () => {
+    it("returns insights by user and meeting", async () => {
+      const organizerId = await createTestUser(t, "workos-user-4", {
+        displayName: "Lookup User",
+      });
+      const meetingId = await createConcludedMeeting(t, organizerId, []);
+      await seedInsightsContext(t, meetingId);
+      await t.action(api.insights.generation.generateInsights, { meetingId });
 
-      const insightId = await t.mutation(
-        internal.insights.mutations.createInsights,
-        {
-          userId,
-          meetingId,
-          summary: "Test insight summary",
-          actionItems: ["Test action item"],
-          recommendations: [
-            {
-              type: "connection",
-              content: "Test recommendation",
-              confidence: 0.8,
-            },
-          ],
-          links: [],
-        },
-      );
-
-      // Verify insight was created
       const insight = await t.query(
         internal.insights.queries.getInsightsByUserAndMeeting,
-        {
-          userId,
-          meetingId,
-        },
+        { userId: organizerId, meetingId },
       );
 
-      expect(insight).toBeTruthy();
-      expect(insight?.summary).toBe("Test insight summary");
+      expect(insight).not.toBeNull();
+      if (!insight) throw new Error("Insight should exist");
+      expect(insight.actionItems.length).toBeGreaterThan(0);
     });
-  });
 
-  describe("Insights Queries", () => {
-    it("should retrieve user insights with proper authorization", async () => {
-      // This test would require proper auth setup
-      // For now, we'll test the internal query
-      const userId = "test-user-id" as any;
+    it("cleans up insights older than the retention window", async () => {
+      const userId = await createTestUser(t, "workos-user-5");
+      const meetingId = await createConcludedMeeting(t, userId, []);
 
-      const insights = await t.query(
+      const now = Date.now();
+      await insertInsight(t, {
+        userId,
+        meetingId,
+        createdAt: now - 400 * 24 * 60 * 60 * 1000, // 400 days ago
+      });
+      const recentId = await insertInsight(t, {
+        userId,
+        meetingId,
+        createdAt: now - 10 * 24 * 60 * 60 * 1000, // 10 days ago
+      });
+
+      const result = await t.mutation(internal.insights.mutations.cleanupOldInsights, {
+        olderThanMs: 365 * 24 * 60 * 60 * 1000,
+        batchSize: 50,
+      });
+
+      expect(result.deleted).toBe(1);
+      expect(result.remaining).toBe(false);
+
+      const remaining = await t.query(
         internal.insights.queries.getInsightsByUserAndMeeting,
-        {
-          userId,
-          meetingId: "test-meeting-id" as any,
-        },
+        { userId, meetingId },
       );
 
-      // Should return null for non-existent insights
-      expect(insights).toBeNull();
-    });
-  });
-
-  describe("Connection Recommendations", () => {
-    it("should generate relevant connection recommendations", async () => {
-      // This would test the recommendation generation logic
-      // The actual implementation is in the generation file
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe("Insights Cleanup", () => {
-    it("should clean up old insights based on retention policy", async () => {
-      // Create old insight
-      const oldTime = Date.now() - 400 * 24 * 60 * 60 * 1000; // 400 days ago
-      const userId = "test-user-id" as any;
-      const meetingId = "test-meeting-id" as any;
-
-      // This would require mocking the creation time
-      // For now, test the cleanup function exists
-      const result = await t.mutation(
-        internal.insights.mutations.cleanupOldInsights,
-        {
-          olderThanMs: 365 * 24 * 60 * 60 * 1000, // 365 days
-          batchSize: 10,
-        },
-      );
-
-      expect(result.deleted).toBeGreaterThanOrEqual(0);
-      expect(typeof result.remaining).toBe("boolean");
+      expect(remaining?._id).toEqual(recentId);
     });
   });
 });
+
+/**
+ * Helper utilities ---------------------------------------------------------
+ */
+
+async function createTestUser(
+  test: TestServer,
+  workosUserId: string,
+  overrides: Partial<{
+    email: string;
+    displayName: string;
+    orgId: string;
+    orgRole: string;
+  }> = {},
+): Promise<Id<"users">> {
+  const now = Date.now();
+  return await test.run(async (ctx) => {
+    return await ctx.db.insert("users", {
+      workosUserId,
+      email: overrides.email ?? `${workosUserId}@example.com`,
+      displayName: overrides.displayName,
+      orgId: overrides.orgId,
+      orgRole: overrides.orgRole,
+      isActive: true,
+      lastSeenAt: now,
+      onboardingComplete: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
+}
+
+async function createConcludedMeeting(
+  test: TestServer,
+  organizerId: Id<"users">,
+  participantIds: Id<"users">[],
+  overrides: Partial<{
+    title: string;
+    description: string;
+  }> = {},
+): Promise<Id<"meetings">> {
+  const now = Date.now();
+  return await test.run(async (ctx) => {
+    const meetingId = await ctx.db.insert("meetings", {
+      organizerId,
+      title: overrides.title ?? "Test Meeting",
+      description: overrides.description ?? "Generated for insights testing",
+      scheduledAt: now - 3600000,
+      duration: 3600000,
+      webrtcEnabled: true,
+      state: "concluded",
+      participantCount: participantIds.length + 1,
+      createdAt: now - 7200000,
+      updatedAt: now - 300000,
+    });
+
+    const participants = new Map<Id<"users">, "host" | "participant">();
+    participants.set(organizerId, "host");
+    for (const id of participantIds) {
+      participants.set(id, "participant");
+    }
+
+    for (const [userId, role] of participants.entries()) {
+      await ctx.db.insert("meetingParticipants", {
+        meetingId,
+        userId,
+        role,
+        joinedAt: now - 3600000,
+        leftAt: now - 1800000,
+        presence: "joined",
+        createdAt: now - 3600000,
+      });
+    }
+
+    return meetingId;
+  });
+}
+
+async function seedInsightsContext(
+  test: TestServer,
+  meetingId: Id<"meetings">,
+): Promise<void> {
+  const now = Date.now();
+  await test.run(async (ctx) => {
+    await ctx.db.insert("transcriptSegments", {
+      meetingId,
+      startMs: 0,
+      endMs: 60000,
+      speakers: ["speaker1", "speaker2"],
+      text: "We will follow up on the AI roadmap and share actionable next steps.",
+      topics: ["AI", "roadmap"],
+      sentiment: 0.6,
+      createdAt: now,
+    });
+
+    await ctx.db.insert("meetingNotes", {
+      meetingId,
+      content: "- [ ] Prepare summary for stakeholders\nAction: Schedule follow up",
+      version: 1,
+      lastRebasedAt: now,
+      updatedAt: now,
+    });
+  });
+}
+
+async function insertInsight(
+  test: TestServer,
+  params: {
+    userId: Id<"users">;
+    meetingId: Id<"meetings">;
+    createdAt: number;
+  },
+): Promise<Id<"insights">> {
+  return await test.run(async (ctx) => {
+    return await ctx.db.insert("insights", {
+      userId: params.userId,
+      meetingId: params.meetingId,
+      summary: "Historic insight",
+      actionItems: ["Follow up"],
+      recommendations: [
+        {
+          type: "connection",
+          content: "Reach out to peers",
+          confidence: 0.5,
+        },
+      ],
+      links: [],
+      createdAt: params.createdAt,
+    });
+  });
+}

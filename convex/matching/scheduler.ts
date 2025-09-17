@@ -8,7 +8,7 @@
  */
 
 import { cronJobs } from "convex/server";
-import { internal } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { internalAction, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 
@@ -22,7 +22,7 @@ export const runAutomatedMatchingCycle = internalAction({
     try {
       // Run the matching cycle with default parameters
       const result = await ctx.runAction(
-        internal.matching.engine.runMatchingCycle,
+        api.matching.engine.runMatchingCycle,
         {
           shardCount: 4,
           minScore: 0.6,
