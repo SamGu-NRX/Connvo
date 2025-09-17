@@ -29,8 +29,8 @@ import type {
   DocumentBranch,
   DocumentMergePoint,
   OperationValidationResult,
-  ValidationError,
-  ValidationWarning,
+  OTValidationError,
+  OTValidationWarning,
   OperationAnalytics,
 } from "../domain/operational-transform";
 

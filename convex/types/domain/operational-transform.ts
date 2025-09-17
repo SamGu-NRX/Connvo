@@ -10,9 +10,23 @@
  */
 
 import type { Id } from "@convex/_generated/dataModel";
-
-// Re-export basic types from entities
-export * from "../entities/note";
+import type {
+  MeetingNote,
+  Operation,
+  OperationType,
+  OperationWithMetadata,
+  NoteOperation,
+  NoteOperationResult,
+  NoteSyncStatus,
+  NoteCollaborationSession,
+  NoteVersion,
+  NoteExport,
+  NoteAnalytics,
+  NoteEvent,
+  OperationStatus,
+  OfflineOperationQueue,
+  OfflineCheckpoint,
+} from "../entities/note";
 
 // Advanced OT domain types
 
@@ -239,8 +253,8 @@ export interface DocumentMergePoint {
 // Operation validation result
 export interface OperationValidationResult {
   valid: boolean;
-  errors: ValidationError[];
-  warnings: ValidationWarning[];
+  errors: OTValidationError[];
+  warnings: OTValidationWarning[];
   metadata: {
     operationType: OperationType;
     positionValid: boolean;
@@ -251,7 +265,7 @@ export interface OperationValidationResult {
 }
 
 // Validation error details
-export interface ValidationError {
+export interface OTValidationError {
   code: string;
   message: string;
   field: string;
@@ -260,7 +274,7 @@ export interface ValidationError {
 }
 
 // Validation warning details
-export interface ValidationWarning {
+export interface OTValidationWarning {
   code: string;
   message: string;
   field: string;
@@ -295,22 +309,3 @@ export interface OperationAnalytics {
     userSatisfaction?: number;
   };
 }
-
-// Re-export basic types from entities for convenience
-export type {
-  Operation,
-  OperationWithMetadata,
-  NoteOperation,
-  MeetingNote,
-  OfflineOperationQueue,
-  OfflineCheckpoint,
-  NoteOperationResult,
-  NoteSyncStatus,
-  NoteCollaborationSession,
-  NoteVersion,
-  NoteExport,
-  NoteAnalytics,
-  NoteEvent,
-  OperationType,
-  OperationStatus,
-} from "../entities/note";

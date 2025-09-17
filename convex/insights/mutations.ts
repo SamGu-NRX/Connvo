@@ -14,6 +14,7 @@ import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
 import { Id } from "@convex/_generated/dataModel";
 import { RecommendationV, LinkV } from "@convex/types/validators/prompt";
+import type { AIInsight } from "@convex/types/entities/prompt";
 
 /**
  * Creates insights for a user and meeting (internal use)

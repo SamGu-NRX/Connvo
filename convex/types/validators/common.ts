@@ -10,30 +10,9 @@
 
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import type { PaginationResult, Result, APIError } from "../api";
 
 // Re-export Convex pagination validator
 export { paginationOptsValidator };
-
-// Standard pagination result validator factory
-export const PaginationResultV = <T extends any>(itemValidator: T) =>
-  v.object({
-    page: v.array(itemValidator),
-    isDone: v.boolean(),
-    continueCursor: v.union(v.string(), v.null()),
-  });
-
-// Result envelope validator factory (for public APIs)
-export const ResultV = <T extends any, E extends any = any>(
-  dataValidator: T,
-  errorValidator?: E,
-) =>
-  v.object({
-    success: v.boolean(),
-    data: v.optional(dataValidator),
-    error: v.optional(errorValidator || v.string()),
-    timestamp: v.number(),
-  });
 
 // Common field validators
 export const CommonV = {
@@ -55,7 +34,10 @@ export const CommonV = {
   numberArray: v.array(v.number()),
 
   // Object validators
-  metadata: v.record(v.string(), v.any()),
+  metadata: v.record(
+    v.string(),
+    v.union(v.string(), v.number(), v.boolean()),
+  ),
 
   // Embedding vector (using ArrayBuffer for performance)
   embeddingVector: v.object({

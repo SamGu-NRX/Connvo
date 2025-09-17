@@ -65,8 +65,13 @@ export interface EmbeddingVector {
 }
 
 // Helper to convert Float32Array to/from ArrayBuffer
-export const float32ArrayToBuffer = (array: Float32Array): ArrayBuffer =>
-  array.buffer;
+export const float32ArrayToBuffer = (array: Float32Array): ArrayBuffer => {
+  const buffer = new ArrayBuffer(array.byteLength);
+  new Uint8Array(buffer).set(
+    new Uint8Array(array.buffer, array.byteOffset, array.byteLength),
+  );
+  return buffer;
+};
 export const bufferToFloat32Array = (buffer: ArrayBuffer): Float32Array =>
   new Float32Array(buffer);
 

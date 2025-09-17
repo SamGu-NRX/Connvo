@@ -11,8 +11,6 @@
 import { v } from "convex/values";
 import type {
   Result,
-  PaginationResult,
-  PaginationResultWithMetadata,
   ListResponse,
   ValidationError,
   APIError,
@@ -28,6 +26,14 @@ import type {
   ExportResponse,
   WebhookResponse,
 } from "../api/responses";
+import type {
+  PaginationResult,
+  PaginationResultWithMetadata,
+} from "../api/pagination";
+import {
+  PaginationResultV as PaginationResultValidator,
+  EnhancedPaginationResultV,
+} from "./pagination";
 
 // Standard Result validators
 export const ResultV = {
@@ -59,29 +65,11 @@ export const ResultV = {
     }),
 } as const;
 
-// Pagination Result validators
-export const PaginationResultV = <T>(itemValidator: any) =>
-  v.object({
-    page: v.array(itemValidator),
-    isDone: v.boolean(),
-    continueCursor: v.union(v.string(), v.null()),
-  });
+// Pagination Result validators re-exported from shared pagination module
+export const PaginationResultV = PaginationResultValidator;
 
-// Pagination Result with Metadata validator
-export const PaginationResultWithMetadataV = <T>(itemValidator: any) =>
-  v.object({
-    page: v.array(itemValidator),
-    isDone: v.boolean(),
-    continueCursor: v.union(v.string(), v.null()),
-    metadata: v.object({
-      totalCount: v.optional(v.number()),
-      pageSize: v.number(),
-      hasNextPage: v.boolean(),
-      hasPreviousPage: v.boolean(),
-      currentPage: v.optional(v.number()),
-      totalPages: v.optional(v.number()),
-    }),
-  });
+// Pagination Result with Metadata validator alias
+export const PaginationResultWithMetadataV = EnhancedPaginationResultV;
 
 // List Response validator
 export const ListResponseV = <T>(itemValidator: any) =>

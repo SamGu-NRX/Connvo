@@ -20,23 +20,26 @@ import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { api, internal } from "@convex/_generated/api";
 import { PaginationResultV, UserV } from "./validators";
-import type { User, UserPublic, PaginationResult } from "./entities";
+import type { User, UserPublic } from "./entities";
+import type { PaginationResult } from "./api/pagination";
 
 // ✅ Example Query - Index-first with proper validators
 export const listActiveUsers = query({
   args: {
     paginationOpts: paginationOptsValidator,
-    activeOnly: v.boolean(),
+    onboardingComplete: v.boolean(),
   },
   returns: PaginationResultV(UserV.public),
   handler: async (
     ctx,
-    { paginationOpts, activeOnly },
+    { paginationOpts, onboardingComplete },
   ): Promise<PaginationResult<UserPublic>> => {
     // ✅ Index-first query - assumes "by_isActive" index exists in schema
     const result = await ctx.db
       .query("users")
-      .withIndex("by_isActive", (q) => q.eq("isActive", activeOnly))
+      .withIndex("by_onboarding_complete", (q) =>
+        q.eq("onboardingComplete", onboardingComplete),
+      )
       .order("desc")
       .paginate(paginationOpts);
 
@@ -56,8 +59,8 @@ export const updateUserProfile = mutation({
     ctx,
     { userId, displayName, avatarUrl },
   ): Promise<UserPublic | null> => {
-    const user = await ctx.db.get(userId);
-    if (!user) return null;
+    const existing = await ctx.db.get(userId);
+    if (!existing) return null;
 
     const updatedUser = await ctx.db.patch(userId, {
       displayName,
@@ -65,12 +68,14 @@ export const updateUserProfile = mutation({
       updatedAt: Date.now(),
     });
 
-    // Return only public-safe fields
+    const updated = await ctx.db.get(userId);
+    if (!updated) return null;
+
     return {
-      _id: updatedUser._id,
-      displayName: updatedUser.displayName,
-      avatarUrl: updatedUser.avatarUrl,
-      isActive: updatedUser.isActive,
+      _id: updated._id,
+      displayName: updated.displayName,
+      avatarUrl: updated.avatarUrl,
+      isActive: updated.isActive,
     };
   },
 });
@@ -79,9 +84,7 @@ export const updateUserProfile = mutation({
 export const getUserByIdInternal = internalQuery({
   args: { userId: v.id("users") },
   returns: v.union(UserV.full, v.null()),
-  handler: async (ctx, { userId }): Promise<User | null> => {
-    return await ctx.db.get(userId);
-  },
+  handler: async (ctx, { userId }): Promise<User | null> => ctx.db.get(userId),
 });
 
 // ✅ Example Internal Mutation - Private function
@@ -99,6 +102,7 @@ export const createUserInternal = internalMutation({
       email,
       displayName,
       isActive: true,
+      onboardingComplete: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -109,7 +113,7 @@ export const createUserInternal = internalMutation({
   },
 });
 
-// ✅ Example Action - No ctx.db access, calls queries/mutations via ctx.run*
+// ✅ Example Action - Calls queries/mutations via ctx.run*
 export const processUserOnboarding = action({
   args: {
     userId: v.id("users"),
@@ -121,16 +125,16 @@ export const processUserOnboarding = action({
   }),
   handler: async (ctx, { userId, onboardingData }) => {
     try {
-      // ✅ Actions call queries/mutations via ctx.run*
       const user = await ctx.runQuery(
-        internal.types._template.getUserByIdInternal,
-        { userId },
+        internal.users.queries.getUserByIdInternal,
+        {
+          userId,
+        },
       );
       if (!user) {
         return { success: false, message: "User not found" };
       }
 
-      // ✅ External API call (actions can access external services)
       const response = await fetch("https://api.example.com/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -141,8 +145,7 @@ export const processUserOnboarding = action({
         return { success: false, message: "External API failed" };
       }
 
-      // ✅ Update via mutation
-      await ctx.runMutation(api.types._template.updateUserProfile, {
+      await ctx.runMutation(api.users.mutations.updateUserProfile, {
         userId,
         displayName: onboardingData.displayName,
       });
@@ -154,25 +157,25 @@ export const processUserOnboarding = action({
   },
 });
 
-// ✅ Example Internal Action - Private action
+// ✅ Example Internal Action - Private background task
 export const syncUserDataInternal = internalAction({
   args: { userId: v.id("users") },
   returns: v.null(),
   handler: async (ctx, { userId }) => {
-    // ✅ Internal actions also use ctx.run* for database operations
     const user = await ctx.runQuery(
-      internal.types._template.getUserByIdInternal,
-      { userId },
+      internal.users.queries.getUserByIdInternal,
+      {
+        userId,
+      },
     );
     if (!user) return null;
 
-    // External sync logic here...
     console.log(`Syncing user ${userId}`);
     return null;
   },
 });
 
-// ✅ Function calling example with type annotation for circularity
+// ✅ Function calling example demonstrating type annotations
 export const getUserWithStats = query({
   args: { userId: v.id("users") },
   returns: v.union(
@@ -186,20 +189,26 @@ export const getUserWithStats = query({
     v.null(),
   ),
   handler: async (ctx, { userId }) => {
-    // ✅ Type annotation to work around TypeScript circularity
-    const users: PaginationResult<UserPublic> = await ctx.runQuery(
-      api.types._template.listActiveUsers,
-      { paginationOpts: { numItems: 1, cursor: null }, activeOnly: true },
+    const user = await ctx.runQuery(
+      internal.users.queries.getUserByIdInternal,
+      {
+        userId,
+      },
     );
-
-    const user = users.page.find((u) => u._id === userId);
     if (!user) return null;
 
+    const publicUser: UserPublic = {
+      _id: user._id,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      isActive: user.isActive,
+    };
+
     return {
-      user,
+      user: publicUser,
       stats: {
-        meetingCount: 0, // Would query meetings
-        connectionCount: 0, // Would query connections
+        meetingCount: 0,
+        connectionCount: 0,
       },
     };
   },

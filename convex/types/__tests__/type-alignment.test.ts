@@ -80,7 +80,7 @@ describe("Type-Validator Alignment", () => {
   test("Pagination types work correctly", () => {
     // Test that pagination result validators work with different item types
     expect(() => {
-      const { PaginationResultV } = require("../validators/common");
+      const { PaginationResultV } = require("../validators/pagination");
       const userPaginationValidator = PaginationResultV(UserV.public);
       const meetingPaginationValidator = PaginationResultV(MeetingV.listItem);
 

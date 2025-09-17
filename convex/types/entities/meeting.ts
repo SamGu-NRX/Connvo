@@ -10,6 +10,13 @@
 
 import type { Id } from "@convex/_generated/dataModel";
 import type { UserSummary } from "./user";
+import type {
+  MeetingNote,
+  NoteOperation,
+  Operation,
+  OperationType,
+  NoteOperationResult,
+} from "./note";
 
 // Meeting lifecycle states (matches schema exactly)
 export type MeetingLifecycleState =
@@ -80,36 +87,6 @@ export interface MeetingRuntimeState {
   topics: string[];
   recordingEnabled: boolean;
   updatedAt: number;
-}
-
-// Meeting notes entity (matches schema exactly)
-export interface MeetingNote {
-  _id: Id<"meetingNotes">;
-  meetingId: Id<"meetings">;
-  content: string;
-  version: number;
-  lastRebasedAt: number;
-  updatedAt: number;
-}
-
-// Note operation types (matches schema exactly)
-export type OperationType = "insert" | "delete" | "retain";
-
-export interface Operation {
-  type: OperationType;
-  position: number;
-  content?: string;
-  length?: number;
-}
-
-export interface NoteOperation {
-  _id: Id<"noteOps">;
-  meetingId: Id<"meetings">;
-  sequence: number;
-  authorId: Id<"users">;
-  operation: Operation;
-  timestamp: number;
-  applied: boolean;
 }
 
 // Meeting counters (matches schema exactly)
@@ -257,15 +234,6 @@ export interface MeetingScheduleResult {
     userId: Id<"users">;
     conflictingMeetings: Id<"meetings">[];
   }[];
-}
-
-// Note operation result
-export interface NoteOperationResult {
-  success: boolean;
-  serverSequence: number;
-  transformedOperation: Operation;
-  newVersion: number;
-  conflicts: string[];
 }
 
 // Meeting analytics

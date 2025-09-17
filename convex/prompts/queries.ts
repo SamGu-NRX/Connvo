@@ -12,6 +12,8 @@ import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 import { Id } from "@convex/_generated/dataModel";
+import { AIPromptV } from "@convex/types/validators/prompt";
+import type { AIPrompt } from "@convex/types/entities/prompt";
 
 /**
  * Gets prompts for a meeting by type (internal use)
@@ -22,25 +24,7 @@ export const getPromptsByMeetingAndType = internalQuery({
     type: v.union(v.literal("precall"), v.literal("incall")),
     limit: v.optional(v.number()),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("prompts"),
-      meetingId: v.id("meetings"),
-      type: v.union(v.literal("precall"), v.literal("incall")),
-      content: v.string(),
-      tags: v.array(v.string()),
-      relevance: v.number(),
-      usedAt: v.optional(v.number()),
-      feedback: v.optional(
-        v.union(
-          v.literal("used"),
-          v.literal("dismissed"),
-          v.literal("upvoted"),
-        ),
-      ),
-      createdAt: v.number(),
-    }),
-  ),
+  returns: v.array(AIPromptV.full),
   handler: async (ctx, { meetingId, type, limit = 10 }) => {
     return await ctx.db
       .query("prompts")
@@ -161,27 +145,8 @@ export const getInCallPrompts = query({
  */
 export const getPromptById = internalQuery({
   args: { promptId: v.id("prompts") },
-  returns: v.union(
-    v.object({
-      _id: v.id("prompts"),
-      meetingId: v.id("meetings"),
-      type: v.union(v.literal("precall"), v.literal("incall")),
-      content: v.string(),
-      tags: v.array(v.string()),
-      relevance: v.number(),
-      usedAt: v.optional(v.number()),
-      feedback: v.optional(
-        v.union(
-          v.literal("used"),
-          v.literal("dismissed"),
-          v.literal("upvoted"),
-        ),
-      ),
-      createdAt: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { promptId }) => {
+  returns: v.union(AIPromptV.full, v.null()),
+  handler: async (ctx, { promptId }): Promise<AIPrompt | null> => {
     return await ctx.db.get(promptId);
   },
 });

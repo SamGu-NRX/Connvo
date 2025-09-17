@@ -10,6 +10,10 @@
 
 import type { Id } from "@convex/_generated/dataModel";
 
+export type MultiModalEmbeddingId = string & {
+  readonly __brand: "MultiModalEmbeddingId";
+};
+
 // Embedding source types (matches schema exactly)
 export type EmbeddingSourceType =
   | "user"
@@ -80,13 +84,13 @@ export interface EmbeddingGenerationRequest {
   sourceId: string;
   content: string;
   model?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 // Embedding generation result
 export interface EmbeddingGenerationResult {
   embeddingId: Id<"embeddings">;
-  vector: number[];
+  vector: ArrayBuffer;
   dimensions: number;
   model: string;
   processingTime: number;
@@ -96,7 +100,7 @@ export interface EmbeddingGenerationResult {
 
 // Vector search query
 export interface VectorSearchQuery {
-  vector: number[];
+  vector: ArrayBuffer;
   sourceTypes?: EmbeddingSourceType[];
   limit?: number;
   threshold?: number;
@@ -127,7 +131,7 @@ export interface EmbeddingBatchRequest {
     sourceType: EmbeddingSourceType;
     sourceId: string;
     content?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, string | number | boolean>;
   }>;
   model?: string;
   batchId: string;
@@ -245,7 +249,7 @@ export interface EmbeddingDriftAnalysis {
 
 // Multi-modal embedding support
 export interface MultiModalEmbedding {
-  _id: Id<"multiModalEmbeddings">;
+  _id: MultiModalEmbeddingId;
   sourceType: EmbeddingSourceType;
   sourceId: string;
   modalities: {
@@ -457,8 +461,13 @@ export interface EmbeddingOptimization {
 // Vector database utilities and helpers
 export const VectorUtils = {
   // Convert Float32Array to ArrayBuffer for storage
-  floatArrayToBuffer: (array: Float32Array): ArrayBuffer =>
-    array.buffer.slice(array.byteOffset, array.byteOffset + array.byteLength),
+  floatArrayToBuffer: (array: Float32Array): ArrayBuffer => {
+    const buffer = new ArrayBuffer(array.byteLength);
+    new Uint8Array(buffer).set(
+      new Uint8Array(array.buffer, array.byteOffset, array.byteLength),
+    );
+    return buffer;
+  },
 
   // Convert ArrayBuffer back to Float32Array for computation
   bufferToFloatArray: (buffer: ArrayBuffer): Float32Array =>

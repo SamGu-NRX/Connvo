@@ -169,7 +169,7 @@ export const createAlertInternal = internalMutation({
     ),
     title: v.string(),
     message: v.string(),
-    metadata: v.any(),
+    metadata: metadataRecordV,
     actionable: v.boolean(),
   },
   returns: v.id("alerts"),
@@ -685,8 +685,8 @@ export const recordCustomMetric = mutation({
       metadata: {
         metricName,
         value,
-        tags: tags ?? {},
         category: "performance_monitoring",
+        ...serializeTags(tags),
       },
     });
   },
@@ -695,6 +695,19 @@ export const recordCustomMetric = mutation({
 /**
  * Helper functions
  */
+function serializeTags(
+  tags?: Record<string, string>,
+): Record<string, string | number | boolean> {
+  if (!tags) {
+    return {};
+  }
+
+  return {
+    tagsJson: JSON.stringify(tags),
+    tagCount: Object.keys(tags).length,
+  };
+}
+
 function percentile(sortedArray: number[], p: number): number {
   if (sortedArray.length === 0) return 0;
 

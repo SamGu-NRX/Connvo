@@ -32,6 +32,20 @@ const promptFeedbackV = v.union(
   v.literal("upvoted"),
 );
 
+// Recommendation validator (for insights)
+export const RecommendationV = v.object({
+  type: v.string(),
+  content: v.string(),
+  confidence: v.number(),
+});
+
+// Link validator (for insights)
+export const LinkV = v.object({
+  type: v.string(),
+  url: v.string(),
+  title: v.string(),
+});
+
 // Core AI Prompt validators (matches schema exactly)
 export const AIPromptV = {
   // Full prompt entity
@@ -180,20 +194,6 @@ export const AIContentGenerationV = {
     error: v.optional(v.string()),
   }),
 } as const;
-
-// Recommendation validator (for insights)
-export const RecommendationV = v.object({
-  type: v.string(),
-  content: v.string(),
-  confidence: v.number(),
-});
-
-// Link validator (for insights)
-export const LinkV = v.object({
-  type: v.string(),
-  url: v.string(),
-  title: v.string(),
-});
 
 // Connection recommendation validator
 export const ConnectionRecommendationV = v.object({

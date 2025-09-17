@@ -119,7 +119,7 @@ export const EmbeddingGenerationV = {
     sourceId: v.string(),
     content: v.string(),
     model: v.optional(v.string()),
-    metadata: v.optional(v.record(v.string(), v.any())),
+    metadata: v.optional(metadataRecordV),
   }),
 
   result: v.object({
@@ -175,7 +175,7 @@ export const EmbeddingBatchV = {
         sourceType: embeddingSourceTypeV,
         sourceId: v.string(),
         content: v.optional(v.string()),
-        metadata: v.optional(v.record(v.string(), v.any())),
+        metadata: v.optional(metadataRecordV),
       }),
     ),
     model: v.optional(v.string()),

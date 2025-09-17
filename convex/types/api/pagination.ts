@@ -31,6 +31,9 @@ export interface EnhancedPaginationResult<T> extends PaginationResult<T> {
   metadata: PaginationMetadata;
 }
 
+// Backward-compatible alias for enhanced pagination result shape
+export type PaginationResultWithMetadata<T> = EnhancedPaginationResult<T>;
+
 // Pagination options (matches Convex paginationOptsValidator exactly)
 export interface PaginationOptions {
   numItems: number;

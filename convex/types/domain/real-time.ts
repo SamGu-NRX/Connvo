@@ -2,16 +2,22 @@
  * Real-time Domain Types
  *
  * Complex domain types for real-time operations, subscriptions, and WebRTC.
- *
- * Requirements: 1.1, 2.1, 2.2, 4.1, 4.2
  */
 
 import type { Id } from "@convex/_generated/dataModel";
 import type { EpochMs } from "../utils";
 
+export type RealtimeSubscriptionId = string & {
+  readonly __brand: "RealtimeSubscriptionId";
+};
+
+export type UserPresenceId = string & {
+  readonly __brand: "UserPresenceId";
+};
+
 // Real-time subscription types
 export interface RealtimeSubscription {
-  _id: Id<"subscriptions">;
+  _id: RealtimeSubscriptionId;
   userId: Id<"users">;
   resourceType: "meeting" | "user" | "transcript" | "note";
   resourceId: string;
@@ -23,7 +29,7 @@ export interface RealtimeSubscription {
 
 // Presence tracking
 export interface UserPresence {
-  _id: Id<"presence">;
+  _id: UserPresenceId;
   userId: Id<"users">;
   status: "online" | "away" | "busy" | "offline";
   lastSeen: EpochMs;

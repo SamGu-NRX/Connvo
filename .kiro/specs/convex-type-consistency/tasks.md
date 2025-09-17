@@ -137,14 +137,14 @@
   - Update ML feature extraction functions to use consistent types
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 10. Refactor AI and embeddings functions to use centralized types
-- [ ] 10.1 Update vector search functions
+- [x] 10. Refactor AI and embeddings functions to use centralized types
+- [x] 10.1 Update vector search functions
   - Refactor embedding generation and search functions to use EmbeddingValidators
   - Replace inline vector type definitions with centralized types
   - Update similarity search functions to use consistent result types
   - _Requirements: 3.1, 3.2, 3.3, 4.3, 4.4, 6.1, 6.2_
 
-- [ ] 10.2 Update AI prompt and insight functions
+- [x] 10.2 Update AI prompt and insight functions
   - Refactor AI prompt management to use centralized prompt types
   - Replace inline insight type definitions with shared types
   - Update LLM integration functions to use consistent types

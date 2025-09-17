@@ -48,6 +48,9 @@ const operationV = v.object({
   length: v.optional(v.number()),
 });
 
+export const OperationTypeV = operationTypeV;
+export const OperationV = operationV;
+
 // Core Note validators
 export const NoteV = {
   // Basic operation

@@ -15,6 +15,11 @@ import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
 import { createError } from "@convex/lib/errors";
 import { Id } from "@convex/_generated/dataModel";
+import type {
+  AIPrompt,
+  AIContentGenerationResult,
+} from "@convex/types/entities/prompt";
+import { AIContentGenerationV } from "@convex/types/validators/prompt";
 
 /**
  * Generates pre-call ideas with idempotency using meetingId hash

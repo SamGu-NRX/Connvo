@@ -17,8 +17,12 @@ import { createError } from "@convex/lib/errors";
 import { Id } from "@convex/_generated/dataModel";
 import type { TranscriptSegment } from "@convex/types/entities/transcript";
 import type { MeetingNote } from "@convex/types/entities/note";
-import type { AIInsight } from "@convex/types/entities/prompt";
+import type {
+  AIInsight,
+  AIContentGenerationResult,
+} from "@convex/types/entities/prompt";
 import type { MeetingParticipant } from "@convex/types/entities/meeting";
+import { AIContentGenerationV } from "@convex/types/validators/prompt";
 
 type InsightResult = {
   summary: string;

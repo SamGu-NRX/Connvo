@@ -8,6 +8,8 @@
  * Compliance: steering/convex_rules.mdc - Consistent API patterns with proper pagination
  */
 
+export type { PaginationResult, PaginationResultWithMetadata } from "./pagination";
+
 // Standard result envelope for public APIs (optional for internal)
 export interface Result<T, E = string> {
   success: boolean;
@@ -29,25 +31,6 @@ export const error = <E = string>(error: E): Result<never, E> => ({
   error,
   timestamp: Date.now(),
 });
-
-// Standardized pagination result (matches Convex guidelines)
-export interface PaginationResult<T> {
-  page: T[];
-  isDone: boolean;
-  continueCursor: string | null;
-}
-
-// Enhanced pagination result with metadata
-export interface PaginationResultWithMetadata<T> extends PaginationResult<T> {
-  metadata: {
-    totalCount?: number;
-    pageSize: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    currentPage?: number;
-    totalPages?: number;
-  };
-}
 
 // List response with optional pagination
 export interface ListResponse<T> {

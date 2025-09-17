@@ -81,9 +81,25 @@ export async function enforceUserLimit(
   const result = await checkRateLimit(ctx, action, userId, config);
 
   if (!result.allowed && options.throws) {
-    throw createError.rateLimited(
-      `Rate limit exceeded for ${action}. Try again in ${Math.ceil((result.resetTime - Date.now()) / 1000)} seconds.`,
+    const retryAfterSeconds = Math.max(
+      0,
+      Math.ceil((result.resetTime - Date.now()) / 1000),
     );
+    const error = createError.rateLimitExceeded(action, config.maxRequests);
+    const payload = error.data as {
+      message: string;
+      metadata?: Record<string, unknown>;
+    };
+    payload.message = `Rate limit exceeded for ${action}. Try again in ${retryAfterSeconds} seconds.`;
+    payload.metadata = {
+      ...(payload.metadata ?? {}),
+      retryAfterSeconds,
+      resetTime: result.resetTime,
+      windowStart: result.windowStart,
+      limit: config.maxRequests,
+      action,
+    };
+    throw error;
   }
 
   return result;

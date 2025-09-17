@@ -13,6 +13,7 @@ import { v } from "convex/values";
 import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
 import { Id } from "@convex/_generated/dataModel";
+import type { AIPrompt } from "@convex/types/entities/prompt";
 
 /**
  * Creates a new prompt (internal use)
@@ -26,7 +27,10 @@ export const createPrompt = internalMutation({
     relevance: v.number(),
   },
   returns: v.id("prompts"),
-  handler: async (ctx, { meetingId, type, content, tags, relevance }) => {
+  handler: async (
+    ctx,
+    { meetingId, type, content, tags, relevance },
+  ): Promise<Id<"prompts">> => {
     const now = Date.now();
 
     return await ctx.db.insert("prompts", {

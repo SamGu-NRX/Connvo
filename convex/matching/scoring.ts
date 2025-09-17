@@ -26,6 +26,7 @@ import type {
   CompatibilityFeatures,
   UserScoringData,
 } from "@convex/types/entities/matching";
+import { VectorUtils } from "@convex/types/entities/embedding";
 
 /**
  * Scoring weights validator (matches CompatibilityFeatures)
@@ -292,21 +293,21 @@ async function calculateCompatibilityFeatures(
   // Timezone compatibility (simplified - would need actual timezone data)
   const timezoneCompatibility = 1.0; // Placeholder - implement with real timezone logic
 
-  // Vector similarity using Convex vector search
+  // Vector similarity using centralized utilities
   let vectorSimilarity: number | undefined;
   if (
     user1Data.embedding &&
     user2Data.embedding &&
     user1Data.embedding.model === user2Data.embedding.model
   ) {
-    // Convert ArrayBuffer to Float32Array for calculation
-    const vector1 = new Float32Array(user1Data.embedding.vector);
-    const vector2 = new Float32Array(user2Data.embedding.vector);
-    vectorSimilarity = await calculateVectorSimilarity(
-      ctx,
-      Array.from(vector1),
-      Array.from(vector2),
-    );
+    // Convert ArrayBuffer to Float32Array using centralized utilities
+    const vector1 = VectorUtils.bufferToFloatArray(user1Data.embedding.vector);
+    const vector2 = VectorUtils.bufferToFloatArray(user2Data.embedding.vector);
+
+    // Calculate cosine similarity using centralized utility
+    const similarity = VectorUtils.cosineSimilarity(vector1, vector2);
+    // Convert from [-1, 1] to [0, 1] range
+    vectorSimilarity = (similarity + 1) / 2;
   }
 
   return {
@@ -514,33 +515,7 @@ function calculateOrgConstraintMatch(
   return 0.5; // Neutral if constraints don't match
 }
 
-/**
- * Calculate vector similarity using cosine similarity
- */
-async function calculateVectorSimilarity(
-  _ctx: any, // Convex context - not used in this function but kept for consistency
-  vector1: number[],
-  vector2: number[],
-): Promise<number> {
-  if (vector1.length !== vector2.length) return 0;
-
-  // Calculate cosine similarity
-  let dotProduct = 0;
-  let norm1 = 0;
-  let norm2 = 0;
-
-  for (let i = 0; i < vector1.length; i++) {
-    dotProduct += vector1[i] * vector2[i];
-    norm1 += vector1[i] * vector1[i];
-    norm2 += vector2[i] * vector2[i];
-  }
-
-  const magnitude = Math.sqrt(norm1) * Math.sqrt(norm2);
-  if (magnitude === 0) return 0;
-
-  // Convert from [-1, 1] to [0, 1] range
-  return (dotProduct / magnitude + 1) / 2;
-}
+// Vector similarity calculation is now handled by centralized VectorUtils
 
 /**
  * Calculate weighted final score

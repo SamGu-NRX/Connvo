@@ -10,12 +10,11 @@
 
 import { v } from "convex/values";
 import { UserV } from "./user";
+import { NoteV, OperationV } from "./note";
 import type {
   Meeting,
   MeetingParticipant,
   MeetingRuntimeState,
-  MeetingNote,
-  NoteOperation,
   MeetingCounter,
   MeetingEvent,
   MeetingRecording,
@@ -28,14 +27,18 @@ import type {
   MeetingSearchResult,
   MeetingScheduleRequest,
   MeetingScheduleResult,
-  NoteOperationResult,
   MeetingAnalytics,
   SpeakingStats,
   LullState,
-  Operation,
   ICEServer,
   VideoRoomFeatures,
 } from "../entities/meeting";
+import type {
+  MeetingNote,
+  NoteOperation,
+  NoteOperationResult,
+  Operation,
+} from "../entities/note";
 
 // Meeting lifecycle state validator
 const meetingLifecycleStateV = v.union(
@@ -230,37 +233,14 @@ export const MeetingRuntimeStateV = {
 
 // Meeting Notes validators (matches schema exactly)
 export const MeetingNoteV = {
-  full: v.object({
-    _id: v.id("meetingNotes"),
-    meetingId: v.id("meetings"),
-    content: v.string(),
-    version: v.number(),
-    lastRebasedAt: v.number(),
-    updatedAt: v.number(),
-  }),
+  full: NoteV.meetingNote,
 } as const;
 
 // Note Operation validators (matches schema exactly)
 export const NoteOperationV = {
-  full: v.object({
-    _id: v.id("noteOps"),
-    meetingId: v.id("meetings"),
-    sequence: v.number(),
-    authorId: v.id("users"),
-    operation: operationV,
-    timestamp: v.number(),
-    applied: v.boolean(),
-  }),
-
-  operation: operationV,
-
-  result: v.object({
-    success: v.boolean(),
-    serverSequence: v.number(),
-    transformedOperation: operationV,
-    newVersion: v.number(),
-    conflicts: v.array(v.string()),
-  }),
+  full: NoteV.noteOperation,
+  operation: OperationV,
+  result: NoteV.operationResult,
 } as const;
 
 // Meeting Counter validators (matches schema exactly)
