@@ -105,7 +105,7 @@ export async function validateTypeScriptCompilation(): Promise<boolean> {
     const { execSync } = require("child_process");
 
     // Run TypeScript compilation check
-    execSync("bun tsc --noEmit", {
+    execSync("pnpm tsc --noEmit", {
       cwd: process.cwd(),
       stdio: "pipe",
     });
