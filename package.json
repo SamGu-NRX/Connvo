@@ -14,7 +14,11 @@
     "type-check": "tsc --noEmit",
     "type-diag": "tsc --noEmit --extendedDiagnostics --listFiles",
     "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
-    "test": "echo \"No tests yet\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:types": "vitest run convex/types/__tests__/",
+    "test:ci": "tsx convex/types/__tests__/ci-validation.ts",
+    "validate-types": "tsx convex/types/__tests__/ci-validation.ts --output=type-validation-report.md",
     "seed": "echo \"No seed script yet\""
   },
   "dependencies": {

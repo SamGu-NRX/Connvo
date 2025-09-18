@@ -49,9 +49,12 @@ describe("Function Type Consistency", () => {
     test("User mutations have proper validators", async () => {
       const mockUserMutation = {
         args: {
-          workosUserId: { kind: "string" },
-          email: { kind: "string" },
-          displayName: { kind: "string" },
+          kind: "object",
+          fields: {
+            workosUserId: { kind: "string" },
+            email: { kind: "string" },
+            displayName: { kind: "string" },
+          },
         },
         returns: { kind: "id", tableName: "users" },
         handler: async () => {},
@@ -69,13 +72,16 @@ describe("Function Type Consistency", () => {
     test("Meeting queries have proper validators", async () => {
       const mockMeetingQuery = {
         args: {
-          paginationOpts: {
-            kind: "object",
-            fields: {
-              numItems: { kind: "number" },
-              cursor: {
-                kind: "union",
-                members: [{ kind: "string" }, { kind: "null" }],
+          kind: "object",
+          fields: {
+            paginationOpts: {
+              kind: "object",
+              fields: {
+                numItems: { kind: "number" },
+                cursor: {
+                  kind: "union",
+                  members: [{ kind: "string" }, { kind: "null" }],
+                },
               },
             },
           },
@@ -101,6 +107,15 @@ describe("Function Type Consistency", () => {
 
       expect(validation.hasArgsValidator).toBe(true);
       expect(validation.hasReturnsValidator).toBe(true);
+
+      // Debug the validation errors if any
+      if (!validation.argsValidatorValid) {
+        console.log("Args validation errors:", validation.errors);
+      }
+      if (!validation.returnsValidatorValid) {
+        console.log("Returns validation errors:", validation.errors);
+      }
+
       expect(validation.argsValidatorValid).toBe(true);
       expect(validation.returnsValidatorValid).toBe(true);
     });
@@ -108,15 +123,18 @@ describe("Function Type Consistency", () => {
     test("Meeting mutations follow state management patterns", async () => {
       const mockMeetingMutation = {
         args: {
-          meetingId: { kind: "id", tableName: "meetings" },
-          state: {
-            kind: "union",
-            members: [
-              { kind: "literal", value: "scheduled" },
-              { kind: "literal", value: "active" },
-              { kind: "literal", value: "concluded" },
-              { kind: "literal", value: "cancelled" },
-            ],
+          kind: "object",
+          fields: {
+            meetingId: { kind: "id", tableName: "meetings" },
+            state: {
+              kind: "union",
+              members: [
+                { kind: "literal", value: "scheduled" },
+                { kind: "literal", value: "active" },
+                { kind: "literal", value: "concluded" },
+                { kind: "literal", value: "cancelled" },
+              ],
+            },
           },
         },
         returns: { kind: "null" },
@@ -138,17 +156,20 @@ describe("Function Type Consistency", () => {
     test("Transcript ingestion functions use proper types", async () => {
       const mockTranscriptMutation = {
         args: {
-          meetingId: { kind: "id", tableName: "meetings" },
-          bucketMs: { kind: "number" },
-          sequence: { kind: "number" },
-          speakerId: { kind: "optional", value: { kind: "string" } },
-          text: { kind: "string" },
-          confidence: { kind: "number" },
-          startMs: { kind: "number" },
-          endMs: { kind: "number" },
-          isInterim: { kind: "optional", value: { kind: "boolean" } },
-          wordCount: { kind: "number" },
-          language: { kind: "optional", value: { kind: "string" } },
+          kind: "object",
+          fields: {
+            meetingId: { kind: "id", tableName: "meetings" },
+            bucketMs: { kind: "number" },
+            sequence: { kind: "number" },
+            speakerId: { kind: "optional", value: { kind: "string" } },
+            text: { kind: "string" },
+            confidence: { kind: "number" },
+            startMs: { kind: "number" },
+            endMs: { kind: "number" },
+            isInterim: { kind: "optional", value: { kind: "boolean" } },
+            wordCount: { kind: "number" },
+            language: { kind: "optional", value: { kind: "string" } },
+          },
         },
         returns: { kind: "id", tableName: "transcripts" },
         handler: async () => {},
@@ -169,26 +190,29 @@ describe("Function Type Consistency", () => {
     test("WebRTC signaling functions use proper types", async () => {
       const mockWebRTCAction = {
         args: {
-          meetingId: { kind: "id", tableName: "meetings" },
-          sessionId: { kind: "string" },
-          fromUserId: { kind: "id", tableName: "users" },
-          toUserId: {
-            kind: "optional",
-            value: { kind: "id", tableName: "users" },
-          },
-          type: {
-            kind: "union",
-            members: [
-              { kind: "literal", value: "sdp" },
-              { kind: "literal", value: "ice" },
-            ],
-          },
-          data: {
-            kind: "union",
-            members: [
-              { kind: "object" }, // SDPData
-              { kind: "object" }, // ICEData
-            ],
+          kind: "object",
+          fields: {
+            meetingId: { kind: "id", tableName: "meetings" },
+            sessionId: { kind: "string" },
+            fromUserId: { kind: "id", tableName: "users" },
+            toUserId: {
+              kind: "optional",
+              value: { kind: "id", tableName: "users" },
+            },
+            type: {
+              kind: "union",
+              members: [
+                { kind: "literal", value: "sdp" },
+                { kind: "literal", value: "ice" },
+              ],
+            },
+            data: {
+              kind: "union",
+              members: [
+                { kind: "object", fields: {} }, // SDPData
+                { kind: "object", fields: {} }, // ICEData
+              ],
+            },
           },
         },
         returns: { kind: "null" },
@@ -210,25 +234,28 @@ describe("Function Type Consistency", () => {
     test("Embedding functions use ArrayBuffer for performance", async () => {
       const mockEmbeddingMutation = {
         args: {
-          sourceType: {
-            kind: "union",
-            members: [
-              { kind: "literal", value: "user" },
-              { kind: "literal", value: "profile" },
-              { kind: "literal", value: "meeting" },
-              { kind: "literal", value: "note" },
-              { kind: "literal", value: "transcriptSegment" },
-            ],
-          },
-          sourceId: { kind: "string" },
-          vector: { kind: "bytes" }, // ArrayBuffer for performance
-          model: { kind: "string" },
-          dimensions: { kind: "number" },
-          version: { kind: "string" },
-          metadata: {
-            kind: "record",
-            keys: { kind: "string" },
-            values: { kind: "any" },
+          kind: "object",
+          fields: {
+            sourceType: {
+              kind: "union",
+              members: [
+                { kind: "literal", value: "user" },
+                { kind: "literal", value: "profile" },
+                { kind: "literal", value: "meeting" },
+                { kind: "literal", value: "note" },
+                { kind: "literal", value: "transcriptSegment" },
+              ],
+            },
+            sourceId: { kind: "string" },
+            vector: { kind: "bytes" }, // ArrayBuffer for performance
+            model: { kind: "string" },
+            dimensions: { kind: "number" },
+            version: { kind: "string" },
+            metadata: {
+              kind: "record",
+              keys: { kind: "string" },
+              values: { kind: "any" },
+            },
           },
         },
         returns: { kind: "id", tableName: "embeddings" },
@@ -245,35 +272,38 @@ describe("Function Type Consistency", () => {
       expect(validation.errors).toHaveLength(0);
 
       // Verify ArrayBuffer usage for vector data
-      expect(mockEmbeddingMutation.args.vector.kind).toBe("bytes");
+      expect(mockEmbeddingMutation.args.fields.vector.kind).toBe("bytes");
     });
 
     test("Vector search functions return proper similarity results", async () => {
       const mockVectorSearchQuery = {
         args: {
-          queryVector: { kind: "bytes" }, // ArrayBuffer
-          sourceType: {
-            kind: "optional",
-            value: {
-              kind: "union",
-              members: [
-                { kind: "literal", value: "user" },
-                { kind: "literal", value: "profile" },
-                { kind: "literal", value: "meeting" },
-                { kind: "literal", value: "note" },
-                { kind: "literal", value: "transcriptSegment" },
-              ],
+          kind: "object",
+          fields: {
+            queryVector: { kind: "bytes" }, // ArrayBuffer
+            sourceType: {
+              kind: "optional",
+              value: {
+                kind: "union",
+                members: [
+                  { kind: "literal", value: "user" },
+                  { kind: "literal", value: "profile" },
+                  { kind: "literal", value: "meeting" },
+                  { kind: "literal", value: "note" },
+                  { kind: "literal", value: "transcriptSegment" },
+                ],
+              },
             },
+            limit: { kind: "optional", value: { kind: "number" } },
+            threshold: { kind: "optional", value: { kind: "number" } },
           },
-          limit: { kind: "optional", value: { kind: "number" } },
-          threshold: { kind: "optional", value: { kind: "number" } },
         },
         returns: {
           kind: "array",
           element: {
             kind: "object",
             fields: {
-              embedding: { kind: "object" },
+              embedding: { kind: "object", fields: {} },
               score: { kind: "number" },
               sourceData: { kind: "optional", value: { kind: "any" } },
             },
@@ -297,23 +327,26 @@ describe("Function Type Consistency", () => {
     test("All paginated functions use standard pagination pattern", async () => {
       const mockPaginatedQuery = {
         args: {
-          paginationOpts: {
-            kind: "object",
-            fields: {
-              numItems: { kind: "number" },
-              cursor: {
-                kind: "union",
-                members: [{ kind: "string" }, { kind: "null" }],
+          kind: "object",
+          fields: {
+            paginationOpts: {
+              kind: "object",
+              fields: {
+                numItems: { kind: "number" },
+                cursor: {
+                  kind: "union",
+                  members: [{ kind: "string" }, { kind: "null" }],
+                },
               },
             },
+            // Additional filters...
+            activeOnly: { kind: "optional", value: { kind: "boolean" } },
           },
-          // Additional filters...
-          activeOnly: { kind: "optional", value: { kind: "boolean" } },
         },
         returns: {
           kind: "object",
           fields: {
-            page: { kind: "array", element: { kind: "object" } },
+            page: { kind: "array", element: { kind: "object", fields: {} } },
             isDone: { kind: "boolean" },
             continueCursor: {
               kind: "union",
@@ -334,7 +367,7 @@ describe("Function Type Consistency", () => {
       expect(validation.errors).toHaveLength(0);
 
       // Verify standard pagination structure
-      const paginationOpts = mockPaginatedQuery.args.paginationOpts;
+      const paginationOpts = mockPaginatedQuery.args.fields.paginationOpts;
       expect(paginationOpts.kind).toBe("object");
       expect(paginationOpts.fields.numItems.kind).toBe("number");
       expect(paginationOpts.fields.cursor.kind).toBe("union");
@@ -350,8 +383,11 @@ describe("Function Type Consistency", () => {
     test("Functions that can fail use proper error types", async () => {
       const mockFunctionWithErrors = {
         args: {
-          userId: { kind: "id", tableName: "users" },
-          action: { kind: "string" },
+          kind: "object",
+          fields: {
+            userId: { kind: "id", tableName: "users" },
+            action: { kind: "string" },
+          },
         },
         returns: {
           kind: "union",
@@ -360,7 +396,7 @@ describe("Function Type Consistency", () => {
               kind: "object",
               fields: {
                 success: { kind: "literal", value: true },
-                data: { kind: "object" },
+                data: { kind: "object", fields: {} },
               },
             },
             {
@@ -414,12 +450,15 @@ describe("Function Type Consistency", () => {
       // Mock query that follows index-first pattern
       const mockIndexFirstQuery = {
         args: {
-          userId: { kind: "id", tableName: "users" },
-          isActive: { kind: "boolean" },
+          kind: "object",
+          fields: {
+            userId: { kind: "id", tableName: "users" },
+            isActive: { kind: "boolean" },
+          },
         },
         returns: {
           kind: "array",
-          element: { kind: "object" },
+          element: { kind: "object", fields: {} },
         },
         handler: async () => {
           // Mock implementation would use:
@@ -452,8 +491,11 @@ describe("Function Type Consistency", () => {
     test("Actions don't access ctx.db directly", async () => {
       const mockAction = {
         args: {
-          meetingId: { kind: "id", tableName: "meetings" },
-          externalData: { kind: "object" },
+          kind: "object",
+          fields: {
+            meetingId: { kind: "id", tableName: "meetings" },
+            externalData: { kind: "object", fields: {} },
+          },
         },
         returns: { kind: "null" },
         handler: async () => {
@@ -488,27 +530,33 @@ describe("Cross-Module Type Consistency", () => {
     // use the same User type definitions
 
     const userQueryFunction = {
-      args: { userId: { kind: "id", tableName: "users" } },
+      args: {
+        kind: "object",
+        fields: { userId: { kind: "id", tableName: "users" } },
+      },
       returns: {
         kind: "union",
-        members: [{ kind: "object" }, { kind: "null" }],
+        members: [{ kind: "object", fields: {} }, { kind: "null" }],
       },
       entityType: "User",
     };
 
     const meetingWithUserFunction = {
-      args: { meetingId: { kind: "id", tableName: "meetings" } },
+      args: {
+        kind: "object",
+        fields: { meetingId: { kind: "id", tableName: "meetings" } },
+      },
       returns: {
         kind: "object",
         fields: {
-          meeting: { kind: "object" },
-          organizer: { kind: "object" }, // Should be same User type
+          meeting: { kind: "object", fields: {} },
+          organizer: { kind: "object", fields: {} }, // Should be same User type
           participants: {
             kind: "array",
             element: {
               kind: "object",
               fields: {
-                user: { kind: "object" }, // Should be same User type
+                user: { kind: "object", fields: {} }, // Should be same User type
               },
             },
           },
@@ -537,19 +585,28 @@ describe("Cross-Module Type Consistency", () => {
     const embeddingFunctions = [
       {
         name: "createEmbedding",
-        args: { vector: { kind: "bytes" } },
+        args: {
+          kind: "object",
+          fields: { vector: { kind: "bytes" } },
+        },
         returns: { kind: "id", tableName: "embeddings" },
       },
       {
         name: "searchSimilarEmbeddings",
-        args: { queryVector: { kind: "bytes" } },
-        returns: { kind: "array", element: { kind: "object" } },
+        args: {
+          kind: "object",
+          fields: { queryVector: { kind: "bytes" } },
+        },
+        returns: { kind: "array", element: { kind: "object", fields: {} } },
       },
       {
         name: "updateEmbedding",
         args: {
-          embeddingId: { kind: "id", tableName: "embeddings" },
-          vector: { kind: "bytes" },
+          kind: "object",
+          fields: {
+            embeddingId: { kind: "id", tableName: "embeddings" },
+            vector: { kind: "bytes" },
+          },
         },
         returns: { kind: "null" },
       },
@@ -566,7 +623,7 @@ describe("Cross-Module Type Consistency", () => {
       expect(validation.errors).toHaveLength(0);
 
       // Verify all embedding functions use bytes (ArrayBuffer) for vectors
-      const vectorArg = Object.values(func.args).find(
+      const vectorArg = Object.values(func.args.fields).find(
         (arg: any) =>
           arg.kind === "bytes" || (arg.value && arg.value.kind === "bytes"),
       );
@@ -605,7 +662,7 @@ describe("Performance and Scalability Validation", () => {
             fields: {
               participants: {
                 kind: "array",
-                element: { kind: "object" },
+                element: { kind: "object", fields: {} },
               },
             },
           },
@@ -614,7 +671,10 @@ describe("Performance and Scalability Validation", () => {
     };
 
     const mockComplexFunction = {
-      args: { data: complexValidator },
+      args: {
+        kind: "object",
+        fields: { data: complexValidator },
+      },
       returns: { kind: "null" },
       handler: async () => {},
     };
@@ -639,8 +699,11 @@ describe("Performance and Scalability Validation", () => {
         name: `function${i}`,
         func: {
           args: {
-            id: { kind: "id", tableName: "users" },
-            data: { kind: "string" },
+            kind: "object",
+            fields: {
+              id: { kind: "id", tableName: "users" },
+              data: { kind: "string" },
+            },
           },
           returns: { kind: "null" },
           handler: async () => {},
