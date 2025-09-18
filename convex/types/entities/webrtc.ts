@@ -27,6 +27,7 @@ export type ConnectionQuality = "excellent" | "good" | "fair" | "poor";
 // WebRTC session entity (matches convex/schema/webrtc.ts exactly)
 export interface WebRTCSession {
   _id: Id<"webrtcSessions">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   sessionId: string;
   userId: Id<"users">;
@@ -53,6 +54,7 @@ export interface ICEData {
 // WebRTC signal entity (matches schema exactly)
 export interface WebRTCSignal {
   _id: Id<"webrtcSignals">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   sessionId: string;
   fromUserId: Id<"users">;
@@ -67,6 +69,7 @@ export interface WebRTCSignal {
 // Connection quality metrics (matches schema exactly)
 export interface ConnectionMetrics {
   _id: Id<"connectionMetrics">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   sessionId: string;
   userId: Id<"users">;

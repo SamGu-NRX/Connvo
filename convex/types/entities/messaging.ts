@@ -24,6 +24,7 @@ export interface Attachment {
 // Core Message entity (matches convex/schema/messaging.ts exactly)
 export interface Message {
   _id: Id<"messages">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   userId?: Id<"users">; // Optional for system messages
   content: string;

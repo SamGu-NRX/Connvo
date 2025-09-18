@@ -29,6 +29,7 @@ export type AlertStatus = "active" | "acknowledged" | "resolved";
 // Idempotency key entity (matches convex/schema/system.ts exactly)
 export interface IdempotencyKey {
   _id: Id<"idempotencyKeys">;
+  _creationTime: number; // Convex system field
   key: string;
   scope: string;
   metadata?: Record<string, string | number | boolean>;
@@ -38,6 +39,7 @@ export interface IdempotencyKey {
 // Alert entity (matches schema exactly)
 export interface Alert {
   _id: Id<"alerts">;
+  _creationTime: number; // Convex system field
   alertId: string;
   severity: AlertSeverity;
   category: AlertCategory;
@@ -54,6 +56,7 @@ export interface Alert {
 // Performance metrics entity (matches schema exactly)
 export interface PerformanceMetric {
   _id: Id<"performanceMetrics">;
+  _creationTime: number; // Convex system field
   name: string;
   value: number;
   unit: string;
@@ -71,6 +74,7 @@ export interface PerformanceMetric {
 // Rate limit entity (matches schema exactly)
 export interface RateLimit {
   _id: Id<"rateLimits">;
+  _creationTime: number; // Convex system field
   userId: Id<"users">;
   action: string;
   windowStartMs: number;
@@ -82,6 +86,7 @@ export interface RateLimit {
 // Audit log entity (matches schema exactly)
 export interface AuditLog {
   _id: Id<"auditLogs">;
+  _creationTime: number; // Convex system field
   actorUserId?: Id<"users">;
   resourceType: string;
   resourceId: string;
@@ -95,6 +100,7 @@ export interface AuditLog {
 // Feature flag entity (matches schema exactly)
 export interface FeatureFlag {
   _id: Id<"featureFlags">;
+  _creationTime: number; // Convex system field
   key: string;
   value: string | number | boolean; // Matches featureFlagValueV
   environment: string;

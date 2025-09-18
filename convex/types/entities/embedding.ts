@@ -28,6 +28,7 @@ export type VectorIndexStatus = "active" | "inactive" | "migrating";
 // Core Embedding entity (optimized for performance with ArrayBuffer)
 export interface Embedding {
   _id: Id<"embeddings">;
+  _creationTime: number; // Convex system field
   sourceType: EmbeddingSourceType;
   sourceId: string;
   // Use ArrayBuffer (v.bytes) with Float32Array for performance & size optimization
@@ -47,6 +48,7 @@ export interface EmbeddingWithFloatVector extends Omit<Embedding, "vector"> {
 // Vector index metadata (matches schema exactly)
 export interface VectorIndexMeta {
   _id: Id<"vectorIndexMeta">;
+  _creationTime: number; // Convex system field
   provider: string;
   indexName: string;
   config: Record<string, string | number | boolean>;

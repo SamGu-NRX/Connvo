@@ -26,7 +26,7 @@ export interface RateLimitConfig {
 export const DEFAULT_RATE_LIMITS: Record<string, RateLimitConfig> = {
   transcriptIngestion: {
     windowMs: 60000, // 1 minute
-    maxRequests: 100, // 100 requests per minute
+    maxRequests: 50, // 50 requests per minute
     keyPrefix: "transcript_",
   },
   noteOperations: {

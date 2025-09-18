@@ -13,6 +13,7 @@ import type { Id } from "@convex/_generated/dataModel";
 // Core Transcript entity (matches convex/schema/transcripts.ts exactly)
 export interface Transcript {
   _id: Id<"transcripts">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   // Sharding key: time bucket (5-minute windows) to prevent hot partitions
   bucketMs: number; // Math.floor(timestamp / 300000) * 300000
@@ -33,6 +34,7 @@ export interface Transcript {
 // Transcription session management (matches schema exactly)
 export interface TranscriptionSession {
   _id: Id<"transcriptionSessions">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   provider: "whisper" | "assemblyai" | "getstream";
   status: "initializing" | "active" | "paused" | "completed" | "failed";
@@ -46,6 +48,7 @@ export interface TranscriptionSession {
 // Transcript segment (aggregated chunks) (matches schema exactly)
 export interface TranscriptSegment {
   _id: Id<"transcriptSegments">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   startMs: number;
   endMs: number;

@@ -77,7 +77,7 @@ export const ingestTranscriptChunk = mutation({
     }
 
     // Enforce rate limits using shared component-backed limiter
-    await enforceUserLimit(ctx, "transcriptIngestion", participant.userId, {
+    const rateLimitResult = await enforceUserLimit(ctx, "transcriptIngestion", participant.userId, {
       throws: true,
     });
 
@@ -183,12 +183,12 @@ export const ingestTranscriptChunk = mutation({
       });
     }
 
+    console.log("rateLimitRemaining in return:", rateLimitResult.remaining);
     return {
       success: true,
       sequence: globalSequence,
       bucketMs,
-      // Remaining capacity is not exposed by the component; returning 0 as neutral value.
-      rateLimitRemaining: 0,
+      rateLimitRemaining: rateLimitResult.remaining,
     };
   },
 });

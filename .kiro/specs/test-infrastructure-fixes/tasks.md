@@ -35,7 +35,7 @@
     - Validate that all insert vs insert transformation scenarios work correctly
     - _Requirements: 2.1, 2.5_
 
-  - [-] 2.2 Fix overlapping delete operation handling
+  - [x] 2.2 Fix overlapping delete operation handling
     - Correct transformDeleteVsDelete function to properly handle overlapping delete operations
     - Calculate overlap correctly when two delete operations affect the same text range
     - Update test "should handle overlapping deletes" to expect correct length (3, not 2)
@@ -43,7 +43,7 @@
     - Ensure delete operations maintain document consistency and proper position tracking
     - _Requirements: 2.2, 2.5_
 
-  - [ ] 2.3 Fix diff creation position calculations
+  - [x] 2.3 Fix diff creation position calculations
     - Correct createDiff function to produce accurate position calculations for insertions and deletions
     - Fix off-by-one errors in position calculations for "should create diff for simple insertion" test
     - Fix position calculations for "should create diff for simple deletion" test
@@ -51,7 +51,7 @@
     - Add comprehensive test coverage for diff creation with various document changes
     - _Requirements: 2.3, 2.5_
 
-  - [ ] 2.4 Resolve complex concurrent operation consistency issues
+  - [x] 2.4 Resolve complex concurrent operation consistency issues
     - Fix "should maintain document consistency with multiple concurrent operations" test
     - Ensure that applying operations in different orders produces the same final document state
     - Implement proper operation composition and transformation for complex scenarios
@@ -59,8 +59,8 @@
     - Validate that operational transform maintains convergence properties
     - _Requirements: 2.4, 2.5, 2.6_
 
-- [ ] 3. Fix Type System Validation Issues
-  - [ ] 3.1 Resolve Transcript entity type drift
+- [x] 3. Fix Type System Validation Issues
+  - [x] 3.1 Resolve Transcript entity type drift
     - Add missing `_creationTime` system field to Transcript interface in convex/types/entities/transcript.ts
     - Update TranscriptV validator in convex/types/validators/transcript.ts to include `_creationTime: v.number()`
     - Ensure all Convex system fields (`_id`, `_creationTime`) are properly included in entity types
@@ -68,7 +68,7 @@
     - Update any other entities missing system fields
     - _Requirements: 4.1, 4.2, 4.3_
 
-  - [ ] 3.2 Fix validator consistency and alignment issues
+  - [x] 3.2 Fix validator consistency and alignment issues
     - Identify and fix the 5 validators that are failing validation
     - Ensure all TypeScript types align exactly with their corresponding Convex validators
     - Add comprehensive type tests using expectTypeOf to validate type-validator alignment
@@ -76,7 +76,7 @@
     - Run type system health checks to ensure all validators pass
     - _Requirements: 4.2, 4.3, 4.4_
 
-  - [ ] 3.3 Restore type system health monitoring
+  - [x] 3.3 Restore type system health monitoring
     - Fix type system health monitoring to report healthy status
     - Resolve all type drift detection issues across entities
     - Update type system monitoring tools to properly validate all validators

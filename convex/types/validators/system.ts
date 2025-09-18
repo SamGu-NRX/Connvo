@@ -67,6 +67,7 @@ const featureFlagValueV = v.union(v.string(), v.number(), v.boolean());
 export const IdempotencyKeyV = {
   full: v.object({
     _id: v.id("idempotencyKeys"),
+    _creationTime: v.number(), // Convex system field
     key: v.string(),
     scope: v.string(),
     metadata: v.optional(metadataRecordV),
@@ -79,6 +80,7 @@ export const AlertV = {
   // Full alert entity
   full: v.object({
     _id: v.id("alerts"),
+    _creationTime: v.number(), // Convex system field
     alertId: v.string(),
     severity: alertSeverityV,
     category: alertCategoryV,
@@ -95,6 +97,7 @@ export const AlertV = {
   // Alert with resolution details
   withResolution: v.object({
     _id: v.id("alerts"),
+    _creationTime: v.number(), // Convex system field
     alertId: v.string(),
     severity: alertSeverityV,
     category: alertCategoryV,
@@ -118,6 +121,7 @@ export const PerformanceMetricV = {
   // Full metric entity
   full: v.object({
     _id: v.id("performanceMetrics"),
+    _creationTime: v.number(), // Convex system field
     name: v.string(),
     value: v.number(),
     unit: v.string(),
@@ -137,6 +141,7 @@ export const PerformanceMetricV = {
   // Metric with trend data
   withTrend: v.object({
     _id: v.id("performanceMetrics"),
+    _creationTime: v.number(), // Convex system field
     name: v.string(),
     value: v.number(),
     unit: v.string(),
@@ -172,6 +177,7 @@ export const PerformanceMetricV = {
 export const RateLimitV = {
   full: v.object({
     _id: v.id("rateLimits"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     action: v.string(),
     windowStartMs: v.number(),
@@ -186,6 +192,7 @@ export const AuditLogV = {
   // Full audit log entity
   full: v.object({
     _id: v.id("auditLogs"),
+    _creationTime: v.number(), // Convex system field
     actorUserId: v.optional(v.id("users")),
     resourceType: v.string(),
     resourceId: v.string(),
@@ -199,6 +206,7 @@ export const AuditLogV = {
   // Audit log with user details
   withUser: v.object({
     _id: v.id("auditLogs"),
+    _creationTime: v.number(), // Convex system field
     actorUserId: v.optional(v.id("users")),
     resourceType: v.string(),
     resourceId: v.string(),
@@ -222,6 +230,7 @@ export const FeatureFlagV = {
   // Full feature flag entity
   full: v.object({
     _id: v.id("featureFlags"),
+    _creationTime: v.number(), // Convex system field
     key: v.string(),
     value: featureFlagValueV,
     environment: v.string(),
@@ -234,6 +243,7 @@ export const FeatureFlagV = {
   // Feature flag with usage statistics
   withStats: v.object({
     _id: v.id("featureFlags"),
+    _creationTime: v.number(), // Convex system field
     key: v.string(),
     value: featureFlagValueV,
     environment: v.string(),

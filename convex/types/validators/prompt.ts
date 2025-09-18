@@ -51,6 +51,7 @@ export const AIPromptV = {
   // Full prompt entity
   full: v.object({
     _id: v.id("prompts"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     type: promptTypeV,
     content: v.string(),
@@ -64,6 +65,7 @@ export const AIPromptV = {
   // Prompt with usage statistics
   withStats: v.object({
     _id: v.id("prompts"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     type: promptTypeV,
     content: v.string(),
@@ -87,6 +89,7 @@ export const AIInsightV = {
   // Full insight entity
   full: v.object({
     _id: v.id("insights"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     meetingId: v.id("meetings"),
     summary: v.string(),
@@ -99,6 +102,7 @@ export const AIInsightV = {
   // Insight list item (for getUserInsights)
   listItem: v.object({
     _id: v.id("insights"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     summary: v.string(),
     actionItems: v.array(v.string()),
@@ -111,6 +115,7 @@ export const AIInsightV = {
   // Insight with meeting details (for getInsightById)
   withMeeting: v.object({
     _id: v.id("insights"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     summary: v.string(),
     actionItems: v.array(v.string()),
@@ -124,6 +129,7 @@ export const AIInsightV = {
   // Insight with user details
   withUser: v.object({
     _id: v.id("insights"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     meetingId: v.id("meetings"),
     summary: v.string(),

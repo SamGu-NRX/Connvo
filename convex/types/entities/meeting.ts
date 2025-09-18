@@ -53,6 +53,7 @@ export interface Meeting {
 // Meeting participant entity (matches schema exactly)
 export interface MeetingParticipant {
   _id: Id<"meetingParticipants">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   userId: Id<"users">;
   role: ParticipantRole;
@@ -78,6 +79,7 @@ export interface LullState {
 // Meeting runtime state tracking (matches schema exactly)
 export interface MeetingRuntimeState {
   _id: Id<"meetingState">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   active: boolean;
   startedAt?: number;
@@ -92,6 +94,7 @@ export interface MeetingRuntimeState {
 // Meeting counters (matches schema exactly)
 export interface MeetingCounter {
   _id: Id<"meetingCounters">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   lastSequence: number;
   updatedAt: number;
@@ -100,6 +103,7 @@ export interface MeetingCounter {
 // Meeting events (matches schema exactly)
 export interface MeetingEvent {
   _id: Id<"meetingEvents">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   event: string;
   userId?: Id<"users">;
@@ -114,6 +118,7 @@ export interface MeetingEvent {
 // Meeting recordings (matches schema exactly)
 export interface MeetingRecording {
   _id: Id<"meetingRecordings">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   recordingId: string;
   recordingUrl?: string;
@@ -143,6 +148,7 @@ export interface VideoRoomFeatures {
 
 export interface VideoRoomConfig {
   _id: Id<"videoRoomConfigs">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   roomId: string;
   provider: "webrtc" | "getstream";

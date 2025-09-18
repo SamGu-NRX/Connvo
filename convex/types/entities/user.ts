@@ -34,6 +34,7 @@ export interface User {
 // User profile entity (matches convex/schema/users.ts exactly)
 export interface UserProfile {
   _id: Id<"profiles">;
+  _creationTime: number; // Convex system field
   userId: Id<"users">;
   displayName: string;
   bio?: string;
@@ -54,6 +55,7 @@ export interface UserProfile {
 // Interest entity (matches convex/schema/interests.ts)
 export interface Interest {
   _id: Id<"interests">;
+  _creationTime: number; // Convex system field
   key: string;
   label: string;
   category: string;
@@ -66,6 +68,7 @@ export interface Interest {
 // User interest relationship (matches convex/schema/interests.ts)
 export interface UserInterest {
   _id: Id<"userInterests">;
+  _creationTime: number; // Convex system field
   userId: Id<"users">;
   interestKey: string;
   createdAt: number;

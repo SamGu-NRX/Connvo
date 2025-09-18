@@ -63,7 +63,9 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
   if (hasDb) {
     userDoc = await (ctx as QueryCtx).db
       .query("users")
-      .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
+      .withIndex("by_workos_id", (q) =>
+            q.eq("workosUserId", workosUserId),
+          )
       .unique();
   } else {
     userDoc = await (ctx as ActionCtx).runQuery(
@@ -105,42 +107,42 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
 export async function assertMeetingAccess(
   ctx: QueryCtx | MutationCtx,
   meetingId: Id<"meetings">,
-  requiredRole?: "host" | "participant",
+  requiredRole?: "host" | "co-host" | "participant" | "observer",
 ) {
-  const { userId } = await requireIdentity(ctx);
+  const identity = await requireIdentity(ctx);
 
-  // Check if user is a participant in the meeting
   const participant = await ctx.db
     .query("meetingParticipants")
     .withIndex("by_meeting_and_user", (q) =>
-      q.eq("meetingId", meetingId).eq("userId", userId),
+      q.eq("meetingId", meetingId).eq("userId", identity.userId),
     )
     .unique();
 
   if (!participant) {
     throw createError.forbidden("Access denied: Not a meeting participant", {
       meetingId,
-      userId,
+      userId: identity.userId,
     });
   }
 
-  // Check role requirements if specified
-  if (requiredRole && participant.role !== requiredRole) {
-    throw createError.insufficientPermissions(requiredRole, participant.role);
-  }
+  // Check role if required
+  if (requiredRole) {
+    const roleHierarchy = {
+      host: 3,
+      "co-host": 2,
+      participant: 1,
+      observer: 0,
+    };
+    const userRoleLevel = roleHierarchy[participant.role];
+    const requiredRoleLevel = roleHierarchy[requiredRole];
 
-  // Log successful access for audit trail
-  await logAuditEvent(ctx, {
-    actorUserId: userId,
-    resourceType: "meeting",
-    resourceId: meetingId,
-    action: "access_granted",
-    metadata: {
-      requiredRole,
-      actualRole: participant.role,
-      participantId: participant._id,
-    },
-  });
+    if (userRoleLevel < requiredRoleLevel) {
+      throw createError.insufficientPermissions(
+        requiredRole,
+        participant.role,
+      );
+    }
+  }
 
   return participant;
 }

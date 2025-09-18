@@ -139,6 +139,7 @@ export function applyToDoc(doc: string, operation: Operation): string {
 
     case "retain":
       // Retain operations don't modify the document content
+      // If length is 0, it's a no-op
       return doc;
 
     default:
@@ -223,27 +224,72 @@ export function transformAgainst(opA: Operation, opB: Operation): Operation {
         position: opA.position - (opB.length || 0),
       };
     } else {
-      // Overlapping deletions - complex case
+      // Overlapping deletions - calculate what A should delete after B is applied
       const overlapStart = Math.max(opA.position, opB.position);
       const overlapEnd = Math.min(aEnd, bEnd);
-      // Calculate overlap length with potential off-by-one adjustment
-      const overlapLength = Math.max(0, overlapEnd - overlapStart - 1);
+      const overlapLength = overlapEnd - overlapStart;
 
       if (opA.position < opB.position) {
         // A starts before B
-        return {
-          ...opA,
-          length: (opA.length || 0) - overlapLength,
-        };
+        if (aEnd <= bEnd) {
+          // A ends before or at the same place as B
+          // A should delete everything before B starts, plus any part after B that A originally covered
+          const beforeB = opB.position - opA.position;
+          const afterB = Math.max(0, aEnd - bEnd);
+          const newLength = beforeB + afterB;
+
+          return {
+            ...opA,
+            length: newLength,
+          };
+        } else {
+          // A extends beyond B
+          // A should delete everything before B starts, plus everything after B ends
+          const beforeB = opB.position - opA.position;
+          const afterB = aEnd - bEnd;
+          const newLength = beforeB + afterB;
+
+          return {
+            ...opA,
+            length: newLength,
+          };
+        }
+      } else if (opA.position === opB.position) {
+        // A and B start at the same position
+        if (aEnd <= bEnd) {
+          // A is completely contained within B
+          return {
+            type: "retain",
+            position: opA.position,
+            length: 0,
+          };
+        } else {
+          // A extends beyond B
+          const newLength = aEnd - bEnd;
+          return {
+            ...opA,
+            position: bEnd,
+            length: newLength,
+          };
+        }
       } else {
-        // B starts before or at same position as A
-        const newPosition = opB.position;
-        const newLength = (opA.length || 0) - overlapLength;
-        return {
-          ...opA,
-          position: newPosition,
-          length: Math.max(0, newLength),
-        };
+        // A starts after B starts
+        if (aEnd <= bEnd) {
+          // A is completely contained within B
+          return {
+            type: "retain",
+            position: opA.position,
+            length: 0,
+          };
+        } else {
+          // A extends beyond B
+          const newLength = aEnd - bEnd;
+          return {
+            ...opA,
+            position: opB.position,
+            length: newLength,
+          };
+        }
       }
     }
   }
@@ -375,8 +421,9 @@ export function validateOperation(operation: Operation): boolean {
         typeof operation.content === "string" && operation.content.length > 0
       );
     case "delete":
-    case "retain":
       return typeof operation.length === "number" && operation.length > 0;
+    case "retain":
+      return typeof operation.length === "number" && operation.length >= 0;
     default:
       return false;
   }
@@ -428,6 +475,30 @@ export function transformAgainstOperations(
   for (const op of operations) {
     transformed = transformAgainst(transformed, op);
   }
+  return transformed;
+}
+
+/**
+ * Transforms a list of operations to maintain consistency when applied in different orders
+ * This is crucial for maintaining convergence in concurrent editing scenarios
+ */
+export function transformOperationSequence(
+  operations: Operation[],
+  againstOperations: Operation[],
+): Operation[] {
+  const transformed: Operation[] = [];
+
+  for (let i = 0; i < operations.length; i++) {
+    let op = operations[i];
+
+    // Transform against all operations in the against sequence
+    for (const againstOp of againstOperations) {
+      op = transformAgainst(op, againstOp);
+    }
+
+    transformed.push(op);
+  }
+
   return transformed;
 }
 
@@ -538,18 +609,74 @@ export function deserializeOperation(
 }
 
 /**
+ * Applies operations in a specific order while maintaining consistency
+ * This ensures convergence regardless of the order operations are applied
+ */
+export function applyOperationsWithTransformation(
+  doc: string,
+  operations: Operation[],
+  referenceOperations?: Operation[],
+): string {
+  if (!referenceOperations || referenceOperations.length === 0) {
+    return applyOperations(doc, operations);
+  }
+
+  // Transform each operation against all reference operations
+  const transformedOps: Operation[] = [];
+
+  for (let i = 0; i < operations.length; i++) {
+    let op = operations[i];
+
+    // Transform against reference operations
+    for (const refOp of referenceOperations) {
+      op = transformAgainst(op, refOp);
+    }
+
+    // Transform against previously transformed operations in this sequence
+    for (const prevOp of transformedOps) {
+      op = transformAgainst(op, prevOp);
+    }
+
+    transformedOps.push(op);
+  }
+
+  return applyOperations(doc, transformedOps);
+}
+
+/**
+ * Ensures operational transform convergence by properly ordering and transforming operations
+ */
+export function ensureConvergence(
+  doc: string,
+  operationsA: Operation[],
+  operationsB: Operation[],
+): [string, string] {
+  // Apply A then transform and apply B
+  const docAfterA = applyOperations(doc, operationsA);
+  const transformedB = transformOperationSequence(operationsB, operationsA);
+  const result1 = applyOperations(docAfterA, transformedB);
+
+  // Apply B then transform and apply A
+  const docAfterB = applyOperations(doc, operationsB);
+  const transformedA = transformOperationSequence(operationsA, operationsB);
+  const result2 = applyOperations(docAfterB, transformedA);
+
+  return [result1, result2];
+}
+
+/**
  * Creates a diff between two document states as operations
  */
 export function createDiff(oldDoc: string, newDoc: string): Operation[] {
-  // Simple diff algorithm - can be enhanced with more sophisticated algorithms
+  // Improved diff algorithm with correct position calculations
   const operations: Operation[] = [];
 
-  let i = 0;
-  let j = 0;
+  let i = 0; // Position in oldDoc
+  let j = 0; // Position in newDoc
 
   while (i < oldDoc.length || j < newDoc.length) {
     if (i >= oldDoc.length) {
-      // Remaining characters are insertions
+      // Remaining characters in newDoc are insertions
       operations.push({
         type: "insert",
         position: i,
@@ -557,7 +684,7 @@ export function createDiff(oldDoc: string, newDoc: string): Operation[] {
       });
       break;
     } else if (j >= newDoc.length) {
-      // Remaining characters are deletions
+      // Remaining characters in oldDoc are deletions
       operations.push({
         type: "delete",
         position: i,
@@ -565,44 +692,57 @@ export function createDiff(oldDoc: string, newDoc: string): Operation[] {
       });
       break;
     } else if (oldDoc[i] === newDoc[j]) {
-      // Characters match, continue
+      // Characters match, advance both pointers
       i++;
       j++;
     } else {
-      // Find the next matching character
-      let found = false;
-      for (let k = j + 1; k < newDoc.length && k - j < 100; k++) {
+      // Characters differ - determine if it's an insertion, deletion, or replacement
+      let insertionFound = false;
+      let deletionFound = false;
+      let insertionLength = 0;
+      let deletionLength = 0;
+
+      // Look ahead to find if this is an insertion
+      for (let k = j + 1; k < newDoc.length && k - j <= 50; k++) {
         if (oldDoc[i] === newDoc[k]) {
-          // Insert the characters between j and k
-          operations.push({
-            type: "insert",
-            position: i,
-            content: newDoc.slice(j, k),
-          });
-          j = k;
-          found = true;
+          // Found matching character - this suggests an insertion
+          insertionFound = true;
+          insertionLength = k - j;
           break;
         }
       }
 
-      if (!found) {
-        for (let k = i + 1; k < oldDoc.length && k - i < 100; k++) {
-          if (oldDoc[k] === newDoc[j]) {
-            // Delete the characters between i and k
-            operations.push({
-              type: "delete",
-              position: i,
-              length: k - i,
-            });
-            i = k;
-            found = true;
-            break;
-          }
+      // Look ahead to find if this is a deletion
+      for (let k = i + 1; k < oldDoc.length && k - i <= 50; k++) {
+        if (oldDoc[k] === newDoc[j]) {
+          // Found matching character - this suggests a deletion
+          deletionFound = true;
+          deletionLength = k - i;
+          break;
         }
       }
 
-      if (!found) {
-        // Replace character
+      if (
+        insertionFound &&
+        (!deletionFound || insertionLength <= deletionLength)
+      ) {
+        // Prefer insertion if both are found and insertion is shorter or equal
+        operations.push({
+          type: "insert",
+          position: i,
+          content: newDoc.slice(j, j + insertionLength),
+        });
+        j += insertionLength;
+      } else if (deletionFound) {
+        // Handle deletion
+        operations.push({
+          type: "delete",
+          position: i,
+          length: deletionLength,
+        });
+        i += deletionLength;
+      } else {
+        // No clear pattern found - treat as replacement (delete + insert)
         operations.push({
           type: "delete",
           position: i,

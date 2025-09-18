@@ -52,6 +52,7 @@ export const EmbeddingV = {
   // Full embedding entity (using v.bytes for better performance)
   full: v.object({
     _id: v.id("embeddings"),
+    _creationTime: v.number(), // Convex system field
     sourceType: embeddingSourceTypeV,
     sourceId: v.string(),
     vector: v.bytes(), // Use ArrayBuffer (v.bytes) for performance & cost optimization
@@ -65,6 +66,7 @@ export const EmbeddingV = {
   // Embedding with source details
   withSource: v.object({
     _id: v.id("embeddings"),
+    _creationTime: v.number(), // Convex system field
     sourceType: embeddingSourceTypeV,
     sourceId: v.string(),
     vector: v.bytes(), // Use ArrayBuffer for performance
@@ -94,6 +96,7 @@ export const EmbeddingV = {
 export const VectorIndexMetaV = {
   full: v.object({
     _id: v.id("vectorIndexMeta"),
+    _creationTime: v.number(), // Convex system field
     provider: v.string(),
     indexName: v.string(),
     config: metadataRecordV,

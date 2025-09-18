@@ -103,6 +103,7 @@ describe("Transcript Ingestion Pipeline", () => {
       },
     );
 
+    console.log("result.rateLimitRemaining in test:", result.rateLimitRemaining);
     expect(result.success).toBe(true);
     expect(result.sequence).toBe(1);
     expect(result.bucketMs).toBeGreaterThan(0);

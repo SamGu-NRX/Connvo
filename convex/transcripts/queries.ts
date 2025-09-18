@@ -39,6 +39,7 @@ export const getTranscriptSegments = internalQuery({
       .take(take);
     return docs.map((d) => ({
       _id: d._id,
+      _creationTime: d._creationTime,
       meetingId: d.meetingId,
       startMs: d.startMs,
       endMs: d.endMs,

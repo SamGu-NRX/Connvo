@@ -80,7 +80,7 @@ export const createWebRTCSession = mutation({
     }
 
     // Create new WebRTC session using centralized types
-    const newSession: Omit<WebRTCSession, "_id"> = {
+    const newSession: Omit<WebRTCSession, "_id" | "_creationTime"> = {
       meetingId,
       sessionId,
       userId: participant.userId,
@@ -115,7 +115,7 @@ export const exchangeSessionDescription = mutation({
     const identity = await requireIdentity(ctx);
 
     // Store the SDP offer/answer
-    const sdpAnswerSignal: Omit<WebRTCSignal, "_id"> = {
+    const sdpAnswerSignal: Omit<WebRTCSignal, "_id" | "_creationTime"> = {
       meetingId,
       sessionId,
       fromUserId: participant.userId,
@@ -150,7 +150,7 @@ export const exchangeICECandidate = mutation({
     const participant = await assertMeetingAccess(ctx, meetingId);
 
     // Store the ICE candidate
-    const iceCandidateSignal: Omit<WebRTCSignal, "_id"> = {
+    const iceCandidateSignal: Omit<WebRTCSignal, "_id" | "_creationTime"> = {
       meetingId,
       sessionId,
       fromUserId: participant.userId,
@@ -376,7 +376,7 @@ export const storeConnectionMetrics = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const metrics: Omit<ConnectionMetrics, "_id"> = {
+    const metrics: Omit<ConnectionMetrics, "_id" | "_creationTime"> = {
       meetingId: args.meetingId,
       sessionId: args.sessionId,
       userId: args.userId,

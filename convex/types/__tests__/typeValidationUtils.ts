@@ -115,7 +115,15 @@ export function validateValidatorCollection(
 
   for (const [key, validator] of Object.entries(validators)) {
     const validatorName = `${collectionName}.${key}`;
-    results.push(validateValidatorStructure(validator, validatorName));
+
+    // If validator has nested validators (like UserV.full), validate those
+    if (validator && typeof validator === "object" && "full" in validator) {
+      results.push(
+        validateValidatorStructure(validator.full, `${validatorName}.full`),
+      );
+    } else {
+      results.push(validateValidatorStructure(validator, validatorName));
+    }
   }
 
   return results;
@@ -246,13 +254,30 @@ export function generateCIValidationReport(
   for (const [collectionName, validators] of Object.entries(
     validatorCollections,
   )) {
-    const results = validateValidatorCollection(validators, collectionName);
+    // Filter out functions and only validate actual validator objects
+    const validatorObjects = Object.fromEntries(
+      Object.entries(validators).filter(([key, validator]) => {
+        return (
+          validator &&
+          typeof validator === "object" &&
+          !Array.isArray(validator) &&
+          typeof validator !== "function" &&
+          ("kind" in validator || "full" in validator)
+        );
+      }),
+    );
+
+    const results = validateValidatorCollection(
+      validatorObjects,
+      collectionName,
+    );
     totalValidators += results.length;
 
     for (const result of results) {
+      const validatorKey = result.validatorName.split(".")[1];
       allValidators.push({
         name: result.validatorName,
-        validator: validators[result.validatorName.split(".")[1]],
+        validator: validatorObjects[validatorKey],
       });
 
       if (!result.isValid) {

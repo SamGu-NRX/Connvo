@@ -36,6 +36,7 @@ export interface OperationWithMetadata extends Operation {
 // Note operation entity (matches convex/schema/meetings.ts exactly)
 export interface NoteOperation {
   _id: Id<"noteOps">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   sequence: number;
   authorId: Id<"users">;
@@ -47,6 +48,7 @@ export interface NoteOperation {
 // Meeting note entity (matches schema exactly)
 export interface MeetingNote {
   _id: Id<"meetingNotes">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   content: string;
   version: number;
@@ -57,6 +59,7 @@ export interface MeetingNote {
 // Offline operation queue (matches convex/schema/offline.ts exactly)
 export interface OfflineOperationQueue {
   _id: Id<"offlineOperationQueue">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   clientId: string;
   queueId: string;
@@ -75,6 +78,7 @@ export interface OfflineOperationQueue {
 // Offline checkpoint (matches schema exactly)
 export interface OfflineCheckpoint {
   _id: Id<"offlineCheckpoints">;
+  _creationTime: number; // Convex system field
   checkpointId: string;
   meetingId: Id<"meetings">;
   clientId: string;

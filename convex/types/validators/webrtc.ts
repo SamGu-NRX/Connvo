@@ -68,6 +68,7 @@ export const WebRTCSessionV = {
   // Full session entity
   full: v.object({
     _id: v.id("webrtcSessions"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     userId: v.id("users"),
@@ -80,6 +81,7 @@ export const WebRTCSessionV = {
   // Session with user details
   withUser: v.object({
     _id: v.id("webrtcSessions"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     userId: v.id("users"),
@@ -102,6 +104,7 @@ export const WebRTCSignalV = {
   // Full signal entity with discriminated union for signal data
   full: v.object({
     _id: v.id("webrtcSignals"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     fromUserId: v.id("users"),
@@ -134,6 +137,7 @@ export const WebRTCSignalV = {
   // Signal with user details
   withUsers: v.object({
     _id: v.id("webrtcSignals"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     fromUserId: v.id("users"),
@@ -162,6 +166,7 @@ export const ConnectionMetricsV = {
   // Full metrics entity
   full: v.object({
     _id: v.id("connectionMetrics"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     userId: v.id("users"),
@@ -781,6 +786,7 @@ export const WebRTCApiResponseV = {
   // Internal helper responses
   participantAccess: v.object({
     _id: v.id("meetingParticipants"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     userId: v.id("users"),
     role: v.union(

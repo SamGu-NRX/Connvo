@@ -8,7 +8,7 @@
  */
 
 import { describe, test, expect, beforeEach } from "vitest";
-import { TypeSystemMonitor, defaultTypeSystemConfig } from "./monitoring-tools";
+import { TypeSystemMonitor, defaultTypeSystemConfig } from "./monitoringTools";
 
 describe("Type System Monitoring Tools", () => {
   let monitor: TypeSystemMonitor;

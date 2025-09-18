@@ -21,7 +21,10 @@ import {
   VideoProviderFactory,
   VideoProviderUtils,
 } from "@convex/lib/videoProviders";
-import { WebRTCApiResponseV, connectionStatsV } from "@convex/types/validators/webrtc";
+import {
+  WebRTCApiResponseV,
+  connectionStatsV,
+} from "@convex/types/validators/webrtc";
 import type {
   Meeting,
   VideoRoomConfig,
@@ -47,9 +50,12 @@ export const initializeWebRTCRoom = action({
     const participant: MeetingParticipant & {
       role: "host" | "participant" | "observer";
       presence: "invited" | "joined" | "left";
-    } = await ctx.runQuery(internal.meetings.webrtc.index.getParticipantForAccess, {
-      meetingId,
-    });
+    } = await ctx.runQuery(
+      internal.meetings.webrtc.index.getParticipantForAccess,
+      {
+        meetingId,
+      },
+    );
 
     // Fetch meeting via internal query
     const meeting: Meeting | null = await ctx.runQuery(
@@ -82,16 +88,19 @@ export const initializeWebRTCRoom = action({
     });
 
     // Store room configuration in database
-    await ctx.runMutation(internal.meetings.webrtc.index.storeRoomConfiguration, {
-      meetingId,
-      roomConfig: {
-        roomId: roomConfig.roomId,
-        provider: roomConfig.provider as "webrtc" | "getstream",
-        iceServers: roomConfig.iceServers,
-        features: roomConfig.features,
-        success: true,
+    await ctx.runMutation(
+      internal.meetings.webrtc.index.storeRoomConfiguration,
+      {
+        meetingId,
+        roomConfig: {
+          roomId: roomConfig.roomId,
+          provider: roomConfig.provider as "webrtc" | "getstream",
+          iceServers: roomConfig.iceServers,
+          features: roomConfig.features,
+          success: true,
+        },
       },
-    });
+    );
 
     return {
       roomId: roomConfig.roomId,
@@ -121,7 +130,7 @@ export const storeRoomConfiguration = internalMutation({
     });
 
     // Store detailed room configuration using centralized types
-    const videoRoomConfig: Omit<VideoRoomConfig, "_id"> = {
+    const videoRoomConfig: Omit<VideoRoomConfig, "_id" | "_creationTime"> = {
       meetingId,
       roomId: roomConfig.roomId,
       provider: roomConfig.provider,
@@ -402,6 +411,7 @@ export const getParticipantForAccess = internalQuery({
     const participant = await assertMeetingAccess(ctx, meetingId);
     return {
       _id: participant._id,
+      _creationTime: participant._creationTime,
       meetingId: participant.meetingId,
       userId: participant.userId,
       role: participant.role,

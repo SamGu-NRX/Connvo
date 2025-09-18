@@ -131,6 +131,7 @@ export const MeetingV = {
   // Meeting with user role
   withUserRole: v.object({
     _id: v.id("meetings"),
+    _creationTime: v.number(), // Convex system field
     organizerId: v.id("users"),
     title: v.string(),
     description: v.optional(v.string()),
@@ -151,6 +152,7 @@ export const MeetingV = {
   // Meeting list item (optimized for lists)
   listItem: v.object({
     _id: v.id("meetings"),
+    _creationTime: v.number(), // Convex system field
     organizerId: v.id("users"),
     title: v.string(),
     description: v.optional(v.string()),
@@ -171,6 +173,7 @@ export const MeetingParticipantV = {
   // Full participant entity
   full: v.object({
     _id: v.id("meetingParticipants"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     userId: v.id("users"),
     role: participantRoleV,
@@ -183,6 +186,7 @@ export const MeetingParticipantV = {
   // Participant with user details
   withUser: v.object({
     _id: v.id("meetingParticipants"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     userId: v.id("users"),
     role: participantRoleV,
@@ -201,6 +205,7 @@ export const MeetingRuntimeStateV = {
   // Full runtime state
   full: v.object({
     _id: v.id("meetingState"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     active: v.boolean(),
     startedAt: v.optional(v.number()),
@@ -215,6 +220,7 @@ export const MeetingRuntimeStateV = {
   // Runtime state with metrics
   withMetrics: v.object({
     _id: v.id("meetingState"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     active: v.boolean(),
     startedAt: v.optional(v.number()),
@@ -247,6 +253,7 @@ export const NoteOperationV = {
 export const MeetingCounterV = {
   full: v.object({
     _id: v.id("meetingCounters"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     lastSequence: v.number(),
     updatedAt: v.number(),
@@ -257,6 +264,7 @@ export const MeetingCounterV = {
 export const MeetingEventV = {
   full: v.object({
     _id: v.id("meetingEvents"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     event: v.string(),
     userId: v.optional(v.id("users")),
@@ -276,6 +284,7 @@ export const MeetingEventV = {
 export const MeetingRecordingV = {
   full: v.object({
     _id: v.id("meetingRecordings"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     recordingId: v.string(),
     recordingUrl: v.optional(v.string()),
@@ -300,6 +309,7 @@ export const MeetingRecordingV = {
 export const VideoRoomConfigV = {
   full: v.object({
     _id: v.id("videoRoomConfigs"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     roomId: v.string(),
     provider: v.union(v.literal("webrtc"), v.literal("getstream")),
@@ -314,6 +324,7 @@ export const VideoRoomConfigV = {
 export const MeetingDetailsV = {
   full: v.object({
     _id: v.id("meetings"),
+    _creationTime: v.number(), // Convex system field
     organizerId: v.id("users"),
     title: v.string(),
     description: v.optional(v.string()),

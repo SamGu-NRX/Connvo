@@ -201,6 +201,7 @@ export const getActiveQueueEntries = query({
   ): Promise<
     Array<{
       _id: Id<"matchingQueue">;
+      _creationTime: number;
       userId: Id<"users">;
       availableFrom: number;
       availableTo: number;

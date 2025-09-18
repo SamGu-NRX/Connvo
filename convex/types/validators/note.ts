@@ -72,6 +72,7 @@ export const NoteV = {
   // Note operation entity (matches schema exactly)
   noteOperation: v.object({
     _id: v.id("noteOps"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     sequence: v.number(),
     authorId: v.id("users"),
@@ -83,6 +84,7 @@ export const NoteV = {
   // Meeting note entity (matches schema exactly)
   meetingNote: v.object({
     _id: v.id("meetingNotes"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     content: v.string(),
     version: v.number(),
@@ -114,6 +116,7 @@ export const NoteV = {
 export const OfflineOperationQueueV = {
   full: v.object({
     _id: v.id("offlineOperationQueue"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     clientId: v.string(),
     queueId: v.string(),
@@ -134,6 +137,7 @@ export const OfflineOperationQueueV = {
 export const OfflineCheckpointV = {
   full: v.object({
     _id: v.id("offlineCheckpoints"),
+    _creationTime: v.number(), // Convex system field
     checkpointId: v.string(),
     meetingId: v.id("meetings"),
     clientId: v.string(),

@@ -168,6 +168,7 @@ export const getUserInsights = query({
       if (meeting) {
         enrichedInsights.push({
           _id: insight._id,
+          _creationTime: insight._creationTime,
           meetingId: insight.meetingId,
           summary: insight.summary,
           actionItems: insight.actionItems,
@@ -210,6 +211,7 @@ export const getInsightById = query({
 
     return {
       _id: insight._id,
+      _creationTime: insight._creationTime,
       meetingId: insight.meetingId,
       summary: insight.summary,
       actionItems: insight.actionItems,

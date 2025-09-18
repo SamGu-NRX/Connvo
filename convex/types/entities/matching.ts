@@ -19,6 +19,7 @@ export type MatchOutcome = "accepted" | "declined" | "completed";
 // Matching queue entry (matches convex/schema/matching.ts exactly)
 export interface MatchingQueueEntry {
   _id: Id<"matchingQueue">;
+  _creationTime: number; // Convex system field
   userId: Id<"users">;
   availableFrom: number;
   availableTo: number;
@@ -36,6 +37,7 @@ export interface MatchingQueueEntry {
 // Matching analytics (matches schema exactly)
 export interface MatchingAnalytics {
   _id: Id<"matchingAnalytics">;
+  _creationTime: number; // Convex system field
   userId: Id<"users">;
   matchId: string;
   outcome: MatchOutcome;

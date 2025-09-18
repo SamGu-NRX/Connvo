@@ -161,6 +161,20 @@ describe("Dynamic Permission Management", () => {
           requiredPermissions: ["read", "write", "manage"],
         },
       );
+      console.log("participantValidation:", participantValidation);
+
+      expect(hostValidation.permissions).toContain("manage");
+
+      // Participant should not have manage permissions - second check
+      const participantValidation2 = await participantT.query(
+        api.auth.permissions.validateSubscriptionPermissions,
+        {
+          resourceType: "meetingNotes",
+          resourceId: testMeetingId,
+          requiredPermissions: ["read", "write", "manage"],
+        },
+      );
+      console.log("participantValidation:", participantValidation);
 
       expect(participantValidation.granted).toBe(true);
       expect(participantValidation.permissions).not.toContain("manage");
@@ -205,10 +219,13 @@ describe("Dynamic Permission Management", () => {
     test("should deny transcript subscription for inactive meetings", async () => {
       // Meeting is not started, should deny transcript access
       try {
-        await participantT.query(api.realtime.subscriptions.subscribeTranscriptStream, {
-          meetingId: testMeetingId,
-          subscriptionId: "test-transcript-sub-2",
-        });
+        await participantT.query(
+          api.realtime.subscriptions.subscribeTranscriptStream,
+          {
+            meetingId: testMeetingId,
+            subscriptionId: "test-transcript-sub-2",
+          },
+        );
         expect.fail("Should have thrown MEETING_NOT_ACTIVE error");
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -218,10 +235,13 @@ describe("Dynamic Permission Management", () => {
 
     test("should validate subscription permissions in real-time", async () => {
       // Establish subscription
-      await participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
-        meetingId: testMeetingId,
-        subscriptionId: "test-validation-sub",
-      });
+      await participantT.query(
+        api.realtime.subscriptions.subscribeMeetingNotes,
+        {
+          meetingId: testMeetingId,
+          subscriptionId: "test-validation-sub",
+        },
+      );
 
       // Validate subscription
       const validation = await participantT.query(
@@ -343,10 +363,13 @@ describe("Dynamic Permission Management", () => {
   describe("Audit Logging", () => {
     test("should log subscription establishment events", async () => {
       // Establish subscription
-      await participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
-        meetingId: testMeetingId,
-        subscriptionId: "test-audit-sub",
-      });
+      await participantT.query(
+        api.realtime.subscriptions.subscribeMeetingNotes,
+        {
+          meetingId: testMeetingId,
+          subscriptionId: "test-audit-sub",
+        },
+      );
 
       // Check audit logs
       const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
@@ -517,11 +540,14 @@ describe("Dynamic Permission Management", () => {
   describe("Edge Cases and Error Handling", () => {
     test("should handle invalid resource types gracefully", async () => {
       try {
-        await participantT.query(api.auth.permissions.validateSubscriptionPermissions, {
-          resourceType: "invalid-resource" as any,
-          resourceId: testMeetingId,
-          requiredPermissions: ["read"],
-        });
+        await participantT.query(
+          api.auth.permissions.validateSubscriptionPermissions,
+          {
+            resourceType: "invalid-resource" as any,
+            resourceId: testMeetingId,
+            requiredPermissions: ["read"],
+          },
+        );
         expect.fail("Should have thrown validation error");
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -533,9 +559,12 @@ describe("Dynamic Permission Management", () => {
       const fakeMeetingId = "fake-meeting-id" as Id<"meetings">;
 
       try {
-        await participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
-          meetingId: fakeMeetingId,
-        });
+        await participantT.query(
+          api.realtime.subscriptions.subscribeMeetingNotes,
+          {
+            meetingId: fakeMeetingId,
+          },
+        );
         expect.fail("Should have thrown NOT_FOUND error");
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

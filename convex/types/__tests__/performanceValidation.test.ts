@@ -12,7 +12,7 @@ import { describe, test, expect } from "vitest";
 import {
   validateValidatorStructure,
   measureValidatorPerformance,
-} from "./type-validation-utils";
+} from "./typeValidationUtils";
 import { UserV, MeetingV, TranscriptV } from "../validators";
 
 // Import only the validators that exist - others will be empty objects for now

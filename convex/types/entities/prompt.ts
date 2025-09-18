@@ -19,6 +19,7 @@ export type PromptFeedback = "used" | "dismissed" | "upvoted";
 // AI prompt entity (matches convex/schema/ai.ts exactly)
 export interface AIPrompt {
   _id: Id<"prompts">;
+  _creationTime: number; // Convex system field
   meetingId: Id<"meetings">;
   type: PromptType;
   content: string;
@@ -32,6 +33,7 @@ export interface AIPrompt {
 // AI insights entity (matches schema exactly)
 export interface AIInsight {
   _id: Id<"insights">;
+  _creationTime: number; // Convex system field
   userId: Id<"users">;
   meetingId: Id<"meetings">;
   summary: string;

@@ -7,7 +7,7 @@
  * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 8.3, 8.4
  * Compliance: Automated monitoring and maintenance for type system health
  */
-
+"use node";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 import {
@@ -18,12 +18,13 @@ import {
   type CIValidationReport,
   type TypeDriftCheck,
   type TypePerformanceMetrics,
-} from "./type-validation-utils";
+} from "./typeValidationUtils";
 
 // Import all validator collections
 import { UserV, MeetingV, TranscriptV } from "../validators";
 import { CommonV } from "../validators/common";
 import { PaginationV } from "../validators/pagination";
+import { platform } from "os";
 
 export interface TypeSystemHealthReport {
   timestamp: number;

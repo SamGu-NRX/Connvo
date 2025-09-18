@@ -12,7 +12,7 @@ import { describe, test, expect } from "vitest";
 import {
   validateFunctionTypes,
   generateCIValidationReport,
-} from "./type-validation-utils";
+} from "./typeValidationUtils";
 import { UserV } from "../validators/user";
 
 // Import function modules to test

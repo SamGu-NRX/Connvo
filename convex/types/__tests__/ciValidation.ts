@@ -7,11 +7,12 @@
  * Requirements: 3.4, 3.5, 6.4, 6.5, 8.3, 8.4
  * Compliance: Automated CI/CD integration for type safety
  */
+"use node";
 
 import {
   generateCIValidationReport,
   type CIValidationReport,
-} from "./type-validation-utils";
+} from "./typeValidationUtils";
 
 // Import all validator collections for validation
 import { UserV } from "../validators/user";

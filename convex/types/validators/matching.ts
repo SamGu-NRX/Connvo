@@ -65,6 +65,7 @@ export const MatchingQueueV = {
   // Full queue entry
   full: v.object({
     _id: v.id("matchingQueue"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     availableFrom: v.number(),
     availableTo: v.number(),
@@ -78,6 +79,7 @@ export const MatchingQueueV = {
   // Queue status with metadata
   status: v.object({
     _id: v.id("matchingQueue"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     availableFrom: v.number(),
     availableTo: v.number(),
@@ -96,6 +98,7 @@ export const MatchingQueueV = {
 export const MatchingAnalyticsV = {
   full: v.object({
     _id: v.id("matchingAnalytics"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     matchId: v.string(),
     outcome: matchOutcomeV,

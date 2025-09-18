@@ -91,6 +91,7 @@ export const UserV = {
 export const UserProfileV = {
   full: v.object({
     _id: v.id("profiles"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     displayName: v.string(),
     bio: v.optional(v.string()),
@@ -120,6 +121,7 @@ export const UserProfileV = {
 export const InterestV = {
   full: v.object({
     _id: v.id("interests"),
+    _creationTime: v.number(), // Convex system field
     key: v.string(),
     label: v.string(),
     category: v.string(),
@@ -134,6 +136,7 @@ export const InterestV = {
 export const UserInterestV = {
   full: v.object({
     _id: v.id("userInterests"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     interestKey: v.string(),
     createdAt: v.number(),
@@ -142,6 +145,7 @@ export const UserInterestV = {
   // User interest with interest details
   withInterest: v.object({
     _id: v.id("userInterests"),
+    _creationTime: v.number(), // Convex system field
     userId: v.id("users"),
     interestKey: v.string(),
     createdAt: v.number(),

@@ -52,6 +52,7 @@ export const TranscriptV = {
   // Full transcript entity
   full: v.object({
     _id: v.id("transcripts"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     // Sharding key: time bucket (5-minute windows) to prevent hot partitions
     bucketMs: v.number(), // Math.floor(timestamp / 300000) * 300000
@@ -110,6 +111,7 @@ export const TranscriptV = {
 export const TranscriptionSessionV = {
   full: v.object({
     _id: v.id("transcriptionSessions"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     provider: transcriptionProviderV,
     status: transcriptionStatusV,
@@ -125,6 +127,7 @@ export const TranscriptionSessionV = {
 export const TranscriptSegmentV = {
   full: v.object({
     _id: v.id("transcriptSegments"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     startMs: v.number(),
     endMs: v.number(),
@@ -138,6 +141,7 @@ export const TranscriptSegmentV = {
   // Segment with speaker details
   withSpeakers: v.object({
     _id: v.id("transcriptSegments"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     startMs: v.number(),
     endMs: v.number(),

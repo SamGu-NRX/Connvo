@@ -36,6 +36,7 @@ export const MessageV = {
   // Full message entity
   full: v.object({
     _id: v.id("messages"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     userId: v.optional(v.id("users")), // Optional for system messages
     content: v.string(),
@@ -46,6 +47,7 @@ export const MessageV = {
   // Message with user details
   withUser: v.object({
     _id: v.id("messages"),
+    _creationTime: v.number(), // Convex system field
     meetingId: v.id("meetings"),
     userId: v.optional(v.id("users")),
     content: v.string(),
