@@ -31,7 +31,7 @@ Professional individuals and enterprise teams seeking genuine networking opportu
 - **Backend**: Convex reactive backend with real-time WebSocket subscriptions
 - **Database**: Convex with time-sharded collections for high-frequency data
 - **Authentication**: WorkOS Auth Kit for enterprise identity management
-- **Video**: GetStream Video for professional-grade video calling
+- **Video**: GetStream Video for professional-grade video calling (paid tier) + WebRTC/custom pipeline (free tier)
 - **AI**: Provider-agnostic AI integration for embeddings and conversation assistance
 - **Real-time**: Operational transform for collaborative editing, live transcription streaming
 
