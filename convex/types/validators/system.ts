@@ -324,3 +324,24 @@ export const MaintenanceWindowV = {
     updatedAt: v.number(),
   }),
 } as const;
+
+/**
+ * Aggregated export for system validators to offer a backward-compatible namespace.
+ */
+export const SystemV = {
+  alertSeverity: alertSeverityV,
+  alertCategory: alertCategoryV,
+  alertStatus: alertStatusV,
+  metadata: metadataRecordV,
+  labels: labelsRecordV,
+  featureFlagValue: featureFlagValueV,
+  idempotencyKey: IdempotencyKeyV,
+  alert: AlertV,
+  performanceMetric: PerformanceMetricV,
+  rateLimit: RateLimitV,
+  auditLog: AuditLogV,
+  featureFlag: FeatureFlagV,
+  healthStatus: SystemHealthStatusV,
+  config: SystemConfigV,
+  maintenanceWindow: MaintenanceWindowV,
+} as const;

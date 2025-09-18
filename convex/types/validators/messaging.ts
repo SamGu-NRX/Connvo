@@ -202,3 +202,18 @@ export const ChatPreferencesV = {
     updatedAt: v.number(),
   }),
 } as const;
+
+/**
+ * Aggregated export for messaging validators to maintain concise imports.
+ */
+export const MessagingV = {
+  attachment: attachmentV,
+  message: MessageV,
+  thread: MessageThreadV,
+  stats: ChatStatsV,
+  searchResult: MessageSearchResultV,
+  moderation: MessageModerationV,
+  export: ChatExportV,
+  event: ChatEventV,
+  preferences: ChatPreferencesV,
+} as const;

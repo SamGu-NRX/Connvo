@@ -645,7 +645,10 @@ export const MatchingOptimizationV = {
   }),
 } as const;
 
-// Fairness Metrics validators
+/**
+ * Aggregated export for matching validators to provide a stable import surface.
+ * Mirrors the fine-grained validators above to avoid redefining structures.
+ */
 export const FairnessMetricsV = {
   full: v.object({
     timeWindow: v.object({
@@ -710,4 +713,32 @@ export const FairnessMetricsV = {
       }),
     ),
   }),
+} as const;
+
+/**
+ * Aggregated export for matching validators to provide a stable import surface.
+ */
+export const MatchingV = {
+  constraints: constraintsV,
+  compatibilityFeatures: compatibilityFeaturesV,
+  queue: MatchingQueueV,
+  analytics: MatchingAnalyticsV,
+  result: MatchResultV,
+  preferences: MatchingPreferencesV,
+  algorithmConfig: MatchingAlgorithmConfigV,
+  stats: MatchingStatsV,
+  feedback: MatchFeedbackV,
+  event: MatchingEventV,
+  userScoring: UserScoringDataV,
+  ml: {
+    modelConfig: MLModelConfigV,
+    featureVector: FeatureVectorV,
+    pipeline: MatchingPipelineV,
+    candidateScore: CandidateScoreV,
+    experiment: MatchingExperimentV,
+    qualityMetrics: MatchingQualityMetricsV,
+    learnedPreferences: LearnedPreferencesV,
+    optimization: MatchingOptimizationV,
+    fairnessMetrics: FairnessMetricsV,
+  },
 } as const;

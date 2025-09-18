@@ -86,3 +86,12 @@ export const StreamWebhookPayloadV = v.object({
     }),
   ),
 });
+
+/**
+ * Aggregated export exposing key Stream validators under a single namespace.
+ */
+export const StreamV = {
+  roomFeatures: streamRoomFeaturesV,
+  api: StreamApiResponseV,
+  webhook: StreamWebhookPayloadV,
+} as const;

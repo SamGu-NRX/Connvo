@@ -8,14 +8,14 @@
  * Compliance: steering/convex_rules.mdc - Uses new function syntax with proper validators
  */
 
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
+import type { Infer } from "convex/values";
 import {
   action,
   internalAction,
   internalMutation,
   internalQuery,
 } from "@convex/_generated/server";
-import { ConvexError } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
 import { internal } from "@convex/_generated/api";
 import { MatchResultV, constraintsV } from "@convex/types/validators/matching";
@@ -242,11 +242,7 @@ export const getShardQueueEntries = internalQuery({
       userId: Id<"users">;
       availableFrom: number;
       availableTo: number;
-      constraints: {
-        interests: string[];
-        roles: string[];
-        orgConstraints?: string;
-      };
+      constraints: Infer<typeof constraintsV>;
       createdAt: number;
     }>
   > => {

@@ -847,3 +847,20 @@ export const WebRTCApiResponseV = {
     }),
   ),
 } as const;
+
+/**
+ * Aggregated export for WebRTC validators to support legacy import paths.
+ */
+export const WebRTCV = {
+  sessionState: webrtcSessionStateV,
+  signalType: webrtcSignalTypeV,
+  connectionQuality: connectionQualityV,
+  metadata: metadataRecordV,
+  sdp: sdpDataV,
+  ice: iceDataV,
+  connectionStats: connectionStatsV,
+  session: WebRTCSessionV,
+  signal: WebRTCSignalV,
+  metrics: ConnectionMetricsV,
+  roomStatus: WebRTCRoomStatusV,
+} as const;

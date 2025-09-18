@@ -313,3 +313,19 @@ export const AIFeedbackV = {
     submittedAt: v.number(),
   }),
 } as const;
+
+/**
+ * Aggregated export to provide a single entry point for prompt-related validators.
+ * Reuses the fine-grained validators defined above without redefining structures.
+ */
+export const PromptV = {
+  prompt: AIPromptV,
+  insight: AIInsightV,
+  contentGeneration: AIContentGenerationV,
+  recommendation: RecommendationV,
+  link: LinkV,
+  connectionRecommendation: ConnectionRecommendationV,
+  analytics: AIAnalyticsV,
+  template: AIPromptTemplateV,
+  feedback: AIFeedbackV,
+} as const;
