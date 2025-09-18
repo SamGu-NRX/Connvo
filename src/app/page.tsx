@@ -442,37 +442,14 @@ const LandingPage = () => {
             transition={{ delay: 1.5, duration: 1 }}
             className="absolute bottom-8 left-1/2 -translate-x-1/2"
           >
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="flex flex-col items-center gap-2"
-            >
+            <div className="flex flex-col items-center gap-2">
               <GlassCard className="p-2">
                 <div className="h-6 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-transparent" />
               </GlassCard>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Scroll</span>
-            </motion.div>
+            </div>
           </motion.div>
         </section>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-10 left-1/2 hidden -translate-x-1/2 transform md:block"
-        >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="flex h-10 w-6 justify-center rounded-full border-2 border-emerald-400 dark:border-emerald-500"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="mt-2 h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-500"
-            />
-          </motion.div>
-        </motion.div>
 
         {/* MacBook Scroll Component */}
         <MacbookScroll />
