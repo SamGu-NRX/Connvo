@@ -154,11 +154,21 @@ export const listActiveUsersInOrg = query({
   handler: async (ctx, { paginationOpts }) => {
     const identity = await requireIdentity(ctx);
 
+    if (!identity.orgId) {
+      return {
+        page: [],
+        isDone: true,
+        continueCursor: null,
+      };
+    }
+
+    const orgId = identity.orgId as string;
+
     // Use index-first query pattern - requires "by_org_and_active" index
     const result = await ctx.db
       .query("users")
       .withIndex("by_org_and_active", (q) =>
-        q.eq("orgId", identity.orgId).eq("isActive", true),
+        q.eq("orgId", orgId).eq("isActive", true),
       )
       .order("desc")
       .paginate(paginationOpts);

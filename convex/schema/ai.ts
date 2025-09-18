@@ -63,12 +63,7 @@ export const aiTables = {
   })
     .index("by_source", ["sourceType", "sourceId"])
     .index("by_model", ["model"])
-    .index("by_created", ["createdAt"])
-    .vectorIndex("by_vector", {
-      vectorField: "vector",
-      dimensions: 1536, // OpenAI embedding dimensions
-      filterFields: ["sourceType", "model"],
-    }),
+    .index("by_created", ["createdAt"]),
 
   vectorIndexMeta: defineTable({
     provider: v.string(),

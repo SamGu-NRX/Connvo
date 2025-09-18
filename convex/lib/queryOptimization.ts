@@ -492,8 +492,3 @@ export function queryOptimizationCleanup(): void {
   SubscriptionStateManager.cleanup();
   QueryCache.cleanup();
 }
-
-// Auto-cleanup every 5 minutes
-if (typeof setInterval !== "undefined") {
-  setInterval(queryOptimizationCleanup, 5 * 60 * 1000);
-}

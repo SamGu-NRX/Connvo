@@ -30,8 +30,8 @@ describe("Prompts Module", () => {
         isActive: true,
       });
 
-      const meetingId = await t.mutation(
-        internal.meetings.mutations.createMeeting,
+      const { meetingId } = await t.mutation(
+        api.meetings.lifecycle.createMeeting,
         {
           organizerId: userId,
           title: "Test Meeting",
@@ -40,7 +40,7 @@ describe("Prompts Module", () => {
       );
 
       // Add participant
-      await t.mutation(internal.meetings.mutations.addParticipant, {
+      await t.mutation(api.meetings.lifecycle.addParticipant, {
         meetingId,
         userId,
         role: "host",
@@ -74,8 +74,8 @@ describe("Prompts Module", () => {
         isActive: true,
       });
 
-      const meetingId = await t.mutation(
-        internal.meetings.mutations.createMeeting,
+      const { meetingId } = await t.mutation(
+        api.meetings.lifecycle.createMeeting,
         {
           organizerId: userId,
           title: "Test Meeting 2",
@@ -84,7 +84,7 @@ describe("Prompts Module", () => {
       );
 
       // Add participant
-      await t.mutation(internal.meetings.mutations.addParticipant, {
+      await t.mutation(api.meetings.lifecycle.addParticipant, {
         meetingId,
         userId,
         role: "host",

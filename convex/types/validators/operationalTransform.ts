@@ -32,7 +32,7 @@ import type {
   OTValidationError,
   OTValidationWarning,
   OperationAnalytics,
-} from "../domain/operational-transform";
+} from "@convex/types/domain/operationalTransform";
 
 // Re-export basic validators from note validators
 export { NoteV, OfflineOperationQueueV, OfflineCheckpointV } from "./note";

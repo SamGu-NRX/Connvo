@@ -36,9 +36,9 @@ convex/types/
 │   ├── pagination.ts  # PaginationResult<T>
 │   └── index.ts       # Barrel exports
 ├── domain/            # Domain-specific complex types
-│   ├── operational-transform.ts
-│   ├── vector-search.ts
-│   ├── real-time.ts
+│   ├── operationalTransform.ts
+│   ├── vectorSearch.ts
+│   ├── realTime.ts
 │   └── index.ts
 ├── __tests__/         # Type alignment tests
 │   └── type-alignment.test.ts

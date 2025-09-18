@@ -9,6 +9,7 @@
  */
 
 import { v } from "convex/values";
+import type { Id } from "@convex/_generated/dataModel";
 import type {
   Operation,
   OperationWithMetadata,
@@ -49,7 +50,7 @@ export interface DocumentState {
 export function createInsertOperation(
   position: number,
   content: string,
-  authorId: string,
+  authorId: Id<"users">,
   sequence: number,
 ): OperationWithMetadata {
   return {
@@ -69,7 +70,7 @@ export function createInsertOperation(
 export function createDeleteOperation(
   position: number,
   length: number,
-  authorId: string,
+  authorId: Id<"users">,
   sequence: number,
 ): OperationWithMetadata {
   return {
@@ -89,7 +90,7 @@ export function createDeleteOperation(
 export function createRetainOperation(
   position: number,
   length: number,
-  authorId: string,
+  authorId: Id<"users">,
   sequence: number,
 ): OperationWithMetadata {
   return {

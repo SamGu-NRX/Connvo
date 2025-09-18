@@ -12,7 +12,8 @@
 
 import { v } from "convex/values";
 import { action, internalAction } from "@convex/_generated/server";
-import { internal } from "@convex/_generated/api";
+import { internal, api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import { ConvexError } from "convex/values";
 
 import {
@@ -24,6 +25,7 @@ import type {
   EmbeddingGenerationResult,
   EmbeddingBatchResult,
   VectorSearchResult,
+  SimilaritySearchResult,
 } from "@convex/types/entities/embedding";
 import { VectorUtils } from "@convex/types/entities/embedding";
 
@@ -307,7 +309,7 @@ export const generateUserProfileEmbedding = internalAction({
     }
 
     // Generate embedding
-    const result = await ctx.runAction(internal.embeddings.actions.generateEmbedding, {
+    const result = await ctx.runAction(api.embeddings.actions.generateEmbedding, {
       sourceType: "user",
       sourceId: args.userId,
       content,
@@ -370,7 +372,7 @@ export const generateMeetingEmbedding = internalAction({
 
     // Get transcript content if available
     const transcripts = await ctx.runQuery(
-      internal.transcripts.queries.getTranscriptsByMeeting,
+      internal.transcripts.queries.getTranscriptSegments,
       {
         meetingId: args.meetingId,
         limit: 50, // Limit to avoid too much content
@@ -391,7 +393,7 @@ export const generateMeetingEmbedding = internalAction({
     }
 
     // Generate embedding
-    const result = await ctx.runAction(internal.embeddings.actions.generateEmbedding, {
+    const result = await ctx.runAction(api.embeddings.actions.generateEmbedding, {
       sourceType: "meeting",
       sourceId: args.meetingId,
       content,
@@ -421,8 +423,8 @@ export const advancedVectorSearch = internalAction({
       const queryVector = VectorUtils.bufferToFloatArray(args.vector);
 
       // Perform basic vector search using Convex
-      const basicResults = await ctx.runQuery(
-        internal.embeddings.queries.vectorSimilaritySearch,
+      const basicResults: SimilaritySearchResult[] = await ctx.runQuery(
+        api.embeddings.queries.vectorSimilaritySearch,
         {
           queryVector: args.vector,
           sourceTypes: args.sourceTypes,
@@ -432,37 +434,29 @@ export const advancedVectorSearch = internalAction({
       );
 
       // Apply additional filtering and ranking if needed
-      let filteredResults = basicResults;
+      let filteredResults: SimilaritySearchResult[] = basicResults;
 
-      if (args.filters) {
+      const filters = args.filters;
+      if (filters) {
         filteredResults = basicResults.filter((result) => {
           const embedding = result.embedding;
 
           // Filter by model
-          if (args.filters!.model && embedding.model !== args.filters!.model) {
+          if (filters.model && embedding.model !== filters.model) {
             return false;
           }
 
           // Filter by source IDs
-          if (
-            args.filters!.sourceIds &&
-            !args.filters!.sourceIds.includes(embedding.sourceId)
-          ) {
+          if (filters.sourceIds && !filters.sourceIds.includes(embedding.sourceId)) {
             return false;
           }
 
           // Filter by creation time
-          if (
-            args.filters!.createdAfter &&
-            embedding.createdAt < args.filters!.createdAfter
-          ) {
+          if (filters.createdAfter && embedding.createdAt < filters.createdAfter) {
             return false;
           }
 
-          if (
-            args.filters!.createdBefore &&
-            embedding.createdAt > args.filters!.createdBefore
-          ) {
+          if (filters.createdBefore && embedding.createdAt > filters.createdBefore) {
             return false;
           }
 
@@ -471,15 +465,16 @@ export const advancedVectorSearch = internalAction({
       }
 
       // Calculate actual similarity scores using cosine similarity
-      const resultsWithScores = filteredResults.map((result) => {
-        const embeddingVector = VectorUtils.bufferToFloatArray(result.embedding.vector);
-        const similarity = VectorUtils.cosineSimilarity(queryVector, embeddingVector);
+      const resultsWithScores: Array<SimilaritySearchResult & { score: number }> =
+        filteredResults.map((result) => {
+          const embeddingVector = VectorUtils.bufferToFloatArray(result.embedding.vector);
+          const similarity = VectorUtils.cosineSimilarity(queryVector, embeddingVector);
 
-        return {
-          ...result,
-          score: similarity,
-        };
-      });
+          return {
+            ...result,
+            score: similarity,
+          };
+        });
 
       // Sort by similarity score (descending)
       resultsWithScores.sort((a, b) => b.score - a.score);
@@ -491,7 +486,7 @@ export const advancedVectorSearch = internalAction({
       );
 
       // Limit results
-      const limit = args.limit ?? 10;
+      const limit = Math.min(Math.max(args.limit ?? 10, 1), 256);
       const finalResults = thresholdedResults.slice(0, limit);
 
       const searchTime = Date.now() - startTime;

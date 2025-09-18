@@ -47,13 +47,13 @@ export const initializeWebRTCRoom = action({
     const participant: MeetingParticipant & {
       role: "host" | "participant" | "observer";
       presence: "invited" | "joined" | "left";
-    } = await ctx.runQuery(internal.meetings.webrtc.getParticipantForAccess, {
+    } = await ctx.runQuery(internal.meetings.webrtc.index.getParticipantForAccess, {
       meetingId,
     });
 
     // Fetch meeting via internal query
     const meeting: Meeting | null = await ctx.runQuery(
-      internal.meetings.webrtc.getMeetingDoc,
+      internal.meetings.webrtc.index.getMeetingDoc,
       { meetingId },
     );
 
@@ -82,7 +82,7 @@ export const initializeWebRTCRoom = action({
     });
 
     // Store room configuration in database
-    await ctx.runMutation(internal.meetings.webrtc.storeRoomConfiguration, {
+    await ctx.runMutation(internal.meetings.webrtc.index.storeRoomConfiguration, {
       meetingId,
       roomConfig: {
         roomId: roomConfig.roomId,
@@ -167,12 +167,12 @@ export const generateParticipantAccessToken = action({
 
     // Verify user is a participant and get their role via internal query
     const participant = await ctx.runQuery(
-      internal.meetings.webrtc.getParticipantForAccess,
+      internal.meetings.webrtc.index.getParticipantForAccess,
       { meetingId },
     );
 
     const meeting: Meeting | null = await ctx.runQuery(
-      internal.meetings.webrtc.getMeetingDoc,
+      internal.meetings.webrtc.index.getMeetingDoc,
       {
         meetingId,
       },
@@ -189,7 +189,7 @@ export const generateParticipantAccessToken = action({
 
     // Get room configuration
     const roomConfig: VideoRoomConfig | null = await ctx.runQuery(
-      internal.meetings.webrtc.getVideoRoomConfigByMeeting,
+      internal.meetings.webrtc.index.getVideoRoomConfigByMeeting,
       { meetingId },
     );
 
@@ -259,7 +259,7 @@ export const handleConnectionFailure = action({
     const identity = await requireIdentity(ctx);
     // Verify user is a participant
     const _p1: MeetingParticipant = await ctx.runQuery(
-      internal.meetings.webrtc.getParticipantForAccess,
+      internal.meetings.webrtc.index.getParticipantForAccess,
       {
         meetingId,
       },
@@ -275,7 +275,7 @@ export const handleConnectionFailure = action({
 
     // Update session state to failed
     const _update0: null = await ctx.runMutation(
-      internal.meetings.webrtc.updateSessionStateInternal,
+      internal.meetings.webrtc.index.updateSessionStateInternal,
       {
         meetingId,
         sessionId,
@@ -291,7 +291,7 @@ export const handleConnectionFailure = action({
     // Determine if fallback is available
     // TODO: should it even be nullable here?
     const roomConfig: VideoRoomConfig | null = await ctx.runQuery(
-      internal.meetings.webrtc.getVideoRoomConfigByMeeting,
+      internal.meetings.webrtc.index.getVideoRoomConfigByMeeting,
       { meetingId },
     );
 
@@ -333,7 +333,7 @@ export const monitorConnectionQuality = action({
     const identity = await requireIdentity(ctx);
     // Verify user is a participant
     const _participant: MeetingParticipant = await ctx.runQuery(
-      internal.meetings.webrtc.getParticipantForAccess,
+      internal.meetings.webrtc.index.getParticipantForAccess,
       {
         meetingId,
       },
@@ -373,7 +373,7 @@ export const monitorConnectionQuality = action({
 
     // Store quality metrics for analytics
     const _stored: null = await ctx.runMutation(
-      internal.meetings.webrtc.storeConnectionMetrics,
+      internal.meetings.webrtc.index.storeConnectionMetrics,
       {
         meetingId,
         sessionId,

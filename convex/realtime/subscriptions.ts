@@ -45,8 +45,8 @@ import {
   TranscriptStreamSubscriptionResultV,
   MeetingParticipantsSubscriptionResultV,
   SubscriptionValidationResultV,
-} from "@convex/types/validators/real-time";
-import type { SubscriptionContext } from "@convex/types/domain/real-time";
+} from "@convex/types/validators/realTime";
+import type { SubscriptionContext } from "@convex/types/domain/realTime";
 
 /**
  * Real-time meeting notes subscription with permission validation and bandwidth management

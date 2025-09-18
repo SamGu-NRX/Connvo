@@ -25,6 +25,12 @@ import {
   RetryPolicies,
   CircuitBreakers,
 } from "@convex/lib/resilience";
+import {
+  createStreamToken,
+  getStreamCall,
+  STREAM_DEFAULT_CALL_TYPE,
+} from "@convex/lib/getstreamServer";
+import type { StreamCall, StreamRecording } from "@convex/lib/getstreamServer";
 import { User } from "@convex/types/entities/user";
 import {
   Meeting,
@@ -42,59 +48,7 @@ import type {
   StreamRoomCreationResponse,
 } from "@convex/types/entities/stream";
 
-/**
- * Minimal types for GetStream Video client to avoid any.
- */
-type StreamRecording = { id?: string; url?: string; duration?: number };
-type StreamCall = {
-  create: (opts: { data: Record<string, unknown> }) => Promise<void>;
-  startRecording: (config: {
-    mode: string;
-    audio_only: boolean;
-    quality: string;
-    layout: { name: string; options?: Record<string, unknown> };
-  }) => Promise<{ recording?: StreamRecording }>;
-  stopRecording: () => Promise<unknown>;
-  queryRecordings: (query: {
-    session_id: string;
-  }) => Promise<{ recordings?: StreamRecording[] }>;
-};
-type StreamVideoClient = {
-  call: (callType: string, callId: string) => StreamCall;
-  createToken: (userId: string, claims: Record<string, unknown>) => string;
-};
-
-/**
- * GetStream Video Client singleton for server-side operations
- */
-let streamVideoClient: StreamVideoClient | null = null;
 const PAID_TIER_MAX_PARTICIPANTS = 100;
-
-function getStreamVideoClient(): StreamVideoClient {
-  if (!streamVideoClient) {
-    const streamApiKey = process.env.STREAM_API_KEY;
-    const streamSecret = process.env.STREAM_SECRET;
-
-    if (!streamApiKey || !streamSecret) {
-      throw new Error(
-        "GetStream credentials not configured. Set STREAM_API_KEY and STREAM_SECRET environment variables.",
-      );
-    }
-
-    // Import GetStream Video JS SDK for Node.js
-    const { StreamVideoClient: StreamCtor } =
-      require("@stream-io/video-react-sdk") as {
-        StreamVideoClient: new (
-          apiKey: string,
-          opts: { secret: string },
-        ) => StreamVideoClient;
-      };
-
-    streamVideoClient = new StreamCtor(streamApiKey, { secret: streamSecret });
-  }
-
-  return streamVideoClient;
-}
 
 /**
  * Creates a GetStream call for paid tier meetings with proper error handling and idempotency
@@ -145,16 +99,13 @@ export const createStreamRoom = internalAction({
 
           // Generate unique call ID (GetStream uses call IDs, not room IDs)
           const callId = `call_${meetingId}_${Date.now()}`;
-          const callType = "default"; // GetStream call type
+          const callType = STREAM_DEFAULT_CALL_TYPE; // GetStream call type
 
           // Initialize GetStream client with retry and circuit breaker
           const result = await withRetry<{ callId: string; call: StreamCall }>(
             async () => {
               return await CircuitBreakers.getstream.execute(async () => {
-                const client = getStreamVideoClient();
-
-                // Create call using GetStream Video JS SDK
-                const call = client.call(callType, callId);
+                const call = getStreamCall(callId, callType);
 
                 // Get organizer user details
                 const organizer: User | null = await ctx.runQuery(
@@ -222,7 +173,7 @@ export const createStreamRoom = internalAction({
           // Track successful room creation
           const duration = Date.now() - startTime;
           const _result0: null = await ctx.runMutation(
-            internal.meetings.streamHelpers.trackStreamEvent,
+            internal.meetings.stream.streamHelpers.trackStreamEvent,
             {
               meetingId,
               event: "call_created",
@@ -260,7 +211,7 @@ export const createStreamRoom = internalAction({
             error instanceof Error ? error.message : "Unknown error";
 
           const _result1: null = await ctx.runMutation(
-            internal.meetings.streamHelpers.trackStreamEvent,
+            internal.meetings.stream.streamHelpers.trackStreamEvent,
             {
               meetingId,
               event: "call_creation_failed",
@@ -272,7 +223,7 @@ export const createStreamRoom = internalAction({
 
           // Send alert for GetStream failures
           const _result2: null = await ctx.runMutation(
-            internal.meetings.streamHelpers.sendStreamAlert,
+            internal.meetings.stream.streamHelpers.sendStreamAlert,
             {
               alertType: "call_creation_failed",
               meetingId,
@@ -319,7 +270,7 @@ export const generateParticipantTokenPublic = action({
     const userId = user._id;
 
     const result: StreamParticipantTokenInternal = await ctx.runAction(
-      internal.meetings.stream.generateParticipantToken,
+      internal.meetings.stream.index.generateParticipantToken,
       {
         meetingId,
         userId,
@@ -403,19 +354,17 @@ export const generateParticipantToken = internalAction({
           const result = await withRetry<{ token: string; expiresAt: number }>(
             async () => {
               return await CircuitBreakers.getstream.execute(async () => {
-                const client = getStreamVideoClient();
-
                 // Token expiry (1 hour for security)
                 const expiresAt = Math.floor(Date.now() / 1000) + 3600;
 
                 // Create JWT token with proper claims
-                const token = client.createToken(user.workosUserId, {
+                const token = createStreamToken(user.workosUserId, {
                   exp: expiresAt,
                   iat: Math.floor(Date.now() / 1000),
                   user_id: user.workosUserId,
                   // Add custom claims for permissions
                   role: role,
-                  call_cids: [`default:${meeting.streamRoomId}`], // Grant access to specific call
+                  call_cids: [`${STREAM_DEFAULT_CALL_TYPE}:${meeting.streamRoomId}`], // Grant access to specific call
                 });
 
                 return {
@@ -444,7 +393,7 @@ export const generateParticipantToken = internalAction({
 
           // Send alert for token generation failures
           await ctx.runMutation(
-            internal.meetings.streamHelpers.sendStreamAlert,
+            internal.meetings.stream.streamHelpers.sendStreamAlert,
             {
               alertType: "token_generation_failed",
               meetingId,
@@ -551,8 +500,7 @@ export const startRecording = action({
         recordingUrl?: string;
       }>(async () => {
         return await CircuitBreakers.getstream.execute(async () => {
-          const client = getStreamVideoClient();
-          const call: StreamCall = client.call("default", streamRoomId);
+          const call = getStreamCall(streamRoomId, STREAM_DEFAULT_CALL_TYPE);
 
           // Configure recording settings
           const config = {
@@ -598,7 +546,7 @@ export const startRecording = action({
       // Track successful recording start
       const duration = Date.now() - startTime;
       const _result4: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.trackStreamEvent,
+        internal.meetings.stream.streamHelpers.trackStreamEvent,
         {
           meetingId,
           event: "recording_started",
@@ -627,7 +575,7 @@ export const startRecording = action({
         error instanceof Error ? error.message : "Unknown error";
 
       const _result5: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.trackStreamEvent,
+        internal.meetings.stream.streamHelpers.trackStreamEvent,
         {
           meetingId,
           event: "recording_start_failed",
@@ -639,7 +587,7 @@ export const startRecording = action({
 
       // Send alert for recording failures
       const _result6: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.sendStreamAlert,
+        internal.meetings.stream.streamHelpers.sendStreamAlert,
         {
           alertType: "recording_failed",
           meetingId,
@@ -717,8 +665,7 @@ export const stopRecording = action({
         duration?: number;
       }>(async () => {
         return await CircuitBreakers.getstream.execute(async () => {
-          const client = getStreamVideoClient();
-          const call: StreamCall = client.call("default", streamRoomId2);
+          const call = getStreamCall(streamRoomId2, STREAM_DEFAULT_CALL_TYPE);
 
           // Stop recording
           const stopResponse = await call.stopRecording();
@@ -757,7 +704,7 @@ export const stopRecording = action({
       // Track successful recording stop
       const duration = Date.now() - startTime;
       const _result8: null = await ctx.runMutation(
-        internal.meetings.streamHelpers.trackStreamEvent,
+        internal.meetings.stream.streamHelpers.trackStreamEvent,
         {
           meetingId,
           event: "recording_stopped",
@@ -787,7 +734,7 @@ export const stopRecording = action({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
 
-      await ctx.runMutation(internal.meetings.streamHelpers.trackStreamEvent, {
+      await ctx.runMutation(internal.meetings.stream.streamHelpers.trackStreamEvent, {
         meetingId,
         event: "recording_stop_failed",
         success: false,
@@ -815,20 +762,8 @@ export const deleteStreamRoom = internalAction({
     { meetingId, roomId },
   ): Promise<StreamSimpleSuccess> => {
     try {
-      // TODO: Delete actual GetStream room
-      const streamApiKey = process.env.STREAM_API_KEY;
-      const streamSecret = process.env.STREAM_SECRET;
-
-      if (streamApiKey && streamSecret) {
-        // TODO: Actual GetStream room deletion
-        /*
-        const StreamVideo = require('@stream-io/video-react-sdk');
-        const client = new StreamVideo(streamApiKey, streamSecret);
-
-        const call = client.call('default', roomId);
-        await call.delete();
-        */
-      }
+      const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
+      await call.delete();
 
       console.log(`Deleted GetStream room ${roomId} for meeting ${meetingId}`);
 

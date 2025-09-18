@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect } from "vitest";
+import type { Id } from "@convex/_generated/dataModel";
 import {
   Operation,
   OperationWithMetadata,
@@ -31,31 +32,34 @@ import {
 describe("Operational Transform Core Functions", () => {
   describe("Operation Creation", () => {
     it("should create insert operations correctly", () => {
-      const op = createInsertOperation(5, "hello", "user1", 1);
+      const authorId = "user1" as Id<"users">;
+      const op = createInsertOperation(5, "hello", authorId, 1);
       expect(op.type).toBe("insert");
       expect(op.position).toBe(5);
       expect(op.content).toBe("hello");
-      expect(op.authorId).toBe("user1");
+      expect(op.authorId).toBe(authorId);
       expect(op.sequence).toBe(1);
       expect(op.id).toBeDefined();
       expect(op.timestamp).toBeGreaterThan(0);
     });
 
     it("should create delete operations correctly", () => {
-      const op = createDeleteOperation(3, 5, "user2", 2);
+      const authorId = "user2" as Id<"users">;
+      const op = createDeleteOperation(3, 5, authorId, 2);
       expect(op.type).toBe("delete");
       expect(op.position).toBe(3);
       expect(op.length).toBe(5);
-      expect(op.authorId).toBe("user2");
+      expect(op.authorId).toBe(authorId);
       expect(op.sequence).toBe(2);
     });
 
     it("should create retain operations correctly", () => {
-      const op = createRetainOperation(0, 10, "user3", 3);
+      const authorId = "user3" as Id<"users">;
+      const op = createRetainOperation(0, 10, authorId, 3);
       expect(op.type).toBe("retain");
       expect(op.position).toBe(0);
       expect(op.length).toBe(10);
-      expect(op.authorId).toBe("user3");
+      expect(op.authorId).toBe(authorId);
       expect(op.sequence).toBe(3);
     });
   });

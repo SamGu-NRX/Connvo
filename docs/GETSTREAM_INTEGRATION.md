@@ -159,7 +159,7 @@ function CustomVideoInterface({ meetingId }: { meetingId: Id<"meetings"> }) {
 Creates a GetStream call for a meeting.
 
 ```typescript
-await ctx.runAction(internal.meetings.stream.createStreamRoom, {
+await ctx.runAction(internal.meetings.stream.index.createStreamRoom, {
   meetingId: "meeting_id",
   organizerId: "user_id",
   title: "Meeting Title",
@@ -174,7 +174,7 @@ Generates authentication token for participants.
 
 ```typescript
 const tokenResponse = await convex.action(
-  api.meetings.stream.generateParticipantTokenPublic,
+  api.meetings.stream.index.generateParticipantTokenPublic,
   { meetingId: "meeting_id" },
 );
 ```
@@ -184,7 +184,7 @@ const tokenResponse = await convex.action(
 Starts recording for a call (host only).
 
 ```typescript
-await convex.action(api.meetings.stream.startRecording, {
+await convex.action(api.meetings.stream.index.startRecording, {
   meetingId: "meeting_id",
   externalStorage: "s3-bucket-name", // optional
 });

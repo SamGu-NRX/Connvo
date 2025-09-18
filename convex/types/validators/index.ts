@@ -22,8 +22,8 @@ export * from "./system";
 export * from "./stream";
 
 // Domain-specific validators
-export * from "./operational-transform";
-export * from "./real-time";
+export * from "./operationalTransform";
+export * from "./realTime";
 
 // API response validators
 export * from "./responses";

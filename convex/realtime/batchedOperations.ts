@@ -35,7 +35,7 @@ import {
   BatchPresenceProcessResultV,
   BatchStatsResultV,
   BatchPresenceUpdateV,
-} from "@convex/types/validators/real-time";
+} from "@convex/types/validators/realTime";
 import { NoteV } from "@convex/types/validators/note";
 import { TranscriptV } from "@convex/types/validators/transcript";
 

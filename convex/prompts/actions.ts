@@ -484,7 +484,7 @@ export const generateContextualPrompts = internalAction({
 /**
  * Detects lulls and triggers contextual prompt generation
  */
-export const detectLullAndGeneratePrompts = action({
+export const detectLullAndGeneratePrompts = internalAction({
   args: {
     meetingId: v.id("meetings"),
   },

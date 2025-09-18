@@ -10,6 +10,7 @@
 
 import { v } from "convex/values";
 import { mutation, internalMutation } from "@convex/_generated/server";
+import type { Id } from "@convex/_generated/dataModel";
 import { ConvexError } from "convex/values";
 
 import {

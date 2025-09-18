@@ -42,13 +42,10 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       // best-effort cleanup
-      try {
-        // StreamVideoClient may have a disconnect/close method depending on SDK version
-        // @ts-ignore
-        if (client && typeof client.disconnect === "function")
-          client.disconnect(); //disconnectUser?
-      } catch {
-        // ignore cleanup errors
+      if (client && typeof client.disconnectUser === "function") {
+        client.disconnectUser().catch(() => {
+          /* ignore cleanup errors */
+        });
       }
     };
   }, [user, loading]);

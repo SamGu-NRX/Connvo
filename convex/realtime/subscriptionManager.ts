@@ -26,8 +26,8 @@ import {
   SubscriptionValidationResultV,
   BulkTerminationResultV,
   SubscriptionStatsV,
-} from "@convex/types/validators/real-time";
-import type { ActiveSubscription } from "@convex/types/domain/real-time";
+} from "@convex/types/validators/realTime";
+import type { ActiveSubscription } from "@convex/types/domain/realTime";
 
 /**
  * Global subscription registry

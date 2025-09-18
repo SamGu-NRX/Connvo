@@ -44,6 +44,14 @@ crons.interval(
   },
 );
 
+// Frequent cleanup of in-memory query optimization caches
+crons.interval(
+  "cleanup query optimization caches",
+  { minutes: 5 },
+  internal.system.maintenance.cleanupQueryOptimizers,
+  {},
+);
+
 // Matching jobs are not registered here to avoid reference errors.
 
 export default crons;

@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import type { RealtimeSubscription, UserPresence } from "../domain/real-time";
+import type { RealtimeSubscription, UserPresence } from "../domain/realTime";
 
 // Real-time subscription validators
 export const RealtimeSubscriptionV = {

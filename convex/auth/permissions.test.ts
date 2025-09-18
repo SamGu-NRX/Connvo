@@ -49,14 +49,14 @@ describe("Dynamic Permission Management", () => {
     });
 
     // Create test meeting
-    const created = await t.mutation(api.meetings.mutations.createMeeting, {
+    const created = await t.mutation(api.meetings.lifecycle.createMeeting, {
       title: "Test Meeting for Permissions",
       description: "Testing dynamic permissions",
     });
     testMeetingId = created.meetingId;
 
     // Add participant
-    await t.mutation(api.meetings.mutations.addParticipant, {
+    await t.mutation(api.meetings.lifecycle.addParticipant, {
       meetingId: testMeetingId,
       userId: participantUserId,
       role: "participant",
@@ -142,7 +142,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should establish transcript subscription only for active meetings", async () => {
       // Start the meeting first
-      await t.mutation(api.meetings.mutations.startMeeting, {
+      await t.mutation(api.meetings.lifecycle.startMeeting, {
         meetingId: testMeetingId,
       });
 
@@ -210,7 +210,7 @@ describe("Dynamic Permission Management", () => {
       expect(subscription?.subscriptionValid).toBe(true);
 
       // Remove participant
-      await t.mutation(api.meetings.mutations.removeParticipant, {
+      await t.mutation(api.meetings.lifecycle.removeParticipant, {
         meetingId: testMeetingId,
         userId: participantUserId,
       });
@@ -243,7 +243,7 @@ describe("Dynamic Permission Management", () => {
       expect(validation.permissions).not.toContain("manage");
 
       // Promote participant to host
-      await t.mutation(api.meetings.mutations.updateParticipantRole, {
+      await t.mutation(api.meetings.lifecycle.updateParticipantRole, {
         meetingId: testMeetingId,
         userId: participantUserId,
         newRole: "host",
@@ -263,7 +263,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should revoke transcript access when meeting ends", async () => {
       // Start meeting and establish transcript subscription
-      await t.mutation(api.meetings.mutations.startMeeting, {
+      await t.mutation(api.meetings.lifecycle.startMeeting, {
         meetingId: testMeetingId,
       });
 
@@ -277,7 +277,7 @@ describe("Dynamic Permission Management", () => {
       expect(subscription.subscriptionValid).toBe(true);
 
       // End meeting
-      await t.mutation(api.meetings.mutations.endMeeting, {
+      await t.mutation(api.meetings.lifecycle.endMeeting, {
         meetingId: testMeetingId,
       });
 
@@ -336,7 +336,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should log permission revocation events", async () => {
       // Remove participant (triggers permission revocation)
-      await t.mutation(api.meetings.mutations.removeParticipant, {
+      await t.mutation(api.meetings.lifecycle.removeParticipant, {
         meetingId: testMeetingId,
         userId: participantUserId,
       });
@@ -370,7 +370,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should log role change events", async () => {
       // Change participant role
-      await t.mutation(api.meetings.mutations.updateParticipantRole, {
+      await t.mutation(api.meetings.lifecycle.updateParticipantRole, {
         meetingId: testMeetingId,
         userId: participantUserId,
         newRole: "host",
@@ -502,10 +502,10 @@ describe("Dynamic Permission Management", () => {
 
     test("should handle subscription validation for expired permissions", async () => {
       // Start and immediately end meeting
-      await t.mutation(api.meetings.mutations.startMeeting, {
+      await t.mutation(api.meetings.lifecycle.startMeeting, {
         meetingId: testMeetingId,
       });
-      await t.mutation(api.meetings.mutations.endMeeting, {
+      await t.mutation(api.meetings.lifecycle.endMeeting, {
         meetingId: testMeetingId,
       });
 

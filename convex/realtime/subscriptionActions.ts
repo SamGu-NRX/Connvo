@@ -6,7 +6,7 @@ import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "@convex/_generated/api";
 import { requireIdentity } from "@convex/auth/guards";
-import { SubscriptionValidationResultV } from "@convex/types/validators/real-time";
+import { SubscriptionValidationResultV } from "@convex/types/validators/realTime";
 
 type ValidateResult = {
   valid: boolean;

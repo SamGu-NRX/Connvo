@@ -11,6 +11,7 @@
 import { v } from "convex/values";
 import { query, internalQuery } from "@convex/_generated/server";
 import { paginationOptsValidator } from "convex/server";
+import type { Id } from "@convex/_generated/dataModel";
 
 import {
   EmbeddingV,
@@ -20,12 +21,13 @@ import {
   VectorSearchV,
 } from "@convex/types/validators/embedding";
 import { PaginationResultV } from "@convex/types/validators/pagination";
-import type {
-  Embedding,
-  EmbeddingWithSource,
-  SimilaritySearchResult,
-  VectorSearchResult,
-  EmbeddingAnalytics,
+import {
+  VectorUtils,
+  type Embedding,
+  type EmbeddingWithSource,
+  type SimilaritySearchResult,
+  type VectorSearchResult,
+  type EmbeddingAnalytics,
 } from "@convex/types/entities/embedding";
 
 /**
@@ -111,43 +113,55 @@ export const vectorSimilaritySearch = query({
   },
   returns: v.array(SimilaritySearchResultV.full),
   handler: async (ctx, args): Promise<SimilaritySearchResult[]> => {
-    const limit = args.limit ?? 10;
+    const limit = Math.min(Math.max(args.limit ?? 10, 1), 256);
     const threshold = args.threshold ?? 0.7;
 
-    // Use Convex vector search with proper filtering
-    let vectorQuery = ctx.db
-      .query("embeddings")
-      .withIndex("by_vector", (q) => q.similar("vector", args.queryVector, limit));
+    const baseVector = new Float32Array(args.queryVector);
+    if (baseVector.length === 0) {
+      return [];
+    }
 
-    // Apply filters if provided
+    const candidateLimit = Math.min(limit * 10, 500);
+
+    const query = args.model
+      ? ctx.db
+          .query("embeddings")
+          .withIndex("by_model", (q) => q.eq("model", args.model!))
+          .order("desc")
+      : ctx.db
+          .query("embeddings")
+          .withIndex("by_created", (q) => q.gt("createdAt", 0))
+          .order("desc");
+
+    let candidates = await query.take(candidateLimit);
+
     if (args.sourceTypes && args.sourceTypes.length > 0) {
-      // For multiple source types, we need to filter after the vector search
-      // since Convex vector indexes support limited filtering
-      const results = await vectorQuery.collect();
-      const filteredResults = results.filter((embedding) =>
-        args.sourceTypes!.includes(embedding.sourceType),
-      );
-
-      return filteredResults
-        .map((embedding) => ({
-          embedding,
-          score: 1.0, // Convex doesn't return similarity scores directly
-          sourceData: undefined,
-        }))
-        .slice(0, limit);
+      const allowed = new Set(args.sourceTypes);
+      candidates = candidates.filter((candidate) => allowed.has(candidate.sourceType));
     }
 
-    if (args.model) {
-      vectorQuery = vectorQuery.filter((q) => q.eq(q.field("model"), args.model));
+    const results: Array<SimilaritySearchResult & { score: number }> = [];
+    for (const candidate of candidates) {
+      const candidateVector = VectorUtils.bufferToFloatArray(candidate.vector);
+      if (candidateVector.length !== baseVector.length) {
+        continue;
+      }
+
+      const score = VectorUtils.cosineSimilarity(baseVector, candidateVector);
+      if (score < threshold) {
+        continue;
+      }
+
+      results.push({
+        embedding: candidate,
+        score,
+        sourceData: undefined,
+      });
     }
 
-    const results = await vectorQuery.collect();
+    results.sort((a, b) => b.score - a.score);
 
-    return results.map((embedding) => ({
-      embedding,
-      score: 1.0, // Convex doesn't return similarity scores directly
-      sourceData: undefined,
-    }));
+    return results.slice(0, limit);
   },
 });
 
@@ -258,24 +272,39 @@ export const findSimilarEmbeddingsBySource = internalQuery({
       return [];
     }
 
-    // Use vector similarity search
-    const results = await ctx.db
+    const comparisonVector = VectorUtils.bufferToFloatArray(sourceEmbedding.vector);
+    if (comparisonVector.length === 0) {
+      return [];
+    }
+
+    const candidateLimit = Math.min(limit * 10, 300);
+
+    let queryBuilder = ctx.db
       .query("embeddings")
-      .withIndex("by_vector", (q) =>
-        q.similar("vector", sourceEmbedding.vector, limit + 1),
-      ) // +1 to exclude self
-      .collect();
+      .withIndex("by_source", (q) => q.eq("sourceType", sourceEmbedding.sourceType))
+      .order("desc");
 
-    // Filter out the source embedding itself
-    const filteredResults = results.filter(
-      (embedding) => embedding._id !== sourceEmbedding._id,
-    );
+    let candidates = await queryBuilder.take(candidateLimit);
+    candidates = candidates.filter((candidate) => candidate._id !== sourceEmbedding._id);
 
-    return filteredResults.slice(0, limit).map((embedding) => ({
-      embedding,
-      score: 1.0, // Convex doesn't return similarity scores directly
-      sourceData: undefined,
-    }));
+    const results: Array<SimilaritySearchResult & { score: number }> = [];
+    for (const candidate of candidates) {
+      const candidateVector = VectorUtils.bufferToFloatArray(candidate.vector);
+      if (candidateVector.length !== comparisonVector.length) {
+        continue;
+      }
+
+      const score = VectorUtils.cosineSimilarity(comparisonVector, candidateVector);
+      results.push({
+        embedding: candidate,
+        score,
+        sourceData: undefined,
+      });
+    }
+
+    results.sort((a, b) => b.score - a.score);
+
+    return results.slice(0, limit);
   },
 });
 
@@ -293,7 +322,8 @@ export const getEmbeddingWithSource = internalQuery({
     let sourceDetails;
     switch (embedding.sourceType) {
       case "user": {
-        const user = await ctx.db.get(embedding.sourceId as any);
+        const userId = embedding.sourceId as Id<"users">;
+        const user = await ctx.db.get(userId);
         if (user) {
           sourceDetails = {
             title: user.displayName || "User Profile",
@@ -308,7 +338,8 @@ export const getEmbeddingWithSource = internalQuery({
         break;
       }
       case "meeting": {
-        const meeting = await ctx.db.get(embedding.sourceId as any);
+        const meetingId = embedding.sourceId as Id<"meetings">;
+        const meeting = await ctx.db.get(meetingId);
         if (meeting) {
           sourceDetails = {
             title: meeting.title,

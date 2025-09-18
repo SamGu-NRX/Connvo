@@ -268,15 +268,18 @@ export const listMeetingParticipants = query({
 /**
  * Gets meeting state with WebRTC connection info
  */
-export const getMeetingState = query({
+export const getMeetingState = internalQuery({
   args: { meetingId: v.id("meetings") },
   returns: v.union(MeetingRuntimeStateV.withMetrics, v.null()),
   handler: async (
     ctx,
     { meetingId },
   ): Promise<MeetingRuntimeStateWithMetrics | null> => {
-    // Verify user has access to this meeting
-    await assertMeetingAccess(ctx, meetingId);
+    // Verify access when the caller is associated with a user; allow system calls.
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity) {
+      await assertMeetingAccess(ctx, meetingId);
+    }
 
     const meetingState = await ctx.db
       .query("meetingState")
@@ -321,7 +324,7 @@ export const getMeetingState = query({
 /**
  * Gets active meetings with WebRTC metrics (for monitoring/admin)
  */
-export const getActiveMeetings = query({
+export const getActiveMeetings = internalQuery({
   args: {
     limit: v.optional(v.number()),
   },
@@ -337,13 +340,13 @@ export const getActiveMeetings = query({
     }),
   ),
   handler: async (ctx, { limit = 100 }) => {
-    // This could be restricted to admin users in a real implementation
-    const identity = await requireIdentity(ctx);
+    // System-invoked query; enforce limit bounds but skip identity requirement.
+    const normalizedLimit = Math.min(Math.max(limit, 1), 200);
 
     const activeMeetings = await ctx.db
       .query("meetings")
       .withIndex("by_state", (q) => q.eq("state", "active"))
-      .take(limit);
+      .take(normalizedLimit);
 
     // Enrich with meeting state and WebRTC data
     const enrichedMeetings = [];

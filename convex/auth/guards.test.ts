@@ -40,7 +40,7 @@ describe("Authentication Guards", () => {
     });
 
     // Create test meeting
-    const created = await t.mutation(api.meetings.mutations.createMeeting, {
+    const created = await t.mutation(api.meetings.lifecycle.createMeeting, {
       title: "Test Meeting",
       description: "A test meeting for auth testing",
       scheduledAt: Date.now() + 3600000, // 1 hour from now
@@ -81,7 +81,7 @@ describe("Authentication Guards", () => {
   describe("assertMeetingAccess", () => {
     test("should allow access for meeting participant", async () => {
       // Add user as participant to meeting
-      await t.mutation(api.meetings.mutations.addParticipant, {
+      await t.mutation(api.meetings.lifecycle.addParticipant, {
         meetingId: testMeetingId,
         userId: testUserId,
         role: "participant",
@@ -112,7 +112,7 @@ describe("Authentication Guards", () => {
 
     test("should enforce role requirements", async () => {
       // Add user as participant (not host)
-      await t.mutation(api.meetings.mutations.addParticipant, {
+      await t.mutation(api.meetings.lifecycle.addParticipant, {
         meetingId: testMeetingId,
         userId: testUserId,
         role: "participant",
@@ -120,7 +120,7 @@ describe("Authentication Guards", () => {
 
       // Try to perform host-only action
       try {
-        await t.mutation(api.meetings.mutations.startMeeting, {
+        await t.mutation(api.meetings.lifecycle.startMeeting, {
           meetingId: testMeetingId,
         });
         expect.fail("Should have thrown INSUFFICIENT_PERMISSIONS error");
@@ -175,7 +175,7 @@ describe("Authentication Guards", () => {
   describe("Audit Logging", () => {
     test("should log successful meeting access", async () => {
       // Add user as participant
-      await t.mutation(api.meetings.mutations.addParticipant, {
+      await t.mutation(api.meetings.lifecycle.addParticipant, {
         meetingId: testMeetingId,
         userId: testUserId,
         role: "participant",
@@ -225,7 +225,7 @@ describe("Authentication Guards", () => {
   describe("Performance and Edge Cases", () => {
     test("should handle concurrent access checks efficiently", async () => {
       // Add user as participant
-      await t.mutation(api.meetings.mutations.addParticipant, {
+      await t.mutation(api.meetings.lifecycle.addParticipant, {
         meetingId: testMeetingId,
         userId: testUserId,
         role: "participant",

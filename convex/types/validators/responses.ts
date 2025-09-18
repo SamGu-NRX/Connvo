@@ -26,14 +26,6 @@ import type {
   ExportResponse,
   WebhookResponse,
 } from "../api/responses";
-import type {
-  PaginationResult,
-  PaginationResultWithMetadata,
-} from "../api/pagination";
-import {
-  PaginationResultV as PaginationResultValidator,
-  EnhancedPaginationResultV,
-} from "./pagination";
 
 // Standard Result validators
 export const ResultV = {
@@ -64,12 +56,6 @@ export const ResultV = {
       timestamp: v.number(),
     }),
 } as const;
-
-// Pagination Result validators re-exported from shared pagination module
-export const PaginationResultV = PaginationResultValidator;
-
-// Pagination Result with Metadata validator alias
-export const PaginationResultWithMetadataV = EnhancedPaginationResultV;
 
 // List Response validator
 export const ListResponseV = <T>(itemValidator: any) =>

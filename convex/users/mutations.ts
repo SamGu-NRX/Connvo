@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Uses new function syntax with proper validators and centralized types
  */
 
-import { mutation } from "@convex/_generated/server";
+import { mutation, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
@@ -213,6 +213,8 @@ export const updateUserInterests = mutation({
         createdAt: now,
       });
     }
+
+    return null;
   },
 });
 
@@ -246,6 +248,8 @@ export const deactivateUser = mutation({
     // - Cancel any active meetings
     // - Remove from matching queues
     // - Clean up active sessions
+
+    return null;
   },
 });
 
@@ -272,6 +276,8 @@ export const updateLastSeen = mutation({
         updatedAt: Date.now(),
       });
     }
+
+    return null;
   },
 });
 
@@ -536,5 +542,53 @@ export const saveOnboarding = mutation({
       interestsCount: interestKeys.length,
       onboardingCompleted: true,
     };
+  },
+});
+/**
+ * Internal helper mutation for creating users in tests and seed scripts.
+ */
+export const createUser = internalMutation({
+  args: {
+    workosUserId: v.string(),
+    email: v.string(),
+    displayName: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
+    orgId: v.optional(v.string()),
+    orgRole: v.optional(v.string()),
+  },
+  returns: v.id("users"),
+  handler: async (ctx, args): Promise<Id<"users">> => {
+    const now = Date.now();
+
+    // If a user with this WorkOS ID already exists, update it to keep the helper idempotent.
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", args.workosUserId))
+      .unique();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        email: args.email,
+        displayName: args.displayName,
+        orgId: args.orgId ?? existing.orgId,
+        orgRole: args.orgRole ?? existing.orgRole,
+        isActive: args.isActive ?? existing.isActive ?? true,
+        updatedAt: now,
+        lastSeenAt: now,
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("users", {
+      workosUserId: args.workosUserId,
+      email: args.email,
+      displayName: args.displayName,
+      orgId: args.orgId ?? undefined,
+      orgRole: args.orgRole ?? undefined,
+      isActive: args.isActive ?? true,
+      lastSeenAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
   },
 });

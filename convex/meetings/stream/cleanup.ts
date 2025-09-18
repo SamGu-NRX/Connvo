@@ -43,7 +43,7 @@ export const cleanupMeetingResources = internalAction({
       // Clean up Stream room if it exists
       if (meeting.streamRoomId) {
         try {
-          await ctx.runAction(internal.meetings.stream.deleteStreamRoom, {
+          await ctx.runAction(internal.meetings.stream.index.deleteStreamRoom, {
             meetingId,
             roomId: meeting.streamRoomId,
           });
