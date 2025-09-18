@@ -4,7 +4,7 @@ LinkedUp is a professional networking platform designed as the antithesis of Lin
 
 ## Core Features
 
-- **Real-time voice/video calls** powered by GetStream Video API
+- **Tiered video calling**: GetStream Video (paid tier) + WebRTC/custom pipeline (free tier)
 - **AI-powered smart matching** using vector similarity and compatibility scoring
 - **Live collaborative notes** with operational transform for real-time editing
 - **Live transcription** with speaker identification and searchable segments
@@ -31,7 +31,7 @@ Professional individuals and enterprise teams seeking genuine networking opportu
 - **Backend**: Convex reactive backend with real-time WebSocket subscriptions
 - **Database**: Convex with time-sharded collections for high-frequency data
 - **Authentication**: WorkOS Auth Kit for enterprise identity management
-- **Video**: GetStream Video for professional-grade video calling (paid tier) + WebRTC/custom pipeline (free tier)
+- **Video**: Hybrid architecture - GetStream Video (paid tier) + WebRTC/custom pipeline (free tier) (paid tier) + WebRTC/custom pipeline (free tier)
 - **AI**: Provider-agnostic AI integration for embeddings and conversation assistance
 - **Real-time**: Operational transform for collaborative editing, live transcription streaming
 

@@ -13,9 +13,18 @@
 └── package.json        # Dependencies and scripts
 ```
 
-## Convex Backend Organization (`/convex`)
+## Hybrid Backend Architecture
 
-### Core Backend Structure
+### Next.js App Directory API Routes (`/src/app/api`)
+
+- **`/auth`** - WorkOS authentication callbacks and session management
+- **`/messages`** - Traditional REST endpoints for messaging features
+- **`/webhooks`** - External service webhooks (GetStream, AI providers)
+- **`/uploads`** - File upload and media processing endpoints
+
+### Convex Backend Organization (`/convex`)
+
+#### Core Backend Structure
 
 - **`/auth`** - Authentication guards and permissions
 - **`/users`** - User management queries and mutations
@@ -63,16 +72,18 @@
 
 ### Data & Business Logic
 
-- **`/providers`** - React context providers (Convex, Stream)
+- **`/providers`** - React context providers (Convex, GetStream, WebRTC)
 - **`/schemas`** - Zod validation schemas for forms
 - **`/types`** - Frontend TypeScript type definitions
 - **`/hooks`** - Custom React hooks
+- **`/services`** - API service layers for Next.js endpoints
 
 ### Utilities & Configuration
 
 - **`/lib`** - Shared utilities and configurations
   - `/shadcn` - UI component utilities
-  - `/getstream` - Stream API configuration
+  - `/getstream` - GetStream API configuration (paid tier)
+  - `/webrtc` - WebRTC utilities and signaling (free tier)
 - **`/utils`** - Helper functions and utilities
 - **`/styles`** - Style utilities and theme configuration
 

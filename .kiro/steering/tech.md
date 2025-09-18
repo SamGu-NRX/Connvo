@@ -14,7 +14,8 @@
 - **Database**: Convex (reactive backend-as-a-service)
 - **Schema**: Convex schema with TypeScript validators
 - **Authentication**: WorkOS Auth Kit for enterprise-grade authentication
-- **Real-time Communication**: GetStream Video API for voice/video calls
+- **API Layer**: Next.js App Directory API routes for traditional REST endpoints
+- **Real-time Communication**: Hybrid - GetStream Video (paid tier) + WebRTC/custom pipeline (free tier)
 - **Real-time Data**: Convex reactive queries and WebSocket subscriptions
 
 ## Development Tools

@@ -1,30 +1,54 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
 
+const commonResolve = {
+  alias: {
+    "@": path.resolve(__dirname, "./src"),
+    "@convex": path.resolve(__dirname, "./convex"),
+  },
+};
+
 export default defineConfig({
   test: {
     globals: true,
-    environment: "node",
-    include: [
-      "convex/**/*.test.ts",
-      "convex/**/*.spec.ts",
-      "src/**/*.test.ts",
-      "src/**/*.spec.ts",
-    ],
     exclude: ["node_modules/**", ".next/**", "dist/**"],
     testTimeout: 30000,
     hookTimeout: 30000,
     teardownTimeout: 10000,
-    // Type testing configuration
     typecheck: {
       enabled: true,
       tsconfig: "./tsconfig.json",
     },
-  },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@convex": path.resolve(__dirname, "./convex"),
+    pool: "threads",
+    poolOptions: {
+      threads: {
+        singleThread: true, // Avoid race conditions in Convex tests
+      },
     },
+    projects: [
+      {
+        test: {
+          name: "convex",
+          include: ["convex/**/*.test.ts", "convex/**/*.spec.ts"],
+          environment: "edge-runtime",
+          setupFiles: ["./convex/test/setup.ts"],
+          server: {
+            deps: {
+              inline: ["convex-test"],
+            },
+          },
+        },
+        resolve: commonResolve,
+      },
+      {
+        test: {
+          name: "frontend",
+          include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
+          environment: "jsdom",
+        },
+        resolve: commonResolve,
+      },
+    ],
   },
+  resolve: commonResolve,
 });

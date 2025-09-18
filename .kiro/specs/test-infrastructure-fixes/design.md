@@ -379,9 +379,27 @@ Type validation is detecting drift in the Transcript entity and validator failur
      }),
    };
 
-   export const mockStreamAPI = {
+   export const mockGetStreamAPI = {
      createRoom: vi.fn().mockResolvedValue({ roomId: "test-room-id" }),
      generateToken: vi.fn().mockResolvedValue("test-token"),
+     startRecording: vi
+       .fn()
+       .mockResolvedValue({ recordingId: "test-recording" }),
+   };
+
+   export const mockWebRTCProvider = {
+     createRoom: vi.fn().mockResolvedValue({
+       roomId: "webrtc-room-id",
+       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+     }),
+     generateSessionId: vi.fn().mockResolvedValue("webrtc-session-id"),
+   };
+
+   export const mockNextJSAPI = {
+     fetch: vi.fn().mockResolvedValue({
+       ok: true,
+       json: () => Promise.resolve({ success: true }),
+     }),
    };
 
    export const mockAIProvider = {

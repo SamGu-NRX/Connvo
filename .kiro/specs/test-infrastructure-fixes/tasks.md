@@ -1,7 +1,7 @@
 # Implementation Plan
 
-- [ ] 1. Emergency convex-test Library Compatibility Fixes
-  - [ ] 1.1 Diagnose and fix convex-test initialization issues
+- [x] 1. Emergency convex-test Library Compatibility Fixes
+  - [x] 1.1 Diagnose and fix convex-test initialization issues
     - Investigate the `(intermediate value).glob is not a function` error across all failing test files
     - Check convex-test library version compatibility with current Convex version
     - Update convex-test to latest compatible version using `bun update convex-test`
@@ -9,7 +9,7 @@
     - Test basic convex-test initialization with `convexTest()` and `convexTest(schema)` patterns
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ] 1.2 Update test con and setup files
+  - [x] 1.2 Update test con and setup files
     - Update vitest.config.ts with proper Convex test environment configuration
     - Create convex/test/setup.ts for global test setup and teardown
     - Configure test environment variables and Convex deployment settings for testing
@@ -17,7 +17,7 @@
     - Ensure test isolation and proper cleanup between test runs
     - _Requirements: 1.5, 1.6, 3.2, 3.3_
 
-  - [ ] 1.3 Fix test import patterns and initialization across all test files
+  - [x] 1.3 Fix test import patterns and initialization across all test files
     - Update all test files using convexTest to use correct import and initialization patterns
     - Fix auth/guards.test.ts, auth/permissions.test.ts, and other auth-related test files
     - Fix matching/matching.test.ts, insights/insights.test.ts, and AI-related test files
@@ -26,7 +26,7 @@
     - Validate that all previously failing tests now initialize properly
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 2. Fix Operational Transform Logic Errors
+- [-] 2. Fix Operational Transform Logic Errors
   - [ ] 2.1 Correct concurrent insert position calculations
     - Fix transformInsertVsInsert function in convex/notes/operations.ts
     - Ensure that when two inserts occur at the same position, the second operation is shifted by the first operation's content length
@@ -94,10 +94,12 @@
     - _Requirements: 3.1, 3.2, 3.4, 5.4_
 
   - [ ] 4.2 Implement proper external service mocking
-    - Create convex/test/mocks.ts with mocks for WorkOS, GetStream, and AI providers
+    - Create convex/test/mocks.ts with mocks for WorkOS, GetStream, WebRTC, and AI providers
     - Mock WorkOS authentication context for testing auth guards and permissions
-    - Mock GetStream API calls for meeting lifecycle and video integration tests
+    - Mock GetStream API calls for paid tier video integration tests
+    - Mock WebRTC signaling and TURN server calls for free tier video tests
     - Mock AI provider calls for insights generation and embedding tests
+    - Mock Next.js API route responses for traditional REST endpoint tests
     - Ensure mocks are properly isolated and don't interfere with other tests
     - _Requirements: 3.4, 6.2, 6.3, 7.3_
 
@@ -151,12 +153,13 @@
     - Validate that matching system handles concurrent operations correctly
     - _Requirements: 7.2, 7.4_
 
-  - [ ] 6.3 Fix AI integration and insights generation tests
-    - Implement proper AI provider mocking for insights generation tests
-    - Test pre-call idea generation with various participant profiles
-    - Add test cases for in-call prompt generation and feedback tracking
-    - Test post-call insights generation and privacy controls
-    - Validate that AI integration handles errors and fallbacks properly
+  - [ ] 6.3 Fix video provider and integration tests
+    - Implement proper video provider mocking for both GetStream (paid) and WebRTC (free) tiers
+    - Test video provider selection logic based on user plan and meeting requirements
+    - Add test cases for GetStream call creation, token generation, and recording features
+    - Test WebRTC signaling, TURN server allocation, and peer connection management
+    - Test Next.js API route integration for webhook handling and external service calls
+    - Validate that video provider abstraction handles errors and fallbacks properly
     - _Requirements: 7.3, 7.4_
 
   - [ ] 6.4 Fix search and vector operations testing

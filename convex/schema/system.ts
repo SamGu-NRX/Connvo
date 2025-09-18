@@ -4,7 +4,7 @@ import {
   featureFlagValueV,
   labelsRecordV,
   metadataRecordV,
-} from "@convex/lib/validators";
+} from "../lib/validators";
 
 export const systemTables = {
   // System Collections
