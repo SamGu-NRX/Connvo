@@ -12,42 +12,45 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { convexTest } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
 import schema from "../schema";
+import { Id } from "@convex/_generated/dataModel";
 
 describe("Prompts Module", () => {
   let t: ReturnType<typeof convexTest>;
 
   beforeEach(async () => {
-    t = convexTest();
+    t = convexTest(schema);
   });
 
   describe("Pre-call Idea Generation", () => {
     it("should generate pre-call ideas with idempotency", async () => {
       // Create test user and meeting
-      const userId = await t.mutation(internal.users.mutations.createUser, {
-        workosUserId: "test-workos-user",
-        email: "test@example.com",
-        displayName: "Test User",
-        isActive: true,
+      const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+            workosUserId: "test-workos-user",
+            email: "test@example.com",
+            displayName: "Test User",
+            isActive: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
       });
 
-      const { meetingId } = await t.mutation(
+      const authedT = t.withIdentity({
+        subject: "test-workos-user",
+        email: "test@example.com",
+        name: "Test User",
+      });
+
+      const { meetingId } = await authedT.mutation(
         api.meetings.lifecycle.createMeeting,
         {
-          organizerId: userId,
           title: "Test Meeting",
           description: "A test meeting for prompt generation",
         },
       );
 
-      // Add participant
-      await t.mutation(api.meetings.lifecycle.addParticipant, {
-        meetingId,
-        userId,
-        role: "host",
-      });
-
       // Generate pre-call ideas
-      const result1 = await t.action(api.prompts.actions.generatePreCallIdeas, {
+      const result1 = await authedT.action(api.prompts.actions.generatePreCallIdeas, {
         meetingId,
       });
 
@@ -56,7 +59,7 @@ describe("Prompts Module", () => {
       expect(result1.promptIds.length).toBeGreaterThan(0);
 
       // Second call should return cached results
-      const result2 = await t.action(api.prompts.actions.generatePreCallIdeas, {
+      const result2 = await authedT.action(api.prompts.actions.generatePreCallIdeas, {
         meetingId,
       });
 
@@ -67,36 +70,38 @@ describe("Prompts Module", () => {
 
     it("should handle force regeneration", async () => {
       // Create test user and meeting
-      const userId = await t.mutation(internal.users.mutations.createUser, {
-        workosUserId: "test-workos-user-2",
-        email: "test2@example.com",
-        displayName: "Test User 2",
-        isActive: true,
+      const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+            workosUserId: "test-workos-user-2",
+            email: "test2@example.com",
+            displayName: "Test User 2",
+            isActive: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
       });
 
-      const { meetingId } = await t.mutation(
+      const authedT = t.withIdentity({
+        subject: "test-workos-user-2",
+        email: "test2@example.com",
+        name: "Test User 2",
+      });
+
+      const { meetingId } = await authedT.mutation(
         api.meetings.lifecycle.createMeeting,
         {
-          organizerId: userId,
           title: "Test Meeting 2",
           description: "Another test meeting",
         },
       );
 
-      // Add participant
-      await t.mutation(api.meetings.lifecycle.addParticipant, {
-        meetingId,
-        userId,
-        role: "host",
-      });
-
       // Generate initial ideas
-      const result1 = await t.action(api.prompts.actions.generatePreCallIdeas, {
+      const result1 = await authedT.action(api.prompts.actions.generatePreCallIdeas, {
         meetingId,
       });
 
       // Force regeneration
-      const result2 = await t.action(api.prompts.actions.generatePreCallIdeas, {
+      const result2 = await authedT.action(api.prompts.actions.generatePreCallIdeas, {
         meetingId,
         forceRegenerate: true,
       });
@@ -108,8 +113,44 @@ describe("Prompts Module", () => {
 
   describe("Prompt Feedback", () => {
     it("should update prompt feedback correctly", async () => {
+        const userId = await t.run(async (ctx) => {
+            return await ctx.db.insert("users", {
+                workosUserId: "test-workos-user-3",
+                email: "test3@example.com",
+                displayName: "Test User 3",
+                isActive: true,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        });
+
+        const authedT = t.withIdentity({
+            subject: "test-workos-user-3",
+            email: "test3@example.com",
+            name: "Test User 3",
+        });
+
       // Create test prompt
-      const meetingId = "test-meeting-id" as any;
+      const meetingId = await t.run(async (ctx) => {
+        return await ctx.db.insert("meetings", {
+            organizerId: userId,
+            title: "Test Meeting 3",
+            state: "concluded",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+      });
+
+      await t.run(async (ctx) => {
+        await ctx.db.insert("meetingParticipants", {
+            meetingId,
+            userId,
+            role: "host",
+            presence: "joined",
+            createdAt: Date.now(),
+        });
+      });
+
       const promptId = await t.mutation(
         internal.prompts.mutations.createPrompt,
         {
@@ -122,7 +163,7 @@ describe("Prompts Module", () => {
       );
 
       // Update feedback
-      await t.mutation(api.prompts.mutations.updatePromptFeedback, {
+      await authedT.mutation(api.prompts.mutations.updatePromptFeedback, {
         promptId,
         feedback: "used",
       });
@@ -139,11 +180,44 @@ describe("Prompts Module", () => {
 
   describe("Prompt Queries", () => {
     it("should retrieve pre-call prompts with proper authorization", async () => {
-      // This test would require proper auth setup
-      // For now, we'll test the internal query
-      const meetingId = "test-meeting-id" as any;
+        const userId = await t.run(async (ctx) => {
+            return await ctx.db.insert("users", {
+                workosUserId: "test-workos-user-4",
+                email: "test4@example.com",
+                displayName: "Test User 4",
+                isActive: true,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+            });
+        });
 
-      const prompts = await t.query(
+        const authedT = t.withIdentity({
+            subject: "test-workos-user-4",
+            email: "test4@example.com",
+            name: "Test User 4",
+        });
+
+      const meetingId = await t.run(async (ctx) => {
+        return await ctx.db.insert("meetings", {
+            organizerId: userId,
+            title: "Test Meeting 4",
+            state: "concluded",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+      });
+
+      await t.run(async (ctx) => {
+        await ctx.db.insert("meetingParticipants", {
+            meetingId,
+            userId,
+            role: "host",
+            presence: "joined",
+            createdAt: Date.now(),
+        });
+      });
+
+      const prompts = await authedT.query(
         internal.prompts.queries.getPromptsByMeetingAndType,
         {
           meetingId,

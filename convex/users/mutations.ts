@@ -311,11 +311,13 @@ export const saveOnboarding = mutation({
   },
   returns: SaveOnboardingResultV,
   handler: async (ctx, args): Promise<SaveOnboardingResult> => {
+    console.log("saveOnboarding args:", args);
     const identity = await requireIdentity(ctx);
 
     if (args.age < 13 || args.age > 120) {
       throw createError.validation("Invalid age");
     }
+    console.log("bio length:", args.bio.length);
     if (args.bio.length < 10 || args.bio.length > 1000) {
       throw createError.validation(
         "Bio must be between 10 and 1000 characters",

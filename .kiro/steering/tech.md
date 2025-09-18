@@ -12,6 +12,7 @@
 ## Backend & Database
 
 - **Database**: Convex (reactive backend-as-a-service)
+   - Essential Compliance (!!!): Always comply with `steering/convex_rules.mdc` AND `steering/convex_test_rules.mdc` and use the `context7 MCP` tool for up-to-date Convex documentation and best practices.
 - **Schema**: Convex schema with TypeScript validators
 - **Authentication**: WorkOS Auth Kit for enterprise-grade authentication
 - **API Layer**: Next.js App Directory API routes for traditional REST endpoints

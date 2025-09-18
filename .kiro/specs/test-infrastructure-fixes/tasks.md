@@ -27,7 +27,7 @@
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
 - [-] 2. Fix Operational Transform Logic Errors
-  - [ ] 2.1 Correct concurrent insert position calculations
+  - [x] 2.1 Correct concurrent insert position calculations
     - Fix transformInsertVsInsert function in convex/notes/operations.ts
     - Ensure that when two inserts occur at the same position, the second operation is shifted by the first operation's content length
     - Update test "should handle concurrent inserts at same position" to expect correct position (4, not 3)
@@ -35,7 +35,7 @@
     - Validate that all insert vs insert transformation scenarios work correctly
     - _Requirements: 2.1, 2.5_
 
-  - [ ] 2.2 Fix overlapping delete operation handling
+  - [-] 2.2 Fix overlapping delete operation handling
     - Correct transformDeleteVsDelete function to properly handle overlapping delete operations
     - Calculate overlap correctly when two delete operations affect the same text range
     - Update test "should handle overlapping deletes" to expect correct length (3, not 2)

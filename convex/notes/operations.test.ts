@@ -155,6 +155,63 @@ describe("Operational Transform Core Functions", () => {
         expect(transformedA).toEqual(opA); // A has priority (comes first)
         expect(transformedB.position).toBe(4); // B shifted by A's length
       });
+
+      it("should handle concurrent inserts at beginning of document", () => {
+        const opA: Operation = {
+          type: "insert",
+          position: 0,
+          content: "Start",
+        };
+        const opB: Operation = {
+          type: "insert",
+          position: 0,
+          content: "Begin",
+        };
+
+        const transformedA = transformAgainst(opA, opB);
+        const transformedB = transformAgainst(opB, opA);
+
+        expect(transformedA.position).toBe(5); // A shifted by B's length ("Begin" < "Start", so B has priority)
+        expect(transformedB).toEqual(opB); // B has priority
+      });
+
+      it("should handle concurrent inserts at middle positions", () => {
+        const opA: Operation = {
+          type: "insert",
+          position: 10,
+          content: "middle",
+        };
+        const opB: Operation = {
+          type: "insert",
+          position: 10,
+          content: "center",
+        };
+
+        const transformedA = transformAgainst(opA, opB);
+        const transformedB = transformAgainst(opB, opA);
+
+        expect(transformedA.position).toBe(16); // A shifted by B's length ("center" < "middle")
+        expect(transformedB).toEqual(opB); // B has priority
+      });
+
+      it("should handle concurrent inserts at end of document", () => {
+        const opA: Operation = {
+          type: "insert",
+          position: 100,
+          content: "end",
+        };
+        const opB: Operation = {
+          type: "insert",
+          position: 100,
+          content: "finish",
+        };
+
+        const transformedA = transformAgainst(opA, opB);
+        const transformedB = transformAgainst(opB, opA);
+
+        expect(transformedA).toEqual(opA); // "end" < "finish", so A has priority
+        expect(transformedB.position).toBe(103); // B shifted by A's length
+      });
     });
 
     describe("Insert vs Delete", () => {

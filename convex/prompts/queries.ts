@@ -26,13 +26,15 @@ export const getPromptsByMeetingAndType = internalQuery({
   },
   returns: v.array(AIPromptV.full),
   handler: async (ctx, { meetingId, type, limit = 10 }) => {
-    return await ctx.db
+    const prompts = await ctx.db
       .query("prompts")
       .withIndex("by_meeting_type", (q) =>
         q.eq("meetingId", meetingId).eq("type", type),
       )
-      .order("desc")
+      .order("asc") // Ensure deterministic order
       .take(limit);
+
+    return prompts;
   },
 });
 

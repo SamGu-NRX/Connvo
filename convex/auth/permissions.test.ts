@@ -12,6 +12,7 @@ import { convexTest } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
+import schema from "../schema";
 
 describe("Dynamic Permission Management", () => {
   let t: ReturnType<typeof convexTest>;
@@ -19,44 +20,86 @@ describe("Dynamic Permission Management", () => {
   let participantUserId: Id<"users">;
   let nonParticipantUserId: Id<"users">;
   let testMeetingId: Id<"meetings">;
+  let hostT: any;
+  let participantT: any;
+  let nonParticipantT: any;
 
   beforeEach(async () => {
-    t = convexTest();
+    t = convexTest(schema);
 
     // Create test users
-    hostUserId = await t.mutation(api.users.mutations.upsertUser, {
-      workosUserId: "host-user",
+    hostUserId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        workosUserId: "host-user",
+        email: "host@example.com",
+        displayName: "Host User",
+        orgId: "test-org",
+        orgRole: "admin",
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    participantUserId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        workosUserId: "participant-user",
+        email: "participant@example.com",
+        displayName: "Participant User",
+        orgId: "test-org",
+        orgRole: "member",
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    nonParticipantUserId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        workosUserId: "non-participant-user",
+        email: "nonparticipant@example.com",
+        displayName: "Non-Participant User",
+        orgId: "test-org",
+        orgRole: "member",
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    hostT = t.withIdentity({
+      subject: "host-user",
       email: "host@example.com",
-      displayName: "Host User",
-      orgId: "test-org",
-      orgRole: "member",
+      name: "Host User",
+      org_id: "test-org",
+      org_role: "admin",
     });
 
-    participantUserId = await t.mutation(api.users.mutations.upsertUser, {
-      workosUserId: "participant-user",
+    participantT = t.withIdentity({
+      subject: "participant-user",
       email: "participant@example.com",
-      displayName: "Participant User",
-      orgId: "test-org",
-      orgRole: "member",
+      name: "Participant User",
+      org_id: "test-org",
+      org_role: "member",
     });
 
-    nonParticipantUserId = await t.mutation(api.users.mutations.upsertUser, {
-      workosUserId: "non-participant-user",
+    nonParticipantT = t.withIdentity({
+      subject: "non-participant-user",
       email: "nonparticipant@example.com",
-      displayName: "Non-Participant User",
-      orgId: "test-org",
-      orgRole: "member",
+      name: "Non-Participant User",
+      org_id: "test-org",
+      org_role: "member",
     });
 
     // Create test meeting
-    const created = await t.mutation(api.meetings.lifecycle.createMeeting, {
+    const created = await hostT.mutation(api.meetings.lifecycle.createMeeting, {
       title: "Test Meeting for Permissions",
       description: "Testing dynamic permissions",
     });
     testMeetingId = created.meetingId;
 
     // Add participant
-    await t.mutation(api.meetings.lifecycle.addParticipant, {
+    await hostT.mutation(api.meetings.lifecycle.addParticipant, {
       meetingId: testMeetingId,
       userId: participantUserId,
       role: "participant",
@@ -65,7 +108,7 @@ describe("Dynamic Permission Management", () => {
 
   describe("Subscription Permission Validation", () => {
     test("should grant permissions for meeting participants", async () => {
-      const validation = await t.query(
+      const validation = await participantT.query(
         api.auth.permissions.validateSubscriptionPermissions,
         {
           resourceType: "meetingNotes",
@@ -81,7 +124,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should deny permissions for non-participants", async () => {
       // Validate for a user that isn't a participant
-      const validation = await t.query(
+      const validation = await nonParticipantT.query(
         api.auth.permissions.validateSubscriptionPermissions,
         {
           resourceType: "meetingNotes",
@@ -97,7 +140,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should enforce role-based permissions", async () => {
       // Host should have manage permissions
-      const hostValidation = await t.query(
+      const hostValidation = await hostT.query(
         api.auth.permissions.validateSubscriptionPermissions,
         {
           resourceType: "meetingNotes",
@@ -110,7 +153,7 @@ describe("Dynamic Permission Management", () => {
       expect(hostValidation.permissions).toContain("manage");
 
       // Participant should not have manage permissions
-      const participantValidation = await t.query(
+      const participantValidation = await participantT.query(
         api.auth.permissions.validateSubscriptionPermissions,
         {
           resourceType: "meetingNotes",
@@ -126,7 +169,7 @@ describe("Dynamic Permission Management", () => {
 
   describe("Real-Time Subscription Management", () => {
     test("should establish meeting notes subscription with proper permissions", async () => {
-      const subscription = await t.query(
+      const subscription = await participantT.query(
         api.realtime.subscriptions.subscribeMeetingNotes,
         {
           meetingId: testMeetingId,
@@ -142,11 +185,11 @@ describe("Dynamic Permission Management", () => {
 
     test("should establish transcript subscription only for active meetings", async () => {
       // Start the meeting first
-      await t.mutation(api.meetings.lifecycle.startMeeting, {
+      await hostT.mutation(api.meetings.lifecycle.startMeeting, {
         meetingId: testMeetingId,
       });
 
-      const subscription = await t.query(
+      const subscription = await participantT.query(
         api.realtime.subscriptions.subscribeTranscriptStream,
         {
           meetingId: testMeetingId,
@@ -162,7 +205,7 @@ describe("Dynamic Permission Management", () => {
     test("should deny transcript subscription for inactive meetings", async () => {
       // Meeting is not started, should deny transcript access
       try {
-        await t.query(api.realtime.subscriptions.subscribeTranscriptStream, {
+        await participantT.query(api.realtime.subscriptions.subscribeTranscriptStream, {
           meetingId: testMeetingId,
           subscriptionId: "test-transcript-sub-2",
         });
@@ -175,13 +218,13 @@ describe("Dynamic Permission Management", () => {
 
     test("should validate subscription permissions in real-time", async () => {
       // Establish subscription
-      await t.query(api.realtime.subscriptions.subscribeMeetingNotes, {
+      await participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
         meetingId: testMeetingId,
         subscriptionId: "test-validation-sub",
       });
 
       // Validate subscription
-      const validation = await t.query(
+      const validation = await participantT.query(
         api.realtime.subscriptions.validateSubscription,
         {
           subscriptionId: "test-validation-sub",
@@ -200,7 +243,7 @@ describe("Dynamic Permission Management", () => {
   describe("Dynamic Permission Updates", () => {
     test("should revoke permissions when participant is removed", async () => {
       // Establish subscription first
-      const subscription = await t.query(
+      const subscription = await participantT.query(
         api.realtime.subscriptions.subscribeMeetingNotes,
         {
           meetingId: testMeetingId,
@@ -210,13 +253,13 @@ describe("Dynamic Permission Management", () => {
       expect(subscription?.subscriptionValid).toBe(true);
 
       // Remove participant
-      await t.mutation(api.meetings.lifecycle.removeParticipant, {
+      await hostT.mutation(api.meetings.lifecycle.removeParticipant, {
         meetingId: testMeetingId,
         userId: participantUserId,
       });
 
       // Validate subscription should now fail
-      const validation = await t.query(
+      const validation = await participantT.query(
         api.realtime.subscriptions.validateSubscription,
         {
           subscriptionId: "test-removal-sub",
@@ -232,7 +275,7 @@ describe("Dynamic Permission Management", () => {
 
     test("should update permissions when participant role changes", async () => {
       // Participant initially doesn't have manage permissions
-      let validation = await t.query(
+      let validation = await participantT.query(
         api.auth.permissions.validateSubscriptionPermissions,
         {
           resourceType: "meetingNotes",
@@ -243,14 +286,14 @@ describe("Dynamic Permission Management", () => {
       expect(validation.permissions).not.toContain("manage");
 
       // Promote participant to host
-      await t.mutation(api.meetings.lifecycle.updateParticipantRole, {
+      await hostT.mutation(api.meetings.lifecycle.updateParticipantRole, {
         meetingId: testMeetingId,
         userId: participantUserId,
         newRole: "host",
       });
 
       // Now should have manage permissions
-      validation = await t.query(
+      validation = await participantT.query(
         api.auth.permissions.validateSubscriptionPermissions,
         {
           resourceType: "meetingNotes",
@@ -263,11 +306,11 @@ describe("Dynamic Permission Management", () => {
 
     test("should revoke transcript access when meeting ends", async () => {
       // Start meeting and establish transcript subscription
-      await t.mutation(api.meetings.lifecycle.startMeeting, {
+      await hostT.mutation(api.meetings.lifecycle.startMeeting, {
         meetingId: testMeetingId,
       });
 
-      const subscription = await t.query(
+      const subscription = await participantT.query(
         api.realtime.subscriptions.subscribeTranscriptStream,
         {
           meetingId: testMeetingId,
@@ -277,12 +320,12 @@ describe("Dynamic Permission Management", () => {
       expect(subscription.subscriptionValid).toBe(true);
 
       // End meeting
-      await t.mutation(api.meetings.lifecycle.endMeeting, {
+      await hostT.mutation(api.meetings.lifecycle.endMeeting, {
         meetingId: testMeetingId,
       });
 
       // Transcript subscription should now be invalid
-      const validation = await t.query(
+      const validation = await participantT.query(
         api.realtime.subscriptions.validateSubscription,
         {
           subscriptionId: "test-end-meeting-sub",
@@ -300,13 +343,13 @@ describe("Dynamic Permission Management", () => {
   describe("Audit Logging", () => {
     test("should log subscription establishment events", async () => {
       // Establish subscription
-      await t.query(api.realtime.subscriptions.subscribeMeetingNotes, {
+      await participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
         meetingId: testMeetingId,
         subscriptionId: "test-audit-sub",
       });
 
       // Check audit logs
-      const auditLogs = (await t.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
         resourceType: "meetingNotes",
         resourceId: testMeetingId,
         action: "subscription_established",
@@ -336,13 +379,13 @@ describe("Dynamic Permission Management", () => {
 
     test("should log permission revocation events", async () => {
       // Remove participant (triggers permission revocation)
-      await t.mutation(api.meetings.lifecycle.removeParticipant, {
+      await hostT.mutation(api.meetings.lifecycle.removeParticipant, {
         meetingId: testMeetingId,
         userId: participantUserId,
       });
 
       // Check audit logs for revocation
-      const auditLogs = (await t.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
         actorUserId: hostUserId,
         action: "participant_removed",
         limit: 10,
@@ -370,14 +413,14 @@ describe("Dynamic Permission Management", () => {
 
     test("should log role change events", async () => {
       // Change participant role
-      await t.mutation(api.meetings.lifecycle.updateParticipantRole, {
+      await hostT.mutation(api.meetings.lifecycle.updateParticipantRole, {
         meetingId: testMeetingId,
         userId: participantUserId,
         newRole: "host",
       });
 
       // Check audit logs
-      const auditLogs = (await t.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
         action: "participant_role_changed",
         limit: 10,
       })) as {
@@ -411,7 +454,7 @@ describe("Dynamic Permission Management", () => {
     test("should handle multiple concurrent subscription validations", async () => {
       // Create multiple subscriptions
       const subscriptionPromises = Array.from({ length: 10 }, (_, i) =>
-        t.query(api.realtime.subscriptions.subscribeMeetingNotes, {
+        participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
           meetingId: testMeetingId,
           subscriptionId: `concurrent-sub-${i}`,
         }),
@@ -474,7 +517,7 @@ describe("Dynamic Permission Management", () => {
   describe("Edge Cases and Error Handling", () => {
     test("should handle invalid resource types gracefully", async () => {
       try {
-        await t.query(api.auth.permissions.validateSubscriptionPermissions, {
+        await participantT.query(api.auth.permissions.validateSubscriptionPermissions, {
           resourceType: "invalid-resource" as any,
           resourceId: testMeetingId,
           requiredPermissions: ["read"],
@@ -490,7 +533,7 @@ describe("Dynamic Permission Management", () => {
       const fakeMeetingId = "fake-meeting-id" as Id<"meetings">;
 
       try {
-        await t.query(api.realtime.subscriptions.subscribeMeetingNotes, {
+        await participantT.query(api.realtime.subscriptions.subscribeMeetingNotes, {
           meetingId: fakeMeetingId,
         });
         expect.fail("Should have thrown NOT_FOUND error");
@@ -502,15 +545,15 @@ describe("Dynamic Permission Management", () => {
 
     test("should handle subscription validation for expired permissions", async () => {
       // Start and immediately end meeting
-      await t.mutation(api.meetings.lifecycle.startMeeting, {
+      await hostT.mutation(api.meetings.lifecycle.startMeeting, {
         meetingId: testMeetingId,
       });
-      await t.mutation(api.meetings.lifecycle.endMeeting, {
+      await hostT.mutation(api.meetings.lifecycle.endMeeting, {
         meetingId: testMeetingId,
       });
 
       // Try to validate transcript subscription
-      const validation = await t.query(
+      const validation = await participantT.query(
         api.realtime.subscriptions.validateSubscription,
         {
           subscriptionId: "expired-sub",

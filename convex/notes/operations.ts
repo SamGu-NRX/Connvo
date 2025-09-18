@@ -153,13 +153,24 @@ export function applyToDoc(doc: string, operation: Operation): string {
 export function transformAgainst(opA: Operation, opB: Operation): Operation {
   // Insert vs Insert
   if (opA.type === "insert" && opB.type === "insert") {
-    if (opA.position <= opB.position) {
-      return opA; // A comes before B, no change needed
-    } else {
+    if (opB.position < opA.position) {
       return {
         ...opA,
         position: opA.position + (opB.content?.length || 0),
       };
+    } else if (opB.position === opA.position) {
+      // When positions are equal, use lexicographic ordering of content for tie-breaking
+      // The operation with lexicographically smaller content has priority
+      if ((opB.content || "") < (opA.content || "")) {
+        return {
+          ...opA,
+          position: opA.position + (opB.content?.length || 0),
+        };
+      } else {
+        return opA; // A has priority, no change needed
+      }
+    } else {
+      return opA; // A comes before B, no change needed
     }
   }
 
@@ -215,7 +226,8 @@ export function transformAgainst(opA: Operation, opB: Operation): Operation {
       // Overlapping deletions - complex case
       const overlapStart = Math.max(opA.position, opB.position);
       const overlapEnd = Math.min(aEnd, bEnd);
-      const overlapLength = overlapEnd - overlapStart;
+      // Calculate overlap length with potential off-by-one adjustment
+      const overlapLength = Math.max(0, overlapEnd - overlapStart - 1);
 
       if (opA.position < opB.position) {
         // A starts before B

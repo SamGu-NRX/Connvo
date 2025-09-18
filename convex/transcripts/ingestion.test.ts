@@ -12,14 +12,16 @@ import { expect, test, describe, beforeEach } from "vitest";
 import { convexTest } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
+import schema from "../schema";
 
 describe("Transcript Ingestion Pipeline", () => {
   let t: ReturnType<typeof convexTest>;
   let testMeetingId: Id<"meetings">;
   let testUserId: Id<"users">;
+  let authedT: any;
 
   beforeEach(async () => {
-    t = convexTest();
+    t = convexTest(schema);
 
     // Create test user
     testUserId = await t.run(async (ctx) => {
@@ -36,6 +38,14 @@ describe("Transcript Ingestion Pipeline", () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
+    });
+
+    authedT = t.withIdentity({
+        subject: "test_user_123",
+        email: "test@example.com",
+        name: "Test User",
+        org_id: "test_org",
+        org_role: "member",
     });
 
     // Create test meeting
@@ -80,7 +90,7 @@ describe("Transcript Ingestion Pipeline", () => {
   });
 
   test("should ingest single transcript chunk successfully", async () => {
-    const result = await t.mutation(
+    const result = await authedT.mutation(
       api.transcripts.ingestion.ingestTranscriptChunk,
       {
         meetingId: testMeetingId,
@@ -102,7 +112,7 @@ describe("Transcript Ingestion Pipeline", () => {
   test("should validate transcript chunk input", async () => {
     // Test empty text
     await expect(
-      t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+      authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
         meetingId: testMeetingId,
         speakerId: "speaker_1",
         text: "",
@@ -114,7 +124,7 @@ describe("Transcript Ingestion Pipeline", () => {
 
     // Test invalid confidence
     await expect(
-      t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+      authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
         meetingId: testMeetingId,
         speakerId: "speaker_1",
         text: "Valid text",
@@ -127,7 +137,7 @@ describe("Transcript Ingestion Pipeline", () => {
     // Test invalid time range
     const now = Date.now();
     await expect(
-      t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+      authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
         meetingId: testMeetingId,
         speakerId: "speaker_1",
         text: "Valid text",
@@ -160,7 +170,7 @@ describe("Transcript Ingestion Pipeline", () => {
 
     const results = [];
     for (const chunk of chunks) {
-      const result = await t.mutation(
+      const result = await authedT.mutation(
         api.transcripts.ingestion.ingestTranscriptChunk,
         {
           meetingId: testMeetingId,
@@ -195,7 +205,7 @@ describe("Transcript Ingestion Pipeline", () => {
     const promises = [];
     for (let i = 0; i < 52; i++) {
       promises.push(
-        t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+        authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
           meetingId: testMeetingId,
           speakerId: "speaker_1",
           text: `Chunk ${i}`,
@@ -226,7 +236,7 @@ describe("Transcript Ingestion Pipeline", () => {
       language: "en",
     }));
 
-    const result = await t.mutation(
+    const result = await authedT.mutation(
       internal.transcripts.ingestion.batchIngestTranscriptChunks,
       {
         meetingId: testMeetingId,
@@ -273,13 +283,13 @@ describe("Transcript Ingestion Pipeline", () => {
     ];
 
     for (const chunk of chunks) {
-      await t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+      await authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
         meetingId: testMeetingId,
         ...chunk,
       });
     }
 
-    const stats = await t.mutation(
+    const stats = await authedT.mutation(
       api.transcripts.ingestion.getTranscriptStats,
       {
         meetingId: testMeetingId,
@@ -315,7 +325,7 @@ describe("Transcript Ingestion Pipeline", () => {
     });
 
     // Insert recent transcript
-    await t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+    await authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
       meetingId: testMeetingId,
       speakerId: "recent_speaker",
       text: "This is a recent transcript",
@@ -326,7 +336,7 @@ describe("Transcript Ingestion Pipeline", () => {
     });
 
     // Cleanup old transcripts (older than 90 days)
-    const result = await t.mutation(
+    const result = await authedT.mutation(
       internal.transcripts.ingestion.cleanupOldTranscripts,
       {
         olderThanMs: 90 * 24 * 60 * 60 * 1000,
@@ -337,7 +347,7 @@ describe("Transcript Ingestion Pipeline", () => {
     expect(result.deleted).toBe(1);
 
     // Verify recent transcript still exists
-    const stats = await t.mutation(
+    const stats = await authedT.mutation(
       api.transcripts.ingestion.getTranscriptStats,
       {
         meetingId: testMeetingId,
@@ -358,7 +368,7 @@ describe("Transcript Ingestion Pipeline", () => {
 
     // Execute all ingestions concurrently
     const promises = concurrentChunks.map((chunk) =>
-      t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+      authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
         meetingId: testMeetingId,
         ...chunk,
       }),
@@ -405,7 +415,7 @@ describe("Transcript Ingestion Pipeline", () => {
     });
 
     await expect(
-      t.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
+      authedT.mutation(api.transcripts.ingestion.ingestTranscriptChunk, {
         meetingId: inactiveMeetingId,
         speakerId: "speaker_1",
         text: "This should fail",
