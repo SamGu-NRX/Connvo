@@ -24,9 +24,7 @@ export function Sidebar() {
             className="flex items-center gap-2 font-semibold"
             href="/app"
           >
-            <Image src="/logo.png" alt="Logo" width={30} height={30} />{" "}
-            {/* Add logo */}
-            <span className="text-2xl font-bold">LinkedUp</span>
+            <span className="text-2xl font-medium">Connvo</span>
           </TransitionLink>
         </div>
         <ScrollArea className="max-h-[calc(100vh-120px)] flex-1 px-3">

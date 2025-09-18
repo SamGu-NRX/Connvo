@@ -33,7 +33,6 @@ import {
 import { handleTransition } from "@/utils/TransitionLink";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 // Auth UI is handled via WorkOS components and hooks; remove Clerk usage
 
 // Retention data for the chart
@@ -106,7 +105,7 @@ const StatCard: React.FC<StatCardProps> = ({
         <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
       </div>
       <div>
-        <h4 className="mb-1 text-3xl font-bold text-gray-900 dark:text-white">
+        <h4 className="mb-1 text-3xl font-medium text-gray-900 dark:text-white">
           {value}
         </h4>
         <p className="text-gray-600 dark:text-gray-300">{label}</p>
@@ -312,26 +311,8 @@ const LandingPage = () => {
           <div className="container mx-auto flex items-center justify-between px-6 py-4">
             {/* Logo that changes based on theme */}
             <div className="flex items-center gap-2">
-              {/* Logo that changes based on theme */}
-              {theme === "light" ? (
-                <Image
-                  src="/linkeduplogos/linkedupblack.png"
-                  alt="LinkedUp Logo"
-                  width={40}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              ) : (
-                <Image
-                  src="/linkeduplogos/linkedupwhite.png"
-                  alt="LinkedUp Logo"
-                  width={40}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              )}
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                LinkedUp
+              <span className="text-2xl font-medium text-gray-900 dark:text-white">
+                Connvo
               </span>
             </div>
 
@@ -391,7 +372,7 @@ const LandingPage = () => {
                 Professional networking reimagined
               </div>
 
-              <h1 className="mb-6 text-5xl font-bold text-gray-900 md:text-6xl lg:text-7xl dark:text-white">
+              <h1 className="mb-6 text-5xl font-medium text-gray-900 md:text-6xl lg:text-7xl dark:text-white">
                 Professional Networking
                 <br />
                 <span className="bg-linear-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
@@ -456,8 +437,8 @@ const LandingPage = () => {
               transition={{ duration: 0.5 }}
               className="mb-12 text-center"
             >
-              <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
-                Why professionals choose LinkedUp
+              <h2 className="mb-4 text-3xl font-semibold text-gray-900 dark:text-white">
+                Why professionals choose Connvo
               </h2>
               <div className="mx-auto h-1 w-20 rounded-full bg-emerald-600"></div>
             </motion.div>
@@ -502,7 +483,7 @@ const LandingPage = () => {
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                 What makes us different
               </div>
-              <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
                 Features That Actually Matter
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -570,7 +551,7 @@ const LandingPage = () => {
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                 {`Don't take our word for it`}
               </div>
-              <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
                 What Real Humans Say
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -617,7 +598,7 @@ const LandingPage = () => {
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                 Users stick around
               </div>
-              <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
                 Industry-Leading Retention
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -678,7 +659,7 @@ const LandingPage = () => {
               whileInView={{ opacity: 1 }}
               className="mx-auto max-w-4xl text-center"
             >
-              <h2 className="mb-6 text-4xl font-bold">
+              <h2 className="mb-6 text-4xl font-semibold">
                 Ready for Real Professional Growth?
               </h2>
               <p className="mb-10 text-xl text-emerald-100">
@@ -703,30 +684,13 @@ const LandingPage = () => {
           <div className="container mx-auto px-6">
             <div className="flex flex-col items-center justify-between md:flex-row">
               <div className="mb-6 flex items-center md:mb-0">
-                {theme === "light" ? (
-                  <Image
-                    src="/linkeduplogos/linkedupblack.png"
-                    alt="LinkedUp Logo"
-                    width={40}
-                    height={40}
-                    className="h-10 w-auto"
-                  />
-                ) : (
-                  <Image
-                    src="/linkeduplogos/linkedupwhite.png"
-                    alt="LinkedUp Logo"
-                    width={40}
-                    height={40}
-                    className="h-10 w-auto"
-                  />
-                )}
-                <span className="pl-2 text-xl font-bold text-gray-900 dark:text-white">
-                  LinkedUp
+                <span className="pl-2 text-xl font-medium text-gray-900 dark:text-white">
+                  Connvo
                 </span>
               </div>
 
               <div className="text-center text-gray-600 md:text-right dark:text-gray-300">
-                © {new Date().getFullYear()} LinkedUp. All rights reserved.
+                © {new Date().getFullYear()} Connvo. All rights reserved.
                 <div className="mt-1 text-sm">
                   No corporate jargon was harmed in the making of this site.
                 </div>

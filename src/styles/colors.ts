@@ -1,4 +1,4 @@
-export const colors = {
+export const connvo = {
   background: "#1a1a1a",
   surface: "#2a2a2a",
   primary: "#3a86ff",
