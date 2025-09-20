@@ -8,40 +8,33 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex query patterns
  */
 
-import { query, internalQuery } from "../_generated/server";
+import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
-import { Id } from "../_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { Id } from "@convex/_generated/dataModel";
+import {
+  MeetingV,
+  MeetingParticipantV,
+  MeetingRuntimeStateV,
+} from "@convex/types/validators/meeting";
+import type {
+  Meeting,
+  MeetingParticipant,
+  MeetingWithUserRole,
+  MeetingParticipantWithUser,
+  MeetingListItem,
+  MeetingRuntimeStateWithMetrics,
+} from "@convex/types/entities/meeting";
+import type { UserSummary } from "@convex/types/entities/user";
 
 /**
  * Gets meeting by ID (internal use)
  */
 export const getMeetingById = internalQuery({
   args: { meetingId: v.id("meetings") },
-  returns: v.union(
-    v.object({
-      _id: v.id("meetings"),
-      organizerId: v.id("users"),
-      title: v.string(),
-      description: v.optional(v.string()),
-      scheduledAt: v.optional(v.number()),
-      duration: v.optional(v.number()),
-      webrtcEnabled: v.optional(v.boolean()),
-      state: v.union(
-        v.literal("scheduled"),
-        v.literal("active"),
-        v.literal("concluded"),
-        v.literal("cancelled"),
-      ),
-      participantCount: v.optional(v.number()),
-      averageRating: v.optional(v.number()),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { meetingId }) => {
+  returns: v.union(MeetingV.full, v.null()),
+  handler: async (ctx, { meetingId }): Promise<Meeting | null> => {
     return await ctx.db.get(meetingId);
   },
 });
@@ -54,28 +47,11 @@ export const getMeetingParticipant = internalQuery({
     meetingId: v.id("meetings"),
     workosUserId: v.string(),
   },
-  returns: v.union(
-    v.object({
-      _id: v.id("meetingParticipants"),
-      meetingId: v.id("meetings"),
-      userId: v.id("users"),
-      role: v.union(
-        v.literal("host"),
-        v.literal("participant"),
-        v.literal("observer"),
-      ),
-      joinedAt: v.optional(v.number()),
-      leftAt: v.optional(v.number()),
-      presence: v.union(
-        v.literal("invited"),
-        v.literal("joined"),
-        v.literal("left"),
-      ),
-      createdAt: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { meetingId, workosUserId }) => {
+  returns: v.union(MeetingParticipantV.full, v.null()),
+  handler: async (
+    ctx,
+    { meetingId, workosUserId },
+  ): Promise<MeetingParticipant | null> => {
     // First find the user by WorkOS ID
     const user = await ctx.db
       .query("users")
@@ -101,27 +77,8 @@ export const getMeetingParticipant = internalQuery({
  */
 export const getMeetingParticipants = internalQuery({
   args: { meetingId: v.id("meetings") },
-  returns: v.array(
-    v.object({
-      _id: v.id("meetingParticipants"),
-      meetingId: v.id("meetings"),
-      userId: v.id("users"),
-      role: v.union(
-        v.literal("host"),
-        v.literal("participant"),
-        v.literal("observer"),
-      ),
-      joinedAt: v.optional(v.number()),
-      leftAt: v.optional(v.number()),
-      presence: v.union(
-        v.literal("invited"),
-        v.literal("joined"),
-        v.literal("left"),
-      ),
-      createdAt: v.number(),
-    }),
-  ),
-  handler: async (ctx, { meetingId }) => {
+  returns: v.array(MeetingParticipantV.full),
+  handler: async (ctx, { meetingId }): Promise<MeetingParticipant[]> => {
     return await ctx.db
       .query("meetingParticipants")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
@@ -134,42 +91,8 @@ export const getMeetingParticipants = internalQuery({
  */
 export const getMeeting = query({
   args: { meetingId: v.id("meetings") },
-  returns: v.union(
-    v.object({
-      _id: v.id("meetings"),
-      organizerId: v.id("users"),
-      title: v.string(),
-      description: v.optional(v.string()),
-      scheduledAt: v.optional(v.number()),
-      duration: v.optional(v.number()),
-      webrtcEnabled: v.optional(v.boolean()),
-      state: v.union(
-        v.literal("scheduled"),
-        v.literal("active"),
-        v.literal("concluded"),
-        v.literal("cancelled"),
-      ),
-      participantCount: v.optional(v.number()),
-      averageRating: v.optional(v.number()),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-      // User's role in this meeting
-      userRole: v.union(
-        v.literal("host"),
-        v.literal("participant"),
-        v.literal("observer"),
-      ),
-      userPresence: v.union(
-        v.literal("invited"),
-        v.literal("joined"),
-        v.literal("left"),
-      ),
-      // WebRTC session info
-      activeWebRTCSessions: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { meetingId }) => {
+  returns: v.union(MeetingV.withUserRole, v.null()),
+  handler: async (ctx, { meetingId }): Promise<MeetingWithUserRole | null> => {
     // Verify user has access to this meeting
     const participant = await assertMeetingAccess(ctx, meetingId);
 
@@ -293,36 +216,11 @@ export const listUserMeetings = query({
  */
 export const listMeetingParticipants = query({
   args: { meetingId: v.id("meetings") },
-  returns: v.array(
-    v.object({
-      _id: v.id("meetingParticipants"),
-      userId: v.id("users"),
-      role: v.union(
-        v.literal("host"),
-        v.literal("participant"),
-        v.literal("observer"),
-      ),
-      presence: v.union(
-        v.literal("invited"),
-        v.literal("joined"),
-        v.literal("left"),
-      ),
-      joinedAt: v.optional(v.number()),
-      leftAt: v.optional(v.number()),
-      createdAt: v.number(),
-      // User details
-      user: v.object({
-        _id: v.id("users"),
-        displayName: v.optional(v.string()),
-        email: v.string(),
-        avatarUrl: v.optional(v.string()),
-      }),
-      // WebRTC connection status
-      webrtcConnected: v.boolean(),
-      webrtcSessionCount: v.number(),
-    }),
-  ),
-  handler: async (ctx, { meetingId }) => {
+  returns: v.array(MeetingParticipantV.withUser),
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<MeetingParticipantWithUser[]> => {
     // Verify user has access to this meeting
     await assertMeetingAccess(ctx, meetingId);
 
@@ -333,23 +231,7 @@ export const listMeetingParticipants = query({
       .collect();
 
     // Enrich with user details and WebRTC status
-    const enrichedParticipants = [] as Array<{
-      _id: Id<"meetingParticipants">;
-      userId: Id<"users">;
-      role: "host" | "participant" | "observer";
-      presence: "invited" | "joined" | "left";
-      joinedAt?: number;
-      leftAt?: number;
-      createdAt: number;
-      user: {
-        _id: Id<"users">;
-        displayName?: string;
-        email: string;
-        avatarUrl?: string;
-      };
-      webrtcConnected: boolean;
-      webrtcSessionCount: number;
-    }>;
+    const enrichedParticipants: MeetingParticipantWithUser[] = [];
     for (const participant of participants) {
       const user = await ctx.db.get(participant.userId);
       if (user) {
@@ -371,7 +253,6 @@ export const listMeetingParticipants = query({
           user: {
             _id: user._id,
             displayName: user.displayName,
-            email: user.email,
             avatarUrl: user.avatarUrl,
           },
           webrtcConnected: connectedSessions.length > 0,
@@ -387,40 +268,18 @@ export const listMeetingParticipants = query({
 /**
  * Gets meeting state with WebRTC connection info
  */
-export const getMeetingState = query({
+export const getMeetingState = internalQuery({
   args: { meetingId: v.id("meetings") },
-  returns: v.union(
-    v.object({
-      _id: v.id("meetingState"),
-      meetingId: v.id("meetings"),
-      active: v.boolean(),
-      startedAt: v.optional(v.number()),
-      endedAt: v.optional(v.number()),
-      speakingStats: v.optional(
-        v.object({
-          totalMs: v.number(),
-          byUserMs: v.record(v.string(), v.number()),
-        }),
-      ),
-      lullState: v.optional(
-        v.object({
-          detected: v.boolean(),
-          lastActivity: v.number(),
-          duration: v.number(),
-        }),
-      ),
-      topics: v.array(v.string()),
-      recordingEnabled: v.boolean(),
-      updatedAt: v.number(),
-      // WebRTC connection metrics
-      totalWebRTCSessions: v.number(),
-      connectedWebRTCSessions: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, { meetingId }) => {
-    // Verify user has access to this meeting
-    await assertMeetingAccess(ctx, meetingId);
+  returns: v.union(MeetingRuntimeStateV.withMetrics, v.null()),
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<MeetingRuntimeStateWithMetrics | null> => {
+    // Verify access when the caller is associated with a user; allow system calls.
+    const identity = await ctx.auth.getUserIdentity();
+    if (identity) {
+      await assertMeetingAccess(ctx, meetingId);
+    }
 
     const meetingState = await ctx.db
       .query("meetingState")
@@ -441,10 +300,23 @@ export const getMeetingState = query({
       (s) => s.state === "connected",
     );
 
+    // Get participant count
+    const participants = await ctx.db
+      .query("meetingParticipants")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .collect();
+
+    // Calculate average speaking time
+    const averageSpeakingTime = meetingState.speakingStats
+      ? meetingState.speakingStats.totalMs / Math.max(participants.length, 1)
+      : 0;
+
     return {
       ...meetingState,
       totalWebRTCSessions: allSessions.length,
       connectedWebRTCSessions: connectedSessions.length,
+      participantCount: participants.length,
+      averageSpeakingTime,
     };
   },
 });
@@ -452,7 +324,7 @@ export const getMeetingState = query({
 /**
  * Gets active meetings with WebRTC metrics (for monitoring/admin)
  */
-export const getActiveMeetings = query({
+export const getActiveMeetings = internalQuery({
   args: {
     limit: v.optional(v.number()),
   },
@@ -468,13 +340,13 @@ export const getActiveMeetings = query({
     }),
   ),
   handler: async (ctx, { limit = 100 }) => {
-    // This could be restricted to admin users in a real implementation
-    const identity = await requireIdentity(ctx);
+    // System-invoked query; enforce limit bounds but skip identity requirement.
+    const normalizedLimit = Math.min(Math.max(limit, 1), 200);
 
     const activeMeetings = await ctx.db
       .query("meetings")
       .withIndex("by_state", (q) => q.eq("state", "active"))
-      .take(limit);
+      .take(normalizedLimit);
 
     // Enrich with meeting state and WebRTC data
     const enrichedMeetings = [];

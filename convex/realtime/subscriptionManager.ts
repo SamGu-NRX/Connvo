@@ -9,30 +9,25 @@
  */
 
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { globalBandwidthManager } from "../lib/batching";
-import { SubscriptionPerformanceTracker } from "../lib/performance";
-import { SubscriptionStateManager, QueryCache } from "../lib/queryOptimization";
-import { internal } from "../_generated/api";
-import { buildSubscriptionAudit } from "../lib/audit";
-import { normalizeRole, permissionsForResource } from "../lib/permissions";
-
-/**
- * Subscription metadata for tracking active connections
- */
-export interface ActiveSubscription {
-  subscriptionId: string;
-  userId: Id<"users">;
-  resourceType: string;
-  resourceId: string;
-  permissions: string[];
-  establishedAt: number;
-  lastValidated: number;
-  validUntil?: number;
-  priority: "critical" | "high" | "normal" | "low";
-}
+import { query, mutation, internalMutation } from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { globalBandwidthManager } from "@convex/lib/batching";
+import { SubscriptionPerformanceTracker } from "@convex/lib/performance";
+import {
+  SubscriptionStateManager,
+  QueryCache,
+} from "@convex/lib/queryOptimization";
+import { internal } from "@convex/_generated/api";
+import { buildSubscriptionAudit } from "@convex/lib/audit";
+import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
+import {
+  SubscriptionEstablishmentResultV,
+  SubscriptionValidationResultV,
+  BulkTerminationResultV,
+  SubscriptionStatsV,
+} from "@convex/types/validators/realTime";
+import type { ActiveSubscription } from "@convex/types/domain/realTime";
 
 /**
  * Global subscription registry
@@ -115,13 +110,7 @@ export const establishSubscription = mutation({
       ),
     ),
   },
-  returns: v.object({
-    success: v.boolean(),
-    subscriptionId: v.string(),
-    permissions: v.array(v.string()),
-    validUntil: v.optional(v.number()),
-    rateLimited: v.boolean(),
-  }),
+  returns: SubscriptionEstablishmentResultV.full,
   handler: async (
     ctx,
     { resourceType, resourceId, subscriptionId, priority = "normal" },
@@ -205,7 +194,7 @@ export const establishSubscription = mutation({
         action: "subscription_established",
         metadata: {
           subscriptionId,
-          permissions,
+          permissions: permissions.join(","),
           priority,
         },
       }),
@@ -229,17 +218,8 @@ export const validateAndUpdateSubscription = query({
     subscriptionId: v.string(),
     lastValidated: v.number(),
   },
-  returns: v.object({
-    valid: v.boolean(),
-    permissions: v.array(v.string()),
-    reason: v.optional(v.string()),
-    shouldReconnect: v.boolean(),
-    validUntil: v.optional(v.number()),
-    rateLimited: v.boolean(),
-    resourceType: v.string(),
-    resourceId: v.string(),
-  }),
-  handler: async (ctx, { subscriptionId, lastValidated }) => {
+  returns: SubscriptionValidationResultV.full,
+  handler: async (ctx, { subscriptionId }) => {
     const identity = await requireIdentity(ctx);
     const subscription = SubscriptionRegistry.get(subscriptionId);
 
@@ -306,10 +286,7 @@ export const validateAndUpdateSubscription = query({
           const meetingState = await ctx.db
             .query("meetingState")
             .withIndex("by_meeting", (q) =>
-              q.eq(
-                "meetingId",
-                subscription.resourceId as Id<"meetings">,
-              ),
+              q.eq("meetingId", subscription.resourceId as Id<"meetings">),
             )
             .unique();
 
@@ -432,10 +409,7 @@ export const bulkTerminateUserSubscriptions = internalMutation({
     resourceId: v.optional(v.string()),
     reason: v.string(),
   },
-  returns: v.object({
-    terminatedCount: v.number(),
-    subscriptionIds: v.array(v.string()),
-  }),
+  returns: BulkTerminationResultV.full,
   handler: async (ctx, { userId, resourceType, resourceId, reason }) => {
     let subscriptions = SubscriptionRegistry.getByUser(userId);
 
@@ -488,25 +462,7 @@ export const bulkTerminateUserSubscriptions = internalMutation({
  */
 export const getSubscriptionStats = query({
   args: {},
-  returns: v.object({
-    totalActive: v.number(),
-    byResourceType: v.record(v.string(), v.number()),
-    byPriority: v.record(v.string(), v.number()),
-    performanceStats: v.array(
-      v.object({
-        subscriptionId: v.string(),
-        stats: v.object({
-          durationMs: v.number(),
-          updateCount: v.number(),
-          avgLatency: v.number(),
-          updatesPerSecond: v.number(),
-          errors: v.number(),
-          lastUpdate: v.number(),
-          sloCompliant: v.boolean(),
-        }),
-      }),
-    ),
-  }),
+  returns: SubscriptionStatsV.full,
   handler: async (ctx, {}) => {
     const identity = await requireIdentity(ctx);
 
@@ -537,7 +493,7 @@ export const getSubscriptionStats = query({
 /**
  * Helper function to get permissions for a resource type and role
  */
-// Permission helpers moved to ../lib/permissions for consistency
+// Permission helpers moved to @convex/lib/permissions for consistency
 
 /**
  * Cleanup function to be called periodically

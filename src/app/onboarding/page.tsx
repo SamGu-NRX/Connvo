@@ -17,7 +17,7 @@ import ProfileSummary from "@/components/onboarding/ProfileSummary";
 import BasicInfo from "@/components/onboarding/BasicInfo";
 import Congratulations from "@/components/onboarding/Congratulations";
 import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@convex/../convex/_generated/api";
 import { onboardingSchema, OnboardingFormData } from "@/schemas/onboarding";
 import {
   Briefcase,
@@ -127,19 +127,23 @@ export default function OnboardingPage() {
       company: data.company,
       linkedinUrl: data.linkedinUrl || "",
       bio: data.bio,
-      interests: data.interests.map((i) => ({ id: i.id, name: i.name, category: i.category })),
+      interests: data.interests.map((i) => ({
+        id: i.id,
+        name: i.name,
+        category: i.category,
+      })),
     });
     // djb2 hash
     let hash = 5381;
     for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = (hash << 5) + hash + str.charCodeAt(i);
       hash = hash & 0xffffffff;
     }
     return `onboarding:${hash >>> 0}`;
   }
 
   return (
-    <div className="from-background to-secondary/20 min-h-screen bg-linear-to-b">
+    <div className="from-background to-secondary/20 bg-linear-to-b min-h-screen">
       <AnimatePresence mode="wait">
         {showCongrats ? (
           <Congratulations

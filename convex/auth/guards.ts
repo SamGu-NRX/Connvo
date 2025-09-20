@@ -9,10 +9,10 @@
  */
 
 import { v } from "convex/values";
-import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { createError } from "../lib/errors";
+import { QueryCtx, MutationCtx, ActionCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Authenticated user identity with WorkOS context
@@ -52,14 +52,20 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
 
   // Load the corresponding Convex user document (no writes here).
   // Queries/Mutations have ctx.db; Actions must use ctx.runQuery.
-  let userDoc:
-    | { _id: Id<"users">; email: string; displayName?: string | undefined; orgId?: string; orgRole?: string }
-    | null = null;
+  let userDoc: {
+    _id: Id<"users">;
+    email: string;
+    displayName?: string | undefined;
+    orgId?: string;
+    orgRole?: string;
+  } | null = null;
   const hasDb = (ctx as any).db && typeof (ctx as any).db.query === "function";
   if (hasDb) {
     userDoc = await (ctx as QueryCtx).db
       .query("users")
-      .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
+      .withIndex("by_workos_id", (q) =>
+            q.eq("workosUserId", workosUserId),
+          )
       .unique();
   } else {
     userDoc = await (ctx as ActionCtx).runQuery(
@@ -101,42 +107,42 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
 export async function assertMeetingAccess(
   ctx: QueryCtx | MutationCtx,
   meetingId: Id<"meetings">,
-  requiredRole?: "host" | "participant",
+  requiredRole?: "host" | "co-host" | "participant" | "observer",
 ) {
-  const { userId } = await requireIdentity(ctx);
+  const identity = await requireIdentity(ctx);
 
-  // Check if user is a participant in the meeting
   const participant = await ctx.db
     .query("meetingParticipants")
     .withIndex("by_meeting_and_user", (q) =>
-      q.eq("meetingId", meetingId).eq("userId", userId),
+      q.eq("meetingId", meetingId).eq("userId", identity.userId),
     )
     .unique();
 
   if (!participant) {
     throw createError.forbidden("Access denied: Not a meeting participant", {
       meetingId,
-      userId,
+      userId: identity.userId,
     });
   }
 
-  // Check role requirements if specified
-  if (requiredRole && participant.role !== requiredRole) {
-    throw createError.insufficientPermissions(requiredRole, participant.role);
-  }
+  // Check role if required
+  if (requiredRole) {
+    const roleHierarchy = {
+      host: 3,
+      "co-host": 2,
+      participant: 1,
+      observer: 0,
+    };
+    const userRoleLevel = roleHierarchy[participant.role];
+    const requiredRoleLevel = roleHierarchy[requiredRole];
 
-  // Log successful access for audit trail
-  await logAuditEvent(ctx, {
-    actorUserId: userId,
-    resourceType: "meeting",
-    resourceId: meetingId,
-    action: "access_granted",
-    metadata: {
-      requiredRole,
-      actualRole: participant.role,
-      participantId: participant._id,
-    },
-  });
+    if (userRoleLevel < requiredRoleLevel) {
+      throw createError.insufficientPermissions(
+        requiredRole,
+        participant.role,
+      );
+    }
+  }
 
   return participant;
 }
@@ -226,7 +232,7 @@ async function logAuditEvent(
   const dbAny = (ctx as any).db;
   if (dbAny && typeof dbAny.insert === "function") {
     try {
-      const { logAudit } = await import("../lib/audit");
+      const { logAudit } = await import("@convex/lib/audit");
       await logAudit(ctx as any, {
         actorUserId: event.actorUserId,
         resourceType: event.resourceType,
@@ -270,7 +276,9 @@ export async function hasMeetingAccess(
  * @param ctx - Convex context
  * @returns AuthIdentity if authenticated, null otherwise
  */
-export async function getCurrentUser(ctx: AuthContext): Promise<AuthIdentity | null> {
+export async function getCurrentUser(
+  ctx: AuthContext,
+): Promise<AuthIdentity | null> {
   try {
     return await requireIdentity(ctx);
   } catch {

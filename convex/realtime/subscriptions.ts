@@ -10,41 +10,43 @@
  */
 
 import { v } from "convex/values";
-import { query, mutation, internalMutation, internalQuery, QueryCtx } from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
-import { createError } from "../lib/errors";
+import {
+  query,
+  mutation,
+  internalMutation,
+  internalQuery,
+  QueryCtx,
+} from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
 import {
   globalBandwidthManager,
   CircuitBreaker,
   debounce,
   throttle,
-} from "../lib/batching";
-import { withTrace, SubscriptionPerformanceTracker } from "../lib/performance";
+} from "@convex/lib/batching";
+import {
+  withTrace,
+  SubscriptionPerformanceTracker,
+} from "@convex/lib/performance";
 import {
   TranscriptQueryOptimizer,
   NotesQueryOptimizer,
   SubscriptionStateManager,
   QueryCache,
-} from "../lib/queryOptimization";
-import { normalizeRole, permissionsForResource } from "../lib/permissions";
-import { buildSubscriptionAudit } from "../lib/audit";
-import { internal } from "../_generated/api";
-
-/**
- * Subscription context for tracking active connections
- */
-export interface SubscriptionContext {
-  subscriptionId: string;
-  userId: Id<"users">;
-  resourceType: string;
-  resourceId: string;
-  permissions: string[];
-  connectionId: string;
-  establishedAt: number;
-  lastValidated: number;
-  validUntil?: number;
-}
+} from "@convex/lib/queryOptimization";
+import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
+import { buildSubscriptionAudit } from "@convex/lib/audit";
+import { internal } from "@convex/_generated/api";
+import {
+  SubscriptionContextV,
+  MeetingNotesSubscriptionResultV,
+  TranscriptStreamSubscriptionResultV,
+  MeetingParticipantsSubscriptionResultV,
+  SubscriptionValidationResultV,
+} from "@convex/types/validators/realTime";
+import type { SubscriptionContext } from "@convex/types/domain/realTime";
 
 /**
  * Real-time meeting notes subscription with permission validation and bandwidth management
@@ -55,18 +57,7 @@ export const subscribeMeetingNotes = query({
     subscriptionId: v.optional(v.string()),
     cursor: v.optional(v.string()),
   },
-  returns: v.union(
-    v.object({
-      content: v.string(),
-      version: v.number(),
-      lastUpdated: v.number(),
-      subscriptionValid: v.boolean(),
-      permissions: v.array(v.string()),
-      cursor: v.string(),
-      rateLimited: v.boolean(),
-    }),
-    v.null(),
-  ),
+  returns: MeetingNotesSubscriptionResultV.full,
   handler: async (ctx, { meetingId, subscriptionId, cursor }) => {
     const startTime = Date.now();
 
@@ -98,7 +89,11 @@ export const subscribeMeetingNotes = query({
 
     // Try cache first for frequently accessed notes
     const cacheKey = `notes_${meetingId}`;
-    type NotesMaterialized = { content: string; version: number; lastUpdated: number };
+    type NotesMaterialized = {
+      content: string;
+      version: number;
+      lastUpdated: number;
+    };
     let notes = QueryCache.get<NotesMaterialized>(cacheKey);
 
     if (!notes) {
@@ -152,24 +147,7 @@ export const subscribeTranscriptStream = query({
     limit: v.optional(v.number()),
     subscriptionId: v.optional(v.string()),
   },
-  returns: v.object({
-    transcripts: v.array(
-      v.object({
-        _id: v.id("transcripts"),
-        sequence: v.number(),
-        speakerId: v.optional(v.string()),
-        text: v.string(),
-        confidence: v.number(),
-        startMs: v.number(),
-        endMs: v.number(),
-        createdAt: v.number(),
-      }),
-    ),
-    nextSequence: v.number(),
-    subscriptionValid: v.boolean(),
-    permissions: v.array(v.string()),
-    validUntil: v.optional(v.number()),
-  }),
+  returns: TranscriptStreamSubscriptionResultV.full,
   handler: async (
     ctx,
     { meetingId, fromSequence = 0, limit = 50, subscriptionId },
@@ -253,33 +231,7 @@ export const subscribeMeetingParticipants = query({
     meetingId: v.id("meetings"),
     subscriptionId: v.optional(v.string()),
   },
-  returns: v.object({
-    participants: v.array(
-      v.object({
-        _id: v.id("meetingParticipants"),
-        userId: v.id("users"),
-        role: v.union(
-          v.literal("host"),
-          v.literal("participant"),
-          v.literal("observer"),
-        ),
-        presence: v.union(
-          v.literal("invited"),
-          v.literal("joined"),
-          v.literal("left"),
-        ),
-        joinedAt: v.optional(v.number()),
-        leftAt: v.optional(v.number()),
-        user: v.object({
-          displayName: v.optional(v.string()),
-          email: v.string(),
-          avatarUrl: v.optional(v.string()),
-        }),
-      }),
-    ),
-    subscriptionValid: v.boolean(),
-    permissions: v.array(v.string()),
-  }),
+  returns: MeetingParticipantsSubscriptionResultV.full,
   handler: async (ctx, { meetingId, subscriptionId }) => {
     // Validate meeting access
     const participant = await assertMeetingAccess(ctx, meetingId);
@@ -309,7 +261,10 @@ export const subscribeMeetingParticipants = query({
     );
 
     const roleForPerms3 = normalizeRole(participant.role);
-    const permissions = permissionsForResource("meetingParticipants", roleForPerms3);
+    const permissions = permissionsForResource(
+      "meetingParticipants",
+      roleForPerms3,
+    );
 
     return {
       participants: enrichedParticipants,
@@ -330,13 +285,7 @@ export const validateSubscription = query({
     resourceId: v.id("meetings"),
     lastValidated: v.number(),
   },
-  returns: v.object({
-    valid: v.boolean(),
-    permissions: v.array(v.string()),
-    reason: v.optional(v.string()),
-    shouldReconnect: v.boolean(),
-    validUntil: v.optional(v.number()),
-  }),
+  returns: SubscriptionValidationResultV.simple,
   handler: async (
     ctx,
     { subscriptionId, resourceType, resourceId, lastValidated },
@@ -459,6 +408,6 @@ async function getMeetingState(ctx: QueryCtx, meetingId: Id<"meetings">) {
     .unique();
 }
 
-// Permission helpers moved to ../lib/permissions for consistency
+// Permission helpers moved to @convex/lib/permissions for consistency
 
 // Intentionally no logging writes from queries

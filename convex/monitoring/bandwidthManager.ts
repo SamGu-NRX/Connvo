@@ -14,10 +14,10 @@ import {
   mutation,
   action,
   internalMutation,
-} from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity } from "../auth/guards";
-import { PerformanceCircuitBreaker } from "../lib/performance";
+} from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity } from "@convex/auth/guards";
+import { PerformanceCircuitBreaker } from "@convex/lib/performance";
 
 /**
  * Advanced bandwidth manager with per-user and global limits
@@ -522,7 +522,7 @@ export const resetCircuitBreaker = mutation({
 
     if (success) {
       // Log the reset action
-      const { logAudit } = await import("../lib/audit");
+      const { logAudit } = await import("@convex/lib/audit");
       await logAudit(ctx, {
         actorUserId: identity.userId as Id<"users">,
         resourceType: "circuit_breaker",

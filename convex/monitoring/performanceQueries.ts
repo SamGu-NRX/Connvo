@@ -9,15 +9,22 @@
  */
 
 import { v } from "convex/values";
-import { query, mutation, action, internalQuery } from "../_generated/server";
-import { Id } from "../_generated/dataModel";
-import { requireIdentity } from "../auth/guards";
+import {
+  query,
+  mutation,
+  action,
+  internalQuery,
+  internalMutation,
+} from "@convex/_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { requireIdentity } from "@convex/auth/guards";
 import {
   PerformanceTracker,
   SubscriptionPerformanceTracker,
   SLO_TARGETS,
-} from "../lib/performance";
-import { globalBandwidthManager } from "../lib/batching";
+} from "@convex/lib/performance";
+import { globalBandwidthManager } from "@convex/lib/batching";
+import { metadataRecordV } from "@convex/lib/validators";
 
 /**
  * Real-time performance metrics query
@@ -98,6 +105,103 @@ export const getPerformanceMetrics = query({
       aggregatedStats: stats,
       sloCompliance,
     };
+  },
+});
+
+/**
+ * Internal: Ingest a transcript streaming performance metric.
+ * Avoids auth requirement for background/internal reporting.
+ */
+export const ingestStreamingMetric = internalMutation({
+  args: {
+    meetingId: v.id("meetings"),
+    metrics: v.object({
+      chunksProcessed: v.number(),
+      batchesProcessed: v.number(),
+      latencyMs: v.number(),
+      throughputChunksPerSecond: v.number(),
+      timestamp: v.number(),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, { meetingId, metrics }) => {
+    await ctx.db.insert("performanceMetrics", {
+      name: "transcript_streaming",
+      value: metrics.throughputChunksPerSecond,
+      unit: "chunks_per_second",
+      labels: {
+        meetingId,
+        operation: "transcript_ingestion",
+        batchesProcessed: String(metrics.batchesProcessed),
+      },
+      meetingId, // Denormalized for indexing
+      threshold: {
+        warning: 10,
+        critical: 5,
+      },
+      timestamp: metrics.timestamp,
+      createdAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
+ * Internal: Create a system alert (no auth requirement).
+ */
+export const createAlertInternal = internalMutation({
+  args: {
+    alertId: v.string(),
+    severity: v.union(
+      v.literal("critical"),
+      v.literal("error"),
+      v.literal("warning"),
+      v.literal("info"),
+    ),
+    category: v.union(
+      v.literal("meeting_lifecycle"),
+      v.literal("video_provider"),
+      v.literal("transcription"),
+      v.literal("authentication"),
+      v.literal("performance"),
+      v.literal("security"),
+      v.literal("system"),
+    ),
+    title: v.string(),
+    message: v.string(),
+    metadata: metadataRecordV,
+    actionable: v.boolean(),
+  },
+  returns: v.id("alerts"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("alerts")
+      .filter((q) => q.eq(q.field("alertId"), args.alertId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        message: args.message,
+        metadata: args.metadata,
+        updatedAt: now,
+      });
+      return existing._id;
+    }
+
+    return await ctx.db.insert("alerts", {
+      alertId: args.alertId,
+      severity: args.severity,
+      category: args.category,
+      title: args.title,
+      message: args.message,
+      metadata: args.metadata,
+      actionable: args.actionable,
+      status: "active",
+      escalationTime: args.severity === "critical" ? now + 300000 : undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
   },
 });
 
@@ -570,7 +674,7 @@ export const recordCustomMetric = mutation({
   handler: async (ctx, { metricName, value, tags, timestamp }) => {
     const identity = await requireIdentity(ctx);
 
-    const { logAudit } = await import("../lib/audit");
+    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       actorUserId: identity.userId as Id<"users">,
       resourceType: "performance_metric",
@@ -581,8 +685,8 @@ export const recordCustomMetric = mutation({
       metadata: {
         metricName,
         value,
-        tags: tags || {},
         category: "performance_monitoring",
+        ...serializeTags(tags),
       },
     });
   },
@@ -591,6 +695,19 @@ export const recordCustomMetric = mutation({
 /**
  * Helper functions
  */
+function serializeTags(
+  tags?: Record<string, string>,
+): Record<string, string | number | boolean> {
+  if (!tags) {
+    return {};
+  }
+
+  return {
+    tagsJson: JSON.stringify(tags),
+    tagCount: Object.keys(tags).length,
+  };
+}
+
 function percentile(sortedArray: number[], p: number): number {
   if (sortedArray.length === 0) return 0;
 

@@ -8,11 +8,11 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
-import { internalAction, internalMutation } from "../_generated/server";
+import { internalAction, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { metadataRecordV } from "../lib/validators";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
+import { metadataRecordV } from "@convex/lib/validators";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Initializes transcription for a meeting
@@ -51,9 +51,8 @@ export const initializeTranscription = internalAction({
       }
 
       // Determine transcription provider based on meeting configuration
-      const transcriptionProvider: "whisper" | "getstream" = meeting.webrtcEnabled
-        ? "whisper"
-        : "getstream";
+      const transcriptionProvider: "whisper" | "getstream" =
+        meeting.webrtcEnabled ? "whisper" : "getstream";
 
       // Create transcription session record
       await ctx.runMutation(
@@ -195,7 +194,10 @@ export const finalizeTranscription = internalAction({
     success: v.boolean(),
     totalChunks: v.number(),
   }),
-  handler: async (ctx, { meetingId }): Promise<{ success: boolean; totalChunks: number }> => {
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<{ success: boolean; totalChunks: number }> => {
     try {
       // Update session status
       await ctx.runMutation(

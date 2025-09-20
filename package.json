@@ -12,10 +12,17 @@
     "convex:deploy": "convex deploy",
     "convex:codegen": "convex codegen",
     "type-check": "tsc --noEmit",
-    "test": "echo \"No tests yet\"",
+    "type-diag": "tsc --noEmit --extendedDiagnostics --listFiles",
+    "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:types": "vitest run convex/types/__tests__/",
+    "test:ci": "tsx convex/types/__tests__/ci-validation.ts",
+    "validate-types": "tsx convex/types/__tests__/ci-validation.ts --output=type-validation-report.md",
     "seed": "echo \"No seed script yet\""
   },
   "dependencies": {
+    "@convex-dev/rate-limiter": "^0.2.12",
     "@convex-dev/workos": "^0.0.1",
     "@hookform/resolvers": "^5.2.1",
     "@next/swc-wasm-nodejs": "15.5.2",
@@ -77,6 +84,7 @@
     "lucide-react": "^0.544.0",
     "motion": "^12.23.12",
     "next-themes": "^0.4.6",
+    "openai": "^5.20.3",
     "react-chartjs-2": "^5.3.0",
     "react-day-picker": "^9.9.0",
     "react-hook-form": "^7.62.0",
@@ -90,6 +98,7 @@
     "zod": "^4.1.5"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@eslint/eslintrc": "^3.3.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "24.3.1",

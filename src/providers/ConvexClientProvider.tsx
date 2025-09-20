@@ -8,7 +8,7 @@ import {
   useAuth,
   useAccessToken,
 } from "@workos-inc/authkit-nextjs/components";
-import { api } from "../../convex/_generated/api";
+import { api } from "@convex/_generated/api";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 

@@ -8,9 +8,9 @@
  * Compliance: steering/convex_rules.mdc - Uses proper error handling patterns
  */
 
-import { MutationCtx, ActionCtx } from "../_generated/server";
+import { MutationCtx, ActionCtx } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Alert severity levels
@@ -131,6 +131,7 @@ export async function recordPerformanceMetric(
     value: metric.value,
     unit: metric.unit,
     labels: metric.labels || {},
+    meetingId: metric.labels?.meetingId, // Denormalized for indexing if present
     threshold: metric.threshold,
     timestamp: metric.timestamp,
     createdAt: Date.now(),

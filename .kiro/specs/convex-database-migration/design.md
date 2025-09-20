@@ -1,18 +1,40 @@
-# LinkedUp Backend Migration to Convex — Design Document (v1.2)
+# LinkedUp Backend Migration to Convex — Design Document (v2.0)
 
 Owner: Platform/Backend
-Date: 2025-09-10
+Date: 2025-09-11
 Compliance: Must comply with steering/convex_rules.mdc. Use the context7 MCP tool for up-to-date Convex guidance and patterns.
 
-**REVISION NOTES (v1.2):**
+What changed since 2024 (validated 2025-09-11):
 
-- Aligned authentication strategy to WorkOS (not Clerk) per requirements
-- Enhanced schema design following Convex best practices and performance patterns
-- Refined index sharding strategies to prevent hot partitions
-- Added concrete OT algorithms for collaborative notes
-- Improved batching/coalescing patterns for scalability
-- Detailed migration mapping from Drizzle schema to Convex collections
-- Enhanced performance optimizations for thousands of concurrent meetings
+- Convex now documents full-text search searchIndex and vector search vectorIndex; vector
+  search must be run from actions via ctx.vectorSearch (docs.convex.dev/search/vector-search).
+- Convex full-text search is prefix-only (no fuzzy) as of 2025-01-15 (docs.convex.dev/search/text-search).
+- WorkOS has first-class Convex support (official provider, announced 2025-07-31)
+  which simplifies auth wiring and enforces aud/iss. Use it where available.
+- HTTP actions and router patterns remain the recommended approach for webhooks and
+  external integrations (docs.convex.dev/functions/http-actions).
+
+REVISION NOTES (v2.0):
+
+- Tiering: Free tier uses native WebRTC with Convex-backed signaling and custom
+  transcription as the base offering; GetStream Video (with recording) is
+  reserved for the paid/pro tier. Meeting lifecycle and provisioning branch by
+  entitlement (free vs paid).
+- Added orgs, orgMemberships, subscriptions, entitlements, rtcSessions,
+  rtcSignals, and recordings to the schema & index plan to support billing and
+  tier-aware feature gating.
+- Authentication: prefer the official Convex + WorkOS integration (2025-07-31
+  provider) for aud/iss enforcement; fallback to customJwt only if the official
+  provider is not yet available in the environment.
+- Added TURN provisioning actions, RTC signaling patterns, and RTC-specific
+  observability (signal throughput, TURN allocation success/fail).
+- Vector & search: vector searches must be invoked from actions (ctx.vectorSearch);
+  text search is prefix-only. Constraints reflected in search/index config.
+- Security: ephemeral ICE/TURN credentials must never be persisted; rtcSignals
+  are short-lived documents with TTL and rate limits to prevent abuse.
+- Migration: extended backfill/cutover plan to populate org/subscription state
+  and default migrated orgs to the free tier; added a feature-flagged read
+  strategy for staged cutover.
 
 Summary
 
@@ -228,7 +250,7 @@ Access Control Helpers
 ```ts
 // convex/auth/guards.ts
 import { v } from "convex/values";
-import { query, mutation, action } from "../_generated/server";
+import { query, mutation, action } from "@convex/_generated/server";
 
 export type AuthIdentity = {
   userId: string;
@@ -675,9 +697,9 @@ Notes subscription (bound by single doc)
 
 ```ts
 // convex/meetings/streams.ts
-import { query } from "../_generated/server";
+import { query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
+import { assertMeetingAccess } from "@convex/auth/guards";
 
 export const subscribeMeetingNotes = query({
   args: { meetingId: v.id("meetings") },
@@ -701,9 +723,9 @@ Transcript stream (bounded by buckets and limit)
 
 ```ts
 // convex/transcripts/queries.ts
-import { query } from "../_generated/server";
+import { query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
+import { assertMeetingAccess } from "@convex/auth/guards";
 
 export const subscribeTranscriptStream = query({
   args: {
@@ -838,7 +860,7 @@ Actions and Webhooks
 
 ```ts
 // convex/internal/meetings/stream.ts
-import { action, httpAction } from "../../_generated/server";
+import { action, httpAction } from "@convex/_generated/server";
 import { v } from "convex/values";
 // Import signature and idempotency helpers
 
@@ -864,9 +886,9 @@ Meeting Mutations
 
 ```ts
 // convex/meetings/lifecycle.ts
-import { mutation } from "../_generated/server";
+import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess, requireIdentity } from "../auth/guards";
+import { assertMeetingAccess, requireIdentity } from "@convex/auth/guards";
 
 export const startMeeting = mutation({
   args: { meetingId: v.id("meetings") },
@@ -905,9 +927,9 @@ Ingestion Mutation
 
 ```ts
 // convex/transcripts/ingestion.ts
-import { mutation } from "../_generated/server";
+import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
+import { assertMeetingAccess } from "@convex/auth/guards";
 
 export const ingestTranscriptChunk = mutation({
   args: {
@@ -960,7 +982,7 @@ Aggregation Action
 
 ```ts
 // convex/internal/transcripts/aggregation.ts
-import { action } from "../../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 export const aggregateTranscriptSegments = action({
@@ -1110,10 +1132,10 @@ function compose(op1: Operation, op2: Operation): Operation {
 
 ```ts
 // convex/notes/operations.ts
-import { mutation } from "../_generated/server";
+import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
-import { transformAgainst, applyToDoc } from "../lib/ot";
+import { assertMeetingAccess } from "@convex/auth/guards";
+import { transformAgainst, applyToDoc } from "@convex/lib/ot";
 
 export const applyNoteOperation = mutation({
   args: {
@@ -1216,9 +1238,9 @@ export function hashRequest(input: any): string {
 
 ```ts
 // convex/internal/ai/precall.ts
-import { action } from "../../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { hashRequest } from "../../lib/idempotency";
+import { hashRequest } from "@convex/lib/idempotency";
 
 export const generatePreCallIdeas = action({
   args: { meetingId: v.id("meetings") },
@@ -1274,9 +1296,9 @@ export const generatePreCallIdeas = action({
 
 ```ts
 // convex/internal/ai/incall.ts
-import { action } from "../../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { hashRequest } from "../../lib/idempotency";
+import { hashRequest } from "@convex/lib/idempotency";
 
 export const generateContextualPrompts = action({
   args: {
@@ -1342,7 +1364,7 @@ export const generateContextualPrompts = action({
 
 ```ts
 // convex/internal/insights/generate.ts
-import { action } from "../../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 export const generateInsights = action({
@@ -1386,9 +1408,9 @@ Queue and Matching Foundation
 
 ```ts
 // convex/matching/queue.ts
-import { mutation } from "../_generated/server";
+import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity } from "../auth/guards";
+import { requireIdentity } from "@convex/auth/guards";
 
 export const enterMatchingQueue = mutation({
   args: {
@@ -1419,7 +1441,7 @@ export const enterMatchingQueue = mutation({
 
 ```ts
 // convex/internal/matching/runner.ts
-import { action } from "../../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 export const runMatchingCycle = action({
@@ -1437,7 +1459,7 @@ Embeddings Abstraction (provider-agnostic)
 
 ```ts
 // convex/embeddings/interface.ts
-import { action } from "../_generated/server";
+import { action } from "@convex/_generated/server";
 import { v } from "convex/values";
 
 export const generateEmbedding = action({
@@ -2640,9 +2662,9 @@ Participants Query
 
 ```ts
 // convex/meetings/participants.ts
-import { query } from "../_generated/server";
+import { query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { assertMeetingAccess } from "../auth/guards";
+import { assertMeetingAccess } from "@convex/auth/guards";
 
 export const getMeetingParticipants = query({
   args: { meetingId: v.id("meetings") },

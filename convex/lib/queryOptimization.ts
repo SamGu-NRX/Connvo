@@ -9,8 +9,8 @@
  */
 
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
-import { QueryCtx, MutationCtx } from "../_generated/server";
+import { Id } from "@convex/_generated/dataModel";
+import { QueryCtx, MutationCtx } from "@convex/_generated/server";
 
 type DbCtx = QueryCtx | MutationCtx;
 
@@ -27,6 +27,10 @@ type TranscriptDoc = {
   endMs: number;
   // Align with schema: transcripts.wordCount is required
   wordCount: number;
+  // Optional language field per schema
+  language?: string;
+  // Optional interim flag
+  isInterim?: boolean;
   createdAt: number;
 };
 
@@ -487,9 +491,4 @@ export class IndexOptimizer {
 export function queryOptimizationCleanup(): void {
   SubscriptionStateManager.cleanup();
   QueryCache.cleanup();
-}
-
-// Auto-cleanup every 5 minutes
-if (typeof setInterval !== "undefined") {
-  setInterval(queryOptimizationCleanup, 5 * 60 * 1000);
 }

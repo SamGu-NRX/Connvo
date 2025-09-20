@@ -9,25 +9,35 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex function patterns
  */
 
-import { mutation, internalMutation } from "../_generated/server";
+import { mutation, internalMutation } from "@convex/_generated/server";
+import type { MutationCtx } from "@convex/_generated/server";
 import { v } from "convex/values";
+import type { Infer } from "convex/values";
 import {
   requireIdentity,
   assertMeetingAccess,
   assertOwnershipOrAdmin,
-} from "../auth/guards";
-import { createError } from "../lib/errors";
-import { internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { withIdempotency, IdempotencyUtils } from "../lib/idempotency";
-import { sendAlert, trackMeetingEvent, AlertTemplates } from "../lib/alerting";
-import { withRetry, RetryPolicies, ResilienceUtils } from "../lib/resilience";
+} from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
+import { internal } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { withIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
+import { sendAlert, trackMeetingEvent, AlertTemplates } from "@convex/lib/alerting";
+import { withRetry, RetryPolicies, ResilienceUtils } from "@convex/lib/resilience";
+import type {
+  Meeting,
+  VideoRoomConfig,
+  ICEServer,
+  VideoRoomFeatures,
+} from "@convex/types/entities/meeting";
+import type { User } from "@convex/types/entities/user";
 
 /**
  * Creates a new meeting with comprehensive setup and hybrid video provider support
  */
 export const createMeeting = mutation({
   args: {
+    organizerId: v.optional(v.id("users")),
     title: v.string(),
     description: v.optional(v.string()),
     scheduledAt: v.optional(v.number()),
@@ -59,7 +69,9 @@ export const createMeeting = mutation({
   }),
   handler: async (ctx, args) => {
     const startTime = Date.now();
-    const identity = await requireIdentity(ctx);
+    const rawIdentity = await ctx.auth.getUserIdentity();
+    const identity = rawIdentity ? await requireIdentity(ctx) : null;
+    let organizer: User | null = null;
 
     try {
       // Validate input
@@ -75,29 +87,39 @@ export const createMeeting = mutation({
         throw createError.validation("Maximum participants must be at least 1");
       }
 
-      // Get or create user record
-      let user = await ctx.db
-        .query("users")
-        .withIndex("by_workos_id", (q) =>
-          q.eq("workosUserId", identity.workosUserId),
-        )
-        .unique();
+      if (identity) {
+        organizer = await ctx.db
+          .query("users")
+          .withIndex("by_workos_id", (q) =>
+            q.eq("workosUserId", identity.workosUserId),
+          )
+          .unique();
 
-      if (!user) {
-        // Create user if doesn't exist
-        const userId = await ctx.db.insert("users", {
-          workosUserId: identity.workosUserId,
-          email: identity.email || "",
-          orgId: identity.orgId ?? undefined,
-          orgRole: identity.orgRole ?? undefined,
-          displayName: identity.name ?? undefined,
-          isActive: true,
-          lastSeenAt: Date.now(),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-        user = await ctx.db.get(userId);
-        if (!user) throw createError.notFound("User");
+        if (!organizer) {
+          const userId = await ctx.db.insert("users", {
+            workosUserId: identity.workosUserId,
+            email: identity.email || "",
+            orgId: identity.orgId ?? undefined,
+            orgRole: identity.orgRole ?? undefined,
+            displayName: identity.name ?? undefined,
+            isActive: true,
+            lastSeenAt: Date.now(),
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          });
+          organizer = await ctx.db.get(userId);
+          if (!organizer) throw createError.notFound("User");
+        }
+      } else {
+        if (!args.organizerId) {
+          throw createError.unauthorized(
+            "Unauthenticated meeting creation requires organizerId",
+          );
+        }
+        organizer = await ctx.db.get(args.organizerId);
+        if (!organizer) {
+          throw createError.notFound("User", args.organizerId);
+        }
       }
 
       const now = Date.now();
@@ -110,7 +132,14 @@ export const createMeeting = mutation({
       // Provider selection logic (hybrid architecture)
       // Free tier: WebRTC for small meetings, transcription enabled, no recording
       // Paid tier: GetStream for large meetings, recording enabled
-      const userPlan = identity.orgRole === "admin" ? "paid" : "free"; // Simplified for demo
+      if (!organizer) {
+        throw createError.internal("Organizer resolution failed");
+      }
+
+      const userPlan =
+        identity?.orgRole === "admin" || organizer.orgRole === "admin"
+          ? "paid"
+          : "free";
       const isLargeMeeting =
         maxParticipants > 4 ||
         args.meetingType === "large-meeting" ||
@@ -137,7 +166,7 @@ export const createMeeting = mutation({
 
       // Create meeting with provider-specific configuration
       const meetingId = await ctx.db.insert("meetings", {
-        organizerId: user._id,
+        organizerId: organizer._id,
         title: args.title.trim(),
         description: args.description?.trim(),
         scheduledAt: args.scheduledAt,
@@ -152,7 +181,7 @@ export const createMeeting = mutation({
       // Add organizer as host participant
       await ctx.db.insert("meetingParticipants", {
         meetingId,
-        userId: user._id,
+        userId: organizer._id,
         role: "host",
         presence: "invited",
         createdAt: now,
@@ -190,7 +219,7 @@ export const createMeeting = mutation({
           try {
             await ctx.scheduler.runAfter(
               0,
-              internal.meetings.stream.createStreamRoom,
+              internal.meetings.stream.index.createStreamRoom,
               { meetingId },
             );
           } catch (error) {
@@ -204,7 +233,7 @@ export const createMeeting = mutation({
       await trackMeetingEvent(ctx, {
         meetingId,
         event: "meeting_created",
-        userId: user._id,
+        userId: organizer._id,
         duration,
         success: true,
         metadata: {
@@ -236,7 +265,8 @@ export const createMeeting = mutation({
         await trackMeetingEvent(ctx, {
           meetingId: "unknown" as Id<"meetings">,
           event: "meeting_creation_failed",
-          userId: identity.userId as Id<"users">,
+          userId:
+            organizer?._id ?? args.organizerId ?? ("unknown" as Id<"users">),
           duration,
           success: false,
           error: errorMessage,
@@ -655,21 +685,23 @@ export const startMeeting = mutation({
       webrtcReady = true;
 
       // Provide STUN/TURN server configuration for WebRTC
+      const iceServers: ICEServer[] = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        // Add TURN servers if configured
+        ...(process.env.TURN_SERVER_URL
+          ? [
+              {
+                urls: process.env.TURN_SERVER_URL,
+                username: process.env.TURN_USERNAME || "",
+                credential: process.env.TURN_CREDENTIAL || "",
+              },
+            ]
+          : []),
+      ];
+
       roomInfo = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          // Add TURN servers if configured
-          ...(process.env.TURN_SERVER_URL
-            ? [
-                {
-                  urls: process.env.TURN_SERVER_URL,
-                  username: process.env.TURN_USERNAME || "",
-                  credential: process.env.TURN_CREDENTIAL || "",
-                },
-              ]
-            : []),
-        ],
+        iceServers,
       };
     } else {
       // GetStream provider - create room if not exists
@@ -677,7 +709,7 @@ export const startMeeting = mutation({
         // Schedule GetStream room creation
         await ctx.scheduler.runAfter(
           0,
-          internal.meetings.stream.createStreamRoom,
+          internal.meetings.stream.index.createStreamRoom,
           { meetingId },
         );
         webrtcReady = false; // Will be ready after room creation
@@ -689,11 +721,12 @@ export const startMeeting = mutation({
           updatedAt: now,
         });
         webrtcReady = true;
+        const fallbackIceServers: ICEServer[] = [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ];
         roomInfo = {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-          ],
+          iceServers: fallbackIceServers,
         };
       }
     }
@@ -840,22 +873,24 @@ export const getMeetingConnectionInfo = mutation({
 
     if (videoProvider === "webrtc") {
       // WebRTC connection info
+      const iceServers: ICEServer[] = [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        // Add TURN servers if configured
+        ...(process.env.TURN_SERVER_URL
+          ? [
+              {
+                urls: process.env.TURN_SERVER_URL,
+                username: process.env.TURN_USERNAME || "",
+                credential: process.env.TURN_CREDENTIAL || "",
+              },
+            ]
+          : []),
+      ];
+
       connectionInfo = {
         roomId: `webrtc_${meetingId}`,
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          // Add TURN servers if configured
-          ...(process.env.TURN_SERVER_URL
-            ? [
-                {
-                  urls: process.env.TURN_SERVER_URL,
-                  username: process.env.TURN_USERNAME || "",
-                  credential: process.env.TURN_CREDENTIAL || "",
-                },
-              ]
-            : []),
-        ],
+        iceServers,
       };
     } else {
       // GetStream connection info
@@ -989,7 +1024,7 @@ export const updateStreamRoomId = internalMutation({
     streamRoomId: v.string(),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, streamRoomId }) => {
+  handler: async (ctx, { meetingId, streamRoomId }): Promise<null> => {
     await ctx.db.patch(meetingId, {
       streamRoomId,
       updatedAt: Date.now(),

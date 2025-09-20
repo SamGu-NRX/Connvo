@@ -3,7 +3,7 @@
 ## Frontend Stack
 
 - **Framework**: Next.js 15+ with React 19
-- **Styling**: Tailwind CSS 4.0 with Shadcn UI components (New York style)
+- **Styling**: Tailwind CSS with Shadcn UI components (New York style)
 - **TypeScript**: Strict mode enabled
 - **Icons**: Lucide React + Tabler Icons
 - **Animations**: Framer Motion
@@ -11,48 +11,52 @@
 
 ## Backend & Database
 
-- **Database**: PostgreSQL with Supabase
-- **ORM**: Drizzle ORM with migrations in `/drizzle` folder
-- **Authentication**: Clerk for user management
-- **Real-time Communication**: Stream API for voice/video calls
+- **Database**: Convex (reactive backend-as-a-service)
+   - Essential Compliance (!!!): Always comply with `steering/convex_rules.mdc` AND `steering/convex_test_rules.mdc` and use the `context7 MCP` tool for up-to-date Convex documentation and best practices.
+- **Schema**: Convex schema with TypeScript validators
+- **Authentication**: WorkOS Auth Kit for enterprise-grade authentication
+- **API Layer**: Next.js App Directory API routes for traditional REST endpoints
+- **Real-time Communication**: Hybrid - GetStream Video (paid tier) + WebRTC/custom pipeline (free tier)
+- **Real-time Data**: Convex reactive queries and WebSocket subscriptions
 
 ## Development Tools
 
-- **Package Manager**: Uses both npm and bun (bun.lock present)
+- **Package Manager**: Bun (bun.lock present)
 - **Linting**: ESLint with Next.js config
 - **Formatting**: Prettier with Tailwind plugin
 - **Git Hooks**: Husky for pre-commit hooks
+- **Testing**: Vitest with convex-test for backend testing
 
 ## Common Commands
 
 ### Development
 
 ```bash
-npm run dev          # Start development server with Turbo
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+bun run dev          # Start development server
+bun run build        # Build for production
+bun run start        # Start production server
+bun run lint         # Run ESLint
+bun run test         # Run test suite
 ```
 
-### Database Operations
+### Convex Operations
 
 ```bash
-npm run db:generate  # Generate Drizzle migrations
-npm run db:push      # Push schema changes to database
-npm run db:pull      # Pull schema from database
-npm run db:studio    # Open Drizzle Studio
-npm run db:seed      # Seed database
-npm run db:reset     # Reset database
+npx convex dev       # Start Convex development server
+npx convex deploy    # Deploy to Convex
+npx convex dashboard # Open Convex dashboard
+npx convex import    # Import data
+npx convex export    # Export data
 ```
 
 ## Environment Setup
 
 - Copy `.env.example` to `.env.local` for local development
-- Required environment variables include Clerk, Supabase, and Stream API keys
-- Database URL configured in `drizzle.config.ts`
+- Required environment variables include WorkOS, GetStream, and AI provider keys
+- Convex deployment configured in `convex.json`
 
 ## Build Configuration
 
 - Next.js config includes SVG handling with @svgr/webpack
-- Turbo mode enabled for faster builds
-- TypeScript and ESLint errors ignored during builds (development setting)
+- TypeScript strict mode enabled
+- Convex functions use new function syntax with args and returns validators

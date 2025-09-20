@@ -16,8 +16,8 @@ import {
   User as StreamUser,
 } from "@stream-io/video-react-sdk";
 import { ConvexReactClient } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * GetStream call configuration
@@ -82,7 +82,7 @@ export class GetStreamCallManager {
 
       // Generate participant token
       const tokenResponse = await this.convex.action(
-        api.meetings.stream.generateParticipantTokenPublic,
+        api.meetings.stream.index.generateParticipantTokenPublic,
         {
           meetingId: this.meetingId,
           role: "participant", // Will be determined by backend based on user's role
@@ -149,7 +149,7 @@ export class GetStreamCallManager {
     try {
       // Start recording via backend (includes permission checks)
       const result = await this.convex.action(
-        api.meetings.stream.startRecording,
+        api.meetings.stream.index.startRecording,
         {
           meetingId: this.meetingId,
           recordingConfig: config,
@@ -177,7 +177,7 @@ export class GetStreamCallManager {
     try {
       // Stop recording via backend (includes permission checks)
       const result = await this.convex.action(
-        api.meetings.stream.stopRecording,
+        api.meetings.stream.index.stopRecording,
         {
           meetingId: this.meetingId,
           recordingId,

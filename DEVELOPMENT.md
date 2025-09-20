@@ -147,7 +147,7 @@ export const sendEmail = action({
 **Always validate authentication:**
 
 ```typescript
-import { requireIdentity, assertMeetingAccess } from "../auth/guards";
+import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 
 export const getMeeting = query({
   args: { meetingId: v.id("meetings") },
@@ -577,7 +577,6 @@ export const updateMeeting = mutation({
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [Project Specifications](./.kiro/specs/convex-database-migration/)
 - [Deployment Guide](./DEPLOYMENT.md)
-
 
 Onboarding Flow (WorkOS + Convex)
 

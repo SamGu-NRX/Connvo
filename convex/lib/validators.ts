@@ -1,10 +1,13 @@
 import { v } from "convex/values";
 
-// Primitive metadata value (no nested objects to keep it cheap and portable)
+// Primitive metadata value (limited to simple primitives for stability)
 export const primitiveValueV = v.union(v.string(), v.number(), v.boolean());
 
-// Generic metadata record: string -> primitive
-export const metadataRecordV = v.record(v.string(), primitiveValueV);
+// Metadata values: constrain to primitives to avoid excessively deep types
+export const metadataValueV = primitiveValueV;
+
+// Metadata: Record<string, primitive>
+export const metadataRecordV = v.record(v.string(), metadataValueV);
 
 // Labels map: string -> string (for metrics labels)
 export const labelsRecordV = v.record(v.string(), v.string());
@@ -29,4 +32,3 @@ export const attachmentV = v.object({
   size: v.optional(v.number()),
   contentType: v.optional(v.string()),
 });
-

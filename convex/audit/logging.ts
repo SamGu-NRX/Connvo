@@ -7,10 +7,9 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { internalMutation } from "../_generated/server";
+import { internalMutation, query } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { metadataRecordV } from "../lib/validators";
-import { query } from "../_generated/server";
+import { metadataRecordV } from "@convex/lib/validators";
 
 /**
  * Logs data access events for audit trail
@@ -92,7 +91,11 @@ export const createAuditLog = internalMutation({
       resourceType: args.resourceType,
       resourceId: args.resourceId,
       action: args.action,
-      metadata: { category: args.category, success: args.success, ...(args.metadata || {}) },
+      metadata: {
+        category: args.category,
+        success: args.success,
+        ...(args.metadata || {}),
+      },
       timestamp: Date.now(),
     });
     return null;
@@ -124,25 +127,29 @@ export const getAuditLogs = query({
       }),
     ),
   }),
-  handler: async (ctx, { resourceType, resourceId, actorUserId, action, limit = 50 }) => {
+  handler: async (
+    ctx,
+    { resourceType, resourceId, actorUserId, action, limit = 50 },
+  ) => {
     // Choose a concrete indexed query path to avoid mixing QueryInitializer and Query types
-    let q = resourceType && resourceId
-      ? ctx.db
-          .query("auditLogs")
-          .withIndex("by_resource", (qi) =>
-            qi.eq("resourceType", resourceType).eq("resourceId", resourceId),
-          )
-      : actorUserId
-      ? ctx.db
-          .query("auditLogs")
-          .withIndex("by_actor", (qi) => qi.eq("actorUserId", actorUserId))
-      : action
-      ? ctx.db
-          .query("auditLogs")
-          .withIndex("by_action", (qi) => qi.eq("action", action))
-      : ctx.db
-          .query("auditLogs")
-          .withIndex("by_timestamp", (qi) => qi.gt("timestamp", 0));
+    let q =
+      resourceType && resourceId
+        ? ctx.db
+            .query("auditLogs")
+            .withIndex("by_resource", (qi) =>
+              qi.eq("resourceType", resourceType).eq("resourceId", resourceId),
+            )
+        : actorUserId
+          ? ctx.db
+              .query("auditLogs")
+              .withIndex("by_actor", (qi) => qi.eq("actorUserId", actorUserId))
+          : action
+            ? ctx.db
+                .query("auditLogs")
+                .withIndex("by_action", (qi) => qi.eq("action", action))
+            : ctx.db
+                .query("auditLogs")
+                .withIndex("by_timestamp", (qi) => qi.gt("timestamp", 0));
 
     const rows = await q.order("desc").take(limit);
     return { logs: rows };

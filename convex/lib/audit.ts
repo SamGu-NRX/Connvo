@@ -2,11 +2,22 @@
  * Typed helpers for audit logging metadata across categories.
  */
 
-import { Id } from "../_generated/dataModel";
-import { ActionCtx, MutationCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { Id } from "@convex/_generated/dataModel";
+import { ActionCtx, MutationCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 
-export type AuditCategory = "subscription_management" | "auth" | "data_access" | "meeting";
+// JSON value helpers
+export type JSONPrimitive = string | number | boolean | null;
+export type JsonValue =
+  | JSONPrimitive
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export type AuditCategory =
+  | "subscription_management"
+  | "auth"
+  | "data_access"
+  | "meeting";
 
 export type SubscriptionEventAction =
   | "subscription_established"
@@ -23,28 +34,35 @@ export type SubscriptionMetadata = {
   performance?: Record<string, number | boolean>;
 };
 
+// Event payload expected by internal.audit.logging.createAuditLog
 export type AuditEvent = {
   actorUserId?: Id<"users">;
   resourceType: string;
-  // Use string to match schema (auditLogs.resourceId is v.string())
-  resourceId: string;
+  resourceId: string; // matches schema.v.string()
   action: string;
   category: AuditCategory;
   success: boolean;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string | number | boolean>;
 };
 
-export function buildSubscriptionAudit(
+// Helper to build a subscription_management audit event with strong metadata typing
+export function makeSubscriptionAuditEvent(
   base: Omit<AuditEvent, "category" | "success"> & {
-    metadata?: SubscriptionMetadata & Record<string, unknown>;
+    metadata?: Record<string, string | number | boolean>;
   },
-  success = true,
+  success: boolean = true,
 ): AuditEvent {
-  return {
-    ...base,
-    category: "subscription_management",
-    success,
-  };
+  return { ...base, category: "subscription_management", success };
+}
+
+// Back-compat builder used by realtime modules
+export function buildSubscriptionAudit(
+  args: Omit<AuditEvent, "category" | "success"> & {
+    metadata?: Record<string, string | number | boolean>;
+    success?: boolean;
+  },
+): AuditEvent {
+  return makeSubscriptionAuditEvent(args, args.success ?? true);
 }
 
 export async function logAudit(

@@ -8,8 +8,8 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { MutationCtx, ActionCtx } from "../_generated/server";
-import { v } from "convex/values";
+import { MutationCtx } from "@convex/_generated/server";
+import type { AlertSeverity } from "@convex/types/entities/system";
 
 /**
  * Metric types for monitoring
@@ -17,12 +17,7 @@ import { v } from "convex/values";
 export type MetricType = "counter" | "gauge" | "histogram" | "timer";
 
 /**
- * Alert severity levels
- */
-export type AlertSeverity = "info" | "warning" | "error" | "critical";
-
-/**
- * Performance metric data
+ * Runtime performance metric payload recorded for observability dashboards.
  */
 export interface PerformanceMetric {
   name: string;
@@ -33,7 +28,7 @@ export interface PerformanceMetric {
 }
 
 /**
- * Alert data structure
+ * Alert notification payload used by monitoring helpers.
  */
 export interface Alert {
   id: string;
@@ -41,7 +36,7 @@ export interface Alert {
   title: string;
   message: string;
   source: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
   timestamp: number;
 }
 
@@ -60,7 +55,7 @@ export async function recordMetric(
   );
 
   try {
-    const { logAudit } = await import("./audit");
+    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       resourceType: "system",
       resourceId: "metrics",
@@ -71,7 +66,7 @@ export async function recordMetric(
         metric: metric.name,
         type: metric.type,
         value: metric.value,
-        labels: metric.labels,
+        ...formatLabelMetadata(metric.labels),
       },
     });
   } catch (error) {
@@ -91,7 +86,7 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
   );
 
   try {
-    const { logAudit } = await import("./audit");
+    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       resourceType: "system",
       resourceId: "alerts",
@@ -104,7 +99,7 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
         title: alert.title,
         message: alert.message,
         source: alert.source,
-        alertMetadata: alert.metadata,
+        ...alert.metadata,
       },
     });
   } catch (error) {
@@ -160,7 +155,7 @@ export async function withTiming<T>(
           operation,
           duration,
           success,
-          error: error?.message,
+          error: error?.message ?? "",
         },
         timestamp: Date.now(),
       });
@@ -178,7 +173,7 @@ export async function withTiming<T>(
           operation,
           duration,
           error: error.message,
-          stack: error.stack,
+          stack: error.stack ?? "",
         },
         timestamp: Date.now(),
       });
@@ -230,8 +225,8 @@ export async function monitorStreamHealth(
       source: "stream_monitor",
       metadata: {
         operation,
-        error,
-        responseTime,
+        error: error ?? "",
+        responseTime: responseTime ?? 0,
       },
       timestamp: Date.now(),
     });
@@ -365,6 +360,18 @@ export interface HealthCheck {
   responseTime?: number;
   error?: string;
   timestamp: number;
+}
+
+function formatLabelMetadata(
+  labels?: Record<string, string>,
+): Record<string, string> {
+  if (!labels) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(labels).map(([key, value]) => [`label.${key}`, value]),
+  );
 }
 
 export async function performHealthCheck(

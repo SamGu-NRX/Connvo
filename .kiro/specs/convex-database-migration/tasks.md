@@ -103,29 +103,29 @@
     - Build alerting and monitoring for Stream integration failures with actionable traces
     - _Requirements: 6.5_
 
-- [ ] 6. Live Transcription System
-  - [ ] 6.1 Build Transcription Ingestion Pipeline with Sharding
+- [-] 6. Live Transcription System
+  - [-] 6.1 Build Transcription Ingestion Pipeline with Sharding
     - Create ingestTranscriptChunk mutation with assertMeetingAccess validation
     - Implement time-bucketed storage with bucketMs (5-minute windows) to prevent hot partitions
     - Add monotonic sequence generation and rate limiting via rateLimits table
     - Build validation for meeting active state and participant permissions
     - _Requirements: 7.1, 7.3_
 
-  - [ ] 6.2 Implement Real-Time Transcript Streaming with Isolation
+  - [-] 6.2 Implement Real-Time Transcript Streaming with Isolation
     - Create subscribeTranscriptStream query with per-meeting access isolation
     - Add speaker identification, confidence scoring, and interim/final transcript handling
     - Implement time-bounded queries across multiple buckets with sequence-based pagination
     - Build dynamic permission updates when participants join/leave meetings
     - _Requirements: 7.2, 7.4_
 
-  - [ ] 6.3 Build Transcript Aggregation and Retention System
+  - [-] 6.3 Build Transcript Aggregation and Retention System
     - Create aggregateTranscriptSegments action for post-meeting processing
     - Implement transcriptSegments creation with speaker grouping and topic extraction
     - Add search indexes on transcript content and retention policies (30-90 days raw, 1 year segments)
     - Build cleanup jobs for expired transcript data with proper audit logging
     - _Requirements: 7.5_
 
-- [ ] 7. Collaborative Notes with Operational Transform
+- [] 7. Collaborative Notes with Operational Transform
   - [ ] 7.1 Implement Comprehensive OT Infrastructure
     - Create Operation interface with insert/delete/retain types and position/content/length fields
     - Build transformAgainst function with proper operational transformation rules for concurrent edits
@@ -147,15 +147,15 @@
     - Build operation composition and coalescing for performance optimization
     - _Requirements: 8.3, 8.4, 8.5_
 
-- [ ] 8. AI-Powered Features Foundation
-  - [ ] 8.1 Build Pre-Call Idea Generation System with Idempotency
+- [x] 8. AI-Powered Features Foundation
+  - [x] 8.1 Build Pre-Call Idea Generation System with Idempotency
     - Create generatePreCallIdeas action with hashRequest idempotency using meetingId
     - Implement participant profile analysis for shared interests, complementary skills, and goals
     - Add prompts collection with type=precall, relevance scoring, and tag categorization
     - Build structured AI prompt generation with fallback to heuristic suggestions
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 8.2 Implement In-Call Conversation Prompts with Context Awareness
+  - [x] 8.2 Implement In-Call Conversation Prompts with Context Awareness
     - Create generateContextualPrompts action with lull detection and topic shift triggers
     - Build meetingState tracking for speaking time ratios, last activity, and current topics
     - Implement contextual prompt generation using recent transcript and participant expertise
@@ -169,22 +169,22 @@
     - Build connection recommendations and follow-up task generation with priority levels
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-- [ ] 9. Intelligent Matching System
-  - [ ] 9.1 Implement Advanced Real-Time Matching Queue
+- [x] 9. Intelligent Matching System
+  - [x] 9.1 Implement Advanced Real-Time Matching Queue
     - Create enterMatchingQueue mutation with availability windows, timezone, and constraint preferences
     - Build matchingQueue collection with interests, roles, experienceLevels, industries, and language preferences
     - Add real-time queue status updates with priority ordering and retry mechanisms
     - Implement queue expiration and cancellation with proper status tracking
     - _Requirements: 12.1_
 
-  - [ ] 9.2 Build Multi-Factor Compatibility Scoring Engine
+  - [x] 9.2 Build Multi-Factor Compatibility Scoring Engine
     - Implement runMatchingCycle action with shard-based processing for scalability
     - Create compatibility scoring using interest overlap, experience gap, industry match, timezone compatibility
     - Add vector similarity integration for qualitative profile matching
     - Build matchingAnalytics collection for feedback loops and model improvement
     - _Requirements: 12.2, 12.4_
 
-  - [ ] 9.3 Add Scalable Match Processing with Analytics
+  - [x] 9.3 Add Scalable Match Processing with Analytics
     - Implement hash-based shard selection (userId % shards) for distributed processing
     - Create optimistic concurrency control for queue operations to prevent race conditions
     - Add comprehensive match outcome tracking (accepted, declined, completed, no-show)

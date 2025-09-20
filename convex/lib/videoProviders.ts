@@ -8,7 +8,12 @@
  * Compliance: steering/convex_rules.mdc - Uses proper TypeScript patterns
  */
 
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
+import {
+  createStreamToken,
+  getStreamCall,
+  STREAM_DEFAULT_CALL_TYPE,
+} from "@convex/lib/getstreamServer";
 
 /**
  * Video provider types
@@ -168,21 +173,7 @@ export class GetStreamProvider implements IVideoProvider {
   ): Promise<VideoRoomConfig> {
     const roomId = `stream_${meetingId}_${Date.now()}`;
 
-    // TODO: Integrate with actual GetStream API
-    const streamApiKey = process.env.STREAM_API_KEY;
-    const streamSecret = process.env.STREAM_SECRET;
-
-    if (!streamApiKey || !streamSecret) {
-      throw new Error("GetStream credentials not configured");
-    }
-
-    // Create actual GetStream call using Node.js SDK
-    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
-    const client = new StreamVideoClient(streamApiKey, {
-      secret: streamSecret,
-    });
-
-    const call = client.call("default", roomId);
+    const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
     await call.create({
       data: {
         created_by_id: config.organizerId,
@@ -226,20 +217,7 @@ export class GetStreamProvider implements IVideoProvider {
 
   async deleteRoom(roomId: string): Promise<boolean> {
     try {
-      // Delete actual GetStream call
-      const streamApiKey = process.env.STREAM_API_KEY;
-      const streamSecret = process.env.STREAM_SECRET;
-
-      if (!streamApiKey || !streamSecret) {
-        throw new Error("GetStream credentials not configured");
-      }
-
-      const { StreamVideoClient } = require("@stream-io/video-react-sdk");
-      const client = new StreamVideoClient(streamApiKey, {
-        secret: streamSecret,
-      });
-
-      const call = client.call("default", roomId);
+      const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
       await call.delete();
 
       console.log(`GetStream call ${roomId} deleted`);
@@ -255,45 +233,19 @@ export class GetStreamProvider implements IVideoProvider {
     userId: Id<"users">,
     role: "host" | "participant",
   ): Promise<string> {
-    const streamApiKey = process.env.STREAM_API_KEY;
-    const streamSecret = process.env.STREAM_SECRET;
-
-    if (!streamApiKey || !streamSecret) {
-      throw new Error("GetStream credentials not configured");
-    }
-
-    // Generate actual GetStream JWT token
-    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
-    const client = new StreamVideoClient(streamApiKey, {
-      secret: streamSecret,
-    });
-
-    const token = client.createToken(userId, {
+    const token = createStreamToken(userId, {
       exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
       iat: Math.floor(Date.now() / 1000),
       user_id: userId,
       role: role,
-      call_cids: [`default:${roomId}`], // Grant access to specific call
+      call_cids: [`${STREAM_DEFAULT_CALL_TYPE}:${roomId}`],
     });
 
     return token;
   }
 
   async startRecording(roomId: string): Promise<{ recordingId: string }> {
-    const streamApiKey = process.env.STREAM_API_KEY;
-    const streamSecret = process.env.STREAM_SECRET;
-
-    if (!streamApiKey || !streamSecret) {
-      throw new Error("GetStream credentials not configured");
-    }
-
-    // Start actual GetStream recording
-    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
-    const client = new StreamVideoClient(streamApiKey, {
-      secret: streamSecret,
-    });
-
-    const call = client.call("default", roomId);
+    const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
     const recordingResponse = await call.startRecording({
       mode: "available",
       audio_only: false,
@@ -312,21 +264,8 @@ export class GetStreamProvider implements IVideoProvider {
   }
 
   async stopRecording(recordingId: string): Promise<{ recordingUrl: string }> {
-    const streamApiKey = process.env.STREAM_API_KEY;
-    const streamSecret = process.env.STREAM_SECRET;
-
-    if (!streamApiKey || !streamSecret) {
-      throw new Error("GetStream credentials not configured");
-    }
-
-    // Stop actual GetStream recording and get URL
-    const { StreamVideoClient } = require("@stream-io/video-react-sdk");
-    const client = new StreamVideoClient(streamApiKey, {
-      secret: streamSecret,
-    });
-
-    // Note: GetStream doesn't provide direct stop recording by ID
-    // This would typically be handled through the call object
+    // Note: GetStream doesn't provide direct stop recording by ID.
+    // This stub will be replaced once we extend the integration further.
     const recordingUrl = `https://stream-recordings.getstream.io/${recordingId}`;
     return { recordingUrl };
   }

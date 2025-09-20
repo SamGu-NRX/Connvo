@@ -10,7 +10,7 @@ This feature involves migrating LinkedUp's current database architecture from Dr
 
 - Basic user profiles and interests management
 - Simulated smart matching (currently mock implementation)
-- Video meetings with Stream integration (INCOMPLETE, NEED TO FIX)
+- Video meetings with hybrid integration: GetStream (paid tier) + WebRTC (free tier) (INCOMPLETE, NEED TO FIX)
 - Basic chat and meeting controls
 
 **New Advanced Features to Implement:**
@@ -46,7 +46,7 @@ Essential Compliance (!!!): Always comply with `steering/convex_rules.mdc` and u
 ## 4. Background and Pain Points
 
 - Current DB is Drizzle + Supabase; features are decoupled and not reactive; live features need per-meeting isolation and robust, low-latency subscriptions.
-- Video calling (Stream) integration is incomplete; tokens/room lifecycle and webhooks are not wired.
+- Video calling integration is incomplete; hybrid provider system (GetStream for paid, WebRTC for free) needs proper tokens/room lifecycle and webhooks.
 - “Smart matching” is mocked and not validated for performance or correctness; no vector similarity foundation.
 - Lack of strong permissioning, streaming scalability, and observability impedes enterprise readiness.
 
@@ -189,9 +189,9 @@ Acceptance Criteria:
 4. WHEN designing queries THEN stable indexes SHALL exist to keep p95 under target; any full-table scans are forbidden in prod paths.
 5. WHEN clients reconnect THEN the system SHALL support resuming with last-seen cursor/sequence to catch up without replaying the entire history.
 
-### Requirement 6 — Meeting Lifecycle and Stream (GetStream) Integration Foundations
+### Requirement 6 — Meeting Lifecycle and Hybrid Video Provider Integration Foundations
 
-User Story: As a developer, I want a reliable backend lifecycle for meetings integrated with Stream.
+User Story: As a developer, I want a reliable backend lifecycle for meetings with hybrid video provider integration (GetStream for paid tier, WebRTC for free tier).
 
 Acceptance Criteria:
 

@@ -1,6 +1,6 @@
-import { config as localConfig } from "../environments/local";
-import { config as stagingConfig } from "../environments/staging";
-import { config as productionConfig } from "../environments/production";
+import { config as localConfig } from "@convex/environments/local";
+import { config as stagingConfig } from "@convex/environments/staging";
+import { config as productionConfig } from "@convex/environments/production";
 
 type Environment = "local" | "staging" | "production";
 

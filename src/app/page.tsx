@@ -33,7 +33,6 @@ import {
 import { handleTransition } from "@/utils/TransitionLink";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { useRouter } from "next/navigation";
-// Auth UI is handled via WorkOS components and hooks; remove Clerk usage
 
 // Retention data for the chart
 const retentionData = [
@@ -44,6 +43,25 @@ const retentionData = [
   { month: "May", rate: 94 },
   { month: "Jun", rate: 95 },
 ];
+
+// Glass Card Component for modern UI elements
+const GlassCard = ({
+  children,
+  className = "",
+  ...props
+}: {
+  children: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}) => (
+  <div
+    className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 ${className}`}
+    {...props}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />
+    <div className="relative">{children}</div>
+  </div>
+);
 
 // MacBook Component with improved transitions
 const MacbookScroll = () => {
@@ -139,7 +157,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
     className="group"
   >
     <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
-      <div className="mb-4 w-fit rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm group-hover:bg-gradient-to-br group-hover:from-emerald-500/20 group-hover:to-teal-500/20 transition-all duration-300">
+      <div className="mb-4 w-fit rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-emerald-500/20 group-hover:to-teal-500/20">
         <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
       </div>
       <h3 className="mb-3 text-xl font-medium text-slate-900 dark:text-white">
@@ -183,7 +201,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
         &quot;{text}&quot;
       </p>
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 font-medium text-slate-700 dark:text-slate-200 backdrop-blur-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 font-medium text-slate-700 backdrop-blur-sm dark:text-slate-200">
           {name.charAt(0)}
         </div>
         <div>
@@ -199,10 +217,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
 const LiquidGlassBackground = () => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* Main gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20" />
-      
-      {/* Subtle noise texture overlay */}
       <div
         className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
         style={{
@@ -213,18 +228,18 @@ const LiquidGlassBackground = () => {
   );
 };
 
-// Glass Card Component for modern UI elements
-const GlassCard = ({ children, className = "", ...props }: { children: React.ReactNode; className?: string; [key: string]: any }) => (
-  <div
-    className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 ${className}`}
-    {...props}
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />
-    <div className="relative">{children}</div>
-  </div>
-);
-
-function StartCta({ className, children, style, ...props }: { className?: string; children: React.ReactNode; style?: React.CSSProperties; [key: string]: any }) {
+// Unified StartCta (merged)
+function StartCta({
+  className,
+  children,
+  style,
+  ...props
+}: {
+  className?: string;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  [key: string]: any;
+}) {
   const router = useRouter();
   const { user, loading } = useAuth();
   return (
@@ -254,7 +269,6 @@ const LandingPage = () => {
   const parallaxY = useTransform(scrollY, [0, 1000], [0, -150]);
   const router = useRouter();
 
-  // Initialize theme from local storage if available
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme") || "light";
@@ -274,7 +288,6 @@ const LandingPage = () => {
     }
   };
 
-  // Smooth scroll function: URGENT TODO: SWITCH TO LENIS
   const scrollToSection = (elementId: string) => {
     const element = document.getElementById(elementId);
     if (element) {
@@ -293,14 +306,12 @@ const LandingPage = () => {
           <div className="mx-6 mt-6">
             <GlassCard className="mx-auto max-w-6xl px-6 py-4">
               <div className="flex items-center justify-between">
-                {/* Logo */}
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-light tracking-tight text-slate-900 dark:text-white">
                     Connvo
                   </span>
                 </div>
 
-                {/* Navigation Links */}
                 <div className="hidden items-center gap-8 md:flex">
                   {[
                     { label: "Features", id: "features" },
@@ -317,7 +328,6 @@ const LandingPage = () => {
                   ))}
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-3">
                   <button
                     onClick={toggleTheme}
@@ -334,7 +344,8 @@ const LandingPage = () => {
                   <StartCta
                     className="rounded-xl px-4 py-2 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl"
                     style={{
-                      background: "radial-gradient(ellipse at center, #10b981, #0d9488)",
+                      background:
+                        "radial-gradient(ellipse at center, #10b981, #0d9488)",
                     }}
                   >
                     Start Connecting
@@ -356,7 +367,6 @@ const LandingPage = () => {
               transition={{ duration: 1, ease: "easeOut" }}
               className="mx-auto max-w-5xl text-center"
             >
-              {/* Glass Badge */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -370,12 +380,11 @@ const LandingPage = () => {
                 </GlassCard>
               </motion.div>
 
-              {/* Hero Title */}
               <motion.h1
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
-                className="mb-8 text-6xl font-light tracking-tight text-slate-900 md:text-7xl lg:text-8xl dark:text-white"
+                className="mb-8 text-6xl font-light tracking-tight text-slate-900 dark:text-white md:text-7xl lg:text-8xl"
               >
                 Professional Networking
                 <br />
@@ -384,7 +393,6 @@ const LandingPage = () => {
                 </span>
               </motion.h1>
 
-              {/* Hero Description */}
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -392,10 +400,10 @@ const LandingPage = () => {
                 className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-slate-600 dark:text-slate-300"
               >
                 Where professionals come to actually connect, not to share
-                inspirational quotes or humble brag about their morning routines.
+                inspirational quotes or humble brag about their morning
+                routines.
               </motion.p>
 
-              {/* CTA Buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -405,13 +413,15 @@ const LandingPage = () => {
                 <StartCta
                   className="group relative overflow-hidden rounded-2xl px-8 py-4 font-medium text-white shadow-lg transition-all duration-300 hover:shadow-2xl sm:w-auto"
                   style={{
-                    background: "radial-gradient(ellipse at center, #10b981, #0d9488)",
+                    background:
+                      "radial-gradient(ellipse at center, #10b981, #0d9488)",
                   }}
                 >
                   <div
                     className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
                     style={{
-                      background: "radial-gradient(ellipse at center, #059669, #0f766e)",
+                      background:
+                        "radial-gradient(ellipse at center, #059669, #0f766e)",
                     }}
                   />
                   <span className="relative flex items-center gap-2">
@@ -435,7 +445,6 @@ const LandingPage = () => {
             </motion.div>
           </div>
 
-          {/* Scroll Indicator */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -446,7 +455,9 @@ const LandingPage = () => {
               <GlassCard className="p-2">
                 <div className="h-6 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-transparent" />
               </GlassCard>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Scroll</span>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Scroll
+              </span>
             </div>
           </motion.div>
         </section>
@@ -645,11 +656,12 @@ const LandingPage = () => {
                       dataKey="month"
                       stroke={theme === "dark" ? "#94a3b8" : "#64748b"}
                     />
-                    <YAxis stroke={theme === "dark" ? "#94a3b8" : "#64748b"} />
+                    <YAxis
+                      stroke={theme === "dark" ? "#94a3b8" : "#64748b"}
+                    />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor:
-                          theme === "dark" ? "#1e293b" : "#ffffff",
+                        backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
                         borderColor: theme === "dark" ? "#334155" : "#e2e8f0",
                         color: theme === "dark" ? "#f8fafc" : "#0f172a",
                       }}
@@ -715,7 +727,7 @@ const LandingPage = () => {
                 </span>
               </div>
 
-              <div className="text-center text-gray-600 md:text-right dark:text-gray-300">
+              <div className="text-center text-gray-600 dark:text-gray-300 md:text-right">
                 © {new Date().getFullYear()} Connvo. All rights reserved.
                 <div className="mt-1 text-sm">
                   No corporate jargon was harmed in the making of this site.

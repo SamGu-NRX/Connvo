@@ -71,55 +71,55 @@ const handleStreamWebhookAction = httpAction(async (ctx, request) => {
     switch (eventType) {
       case "call.session_started":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleCallSessionStarted,
+          internal.meetings.stream.streamHandlers.handleCallSessionStarted,
           { data: eventData },
         );
         break;
       case "call.session_ended":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleCallSessionEnded,
+          internal.meetings.stream.streamHandlers.handleCallSessionEnded,
           { data: eventData },
         );
         break;
       case "call.member_joined":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleMemberJoined,
+          internal.meetings.stream.streamHandlers.handleMemberJoined,
           { data: eventData },
         );
         break;
       case "call.member_left":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleMemberLeft,
+          internal.meetings.stream.streamHandlers.handleMemberLeft,
           { data: eventData },
         );
         break;
       case "call.recording_started":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleRecordingStarted,
+          internal.meetings.stream.streamHandlers.handleRecordingStarted,
           { data: eventData },
         );
         break;
       case "call.recording_stopped":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleRecordingStopped,
+          internal.meetings.stream.streamHandlers.handleRecordingStopped,
           { data: eventData },
         );
         break;
       case "call.recording_ready":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleRecordingReady,
+          internal.meetings.stream.streamHandlers.handleRecordingReady,
           { data: eventData },
         );
         break;
       case "call.transcription_started":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleTranscriptionStarted,
+          internal.meetings.stream.streamHandlers.handleTranscriptionStarted,
           { data: eventData },
         );
         break;
       case "call.transcription_stopped":
         processingResult = await ctx.runMutation(
-          internal.meetings.streamHandlers.handleTranscriptionStopped,
+          internal.meetings.stream.streamHandlers.handleTranscriptionStopped,
           { data: eventData },
         );
         break;

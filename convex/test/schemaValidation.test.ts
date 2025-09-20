@@ -7,7 +7,7 @@
 
 import { convexTest } from "convex-test";
 import { expect, test, describe } from "vitest";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 import schema from "../schema";
 
 describe("Schema Validation and Performance Tests", () => {
@@ -123,12 +123,13 @@ describe("Schema Validation and Performance Tests", () => {
       const t = convexTest(schema);
 
       const embeddingId = await t.run(async (ctx) => {
-        const vector = new Array(1536).fill(0).map(() => Math.random());
+        const vector = Array.from({ length: 1536 }, () => Math.random());
+        const vectorBuffer = new Float32Array(vector).buffer;
 
         return await ctx.db.insert("embeddings", {
           sourceType: "user",
           sourceId: "user_123",
-          vector,
+          vector: vectorBuffer,
           model: "text-embedding-ada-002",
           dimensions: 1536,
           version: "v1",
@@ -142,7 +143,10 @@ describe("Schema Validation and Performance Tests", () => {
       });
 
       expect(embedding).toBeDefined();
-      expect(embedding?.vector).toHaveLength(1536);
+      expect(embedding?.vector.byteLength).toBe(
+        1536 * Float32Array.BYTES_PER_ELEMENT,
+      );
+      expect(new Float32Array(embedding!.vector)).toHaveLength(1536);
       expect(embedding?.dimensions).toBe(1536);
     });
   });

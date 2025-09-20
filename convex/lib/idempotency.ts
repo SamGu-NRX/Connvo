@@ -8,10 +8,10 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { MutationCtx, ActionCtx } from "../_generated/server";
-import { internal } from "../_generated/api";
+import { MutationCtx, ActionCtx } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
-import { createError } from "./errors";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Idempotency key configuration
@@ -30,6 +30,73 @@ export interface IdempotencyResult<T> {
   isFirstExecution: boolean;
   result?: T;
   previousError?: string;
+}
+
+/**
+ * Persist an operation result in a metadata-safe way.
+ * - For primitive results (string | number | boolean), store inline in metadata as `resultInline`.
+ * - For objects/arrays, serialize to JSON and store in Convex storage; keep the storage id in `resultRef`.
+ * Metadata fields only contain primitives to satisfy strict validators.
+ */
+async function persistResultMutation(
+  ctx: MutationCtx,
+  result: unknown,
+): Promise<{ meta: Record<string, string | number | boolean> }> {
+  if (
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean"
+  ) {
+    return { meta: { resultType: "inline", resultInline: result } };
+  }
+  // Store serialized JSON in metadata for complex objects
+  const json = JSON.stringify(result);
+  // Consider implementing size limits
+  if (json.length > 100000) {
+    // 100KB limit
+    throw new Error("Result too large for idempotency storage");
+  }
+  return {
+    meta: {
+      resultType: "json",
+      resultJson: json,
+    },
+  };
+}
+
+async function persistResultAction(
+  ctx: ActionCtx,
+  result: unknown,
+): Promise<{ meta: Record<string, string | number | boolean> }> {
+  if (
+    typeof result === "string" ||
+    typeof result === "number" ||
+    typeof result === "boolean"
+  ) {
+    return { meta: { resultType: "inline", resultInline: result } };
+  }
+  const json = JSON.stringify(result);
+  try {
+    const blob = new Blob([json], { type: "application/json" });
+    const storageId = await ctx.storage.store(blob);
+    return {
+      meta: {
+        resultType: "storage",
+        resultRef: String(storageId),
+        resultSize: json.length,
+      },
+    };
+  } catch (error) {
+    // Log error and fall back to storing a summary
+    console.error("Failed to store result in storage:", error);
+    return {
+      meta: {
+        resultType: "error",
+        resultError: "Failed to persist result",
+        resultSize: json.length,
+      },
+    };
+  }
 }
 
 /**
@@ -90,12 +157,13 @@ export async function withIdempotency<T>(
     // Execute the operation
     const result = await operation();
 
-    // Update idempotency key with success
+    // Update idempotency key with success; store result via storage if object
+    const stored = await persistResultMutation(ctx, result);
     await ctx.db.patch(idempotencyId, {
       metadata: {
         status: "completed",
-        result,
         completedAt: Date.now(),
+        ...stored.meta,
       },
     });
 
@@ -181,12 +249,13 @@ export async function withActionIdempotency<T>(
 
   try {
     const result = await operation();
+    const stored = await persistResultAction(ctx, result);
     await ctx.runMutation(internal.system.idempotency.patchKey, {
       id: idempotencyId,
       metadata: {
         status: "completed",
-        result,
         completedAt: Date.now(),
+        ...stored.meta,
       },
     });
     return { isFirstExecution: true, result };

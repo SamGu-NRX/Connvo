@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 
 /**
  * Performance metrics collection
@@ -131,7 +131,7 @@ export class PerformanceTracker {
       p99: percentile(executionTimes, 0.99),
       avgExecutionTime:
         executionTimes.reduce((a: number, b: number) => a + b, 0) /
-          executionTimes.length,
+        executionTimes.length,
       sloBreaches,
     };
   }

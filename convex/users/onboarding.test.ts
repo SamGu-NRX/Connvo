@@ -1,8 +1,8 @@
 import { convexTest } from "convex-test";
 import { expect, test, describe, beforeEach } from "vitest";
 import schema from "../schema";
-import { api } from "../_generated/api";
-import { Doc, Id } from "../_generated/dataModel";
+import { api } from "@convex/_generated/api";
+import { Doc, Id } from "@convex/_generated/dataModel";
 
 describe("Onboarding Mutation", () => {
   let t = convexTest(schema);
@@ -16,26 +16,49 @@ describe("Onboarding Mutation", () => {
     await t.run(async (ctx) => {
       const now = Date.now();
       const defaults = [
-        { key: "software-engineering", label: "Software Engineering", category: "industry" },
+        {
+          key: "software-engineering",
+          label: "Software Engineering",
+          category: "industry",
+        },
         { key: "data-science", label: "Data Science", category: "industry" },
-        { key: "product-management", label: "Product Management", category: "industry" },
+        {
+          key: "product-management",
+          label: "Product Management",
+          category: "industry",
+        },
         { key: "ai-ml", label: "AI / ML", category: "academic" },
         { key: "startups", label: "Startups", category: "personal" },
         { key: "design", label: "Design", category: "skill" },
       ];
       for (const d of defaults) {
-        await ctx.db.insert("interests", { ...d, usageCount: 0, createdAt: now });
+        await ctx.db.insert("interests", {
+          ...d,
+          usageCount: 0,
+          createdAt: now,
+        });
       }
     });
 
     // Upsert user
-    const userId = await t.mutation(api.users.mutations.upsertUser, {
-      workosUserId: "workos_1",
-      email: "test@example.com",
-      displayName: "Test User",
+    const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+            workosUserId: "workos_1",
+            email: "test@example.com",
+            displayName: "Test User",
+            isActive: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
     });
 
-    const res = await t.mutation(api.users.mutations.saveOnboarding, {
+    const authedT = t.withIdentity({
+        subject: "workos_1",
+        email: "test@example.com",
+        name: "Test User",
+    });
+
+    const res = await authedT.mutation(api.users.mutations.saveOnboarding, {
       age: 25,
       gender: "prefer-not-to-say",
       field: "Software",
@@ -44,7 +67,11 @@ describe("Onboarding Mutation", () => {
       linkedinUrl: "https://linkedin.com/in/test",
       bio: "Hello, I build things.",
       interests: [
-        { id: "software-engineering", name: "Software Engineering", category: "industry" },
+        {
+          id: "software-engineering",
+          name: "Software Engineering",
+          category: "industry",
+        },
         { id: "startups", name: "Startups", category: "personal" },
       ],
       idempotencyKey: "fixed-key-1",
@@ -80,32 +107,54 @@ describe("Onboarding Mutation", () => {
     await t.run(async (ctx) => {
       const now = Date.now();
       const defaults = [
-        { key: "software-engineering", label: "Software Engineering", category: "industry" },
+        {
+          key: "software-engineering",
+          label: "Software Engineering",
+          category: "industry",
+        },
         { key: "data-science", label: "Data Science", category: "industry" },
-        { key: "product-management", label: "Product Management", category: "industry" },
+        {
+          key: "product-management",
+          label: "Product Management",
+          category: "industry",
+        },
         { key: "ai-ml", label: "AI / ML", category: "academic" },
         { key: "startups", label: "Startups", category: "personal" },
         { key: "design", label: "Design", category: "skill" },
       ];
-      for (const d of defaults) await ctx.db.insert("interests", { ...d, usageCount: 0, createdAt: now });
+      for (const d of defaults)
+        await ctx.db.insert("interests", {
+          ...d,
+          usageCount: 0,
+          createdAt: now,
+        });
     });
-    const userId = await t.mutation(api.users.mutations.upsertUser, {
-      workosUserId: "workos_2",
-      email: "t2@example.com",
-      displayName: "User Two",
+    const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+            workosUserId: "workos_2",
+            email: "t2@example.com",
+            displayName: "User Two",
+            isActive: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+    });
+
+    const authedT = t.withIdentity({
+        subject: "workos_2",
+        email: "t2@example.com",
+        name: "User Two",
     });
 
     try {
-      await t.mutation(api.users.mutations.saveOnboarding, {
+      await authedT.mutation(api.users.mutations.saveOnboarding, {
         age: 30,
         gender: "male",
         field: "Data",
         jobTitle: "Scientist",
         company: "Beta",
         bio: "I love data.",
-        interests: [
-          { id: "nonexistent", name: "Bad", category: "industry" },
-        ],
+        interests: [{ id: "nonexistent", name: "Bad", category: "industry" }],
       });
       expect.fail("Expected validation error");
     } catch (e) {
@@ -117,12 +166,29 @@ describe("Onboarding Mutation", () => {
   test("idempotent by idempotencyKey", async () => {
     await t.run(async (ctx) => {
       const now = Date.now();
-      await ctx.db.insert("interests", { key: "design", label: "Design", category: "skill", usageCount: 0, createdAt: now });
+      await ctx.db.insert("interests", {
+        key: "design",
+        label: "Design",
+        category: "skill",
+        usageCount: 0,
+        createdAt: now,
+      });
     });
-    const userId = await t.mutation(api.users.mutations.upsertUser, {
-      workosUserId: "workos_3",
-      email: "t3@example.com",
-      displayName: "User Three",
+    const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+            workosUserId: "workos_3",
+            email: "t3@example.com",
+            displayName: "User Three",
+            isActive: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+    });
+
+    const authedT = t.withIdentity({
+        subject: "workos_3",
+        email: "t3@example.com",
+        name: "User Three",
     });
 
     const payload = {
@@ -131,18 +197,51 @@ describe("Onboarding Mutation", () => {
       field: "PM",
       jobTitle: "PM",
       company: "Gamma",
-      bio: "Ship it.",
-      interests: [
-        { id: "design", name: "Design", category: "skill" as const },
-      ],
+      bio: "Ship it to production!",
+      interests: [{ id: "design", name: "Design", category: "skill" as const }],
       idempotencyKey: "same-key",
     };
 
-    const first = await t.mutation(api.users.mutations.saveOnboarding, payload);
-    const second = await t.mutation(api.users.mutations.saveOnboarding, payload);
+    const first = await authedT.mutation(api.users.mutations.saveOnboarding, payload);
+    const second = await authedT.mutation(
+      api.users.mutations.saveOnboarding,
+      payload,
+    );
 
     expect(first.userId).toBe(second.userId);
     expect(first.profileId).toBe(second.profileId);
     expect(second.interestsCount).toBe(1);
+  });
+
+  test("bio validation should pass with correct bio", async () => {
+    const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+            workosUserId: "workos_4",
+            email: "t4@example.com",
+            displayName: "User Four",
+            isActive: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+    });
+
+    const authedT = t.withIdentity({
+        subject: "workos_4",
+        email: "t4@example.com",
+        name: "User Four",
+    });
+
+    const payload = {
+      age: 28,
+      gender: "female" as const,
+      field: "PM",
+      jobTitle: "PM",
+      company: "Gamma",
+      bio: "This is a bio that is long enough.",
+      interests: [],
+      idempotencyKey: "some-key",
+    };
+
+    await authedT.mutation(api.users.mutations.saveOnboarding, payload);
   });
 });

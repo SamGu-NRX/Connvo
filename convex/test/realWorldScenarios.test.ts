@@ -7,7 +7,7 @@
 
 import { convexTest } from "convex-test";
 import { expect, test, describe } from "vitest";
-import { Id } from "../_generated/dataModel";
+import { Id } from "@convex/_generated/dataModel";
 import schema from "../schema";
 
 describe("Real-World Scenario Tests", () => {
@@ -579,7 +579,9 @@ describe("Real-World Scenario Tests", () => {
           {
             sourceType: "user" as const,
             sourceId: "user_1",
-            vector: new Array(1536).fill(0).map(() => Math.random()),
+            vector: new Float32Array(
+              Array.from({ length: 1536 }, () => Math.random()),
+            ).buffer,
             model: "text-embedding-ada-002",
             dimensions: 1536,
             version: "v1",
@@ -591,7 +593,9 @@ describe("Real-World Scenario Tests", () => {
           {
             sourceType: "user" as const,
             sourceId: "user_2",
-            vector: new Array(1536).fill(0).map(() => Math.random()),
+            vector: new Float32Array(
+              Array.from({ length: 1536 }, () => Math.random()),
+            ).buffer,
             model: "text-embedding-ada-002",
             dimensions: 1536,
             version: "v1",
@@ -601,7 +605,9 @@ describe("Real-World Scenario Tests", () => {
           {
             sourceType: "transcriptSegment" as const,
             sourceId: "segment_1",
-            vector: new Array(1536).fill(0).map(() => Math.random()),
+            vector: new Float32Array(
+              Array.from({ length: 1536 }, () => Math.random()),
+            ).buffer,
             model: "text-embedding-ada-002",
             dimensions: 1536,
             version: "v1",
@@ -629,7 +635,10 @@ describe("Real-World Scenario Tests", () => {
         });
 
         expect(embedding).toBeDefined();
-        expect(embedding?.vector).toHaveLength(1536);
+        expect(embedding?.vector.byteLength).toBe(
+          1536 * Float32Array.BYTES_PER_ELEMENT,
+        );
+        expect(new Float32Array(embedding!.vector)).toHaveLength(1536);
         expect(embedding?.dimensions).toBe(1536);
       }
 

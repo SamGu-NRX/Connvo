@@ -8,9 +8,12 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex action patterns
  */
 
-import { internalAction } from "../_generated/server";
+// TODO: Review whether or not the preset delay is robust for different enviroments (bandwidths)
+// -- doesn't seem like the most scalable nor efficient approach? what about just `await` actions
+
+import { internalAction } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { internal } from "../_generated/api";
+import { internal } from "@convex/_generated/api";
 
 /**
  * Handles comprehensive post-meeting processing
@@ -62,7 +65,7 @@ export const handleMeetingEnd = internalAction({
       // 4. Schedule cleanup tasks
       await ctx.scheduler.runAfter(
         300000, // 5 minutes delay
-        internal.meetings.cleanup.cleanupMeetingResources,
+        internal.meetings.stream.cleanup.cleanupMeetingResources,
         { meetingId },
       );
       tasksScheduled.push("resource_cleanup");

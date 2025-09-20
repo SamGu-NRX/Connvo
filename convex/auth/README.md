@@ -70,7 +70,7 @@ Validates organization-level permissions.
 await assertOrgAccess(ctx, "admin");
 ```
 
-### 2. Error Management (`../lib/errors.ts`)
+### 2. Error Management (`@convex/lib/errors.ts`)
 
 Standardized error codes and helper functions:
 
