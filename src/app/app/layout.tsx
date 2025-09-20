@@ -40,33 +40,13 @@ export default function RootLayout({
                 className="flex items-center gap-2 font-semibold transition-all duration-300 hover:opacity-80"
                 href="/app"
               >
-                <motion.div
-                  whileHover={{ rotate: 10, scale: 1.1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="relative h-9 w-9"
-                >
-                  <Image
-                    src="/linkeduplogos/linkedupblack.png"
-                    alt="Logo"
-                    width={36}
-                    height={36}
-                    className="rounded-lg shadow-md dark:hidden"
-                  />
-                  <Image
-                    src="/linkeduplogos/linkedupwhite.png"
-                    alt="Logo"
-                    width={36}
-                    height={36}
-                    className="hidden rounded-lg shadow-md dark:block"
-                  />
-                </motion.div>
                 <motion.h1
-                  className="bg-emerald-400 bg-clip-text text-xl font-bold text-transparent dark:bg-emerald-300"
+                  className="text-xl font-medium text-emerald-600 dark:text-emerald-300"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  LinkedUp
+                  Connvo
                 </motion.h1>
               </Link>
             </div>

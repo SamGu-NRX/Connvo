@@ -33,8 +33,6 @@ import {
 import { handleTransition } from "@/utils/TransitionLink";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-// Auth UI is handled via WorkOS components and hooks; remove Clerk usage
 
 // Retention data for the chart
 const retentionData = [
@@ -45,6 +43,25 @@ const retentionData = [
   { month: "May", rate: 94 },
   { month: "Jun", rate: 95 },
 ];
+
+// Glass Card Component for modern UI elements
+const GlassCard = ({
+  children,
+  className = "",
+  ...props
+}: {
+  children: React.ReactNode;
+  className?: string;
+  [key: string]: any;
+}) => (
+  <div
+    className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 ${className}`}
+    {...props}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />
+    <div className="relative">{children}</div>
+  </div>
+);
 
 // MacBook Component with improved transitions
 const MacbookScroll = () => {
@@ -99,19 +116,22 @@ const StatCard: React.FC<StatCardProps> = ({
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.5 }}
-    className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-lg transition-all duration-300 hover:border-emerald-200 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:border-emerald-800"
+    whileHover={{ y: -5, scale: 1.02 }}
+    className="group"
   >
-    <div className="flex items-center gap-4">
-      <div className="rounded-xl bg-emerald-50 p-3 dark:bg-emerald-900/30">
-        <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+    <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
+      <div className="flex items-center gap-4">
+        <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm">
+          <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div>
+          <h4 className="mb-1 text-3xl font-light text-slate-900 dark:text-white">
+            {value}
+          </h4>
+          <p className="text-slate-600 dark:text-slate-300">{label}</p>
+        </div>
       </div>
-      <div>
-        <h4 className="mb-1 text-3xl font-bold text-gray-900 dark:text-white">
-          {value}
-        </h4>
-        <p className="text-gray-600 dark:text-gray-300">{label}</p>
-      </div>
-    </div>
+    </GlassCard>
   </motion.div>
 );
 
@@ -133,16 +153,18 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.1, duration: 0.5 }}
-    whileHover={{ y: -5, scale: 1.02 }}
-    className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-lg transition-all duration-300 hover:border-emerald-200 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-emerald-800"
+    whileHover={{ y: -8, scale: 1.03 }}
+    className="group"
   >
-    <div className="mb-4 w-fit rounded-xl bg-emerald-50 p-3 dark:bg-emerald-900/30">
-      <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-    </div>
-    <h3 className="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-      {title}
-    </h3>
-    <p className="text-gray-600 dark:text-gray-300">{description}</p>
+    <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
+      <div className="mb-4 w-fit rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-emerald-500/20 group-hover:to-teal-500/20">
+        <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+      </div>
+      <h3 className="mb-3 text-xl font-medium text-slate-900 dark:text-white">
+        {title}
+      </h3>
+      <p className="text-slate-600 dark:text-slate-300">{description}</p>
+    </GlassCard>
   </motion.div>
 );
 
@@ -166,91 +188,57 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.2, duration: 0.5 }}
-    className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-lg transition-all duration-300 hover:border-emerald-200 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:border-emerald-800"
+    whileHover={{ y: -5, scale: 1.02 }}
+    className="group"
   >
-    <div className="mb-4 flex gap-1">
-      {[...Array(rating)].map((_, i) => (
-        <Star key={i} className="h-5 w-5 fill-current text-emerald-400" />
-      ))}
-    </div>
-    <p className="mb-4 text-gray-600 italic dark:text-gray-300">
-      &quot;{text}&quot;
-    </p>
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400">
-        {name.charAt(0)}
+    <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
+      <div className="mb-4 flex gap-1">
+        {[...Array(rating)].map((_, i) => (
+          <Star key={i} className="h-5 w-5 fill-current text-amber-400" />
+        ))}
       </div>
-      <div>
-        <p className="font-semibold text-gray-900 dark:text-white">{name}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{role}</p>
+      <p className="mb-4 text-slate-600 italic dark:text-slate-300">
+        &quot;{text}&quot;
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 font-medium text-slate-700 backdrop-blur-sm dark:text-slate-200">
+          {name.charAt(0)}
+        </div>
+        <div>
+          <p className="font-medium text-slate-900 dark:text-white">{name}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{role}</p>
+        </div>
       </div>
-    </div>
+    </GlassCard>
   </motion.div>
 );
 
-// Floating Shapes Component for hero background animation
-const FloatingShapes = () => {
+// Clean Gradient Background Component
+const LiquidGlassBackground = () => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{
-          opacity: [0.1, 0.3, 0.1],
-          scale: [1, 1.2, 1],
-          x: [0, 20, 0],
-          y: [0, -30, 0],
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20" />
+      <div
+        className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
         }}
-        transition={{
-          repeat: Infinity,
-          duration: 15,
-          ease: "easeInOut",
-        }}
-        className="absolute -top-20 -right-20 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl"
-      />
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{
-          opacity: [0.1, 0.2, 0.1],
-          scale: [1, 1.1, 1],
-          x: [0, -20, 0],
-          y: [0, 30, 0],
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 20,
-          ease: "easeInOut",
-          delay: 2,
-        }}
-        className="absolute top-40 -left-40 h-96 w-96 rounded-full bg-emerald-300/10 blur-3xl"
-      />
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.5 }}
-        animate={{
-          opacity: [0.05, 0.15, 0.05],
-          scale: [1, 1.3, 1],
-          x: [0, 30, 0],
-          y: [0, 40, 0],
-        }}
-        transition={{
-          repeat: Infinity,
-          duration: 25,
-          ease: "easeInOut",
-          delay: 5,
-        }}
-        className="absolute -bottom-40 left-40 h-80 w-80 rounded-full bg-teal-500/10 blur-3xl"
       />
     </div>
   );
 };
 
+// Unified StartCta (merged)
 function StartCta({
   className,
   children,
+  style,
+  ...props
 }: {
   className?: string;
   children: React.ReactNode;
+  style?: React.CSSProperties;
+  [key: string]: any;
 }) {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -260,12 +248,14 @@ function StartCta({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       className={className}
+      style={style}
       onClick={(e) => {
         e.preventDefault();
         if (loading) return;
         const dest = user ? "/app" : "/auth/signin";
         handleTransition(e, dest, router);
       }}
+      {...props}
     >
       {children}
     </motion.a>
@@ -279,7 +269,6 @@ const LandingPage = () => {
   const parallaxY = useTransform(scrollY, [0, 1000], [0, -150]);
   const router = useRouter();
 
-  // Initialize theme from local storage if available
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme") || "light";
@@ -299,7 +288,6 @@ const LandingPage = () => {
     }
   };
 
-  // Smooth scroll function: URGENT TODO: SWITCH TO LENIS
   const scrollToSection = (elementId: string) => {
     const element = document.getElementById(elementId);
     if (element) {
@@ -313,142 +301,166 @@ const LandingPage = () => {
   return (
     <div className={`min-h-screen ${theme === "dark" ? "dark" : ""}`}>
       <div className="bg-white transition-colors duration-300 dark:bg-gray-900">
-        {/* Improved Nav */}
-        <nav className="fixed top-0 z-50 w-full border-b border-emerald-100 bg-white/90 backdrop-blur-xl transition-all duration-300 dark:border-gray-800 dark:bg-gray-900/90">
-          <div className="container mx-auto flex items-center justify-between px-6 py-4">
-            {/* Logo that changes based on theme */}
-            <div className="flex items-center gap-2">
-              {/* Logo that changes based on theme */}
-              {theme === "light" ? (
-                <Image
-                  src="/linkeduplogos/linkedupblack.png"
-                  alt="LinkedUp Logo"
-                  width={40}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              ) : (
-                <Image
-                  src="/linkeduplogos/linkedupwhite.png"
-                  alt="LinkedUp Logo"
-                  width={40}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              )}
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                LinkedUp
-              </span>
-            </div>
+        {/* Modern Glass Nav */}
+        <nav className="fixed top-0 z-50 w-full">
+          <div className="mx-6 mt-6">
+            <GlassCard className="mx-auto max-w-6xl px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-light tracking-tight text-slate-900 dark:text-white">
+                    Connvo
+                  </span>
+                </div>
 
-            <div className="hidden items-center gap-8 md:flex">
-              <button
-                onClick={() => scrollToSection("features")}
-                className="text-gray-600 transition-colors hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-400"
-              >
-                Features
-              </button>
-              <button
-                onClick={() => scrollToSection("testimonials")}
-                className="text-gray-600 transition-colors hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-400"
-              >
-                Testimonials
-              </button>
-              <button
-                onClick={() => scrollToSection("pricing")}
-                className="text-gray-600 transition-colors hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-400"
-              >
-                Pricing
-              </button>
-            </div>
+                <div className="hidden items-center gap-8 md:flex">
+                  {[
+                    { label: "Features", id: "features" },
+                    { label: "Testimonials", id: "testimonials" },
+                    { label: "Pricing", id: "pricing" },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToSection(item.id)}
+                      className="relative text-sm font-medium text-slate-600 transition-colors hover:text-emerald-700 dark:text-slate-300 dark:hover:text-emerald-400"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleTheme}
-                className="rounded-full p-2 transition-colors hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
-                aria-label="Toggle theme"
-              >
-                {theme === "light" ? (
-                  <Moon className="h-5 w-5 text-emerald-600" />
-                ) : (
-                  <Sun className="h-5 w-5 text-emerald-400" />
-                )}
-              </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={toggleTheme}
+                    className="rounded-xl p-2 transition-colors hover:bg-white/20 dark:hover:bg-white/10"
+                    aria-label="Toggle theme"
+                  >
+                    {theme === "light" ? (
+                      <Moon className="h-5 w-5 text-slate-600" />
+                    ) : (
+                      <Sun className="h-5 w-5 text-slate-300" />
+                    )}
+                  </button>
 
-              <StartCta className="rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white shadow-md transition-colors duration-300 hover:bg-emerald-700 hover:shadow-lg">
-                Start Connecting
-              </StartCta>
-            </div>
+                  <StartCta
+                    className="rounded-xl px-4 py-2 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl"
+                    style={{
+                      background:
+                        "radial-gradient(ellipse at center, #10b981, #0d9488)",
+                    }}
+                  >
+                    Start Connecting
+                  </StartCta>
+                </div>
+              </div>
+            </GlassCard>
           </div>
         </nav>
 
-        {/* Improved Hero Section */}
-        <section className="relative flex min-h-screen items-center pt-32 pb-16 md:pb-0">
-          <FloatingShapes />
+        {/* Modern Glass Hero Section */}
+        <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
+          <LiquidGlassBackground />
 
-          <div className="relative container mx-auto px-6 pt-12 pb-32">
+          <div className="relative z-10 container mx-auto px-6 py-32">
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="mx-auto max-w-4xl text-center"
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="mx-auto max-w-5xl text-center"
             >
-              <div className="mb-6 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-                Professional networking reimagined
-              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="mb-8 inline-block"
+              >
+                <GlassCard className="px-6 py-3">
+                  <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-sm font-medium text-transparent dark:from-emerald-400 dark:to-teal-400">
+                    Professional networking reimagined
+                  </span>
+                </GlassCard>
+              </motion.div>
 
-              <h1 className="mb-6 text-5xl font-bold text-gray-900 md:text-6xl lg:text-7xl dark:text-white">
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.8 }}
+                className="mb-8 text-6xl font-light tracking-tight text-slate-900 dark:text-white md:text-7xl lg:text-8xl"
+              >
                 Professional Networking
                 <br />
-                <span className="bg-linear-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text font-medium text-transparent dark:from-emerald-400 dark:to-teal-300">
                   Without the BS.
                 </span>
-              </h1>
+              </motion.h1>
 
-              <p className="mx-auto mb-10 max-w-2xl text-xl text-gray-600 dark:text-gray-300">
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.6 }}
+                className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-slate-600 dark:text-slate-300"
+              >
                 Where professionals come to actually connect, not to share
                 inspirational quotes or humble brag about their morning
                 routines.
-              </p>
+              </motion.p>
 
-              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <StartCta className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-4 font-medium text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg sm:w-auto">
-                  Start Real Networking <ArrowRight className="h-5 w-5" />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+                className="flex flex-col items-center justify-center gap-4 sm:flex-row"
+              >
+                <StartCta
+                  className="group relative overflow-hidden rounded-2xl px-8 py-4 font-medium text-white shadow-lg transition-all duration-300 hover:shadow-2xl sm:w-auto"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse at center, #10b981, #0d9488)",
+                  }}
+                >
+                  <div
+                    className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+                    style={{
+                      background:
+                        "radial-gradient(ellipse at center, #059669, #0f766e)",
+                    }}
+                  />
+                  <span className="relative flex items-center gap-2">
+                    Start Real Networking
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </StartCta>
 
-                <motion.button
+                <button
                   onClick={() => scrollToSection("how-it-works")}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-8 py-4 font-medium text-gray-800 shadow-md transition-all hover:bg-emerald-50 hover:shadow-lg sm:w-auto dark:border-emerald-800 dark:bg-gray-800 dark:text-white dark:hover:bg-emerald-900/20"
+                  className="group relative sm:w-auto"
                 >
-                  See How It Works <ChevronRight className="h-5 w-5" />
-                </motion.button>
-              </div>
+                  <GlassCard className="px-8 py-4 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
+                    <span className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-200">
+                      See How It Works
+                      <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </GlassCard>
+                </button>
+              </motion.div>
             </motion.div>
-
-            {/* Smooth transition to next section */}
           </div>
-        </section>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-10 left-1/2 hidden -translate-x-1/2 transform md:block"
-        >
           <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="flex h-10 w-6 justify-center rounded-full border-2 border-emerald-400 dark:border-emerald-500"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5, duration: 1 }}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2"
           >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="mt-2 h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-500"
-            />
+            <div className="flex flex-col items-center gap-2">
+              <GlassCard className="p-2">
+                <div className="h-6 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-transparent" />
+              </GlassCard>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Scroll
+              </span>
+            </div>
           </motion.div>
-        </motion.div>
+        </section>
 
         {/* MacBook Scroll Component */}
         <MacbookScroll />
@@ -462,8 +474,8 @@ const LandingPage = () => {
               transition={{ duration: 0.5 }}
               className="mb-12 text-center"
             >
-              <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white">
-                Why professionals choose LinkedUp
+              <h2 className="mb-4 text-3xl font-semibold text-gray-900 dark:text-white">
+                Why professionals choose Connvo
               </h2>
               <div className="mx-auto h-1 w-20 rounded-full bg-emerald-600"></div>
             </motion.div>
@@ -508,7 +520,7 @@ const LandingPage = () => {
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                 What makes us different
               </div>
-              <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
                 Features That Actually Matter
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -576,7 +588,7 @@ const LandingPage = () => {
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                 {`Don't take our word for it`}
               </div>
-              <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
                 What Real Humans Say
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -623,7 +635,7 @@ const LandingPage = () => {
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                 Users stick around
               </div>
-              <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white">
+              <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
                 Industry-Leading Retention
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -644,11 +656,12 @@ const LandingPage = () => {
                       dataKey="month"
                       stroke={theme === "dark" ? "#94a3b8" : "#64748b"}
                     />
-                    <YAxis stroke={theme === "dark" ? "#94a3b8" : "#64748b"} />
+                    <YAxis
+                      stroke={theme === "dark" ? "#94a3b8" : "#64748b"}
+                    />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor:
-                          theme === "dark" ? "#1e293b" : "#ffffff",
+                        backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
                         borderColor: theme === "dark" ? "#334155" : "#e2e8f0",
                         color: theme === "dark" ? "#f8fafc" : "#0f172a",
                       }}
@@ -684,7 +697,7 @@ const LandingPage = () => {
               whileInView={{ opacity: 1 }}
               className="mx-auto max-w-4xl text-center"
             >
-              <h2 className="mb-6 text-4xl font-bold">
+              <h2 className="mb-6 text-4xl font-semibold">
                 Ready for Real Professional Growth?
               </h2>
               <p className="mb-10 text-xl text-emerald-100">
@@ -709,30 +722,13 @@ const LandingPage = () => {
           <div className="container mx-auto px-6">
             <div className="flex flex-col items-center justify-between md:flex-row">
               <div className="mb-6 flex items-center md:mb-0">
-                {theme === "light" ? (
-                  <Image
-                    src="/linkeduplogos/linkedupblack.png"
-                    alt="LinkedUp Logo"
-                    width={40}
-                    height={40}
-                    className="h-10 w-auto"
-                  />
-                ) : (
-                  <Image
-                    src="/linkeduplogos/linkedupwhite.png"
-                    alt="LinkedUp Logo"
-                    width={40}
-                    height={40}
-                    className="h-10 w-auto"
-                  />
-                )}
-                <span className="pl-2 text-xl font-bold text-gray-900 dark:text-white">
-                  LinkedUp
+                <span className="pl-2 text-xl font-medium text-gray-900 dark:text-white">
+                  Connvo
                 </span>
               </div>
 
-              <div className="text-center text-gray-600 md:text-right dark:text-gray-300">
-                © {new Date().getFullYear()} LinkedUp. All rights reserved.
+              <div className="text-center text-gray-600 dark:text-gray-300 md:text-right">
+                © {new Date().getFullYear()} Connvo. All rights reserved.
                 <div className="mt-1 text-sm">
                   No corporate jargon was harmed in the making of this site.
                 </div>
