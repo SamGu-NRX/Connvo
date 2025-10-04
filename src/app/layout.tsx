@@ -5,15 +5,15 @@ import { Providers } from "./providers";
 import type { Metadata } from "next";
 import { cn } from "@/lib/shadcn";
 
-const title = "LinkedUp – Professional Networking Without the BS";
+const title = "Connvo – Real Conversations, Better Connections";
 const description =
-  "LinkedUp is a professional networking platform that focuses on authentic connections and meaningful conversations.";
-const image = "https://LinkedUp.com/thumbnail.png"; // Replace with your actual image URL
+  "Connvo is a professional networking platform focused on authentic conversations that lead to meaningful connections.";
+const image = "https://connvo.com/thumbnail.png"; // Replace with your actual image URL
 
 export const metadata: Metadata = {
   title,
   description,
-  icons: ["https://LinkedUp.com/favicon.ico"], // Replace with your actual favicon URL
+  icons: ["https://connvo.com/favicon.ico"], // Replace with your actual favicon URL
   openGraph: {
     title,
     description,
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
     title,
     description,
     images: [image],
-    creator: "@LinkedUp",
+    creator: "@Connvo",
   },
-  metadataBase: new URL("https://LinkedUp.com"), // Replace with your actual URL
+  metadataBase: new URL("https://connvo.com"), // Replace with your actual URL
 };
 
 export default function RootLayout({
