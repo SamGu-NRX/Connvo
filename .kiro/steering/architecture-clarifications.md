@@ -1,6 +1,6 @@
 ---
 description: Key architectural clarifications for LinkedUp project
-globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.md
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.md"]
 ---
 
 # LinkedUp Architecture Clarifications

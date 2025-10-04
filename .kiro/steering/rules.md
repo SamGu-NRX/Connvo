@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: "**/*.ts,**/*.tsx,**/*.js,**/*.jsx"
+fileMatchPattern: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
 description: Guidelines that applies to all code generated
 ---
 
