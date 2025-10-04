@@ -82,8 +82,8 @@ export async function requireIdentity(
       return {
         userId: null as any, // Will be set after user creation
         workosUserId,
-        orgId: identity.org_id || null,
-        orgRole: identity.org_role || null,
+        orgId: (identity.org_id as string) || null,
+        orgRole: (identity.org_role as string) || null,
         email: identity.email || null,
         name: identity.name || null,
       };
@@ -326,7 +326,7 @@ export async function requireAuthToken(ctx: AuthContext): Promise<{
     workosUserId,
     email: identity.email || null,
     name: identity.name || null,
-    orgId: identity.org_id || null,
-    orgRole: identity.org_role || null,
+    orgId: (identity.org_id as string) || null,
+    orgRole: (identity.org_role as string) || null,
   };
 }

@@ -13,7 +13,7 @@ import { api, internal } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach, afterEach } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
 import schema from "../schema";
-import { modules } from "../test/setup";
+import { modules } from "../../convex-tests/test/setup.js";
 import {
   createTestEnvironment,
   createCompleteTestUser,
@@ -21,7 +21,7 @@ import {
   resetAllMocks,
   setupTestMocks,
   cleanupTestMocks,
-} from "../test/helpers";
+} from "../../convex-tests/test/helpers.js";
 
 describe("Authentication Guards", () => {
   let t: ReturnType<typeof createTestEnvironment>;
