@@ -11,12 +11,13 @@
 import { convexTest } from "convex-test";
 import { Id } from "@convex/_generated/dataModel";
 import schema from "../../convex/schema.js";
+import { modules as testModules } from "./setup";
 
 /**
  * Creates a standardized test environment with proper module resolution
  */
 export function createTestEnvironment() {
-  return convexTest(schema);
+  return convexTest(schema, testModules);
 }
 
 /**
@@ -260,15 +261,30 @@ export async function createTestMeetingWithParticipants(
   organizerData: TestUserData = {},
   participantCount: number = 2,
   meetingData: TestMeetingData = {},
+  options: {
+    organizerOverride?: {
+      userId: Id<"users">;
+      workosUserId: string;
+    };
+  } = {},
 ): Promise<{
   meetingId: Id<"meetings">;
   organizerId: Id<"users">;
   participantIds: Id<"users">[];
   organizerWorkosId: string;
+  participantWorkosIds: string[];
 }> {
   // Create organizer
-  const { userId: organizerId, workosUserId: organizerWorkosId } =
-    await createCompleteTestUser(t, organizerData);
+  let organizerId: Id<"users">;
+  let organizerWorkosId: string;
+  if (options.organizerOverride) {
+    organizerId = options.organizerOverride.userId;
+    organizerWorkosId = options.organizerOverride.workosUserId;
+  } else {
+    const organizerResult = await createCompleteTestUser(t, organizerData);
+    organizerId = organizerResult.userId;
+    organizerWorkosId = organizerResult.workosUserId;
+  }
 
   // Create meeting
   const meetingId = await createTestMeeting(t, organizerId, meetingData);
@@ -278,11 +294,13 @@ export async function createTestMeetingWithParticipants(
 
   // Create and add participants
   const participantIds: Id<"users">[] = [];
+  const participantWorkosIds: string[] = [];
   for (let i = 0; i < participantCount; i++) {
-    const { userId: participantId } = await createCompleteTestUser(t, {
-      email: `participant-${i}@example.com`,
-      displayName: `Participant ${i + 1}`,
-    });
+    const { userId: participantId, workosUserId: participantWorkosId } =
+      await createCompleteTestUser(t, {
+        email: `participant-${i}@example.com`,
+        displayName: `Participant ${i + 1}`,
+      });
     await addMeetingParticipant(
       t,
       meetingId,
@@ -291,9 +309,16 @@ export async function createTestMeetingWithParticipants(
       "invited",
     );
     participantIds.push(participantId);
+    participantWorkosIds.push(participantWorkosId);
   }
 
-  return { meetingId, organizerId, participantIds, organizerWorkosId };
+  return {
+    meetingId,
+    organizerId,
+    participantIds,
+    organizerWorkosId,
+    participantWorkosIds,
+  };
 }
 
 /**
@@ -371,3 +396,4 @@ export async function waitFor(
  * Re-export mock functions for convenience
  */
 export { resetAllMocks, setupTestMocks, cleanupTestMocks } from "./mocks";
+export { modules as convexFunctionModules } from "./setup";

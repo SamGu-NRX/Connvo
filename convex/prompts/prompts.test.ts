@@ -9,16 +9,15 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { convexTest } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
-import schema from "../schema";
 import { Id } from "@convex/_generated/dataModel";
+import { createTestEnvironment } from "../test/helpers";
 
 describe("Prompts Module", () => {
-  let t: ReturnType<typeof convexTest>;
+  let t: ReturnType<typeof createTestEnvironment>;
 
   beforeEach(async () => {
-    t = convexTest(schema);
+    t = createTestEnvironment();
   });
 
   describe("Pre-call Idea Generation", () => {

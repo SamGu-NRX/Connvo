@@ -8,8 +8,159 @@
  * Compliance: steering/convex_rules.mdc - Proper testing patterns
  */
 
-import { vi } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
+
+type AnyFunction = (...args: any[]) => any;
+
+type MockResult = {
+  type: "return" | "throw";
+  value: any;
+};
+
+interface ViMockFunction extends AnyFunction {
+  mock: {
+    calls: any[][];
+    results: MockResult[];
+    instances: any[];
+  };
+  mockImplementation: (impl: AnyFunction) => ViMockFunction;
+  mockResolvedValue: (value: any) => ViMockFunction;
+  mockReturnValue: (value: any) => ViMockFunction;
+  mockRejectedValue: (error: any) => ViMockFunction;
+  mockClear: () => ViMockFunction;
+  mockRestore?: () => void;
+  __implementation?: AnyFunction;
+  __isMockFunction: true;
+}
+
+interface ViLike {
+  fn: <T extends AnyFunction>(impl?: T) => ViMockFunction;
+  spyOn: (object: Record<PropertyKey, any>, key: PropertyKey) => ViMockFunction;
+  stubGlobal: (name: string, value: any) => void;
+  unstubAllGlobals: () => void;
+  restoreAllMocks: () => void;
+  clearAllMocks: () => void;
+  isMockFunction: (value: unknown) => value is ViMockFunction;
+}
+
+function createViFallback(): ViLike {
+  const createdMocks = new Set<ViMockFunction>();
+  const stubbedGlobals = new Map<string, { hadValue: boolean; value: any }>();
+
+  function createMockFunction(impl?: AnyFunction): ViMockFunction {
+    const mockFn = function (this: unknown, ...args: any[]) {
+      mockFn.mock.calls.push(args);
+      mockFn.mock.instances.push(this);
+      const implementation = mockFn.__implementation ?? impl;
+
+      if (!implementation) {
+        mockFn.mock.results.push({ type: "return", value: undefined });
+        return undefined;
+      }
+
+      try {
+        const result = implementation.apply(this, args);
+        mockFn.mock.results.push({ type: "return", value: result });
+        return result;
+      } catch (error) {
+        mockFn.mock.results.push({ type: "throw", value: error });
+        throw error;
+      }
+    } as ViMockFunction;
+
+    mockFn.__implementation = impl;
+    mockFn.__isMockFunction = true;
+    mockFn.mock = {
+      calls: [],
+      results: [],
+      instances: [],
+    };
+    mockFn.mockImplementation = (newImpl: AnyFunction) => {
+      mockFn.__implementation = newImpl;
+      return mockFn;
+    };
+    mockFn.mockResolvedValue = (value: any) => {
+      mockFn.__implementation = () => Promise.resolve(value);
+      return mockFn;
+    };
+    mockFn.mockReturnValue = (value: any) => {
+      mockFn.__implementation = () => value;
+      return mockFn;
+    };
+    mockFn.mockRejectedValue = (error: any) => {
+      mockFn.__implementation = () => Promise.reject(error);
+      return mockFn;
+    };
+    mockFn.mockClear = () => {
+      mockFn.mock.calls.length = 0;
+      mockFn.mock.results.length = 0;
+      mockFn.mock.instances.length = 0;
+      return mockFn;
+    };
+
+    createdMocks.add(mockFn);
+    return mockFn;
+  }
+
+  return {
+    fn: (impl?: AnyFunction) => createMockFunction(impl),
+    spyOn: (object: Record<PropertyKey, any>, key: PropertyKey) => {
+      const original = object[key];
+      const spy = createMockFunction(function (this: unknown, ...args: any[]) {
+        if (typeof original === "function") {
+          return original.apply(this, args);
+        }
+        return original;
+      });
+
+      spy.mockRestore = () => {
+        object[key] = original;
+      };
+
+      object[key] = spy;
+      return spy;
+    },
+    stubGlobal: (name: string, value: any) => {
+      if (!stubbedGlobals.has(name)) {
+        const hadValue = Object.prototype.hasOwnProperty.call(globalThis, name);
+        stubbedGlobals.set(name, {
+          hadValue,
+          value: (globalThis as Record<string, any>)[name],
+        });
+      }
+      (globalThis as Record<string, any>)[name] = value;
+    },
+    unstubAllGlobals: () => {
+      for (const [name, state] of stubbedGlobals.entries()) {
+        if (!state.hadValue) {
+          delete (globalThis as Record<string, any>)[name];
+        } else {
+          (globalThis as Record<string, any>)[name] = state.value;
+        }
+      }
+      stubbedGlobals.clear();
+    },
+    restoreAllMocks: () => {
+      for (const mock of createdMocks) {
+        if (mock.mockRestore) {
+          mock.mockRestore();
+        }
+        mock.mockClear();
+      }
+    },
+    clearAllMocks: () => {
+      for (const mock of createdMocks) {
+        mock.mockClear();
+      }
+    },
+    isMockFunction: (value: unknown): value is ViMockFunction =>
+      typeof value === "function" &&
+      Boolean((value as Partial<ViMockFunction>).__isMockFunction),
+  };
+}
+
+const vi: ViLike =
+  (globalThis as { vi?: ViLike }).vi ?? createViFallback();
 
 /**
  * Mock WorkOS authentication context

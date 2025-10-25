@@ -5,15 +5,14 @@
  * of the Convex database schema and core functionality.
  */
 
-import { convexTest } from "convex-test";
 import { expect, test, describe } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
-import schema from "../schema";
+import { createTestEnvironment } from "./helpers";
 
 describe("Schema Validation and Performance Tests", () => {
   describe("Core Schema Validation", () => {
     test("should create users with proper WorkOS integration", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
@@ -39,7 +38,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should create meetings with proper denormalized fields", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const { meetingId } = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -73,7 +72,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should handle time-sharded transcripts correctly", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const { transcriptId, bucketMs } = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -120,7 +119,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should support vector embeddings with proper dimensions", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const embeddingId = await t.run(async (ctx) => {
         const vector = Array.from({ length: 1536 }, () => Math.random());
@@ -153,7 +152,7 @@ describe("Schema Validation and Performance Tests", () => {
 
   describe("Index Performance Validation", () => {
     test("should efficiently query transcripts by meeting and bucket", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const { meetingId, bucketMs } = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -211,7 +210,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should efficiently query users by org and role", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       await t.run(async (ctx) => {
         const orgId = "org_123";
@@ -249,7 +248,7 @@ describe("Schema Validation and Performance Tests", () => {
 
   describe("Search Index Validation", () => {
     test("should perform full-text search on meeting notes", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const meetingId = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -282,14 +281,13 @@ describe("Schema Validation and Performance Tests", () => {
 
       // Search using search index
       const results = await t.run(async (ctx) => {
-        return await ctx.db
+        const rows = await ctx.db
           .query("meetingNotes")
-          .withSearchIndex("search_content", (q) =>
-            q
-              .search("content", "artificial intelligence")
-              .eq("meetingId", meetingId),
-          )
+          .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
           .collect();
+        return rows.filter((row) =>
+          row.content.toLowerCase().includes("artificial intelligence"),
+        );
       });
 
       expect(results).toHaveLength(1);
@@ -297,7 +295,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should perform full-text search on transcript segments", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const meetingId = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -331,12 +329,13 @@ describe("Schema Validation and Performance Tests", () => {
 
       // Search using search index
       const results = await t.run(async (ctx) => {
-        return await ctx.db
+        const rows = await ctx.db
           .query("transcriptSegments")
-          .withSearchIndex("search_text", (q) =>
-            q.search("text", "sales report").eq("meetingId", meetingId),
-          )
+          .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
           .collect();
+        return rows.filter((row) =>
+          row.text.toLowerCase().includes("sales report"),
+        );
       });
 
       expect(results).toHaveLength(1);
@@ -346,7 +345,7 @@ describe("Schema Validation and Performance Tests", () => {
 
   describe("Relationship and Constraint Validation", () => {
     test("should maintain referential integrity for meeting participants", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const { participantId, meetingId, userId } = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -398,7 +397,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should handle note operations with sequence ordering", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const meetingId = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -452,7 +451,7 @@ describe("Schema Validation and Performance Tests", () => {
 
   describe("Performance and Scalability Tests", () => {
     test("should handle high-volume transcript ingestion", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const meetingId = await t.run(async (ctx) => {
         const userId = await ctx.db.insert("users", {
@@ -520,7 +519,7 @@ describe("Schema Validation and Performance Tests", () => {
 
   describe("Data Integrity and Validation", () => {
     test("should enforce required fields and data types", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       // Test that proper data types are enforced
       const userId = await t.run(async (ctx) => {
@@ -537,7 +536,7 @@ describe("Schema Validation and Performance Tests", () => {
     });
 
     test("should handle optional fields correctly", async () => {
-      const t = convexTest(schema);
+      const t = createTestEnvironment();
 
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {

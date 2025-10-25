@@ -9,19 +9,18 @@
  */
 
 import { expect, test, describe, beforeEach } from "vitest";
-import { convexTest } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import schema from "../schema";
+import { createTestEnvironment } from "../test/helpers";
 
 describe("Transcript Ingestion Pipeline", () => {
-  let t: ReturnType<typeof convexTest>;
+  let t: ReturnType<typeof createTestEnvironment>;
   let testMeetingId: Id<"meetings">;
   let testUserId: Id<"users">;
   let authedT: any;
 
   beforeEach(async () => {
-    t = convexTest(schema);
+    t = createTestEnvironment();
 
     // Create test user
     testUserId = await t.run(async (ctx) => {
@@ -41,11 +40,11 @@ describe("Transcript Ingestion Pipeline", () => {
     });
 
     authedT = t.withIdentity({
-        subject: "test_user_123",
-        email: "test@example.com",
-        name: "Test User",
-        org_id: "test_org",
-        org_role: "member",
+      subject: "test_user_123",
+      email: "test@example.com",
+      name: "Test User",
+      org_id: "test_org",
+      org_role: "member",
     });
 
     // Create test meeting
