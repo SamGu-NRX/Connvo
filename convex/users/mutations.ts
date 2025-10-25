@@ -10,7 +10,11 @@
 
 import { mutation, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
-import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
+import {
+  requireIdentity,
+  assertOwnershipOrAdmin,
+  requireAuthToken,
+} from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
 import { Id } from "@convex/_generated/dataModel";
 import { UserV, UserProfileV, InterestV } from "@convex/types/validators/user";
@@ -51,9 +55,9 @@ export const upsertUser = mutation({
   },
   returns: v.id("users"),
   handler: async (ctx, args): Promise<Id<"users">> => {
-    // Verify the authenticated user matches the WorkOS user ID
-    const identity = await requireIdentity(ctx);
-    if (identity.workosUserId !== args.workosUserId) {
+    // Use bootstrap-friendly authentication for user creation
+    const authToken = await requireAuthToken(ctx);
+    if (authToken.workosUserId !== args.workosUserId) {
       throw createError.forbidden("Cannot create user for different WorkOS ID");
     }
 

@@ -35,10 +35,14 @@ type AuthContext = QueryCtx | MutationCtx | ActionCtx;
  * Extracts and validates user identity from Convex auth context
  *
  * @param ctx - Convex context (query, mutation, or action)
+ * @param allowBootstrap - If true, allows authenticated but unprovisioned users (for upsertUser)
  * @returns AuthIdentity with WorkOS user information
  * @throws ConvexError if user is not authenticated
  */
-export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
+export async function requireIdentity(
+  ctx: AuthContext,
+  allowBootstrap: boolean = false,
+): Promise<AuthIdentity> {
   const identity = await ctx.auth.getUserIdentity();
 
   if (!identity) {
@@ -63,9 +67,7 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
   if (hasDb) {
     userDoc = await (ctx as QueryCtx).db
       .query("users")
-      .withIndex("by_workos_id", (q) =>
-            q.eq("workosUserId", workosUserId),
-          )
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
       .unique();
   } else {
     userDoc = await (ctx as ActionCtx).runQuery(
@@ -75,6 +77,17 @@ export async function requireIdentity(ctx: AuthContext): Promise<AuthIdentity> {
   }
 
   if (!userDoc) {
+    if (allowBootstrap) {
+      // Return a bootstrap identity for user creation
+      return {
+        userId: null as any, // Will be set after user creation
+        workosUserId,
+        orgId: (identity.org_id as string) || null,
+        orgRole: (identity.org_role as string) || null,
+        email: identity.email || null,
+        name: identity.name || null,
+      };
+    }
     throw createError.unauthorized(
       "User not provisioned. Please complete sign-in and try again.",
     );
@@ -137,10 +150,7 @@ export async function assertMeetingAccess(
     const requiredRoleLevel = roleHierarchy[requiredRole];
 
     if (userRoleLevel < requiredRoleLevel) {
-      throw createError.insufficientPermissions(
-        requiredRole,
-        participant.role,
-      );
+      throw createError.insufficientPermissions(requiredRole, participant.role);
     }
   }
 
@@ -284,4 +294,39 @@ export async function getCurrentUser(
   } catch {
     return null;
   }
+}
+
+/**
+ * Lightweight authentication check for bootstrap operations
+ * Only validates the JWT token without requiring a provisioned user
+ *
+ * @param ctx - Convex context
+ * @returns Basic identity information from JWT
+ * @throws ConvexError if token is invalid
+ */
+export async function requireAuthToken(ctx: AuthContext): Promise<{
+  workosUserId: string;
+  email: string | null;
+  name: string | null;
+  orgId: string | null;
+  orgRole: string | null;
+}> {
+  const identity = await ctx.auth.getUserIdentity();
+
+  if (!identity) {
+    throw createError.unauthorized("Authentication required");
+  }
+
+  const workosUserId = identity.subject;
+  if (!workosUserId) {
+    throw createError.unauthorized("Invalid authentication token");
+  }
+
+  return {
+    workosUserId,
+    email: identity.email || null,
+    name: identity.name || null,
+    orgId: (identity.org_id as string) || null,
+    orgRole: (identity.org_role as string) || null,
+  };
 }

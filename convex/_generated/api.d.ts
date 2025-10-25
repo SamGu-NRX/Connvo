@@ -96,7 +96,6 @@ import type * as schema_webrtc from "../schema/webrtc.js";
 import type * as system_idempotency from "../system/idempotency.js";
 import type * as system_maintenance from "../system/maintenance.js";
 import type * as system_rateLimit from "../system/rateLimit.js";
-import type * as test_setup from "../test/setup.js";
 import type * as transcripts_aggregation from "../transcripts/aggregation.js";
 import type * as transcripts_ingestion from "../transcripts/ingestion.js";
 import type * as transcripts_initialization from "../transcripts/initialization.js";
@@ -250,7 +249,6 @@ declare const fullApi: ApiFromModules<{
   "system/idempotency": typeof system_idempotency;
   "system/maintenance": typeof system_maintenance;
   "system/rateLimit": typeof system_rateLimit;
-  "test/setup": typeof test_setup;
   "transcripts/aggregation": typeof transcripts_aggregation;
   "transcripts/ingestion": typeof transcripts_ingestion;
   "transcripts/initialization": typeof transcripts_initialization;

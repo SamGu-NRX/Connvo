@@ -21,7 +21,7 @@
 
 ## Development Tools
 
-- **Package Manager**: Bun (bun.lock present)
+- **Package Manager**: pnpm (pnpm.lock present)
 - **Linting**: ESLint with Next.js config
 - **Formatting**: Prettier with Tailwind plugin
 - **Git Hooks**: Husky for pre-commit hooks
@@ -32,11 +32,11 @@
 ### Development
 
 ```bash
-bun run dev          # Start development server
-bun run build        # Build for production
-bun run start        # Start production server
-bun run lint         # Run ESLint
-bun run test         # Run test suite
+pnpm run dev          # Start development server
+pnpm run build        # Build for production
+pnpm run start        # Start production server
+pnpm run lint         # Run ESLint
+pnpm run test         # Run test suite
 ```
 
 ### Convex Operations
