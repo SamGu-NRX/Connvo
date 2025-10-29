@@ -1,0 +1,69 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "LinkedUp API Documentation",
+  "logo": {
+    "dark": "/public/linkeduplogos/linkedupwhite.svg",
+    "light": "/public/linkeduplogos/linkedupblack.svg"
+  },
+  "favicon": "/public/logo-square.png",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Dashboard",
+      "url": "https://app.linkedup.example.com"
+    }
+  ],
+  "cta": {
+    "name": "Sign in",
+    "url": "https://app.linkedup.example.com/login"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "authentication"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "openapi": {
+          "source": "/api-reference/convex-openapi.yaml",
+          "directory": "api-reference"
+        },
+        "pages": [
+          "api-reference/introduction"
+        ]
+      }
+    ]
+  },
+  "footerSocials": {
+    "github": "https://github.com/linkedup"
+  },
+  "openapi": "docs/api-reference/convex-openapi.yaml",
+  "api": {
+    "baseUrl": "https://linkedup-dev.convex.cloud",
+    "auth": {
+      "method": "bearer",
+      "name": "Authorization"
+    },
+    "playground": {
+      "mode": "show"
+    }
+  }
+}

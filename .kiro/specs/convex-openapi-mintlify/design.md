@@ -70,6 +70,117 @@ The workflow has three phases:
 5. Validation runs against OpenAPI 3.x schema
 6. Mintlify auto-syncs via Git integration and rebuilds documentation
 
+## Detailed Workflow
+
+### Step 1: Prerequisites
+- Ensure Node.js and npm are installed locally.
+- Confirm the Convex deployment you want to document is live and that you know its base URL.
+- Review Convex functions to verify they declare argument and return validators so the generator can emit accurate schemas.[^convex-openapi]
+
+### Step 2: Generate the baseline spec
+- Install the Convex helpers CLI (or rely on the dev dependency) and run the generator against the target deployment. This produces `convex-spec.yaml` in the project root.[^convex-openapi]
+
+```bash
+npm install --save-dev convex-helpers
+npx convex-helpers open-api-spec
+```
+
+### Step 3: Polish the spec for Mintlify
+- Replace any placeholder server URLs (e.g., `{hostUrl}`) with concrete deployment URLs so Mintlify’s playground can send requests to the right environment.[^mint-openapi]
+- Append security schemes under `components.securitySchemes` such as bearer auth for user JWTs and a header-based deploy key, and optionally apply them globally using the `security` array.[^mint-openapi]
+- Layer in request and response examples that match the Convex HTTP payload shape (typically `{ "args": { ... }, "format": "json" }`) so Mintlify renders helpful samples.
+- Note limitations: missing validators fall back to `v.any()`, and values like `bigint`/`bytes` are not emitted in JSON format.[^convex-openapi]
+
+```yaml
+servers:
+  - url: "https://your-deployment.convex.cloud"
+    description: "Convex deployment base URL"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    convexDeploy:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "Use `Convex <deploy-key>` for admin operations; never publish this value."
+security:
+  - bearerAuth: []
+```
+
+### Step 4: Validate and optionally generate SDKs
+- Run both Mintlify and general OpenAPI validators to catch structural issues before committing.[^mint-openapi]
+
+```bash
+mint openapi-check ./docs/api-reference/convex-spec.yaml
+npx @apidevtools/swagger-cli validate convex-spec.yaml
+```
+
+- When a typed client is needed, feed the spec into an OpenAPI generator for the desired language.[^convex-openapi]
+
+```bash
+npx openapi-generator-cli generate -i convex-spec.yaml -g go -o convex_client
+```
+
+### Step 5: Add the spec to Mintlify
+- **Dashboard upload**: Import the YAML file through Mintlify’s API Playground setup so it can auto-generate pages.
+- **docs.json configuration**: Commit the spec within the docs repo (for example `docs/api-reference/convex-spec.yaml`) and reference it via navigation metadata so Mintlify bundles it with the site build.[^mint-openapi]
+
+```json
+{
+  "tab": "API Reference",
+  "groups": [
+    {
+      "group": "Endpoints",
+      "openapi": {
+        "source": "/api-reference/convex-spec.yaml",
+        "directory": "api-reference"
+      }
+    }
+  ]
+}
+```
+
+### Step 6: Test the playground
+- Execute curl requests against representative endpoints (e.g., `/api/run/{function}`) to confirm responses match the examples you embedded.
+- In Mintlify preview, verify the playground prompts for the expected auth headers and that each endpoint loads with the correct schema and examples.
+
+```bash
+curl https://your-deployment.convex.cloud/api/run/messages/list \
+  -H "Content-Type: application/json" \
+  -d '{"args": {}, "format": "json"}'
+```
+
+### Step 7: Automate post-processing (optional)
+- Wrap generation, URL replacement, and validation in a small helper script so developers can refresh docs with a single command.
+
+```js
+// tools/move-spec.js
+const fs = require("fs");
+const src = "./convex-spec.yaml";
+const dst = "./docs/api-reference/convex-spec.yaml";
+let yaml = fs.readFileSync(src, "utf8");
+yaml = yaml.replace("{hostUrl}", "https://your-deployment.convex.cloud");
+fs.mkdirSync("./docs/api-reference", { recursive: true });
+fs.writeFileSync(dst, yaml);
+console.log("Spec moved to", dst);
+```
+
+### Step 8: Security and best practices
+- Exclude internal or admin-only endpoints from public specs, or mark them with prominent warnings plus dedicated security requirements.
+- Use placeholder tokens (e.g., `<your-token-here>`) in examples and remind readers to keep deploy keys out of version control.
+- Document how to obtain credentials and highlight Convex-specific semantics (e.g., run endpoints, `format` parameter, `logLines` field).
+
+### Step 9: Caveats and helpful links
+- Emphasize that Convex’s OpenAPI generator is currently in beta and focuses on HTTP access patterns, not reactive subscriptions.[^convex-openapi]
+- Link to the Convex OpenAPI reference and Mintlify API Playground docs so maintainers can dig deeper when features evolve.[^mint-openapi]
+
+[^convex-openapi]: Convex documentation — “Generate OpenAPI Specification” and related guidance on limitations and client generation. Retrieved via Context7 `/get-convex/convex-backend`.
+[^mint-openapi]: Mintlify documentation — API Playground setup, server configuration, authentication, and validation commands. Retrieved via Context7 `/mintlify/docs`.
+
 ## Components and Interfaces
 
 ### 1. Workflow Orchestration Script (`scripts/update-api-docs.sh`)
