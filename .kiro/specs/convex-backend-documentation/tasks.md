@@ -6,20 +6,20 @@ This plan systematically adds comprehensive docstrings with test-validated examp
 
 ## Task Breakdown
 
-- [ ] 1. Create documentation audit and tooling infrastructure
+- [x] 1. Create documentation audit and tooling infrastructure
   - Create audit script to scan all Convex functions and generate coverage reports
   - Create docstring validation utilities to check JSON syntax and format
   - Create test helper utilities for example validation patterns
   - _Requirements: 1.1, 1.2, 7.1_
 
-- [ ] 2. Document core user management domain (convex/users/)
-  - [ ] 2.1 Add docstrings to convex/users/queries.ts functions
+- [x] 2. Document core user management domain (convex/users/)
+  - [x] 2.1 Add docstrings to convex/users/queries.ts functions
     - Document `getUserById`, `getCurrentUser`, `getUserProfile`, `getOnboardingState`, `listActiveUsersInOrg`, `getUsersByOnboardingStatus`
     - Add request/response examples for each function
     - Include error examples for authorization failures
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 2.2 Add docstrings to convex/users/mutations.ts functions
+  - [x] 2.2 Add docstrings to convex/users/mutations.ts functions
     - Document `upsertUser`, `updateUserProfile`, `updateUserInterests`, `deactivateUser`, `updateLastSeen`, `saveOnboarding`
     - Add request/response examples showing successful operations
     - Include error examples for validation failures
