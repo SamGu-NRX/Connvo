@@ -1,4 +1,4 @@
-# LinkedUp Authentication Testing Guide
+# Connvo Authentication Testing Guide
 
 This guide will help you test the WorkOS authentication integration with Convex that we've built so far.
 

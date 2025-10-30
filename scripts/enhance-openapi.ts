@@ -29,15 +29,16 @@ type OpenAPISpec = {
 };
 
 const DEFAULT_DEPLOYMENT_URLS: Record<Environment, string> = {
-  dev: "https://linkedup-dev.convex.cloud",
-  staging: "https://linkedup-staging.convex.cloud",
-  prod: "https://linkedup-prod.convex.cloud",
+  dev: "https://Connvo-dev.convex.cloud",
+  staging: "https://Connvo-staging.convex.cloud",
+  prod: "https://Connvo-prod.convex.cloud",
 };
 
 const TAG_DEFINITIONS: Array<{ name: string; description: string }> = [
   {
     name: "Users",
-    description: "Identity, profile, and authentication operations for LinkedUp users.",
+    description:
+      "Identity, profile, and authentication operations for Connvo users.",
   },
   {
     name: "Meetings",
@@ -45,11 +46,13 @@ const TAG_DEFINITIONS: Array<{ name: string; description: string }> = [
   },
   {
     name: "Transcripts",
-    description: "Endpoints for accessing call transcripts and transcription controls.",
+    description:
+      "Endpoints for accessing call transcripts and transcription controls.",
   },
   {
     name: "Insights",
-    description: "AI-generated insights, summaries, and analytics derived from meetings.",
+    description:
+      "AI-generated insights, summaries, and analytics derived from meetings.",
   },
   {
     name: "Prompts",
@@ -61,11 +64,13 @@ const TAG_DEFINITIONS: Array<{ name: string; description: string }> = [
   },
   {
     name: "WebRTC",
-    description: "Real-time communication, session signalling, and media utilities.",
+    description:
+      "Real-time communication, session signalling, and media utilities.",
   },
   {
     name: "System",
-    description: "General system endpoints such as health checks and diagnostics.",
+    description:
+      "General system endpoints such as health checks and diagnostics.",
   },
 ];
 
@@ -141,7 +146,9 @@ function parseOperationContext(pathKey: string): OperationContext | null {
 function buildOperationId(method: string, pathKey: string): string {
   const segments = pathKey
     .split("/")
-    .filter((segment) => segment.length > 0 && segment !== "{id}" && segment !== "{}")
+    .filter(
+      (segment) => segment.length > 0 && segment !== "{id}" && segment !== "{}",
+    )
     .map((segment) =>
       segment
         .replace(/[{}]/g, "")
@@ -169,14 +176,18 @@ function resolveDeploymentUrls(): Record<Environment, string> {
 
 function readOpenAPISpec(filePath: string): OpenAPISpec {
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Base spec not found at ${filePath}. Run convex-helpers before enhancement.`);
+    throw new Error(
+      `Base spec not found at ${filePath}. Run convex-helpers before enhancement.`,
+    );
   }
 
   const fileContents = fs.readFileSync(filePath, "utf8");
   const parsed = yaml.load(fileContents);
 
   if (!parsed || typeof parsed !== "object") {
-    throw new Error("Unable to parse OpenAPI spec: parsed value is not an object.");
+    throw new Error(
+      "Unable to parse OpenAPI spec: parsed value is not an object.",
+    );
   }
 
   return parsed as OpenAPISpec;
@@ -190,9 +201,12 @@ function writeOpenAPISpec(spec: OpenAPISpec, filePath: string) {
 }
 
 function buildServers(env: Environment, urls: Record<Environment, string>) {
-  const orderedEnvironments: Environment[] = [env, ...(["dev", "staging", "prod"] as Environment[]).filter(
-    (name) => name !== env,
-  )];
+  const orderedEnvironments: Environment[] = [
+    env,
+    ...(["dev", "staging", "prod"] as Environment[]).filter(
+      (name) => name !== env,
+    ),
+  ];
 
   const seen = new Set<string>();
   return orderedEnvironments
@@ -212,7 +226,9 @@ function buildServers(env: Environment, urls: Record<Environment, string>) {
         description: `${name.charAt(0).toUpperCase()}${name.slice(1)} Convex deployment`,
       };
     })
-    .filter((server): server is { url: string; description: string } => Boolean(server));
+    .filter((server): server is { url: string; description: string } =>
+      Boolean(server),
+    );
 }
 
 function applySecuritySchemes(spec: OpenAPISpec) {
@@ -241,7 +257,10 @@ function applySecuritySchemes(spec: OpenAPISpec) {
 }
 
 function ensureTags(spec: OpenAPISpec) {
-  const existingTags = new Map<string, { name: string; description?: string }>();
+  const existingTags = new Map<
+    string,
+    { name: string; description?: string }
+  >();
 
   if (Array.isArray(spec.tags)) {
     for (const tag of spec.tags) {
@@ -303,7 +322,9 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
 
       if (!/\/health/i.test(pathKey)) {
         operation.security = operation.security ?? [];
-        const hasBearer = operation.security.some((item: any) => item && "bearerAuth" in item);
+        const hasBearer = operation.security.some(
+          (item: any) => item && "bearerAuth" in item,
+        );
         if (!hasBearer) {
           operation.security.push({ bearerAuth: [] });
         }
@@ -311,12 +332,15 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
 
       operation.tags = [resolveTagForPath(pathKey)];
 
-       if (!operation.operationId || typeof operation.operationId !== "string") {
+      if (!operation.operationId || typeof operation.operationId !== "string") {
         operation.operationId = buildOperationId(method, pathKey);
       }
 
       if (!operation.description || typeof operation.description !== "string") {
-        if (typeof operation.summary === "string" && operation.summary.trim().length > 0) {
+        if (
+          typeof operation.summary === "string" &&
+          operation.summary.trim().length > 0
+        ) {
           operation.description = operation.summary;
         } else {
           operation.description = `${method.toUpperCase()} ${pathKey}`;
@@ -363,7 +387,8 @@ function enrichOperationMetadata(spec: OpenAPISpec) {
 
       const fallbackDescription = `Runs the Convex function \`${context.key}\` (export \`${context.exportName}\`) through the Convex HTTP API.`;
       const resolvedDescription =
-        descriptionCandidates.find((value) => value && value.length > 0) ?? fallbackDescription;
+        descriptionCandidates.find((value) => value && value.length > 0) ??
+        fallbackDescription;
 
       operation.description = resolvedDescription;
 
@@ -397,16 +422,21 @@ function enhanceOpenAPISpec(config: EnhancementConfig) {
 
   spec.info = {
     ...spec.info,
-    title: "LinkedUp Convex API",
-    version: spec.info?.version && spec.info.version !== "0.0.0" ? spec.info.version : "1.0.0",
+    title: "Connvo Convex API",
+    version:
+      spec.info?.version && spec.info.version !== "0.0.0"
+        ? spec.info.version
+        : "1.0.0",
     description:
       spec.info?.description ??
-      "HTTP interface for LinkedUp's Convex backend, exposing all public query, mutation, and action endpoints.",
+      "HTTP interface for Connvo's Convex backend, exposing all public query, mutation, and action endpoints.",
   };
 
   const servers = buildServers(config.environment, config.deploymentUrls);
   if (servers.length === 0) {
-    throw new Error("No deployment URLs were resolved. Ensure CONVEX_URL_* variables are set.");
+    throw new Error(
+      "No deployment URLs were resolved. Ensure CONVEX_URL_* variables are set.",
+    );
   }
   spec.servers = servers;
 
@@ -425,10 +455,16 @@ function parseArgs(): Environment {
   for (const arg of process.argv.slice(2)) {
     if (arg.startsWith("--env=")) {
       const requested = arg.split("=")[1] as Environment;
-      if (requested === "dev" || requested === "staging" || requested === "prod") {
+      if (
+        requested === "dev" ||
+        requested === "staging" ||
+        requested === "prod"
+      ) {
         return requested;
       }
-      throw new Error(`Unsupported environment '${requested}'. Expected dev, staging, or prod.`);
+      throw new Error(
+        `Unsupported environment '${requested}'. Expected dev, staging, or prod.`,
+      );
     }
   }
   return defaultEnv;

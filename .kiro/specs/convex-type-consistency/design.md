@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document outlines the technical approach for establishing a comprehensive, centralized type system across the LinkedUp Convex backend. After analyzing the complete codebase (24 modules, 100+ functions, 30+ collections), the goal is to eliminate massive type duplication, ensure consistency, and improve developer experience while maintaining full type safety.
+This design document outlines the technical approach for establishing a comprehensive, centralized type system across the Connvo Convex backend. After analyzing the complete codebase (24 modules, 100+ functions, 30+ collections), the goal is to eliminate massive type duplication, ensure consistency, and improve developer experience while maintaining full type safety.
 
 ## Architecture
 

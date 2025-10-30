@@ -1,6 +1,6 @@
-# LinkedUp Convex Backend
+# Connvo Convex Backend
 
-This directory contains the Convex backend implementation for LinkedUp, providing real-time, reactive database functionality with TypeScript-first development.
+This directory contains the Convex backend implementation for Connvo, providing real-time, reactive database functionality with TypeScript-first development.
 
 ## Module Structure
 

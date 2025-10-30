@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Setting up LinkedUp development environment..."
+echo "🚀 Setting up Connvo development environment..."
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then

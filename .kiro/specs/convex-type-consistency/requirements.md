@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The LinkedUp Convex backend currently suffers from significant type inconsistencies and duplication acns. Each query, mutation, and action defines its own return types inline, leading to:
+The Connvo Convex backend currently suffers from significant type inconsistencies and duplication acns. Each query, mutation, and action defines its own return types inline, leading to:
 
 - **Type Duplication**: The same entity types (User, Meeting, etc.) are redefined multiple times with slight variations
 - **Inconsistent Return Types**: Similar functions return different shaped objects for the same entities

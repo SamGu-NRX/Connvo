@@ -1,16 +1,16 @@
-<h1 align="center">LinkedUp</h1>
+<h1 align="center">Connvo</h1>
 
 <p align="center">
   <strong>Professional connections, without the BS.</strong><br>
   The antithesis of LinkedIn – real-time, genuine professional connections via sleek UI, effective AI-powered smart matching, and live voice/video calls.<br>
-<!--   <a href="https://devpost.com/software/linkedup-d5slpu?ref_content=user-portfolio&ref_feature=in_progress">HackTAMS 2025 Project</a> -->
+<!--   <a href="https://devpost.com/software/Connvo-d5slpu?ref_content=user-portfolio&ref_feature=in_progress">HackTAMS 2025 Project</a> -->
 </p>
 
 ---
 
 ## Overview
 
-LinkedUp was born out of the frustration with platforms like LinkedIn – cluttered interfaces, bot-filled interactions, and an overall unproductive networking environment. We reimagined professional connections by building an app that emphasizes:
+Connvo was born out of the frustration with platforms like LinkedIn – cluttered interfaces, bot-filled interactions, and an overall unproductive networking environment. We reimagined professional connections by building an app that emphasizes:
 
 - **Real Human Interaction:** Instant voice and video calls powered by Stream.
 - **Seamless Onboarding:** Robust authentication and onboarding with Clerk.
@@ -108,8 +108,8 @@ Before you begin, ensure you have met the following requirements:
 
 1. **Clone** the repo:
    ```bash
-   git clone https://github.com/SamGu-NRX/linkedup.git
-   cd linkedup
+   git clone https://github.com/SamGu-NRX/Connvo.git
+   cd Connvo
    ```
 2. **Install dependencies** (using Turborepo + workspaces):
    ```bash
@@ -184,7 +184,7 @@ We employ a combination of **xgBoost** (for our “PTM” pipeline) and vector-b
 
 ---
 
-## What's Next for LinkedUp
+## What's Next for Connvo
 
 - **New Connection Modes:** Explore B2B meeting opportunities, mentor-client sessions, and more.
 - **Enhanced Matching:** Continuously refine our ML matching for even more effective networking.

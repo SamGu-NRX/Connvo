@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The LinkedUp project currently has significant testing infrastructure issues that are preventing proper validation of the codebase. The test suite shows 77 failed tests out of 216 total tests, with multiple categories of failures:
+The Connvo project currently has significant testing infrastructure issues that are preventing proper validation of the codebase. The test suite shows 77 failed tests out of 216 total tests, with multiple categories of failures:
 
 1. **convex-test Library Compatibility Issues**: Many tests are failing with `(intermediate value).glob is not a function` error, indicating a compatibility issue with the convex-test library
 2. **Operational Transform Logic Errors**: Several OT tests are failing with incorrect position calculations in concurrent editing scenarios

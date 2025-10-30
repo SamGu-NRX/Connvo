@@ -1,6 +1,6 @@
 # Convex Type System Documentation
 
-This directory contains the centralized type system for the LinkedUp Convex backend, providing a single source of truth for all entity types, validators, and API responses.
+This directory contains the centralized type system for the Connvo Convex backend, providing a single source of truth for all entity types, validators, and API responses.
 
 ## 🎯 Overview
 

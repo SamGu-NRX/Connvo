@@ -1,7 +1,7 @@
 /**
  * Mock External Services for Testing
  *
- * This module provides mocks for external services used in the LinkedUp application,
+ * This module provides mocks for external services used in the Connvo application,
  * including WorkOS, GetStream, WebRTC, AI providers, and Next.js API routes.
  *
  * Requirements: 3.4, 6.2, 6.3, 7.3
@@ -159,8 +159,7 @@ function createViFallback(): ViLike {
   };
 }
 
-const vi: ViLike =
-  (globalThis as { vi?: ViLike }).vi ?? createViFallback();
+const vi: ViLike = (globalThis as { vi?: ViLike }).vi ?? createViFallback();
 
 /**
  * Mock WorkOS authentication context

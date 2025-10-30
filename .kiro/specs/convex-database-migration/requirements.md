@@ -2,9 +2,9 @@
 
 ## Introduction
 
-LinkedUp’s backend must migrate from Drizzle ORM + PostgreSQL/Supabase to Convex to enable enterprise-grade, real-time experiences: pre-call idea generation, in-call prompts, collaborative notes, live transcription, and post-call insights. Current matching and video call features are incomplete and not wired to robust data flows. This spec defines a rigorous, TypeScript-first, reactive foundation in Convex, with secure, isolated, per-meeting data streams; scalable schemas and indexes; WorkOS-authenticated access; and clear performance/observability standards. Some advanced features will be stubbed/mocked initially with plug-and-play architecture for future expansion (e.g., “knowledge bank”).
+Connvo’s backend must migrate from Drizzle ORM + PostgreSQL/Supabase to Convex to enable enterprise-grade, real-time experiences: pre-call idea generation, in-call prompts, collaborative notes, live transcription, and post-call insights. Current matching and video call features are incomplete and not wired to robust data flows. This spec defines a rigorous, TypeScript-first, reactive foundation in Convex, with secure, isolated, per-meeting data streams; scalable schemas and indexes; WorkOS-authenticated access; and clear performance/observability standards. Some advanced features will be stubbed/mocked initially with plug-and-play architecture for future expansion (e.g., “knowledge bank”).
 
-This feature involves migrating LinkedUp's current database architecture from Drizzle ORM with PostgreSQL/Supabase to Convex, a modern reactive backend-as-a-service platform. LinkedUp is a professional networking application that currently features basic matching and video calling, but requires significant enhancement with advanced real-time capabilities:
+This feature involves migrating Connvo's current database architecture from Drizzle ORM with PostgreSQL/Supabase to Convex, a modern reactive backend-as-a-service platform. Connvo is a professional networking application that currently features basic matching and video calling, but requires significant enhancement with advanced real-time capabilities:
 
 **Current Features:**
 

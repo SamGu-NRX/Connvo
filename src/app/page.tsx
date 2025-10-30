@@ -384,7 +384,7 @@ const LandingPage = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
-                className="mb-8 text-6xl font-light tracking-tight text-slate-900 dark:text-white md:text-7xl lg:text-8xl"
+                className="mb-8 text-6xl font-light tracking-tight text-slate-900 md:text-7xl lg:text-8xl dark:text-white"
               >
                 Professional Networking
                 <br />
@@ -639,7 +639,7 @@ const LandingPage = () => {
                 Industry-Leading Retention
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
-                People who join LinkedUp actually keep using it. Imagine that.
+                People who join Connvo actually keep using it. Imagine that.
               </p>
             </motion.div>
 
@@ -656,12 +656,11 @@ const LandingPage = () => {
                       dataKey="month"
                       stroke={theme === "dark" ? "#94a3b8" : "#64748b"}
                     />
-                    <YAxis
-                      stroke={theme === "dark" ? "#94a3b8" : "#64748b"}
-                    />
+                    <YAxis stroke={theme === "dark" ? "#94a3b8" : "#64748b"} />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: theme === "dark" ? "#1e293b" : "#ffffff",
+                        backgroundColor:
+                          theme === "dark" ? "#1e293b" : "#ffffff",
                         borderColor: theme === "dark" ? "#334155" : "#e2e8f0",
                         color: theme === "dark" ? "#f8fafc" : "#0f172a",
                       }}
@@ -727,7 +726,7 @@ const LandingPage = () => {
                 </span>
               </div>
 
-              <div className="text-center text-gray-600 dark:text-gray-300 md:text-right">
+              <div className="text-center text-gray-600 md:text-right dark:text-gray-300">
                 © {new Date().getFullYear()} Connvo. All rights reserved.
                 <div className="mt-1 text-sm">
                   No corporate jargon was harmed in the making of this site.

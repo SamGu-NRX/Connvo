@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🔍 LinkedUp Setup Verification"
+echo "🔍 Connvo Setup Verification"
 echo "=============================="
 
 # Check Node.js version

@@ -1,11 +1,11 @@
 ---
 title: "Authentication"
-description: "Authenticate with LinkedUp using WorkOS-issued bearer tokens and deploy keys."
+description: "Authenticate with Connvo using WorkOS-issued bearer tokens and deploy keys."
 ---
 
 # Authentication
 
-LinkedUp relies on WorkOS to authenticate end users and Convex deploy keys to protect privileged endpoints. The OpenAPI specification ships with two security schemes:
+Connvo relies on WorkOS to authenticate end users and Convex deploy keys to protect privileged endpoints. The OpenAPI specification ships with two security schemes:
 
 - `bearerAuth` &mdash; for user-level access with JSON Web Tokens (JWTs) obtained from WorkOS.
 - `convexDeploy` &mdash; for administrative automation using the `Convex <deploy-key>` header format.
@@ -19,7 +19,7 @@ LinkedUp relies on WorkOS to authenticate end users and Convex deploy keys to pr
 
 ## Obtaining bearer tokens for testing
 
-During development you can generate tokens by signing in through the local LinkedUp app. Copy the token from the browser dev tools (or use a server-side session exchange) and set it in Mintlify's API playground under the `bearerAuth` security input.
+During development you can generate tokens by signing in through the local Connvo app. Copy the token from the browser dev tools (or use a server-side session exchange) and set it in Mintlify's API playground under the `bearerAuth` security input.
 
 ```bash
 curl https://your-deployment.convex.cloud/api/run/users/getCurrent \

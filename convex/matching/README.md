@@ -1,6 +1,6 @@
 # Intelligent Matching System
 
-The Intelligent Matching System provides real-time, AI-powered user matching for LinkedUp's professional networking platform. It implements a scalable, multi-factor compatibility scoring engine with comprehensive analytics and feedback loops.
+The Intelligent Matching System provides real-time, AI-powered user matching for Connvo's professional networking platform. It implements a scalable, multi-factor compatibility scoring engine with comprehensive analytics and feedback loops.
 
 ## Features
 

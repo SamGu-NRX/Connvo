@@ -1,6 +1,6 @@
 # Insights Module
 
-This module implements AI-powered post-call insights generation for LinkedUp meetings, providing personalized analysis, action items, and connection recommendations with strict privacy controls.
+This module implements AI-powered post-call insights generation for Connvo meetings, providing personalized analysis, action items, and connection recommendations with strict privacy controls.
 
 ## Features
 
