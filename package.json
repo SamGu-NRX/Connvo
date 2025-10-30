@@ -76,7 +76,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "convex": "^1.28.0",
-    "crypto": "^1.0.1",
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
@@ -101,7 +100,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@apidevtools/swagger-cli": "^4.0.4",
+    "@redocly/cli": "^2.9.0",
     "@edge-runtime/vm": "^5.0.0",
     "@eslint/eslintrc": "^3.3.1",
     "@types/canvas-confetti": "^1.9.0",

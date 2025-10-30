@@ -13,7 +13,7 @@ This design outlines the implementation of an automated OpenAPI specification wo
 
 The workflow has three phases:
 
-1. **Generation**: Run `npx convex-helpers open-api-spec` to generate `convex-spec.yaml` from the Convex deployment
+1. **Generation**: Run `pnpm exec convex-helpers open-api-spec` to generate `convex-spec.yaml` from the Convex deployment
 2. **Enhancement**: Post-process the spec to replace placeholder URLs, add security schemes, and optionally extract real examples
 3. **Integration**: Configure Mintlify to consume the enhanced spec and enable the API Playground
 
@@ -29,7 +29,7 @@ The workflow has three phases:
 │  • Real function signatures and types                            │
 └─────────────────────────────────────────────────────────────────┘
                               │
-                              │ npx convex-helpers open-api-spec
+                              │ pnpm exec convex-helpers open-api-spec
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              Base OpenAPI Spec (convex-spec.yaml)                │
@@ -64,7 +64,7 @@ The workflow has three phases:
 ### Data Flow
 
 1. Developer runs `npm run update:api-docs`
-2. Script executes `npx convex-helpers open-api-spec` → generates `convex-spec.yaml`
+2. Script executes `pnpm exec convex-helpers open-api-spec` → generates `convex-spec.yaml`
 3. Enhancement script reads `convex-spec.yaml`, applies transformations
 4. Enhanced spec written to `docs/api-reference/convex-openapi.yaml`
 5. Validation runs against OpenAPI 3.x schema
@@ -81,9 +81,10 @@ The workflow has three phases:
 - Install the Convex helpers CLI (or rely on the dev dependency) and run the generator against the target deployment. This produces `convex-spec.yaml` in the project root.[^convex-openapi]
 
 ```bash
-npm install --save-dev convex-helpers
-npx convex-helpers open-api-spec
+pnpm add -D convex-helpers
+pnpm exec convex-helpers open-api-spec
 ```
+- When Convex functions expose `v.bytes()` validators, run `pnpm exec node scripts/patch-convex-helpers-openapi.js` before generation so the helper treats them as `type: string` with `format: binary` instead of throwing an unsupported error.
 
 ### Step 3: Polish the spec for Mintlify
 - Replace any placeholder server URLs (e.g., `{hostUrl}`) with concrete deployment URLs so Mintlify’s playground can send requests to the right environment.[^mint-openapi]
@@ -112,17 +113,17 @@ security:
 ```
 
 ### Step 4: Validate and optionally generate SDKs
-- Run both Mintlify and general OpenAPI validators to catch structural issues before committing.[^mint-openapi]
+- Run both Mintlify and general OpenAPI validators to catch structural issues before committing.[^mint-openapi][^redocly-cli]
 
 ```bash
 mint openapi-check ./docs/api-reference/convex-spec.yaml
-npx @apidevtools/swagger-cli validate convex-spec.yaml
+pnpm exec redocly lint --config redocly.yaml convex-spec.yaml
 ```
 
 - When a typed client is needed, feed the spec into an OpenAPI generator for the desired language.[^convex-openapi]
 
 ```bash
-npx openapi-generator-cli generate -i convex-spec.yaml -g go -o convex_client
+pnpm exec openapi-generator-cli generate -i convex-spec.yaml -g go -o convex_client
 ```
 
 ### Step 5: Add the spec to Mintlify
@@ -180,6 +181,7 @@ console.log("Spec moved to", dst);
 
 [^convex-openapi]: Convex documentation — “Generate OpenAPI Specification” and related guidance on limitations and client generation. Retrieved via Context7 `/get-convex/convex-backend`.
 [^mint-openapi]: Mintlify documentation — API Playground setup, server configuration, authentication, and validation commands. Retrieved via Context7 `/mintlify/docs`.
+[^redocly-cli]: Redocly CLI documentation — migration guidance from swagger-cli and lint command usage. Retrieved via Context7 `/redocly/redocly-cli`.
 
 ## Components and Interfaces
 
@@ -198,7 +200,8 @@ console.log("Spec moved to", dst);
 **Responsibilities**:
 
 - Verify `convex-helpers` is installed (install if missing)
-- Run `npx convex-helpers open-api-spec` to generate base spec
+- Apply a bytes-to-binary compatibility patch for the current `convex-helpers` release
+- Run `pnpm exec convex-helpers open-api-spec --output-file convex-spec` to generate base spec
 - Invoke enhancement script with environment-specific configuration
 - Run OpenAPI validation
 - Move enhanced spec to docs directory
@@ -214,22 +217,28 @@ ENV=${1:-dev}
 echo "Generating OpenAPI spec for environment: $ENV"
 
 # Ensure convex-helpers is installed
-if ! npm list convex-helpers > /dev/null 2>&1; then
+if ! pnpm exec convex-helpers open-api-spec --help > /dev/null 2>&1; then
   echo "Installing convex-helpers..."
-  npm install --save-dev convex-helpers
+  pnpm add -D convex-helpers
 fi
+
+echo "Patching convex-helpers for bytes support..."
+node scripts/patch-convex-helpers-openapi.js
 
 # Generate base spec from Convex deployment
 echo "Running convex-helpers open-api-spec..."
-npx convex-helpers open-api-spec
+pnpm exec convex-helpers open-api-spec --output-file convex-spec
+
+echo "Generated convex-spec files:"
+ls -1 convex-spec*.yaml 2>/dev/null || echo "  (no convex-spec*.yaml files present)"
 
 # Enhance the spec
 echo "Enhancing OpenAPI spec..."
-npx tsx scripts/enhance-openapi.ts --env=$ENV
+pnpm exec tsx scripts/enhance-openapi.ts --env=$ENV
 
 # Validate the enhanced spec
 echo "Validating OpenAPI spec..."
-npx tsx scripts/validate-openapi.ts docs/api-reference/convex-openapi.yaml
+pnpm exec tsx scripts/validate-openapi.ts docs/api-reference/convex-openapi.yaml
 
 echo "✓ API documentation updated successfully!"
 ```
@@ -444,9 +453,9 @@ async function validateOpenAPISpec(specPath: string): Promise<void> {
     throw new Error(`Invalid YAML: ${error.message}`);
   }
 
-  // 3. Validate against OpenAPI schema using swagger-cli
+  // 3. Validate against OpenAPI schema using Redocly CLI
   try {
-    execSync(`npx @apidevtools/swagger-cli validate ${specPath}`, {
+    execSync(`pnpm exec redocly lint --extends=minimal ${specPath}`, {
       stdio: "inherit",
     });
     console.log("✓ Valid OpenAPI 3.x specification");
@@ -487,7 +496,7 @@ validateOpenAPISpec(specPath).catch((error) => {
 
 **Key Design Decisions**:
 
-- Use `@apidevtools/swagger-cli` for standard OpenAPI validation
+- Use `@redocly/cli` for standard OpenAPI validation
 - Add custom checks for common issues
 - Provide clear error messages
 - Exit with non-zero code on failure for CI integration

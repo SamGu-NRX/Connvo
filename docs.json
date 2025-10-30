@@ -1,0 +1,66 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "LinkedUp API Documentation",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373"
+  },
+  "favicon": "/public/logo-square.png",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "docs/introduction",
+              "docs/authentication"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "openapi": {
+              "source": "docs/api-reference/convex-openapi.yaml",
+              "directory": "docs/api-reference"
+            },
+            "pages": [
+              "docs/api-reference/introduction"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/public/linkeduplogos/linkedupblack.svg",
+    "dark": "/public/linkeduplogos/linkedupwhite.svg"
+  },
+  "api": {
+    "playground": {
+      "display": "interactive"
+    },
+    "mdx": {
+      "server": "https://linkedup-dev.convex.cloud",
+      "auth": {
+        "method": "bearer",
+        "name": "Authorization"
+      }
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Dashboard",
+        "href": "https://app.linkedup.example.com"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/linkedup"
+    }
+  }
+}

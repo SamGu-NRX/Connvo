@@ -72,6 +72,27 @@ const TAG_PATH_PATTERNS: Array<{ tag: string; matcher: RegExp }> = [
   { tag: "WebRTC", matcher: /webrtc|rtc|session/i },
 ];
 
+function buildOperationId(method: string, pathKey: string): string {
+  const segments = pathKey
+    .split("/")
+    .filter((segment) => segment.length > 0 && segment !== "{id}" && segment !== "{}")
+    .map((segment) =>
+      segment
+        .replace(/[{}]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, " ")
+        .split(" ")
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(""),
+    )
+    .filter(Boolean);
+
+  const baseId = segments.length > 0 ? segments.join("") : "Root";
+  const methodPrefix = method.toLowerCase();
+  const operationId = `${methodPrefix}${baseId}`;
+  return operationId;
+}
+
 function resolveDeploymentUrls(): Record<Environment, string> {
   return {
     dev: process.env.CONVEX_URL_DEV || DEFAULT_DEPLOYMENT_URLS.dev,
@@ -217,6 +238,18 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
 
       if (!Array.isArray(operation.tags) || operation.tags.length === 0) {
         operation.tags = [resolveTagForPath(pathKey)];
+      }
+
+       if (!operation.operationId || typeof operation.operationId !== "string") {
+        operation.operationId = buildOperationId(method, pathKey);
+      }
+
+      if (!operation.description || typeof operation.description !== "string") {
+        if (typeof operation.summary === "string" && operation.summary.trim().length > 0) {
+          operation.description = operation.summary;
+        } else {
+          operation.description = `${method.toUpperCase()} ${pathKey}`;
+        }
       }
     }
   }

@@ -30,6 +30,7 @@ yarn-error.log*
 .env*
 !.env*.example
 convex-spec.yaml
+convex-spec-*.yaml
 
 # vercel
 .vercel
@@ -40,3 +41,4 @@ convex-spec.yaml
 # clerk configuration (can include secrets)
 /.clerk/
 .specstory
+log.txt

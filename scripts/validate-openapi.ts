@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
@@ -22,11 +22,18 @@ function parseYaml(specPath: string) {
   }
 }
 
-function runSwaggerCli(specPath: string) {
+function runRedoclyLint(specPath: string) {
   try {
-    execSync(`npx @apidevtools/swagger-cli validate ${specPath}`, {
-      stdio: "inherit",
-    });
+    const args = ["exec", "redocly", "lint", specPath];
+    const configPath = "redocly.yaml";
+    if (fs.existsSync("redocly.yaml")) {
+      console.log(`Using Redocly configuration at ${configPath}.`);
+      args.splice(3, 0, "--config", configPath);
+    } else {
+      console.warn("redocly.yaml not found. Falling back to Redocly minimal configuration.");
+      args.splice(3, 0, "--extends=minimal");
+    }
+    execFileSync("pnpm", args, { stdio: "inherit" });
   } catch (error) {
     throw new Error("OpenAPI validation failed. See output above for details.");
   }
@@ -75,8 +82,8 @@ function validateOpenAPISpec(specPath: string) {
   const parsedSpec = parseYaml(specPath);
   console.log("✓ YAML syntax is valid.");
 
-  runSwaggerCli(specPath);
-  console.log("✓ Spec conforms to the OpenAPI 3.x schema.");
+  runRedoclyLint(specPath);
+  console.log("✓ Spec conforms to the OpenAPI 3.x schema linted with Redocly CLI.");
 
   runCustomChecks(parsedSpec);
   console.log("✓ Custom validation checks passed.");

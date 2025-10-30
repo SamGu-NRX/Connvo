@@ -28,30 +28,24 @@
   "tabs": [
     {
       "name": "API Reference",
-      "url": "api-reference"
+      "url": "docs/api-reference/introduction"
     }
   ],
-  "navigation": {
-    "groups": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "introduction",
-          "authentication"
-        ]
-      },
-      {
-        "group": "API Reference",
-        "openapi": {
-          "source": "/api-reference/convex-openapi.yaml",
-          "directory": "api-reference"
-        },
-        "pages": [
-          "api-reference/introduction"
-        ]
-      }
-    ]
-  },
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "docs/introduction",
+        "docs/authentication"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "docs/api-reference/introduction"
+      ]
+    }
+  ],
   "footerSocials": {
     "github": "https://github.com/linkedup"
   },
