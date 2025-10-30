@@ -40,7 +40,86 @@ type InsightResult = {
 };
 
 /**
- * Generates post-call insights for all participants
+ * @summary Generates AI-powered post-call insights for all meeting participants.
+ * @description Analyzes meeting transcripts, notes, and participant data to generate personalized insights for each participant. Each insight includes a summary, action items, recommendations, and relevant resource links. Insights are generated per-user to maintain privacy isolation. If insights already exist for a participant, they are skipped unless `forceRegenerate` is true. The meeting must be in "concluded" state before insights can be generated.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "forceRegenerate": false
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "insightsGenerated": 2,
+ *     "participantInsights": [
+ *       "insights_ck9hx2g1v0001",
+ *       "insights_ck9hx2g1v0002"
+ *     ]
+ *   }
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting must be concluded to generate insights",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "meetingState": "active"
+ *   },
+ *   "value": null
+ * }
+ * ```
+ * @example datamodel
+ * ```json
+ * {
+ *   "insights": [
+ *     {
+ *       "_id": "insights_ck9hx2g1v0001",
+ *       "_creationTime": 1714066800000,
+ *       "userId": "user_abc123",
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy, user-research. Key points were documented in the shared notes.",
+ *       "actionItems": [
+ *         "Follow up on the AI model training pipeline discussion",
+ *         "Share the user research findings document",
+ *         "Schedule next sprint planning session"
+ *       ],
+ *       "recommendations": [
+ *         {
+ *           "type": "learning",
+ *           "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *           "confidence": 0.7
+ *         },
+ *         {
+ *           "type": "networking",
+ *           "content": "Consider connecting with other participants to continue the conversation",
+ *           "confidence": 0.8
+ *         }
+ *       ],
+ *       "links": [
+ *         {
+ *           "type": "resource",
+ *           "url": "https://example.com/resources/ai-ml",
+ *           "title": "Learn more about ai-ml"
+ *         }
+ *       ],
+ *       "createdAt": 1714066800000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const generateInsights = action({
   args: {
@@ -137,9 +216,83 @@ export const generateInsights = action({
 });
 
 /**
- * Generates insights for a specific participant
+ * @summary Generates personalized insights for a specific meeting participant.
+ * @description Analyzes transcript segments and meeting notes to generate AI-powered insights tailored to an individual participant. Returns the insight ID if successfully created, or null if insufficient data is available (no transcript segments or notes). This is an internal action called by `generateInsights` for each participant. The analysis includes extracting key topics, generating summaries, identifying action items, creating recommendations, and suggesting relevant resource links.
  *
- * NOTE: return is optional id (null when no insight was created)
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "userId": "user_abc123"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "insights_ck9hx2g1v0001"
+ * }
+ * ```
+ * @example response-no-data
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example datamodel
+ * ```json
+ * {
+ *   "insight": {
+ *     "_id": "insights_ck9hx2g1v0001",
+ *     "_creationTime": 1714066800000,
+ *     "userId": "user_abc123",
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy, user-research. Key points were documented in the shared notes.",
+ *     "actionItems": [
+ *       "Follow up on the AI model training pipeline discussion",
+ *       "Share the user research findings document",
+ *       "Schedule next sprint planning session"
+ *     ],
+ *     "recommendations": [
+ *       {
+ *         "type": "learning",
+ *         "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *         "confidence": 0.7
+ *       },
+ *       {
+ *         "type": "networking",
+ *         "content": "Consider connecting with other participants to continue the conversation",
+ *         "confidence": 0.8
+ *       },
+ *       {
+ *         "type": "follow-up",
+ *         "content": "Schedule a follow-up meeting to track progress on action items",
+ *         "confidence": 0.6
+ *       }
+ *     ],
+ *     "links": [
+ *       {
+ *         "type": "resource",
+ *         "url": "https://example.com/resources/ai-ml",
+ *         "title": "Learn more about ai-ml"
+ *       },
+ *       {
+ *         "type": "resource",
+ *         "url": "https://example.com/resources/product-strategy",
+ *         "title": "Learn more about product-strategy"
+ *       }
+ *     ],
+ *     "createdAt": 1714066800000
+ *   }
+ * }
+ * ```
  */
 export const generateParticipantInsights = internalAction({
   args: {
