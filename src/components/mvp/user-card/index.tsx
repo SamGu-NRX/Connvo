@@ -34,18 +34,17 @@ export function UserCard({
   className,
   forceVisible = false, // Default to false
 }: UserCardProps) {
+  // Hooks must be called before any conditional returns
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(cardRef, { once: true });
+  const isVisible = forceVisible || isInView;
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
   // Early return if user data is somehow missing (though TS should help prevent this)
   if (!user) {
     console.warn("UserCard rendered without user data.");
     return null;
   }
-
-  const cardRef = useRef<HTMLDivElement>(null);
-  // Respect forceVisible prop for modals or specific use cases
-  const isInView = useInView(cardRef, { once: true });
-  const isVisible = forceVisible || isInView;
-
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (cardRef.current) {

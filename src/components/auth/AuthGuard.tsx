@@ -83,7 +83,7 @@ export function AuthGuard({
             <AlertCircle className="text-destructive mx-auto mb-4 h-12 w-12" />
             <CardTitle>Access Denied</CardTitle>
             <CardDescription>
-              You don't have the required role ({requireRole}) to access this
+              You don&apos;t have the required role ({requireRole}) to access this
               page
             </CardDescription>
           </CardHeader>

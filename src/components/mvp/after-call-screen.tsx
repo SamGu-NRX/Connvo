@@ -282,7 +282,7 @@ const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
             <Sparkles className="mx-auto mb-4 h-12 w-12 animate-pulse text-emerald-500" />
             <h3 className="mb-2 text-lg font-semibold">Processing Meeting Data</h3>
             <p className="text-muted-foreground text-sm">
-              We're generating your meeting insights. This will take about 30 seconds...
+              We&apos;re generating your meeting insights. This will take about 30 seconds...
             </p>
           </CardContent>
         </Card>
