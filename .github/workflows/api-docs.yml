@@ -59,7 +59,7 @@ jobs:
         if: steps.check_changes.outputs.has_changes == 'true'
         run: git diff --stat
 
-      - name: Commit and push updated documentation
+      - name: Commit and push updated documentation (new)
         if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           git config user.name "${{ github.actor }}"
