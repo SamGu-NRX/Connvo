@@ -14,6 +14,7 @@ import {
   VideoOff,
   Plus,
   PenLine,
+  User,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -143,6 +144,7 @@ export default function VideoMeeting() {
   const [currentTimeRequest, setCurrentTimeRequest] = useState(null);
   const [isLeaveRequestPending, setIsLeaveRequestPending] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [activeTab, setActiveTab] = useState<"profile" | "notes">("profile");
 
   // Helpers: persist small pieces of state to localStorage
   const persist = (key: string, value: any) => {
@@ -378,128 +380,175 @@ export default function VideoMeeting() {
               transition={{ type: "tween", duration: 0.2 }}
               className="sidebar z-10 flex w-80 flex-col space-y-4 overflow-y-auto border-r border-zinc-800 bg-zinc-900/70 p-4 backdrop-blur-lg"
             >
-              {/* User Card */}
-              <div className="shrink-0">
-                <UserCard
-                  user={{
-                    id: "match123",
-                    name: "Jane Doe",
-                    avatar: null,
-                    bio: "Software Engineer | AI Enthusiast",
-                    profession: "Software Engineer",
-                    company: "TechCorp Inc.",
-                    school: "Stanford University",
-                    experience: 5,
-                    sharedInterests: [
-                      { type: "academic" as const, name: "Machine Learning" },
-                      { type: "industry" as const, name: "Open Source" },
-                      { type: "skill" as const, name: "Hiking" },
-                    ],
-                    connectionType: "collaboration",
-                    isBot: false,
-                    status: "online",
-                    connectionStatus:
-                      MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status ===
-                      "excellent"
-                        ? "excellent"
-                        : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]
-                              ?.status === "good"
-                          ? "good"
-                          : "poor",
-                    isSpeaking:
-                      MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
-                  }}
-                  inMeeting={true}
-                />
+              {/* Tab Navigation */}
+              <div className="flex gap-2 shrink-0">
+                <Button
+                  variant={activeTab === "profile" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveTab("profile")}
+                  className="flex-1"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Button>
+                <Button
+                  variant={activeTab === "notes" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveTab("notes")}
+                  className="flex-1"
+                >
+                  <PenLine className="mr-2 h-4 w-4" />
+                  Notes
+                </Button>
               </div>
-              {/* Compact Prompts Card */}
-              <Card className="shrink-0 border-none bg-zinc-800/30 shadow-lg">
-                <CardContent className="p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Lightbulb className="h-4 w-4 text-amber-400" />
-                      <h3 className="text-xs font-medium text-zinc-300">
-                        Discussion Prompt
-                      </h3>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          setCurrentPrompt((prev) => Math.max(0, prev - 1))
-                        }
-                        disabled={currentPrompt === 0}
-                        className="h-6 w-6 hover:bg-zinc-700"
-                      >
-                        <ChevronLeft className="h-3 w-3 text-zinc-400" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          setCurrentPrompt((prev) =>
-                            Math.min(prompts.length - 1, prev + 1),
-                          )
-                        }
-                        disabled={currentPrompt === prompts.length - 1}
-                        className="h-6 w-6 hover:bg-zinc-700"
-                      >
-                        <ChevronRight className="h-3 w-3 text-zinc-400" />
-                      </Button>
-                    </div>
-                  </div>
-                  <Separator className="my-2 bg-zinc-700" />
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={currentPrompt}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="text-xs leading-relaxed text-zinc-300"
-                    >
-                      {prompts[currentPrompt]}
-                    </motion.p>
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
 
-              <Card className="min-h-0 flex-1 border-none bg-zinc-800/30 shadow-lg">
-                <CardContent className="flex h-full flex-col p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <PenLine className="h-4 w-4 text-zinc-400" />
-                      <h3 className="text-xs font-medium text-zinc-300">
-                        Meeting Notes
-                      </h3>
+              {/* Tab Content */}
+              <AnimatePresence mode="wait">
+                {activeTab === "profile" ? (
+                  <motion.div
+                    key="profile"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex flex-col space-y-4 flex-1 min-h-0"
+                  >
+                    {/* User Card */}
+                    <div className="shrink-0">
+                      <UserCard
+                        user={{
+                          id: "match123",
+                          name: "Jane Doe",
+                          avatar: null,
+                          bio: "Software Engineer | AI Enthusiast",
+                          profession: "Software Engineer",
+                          company: "TechCorp Inc.",
+                          school: "Stanford University",
+                          experience: 5,
+                          sharedInterests: [
+                            { type: "academic" as const, name: "Machine Learning" },
+                            { type: "industry" as const, name: "Open Source" },
+                            { type: "skill" as const, name: "Hiking" },
+                          ],
+                          connectionType: "collaboration",
+                          isBot: false,
+                          status: "online",
+                          connectionStatus:
+                            MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status ===
+                            "excellent"
+                              ? "excellent"
+                              : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]
+                                    ?.status === "good"
+                                ? "good"
+                                : "poor",
+                          isSpeaking:
+                            MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
+                        }}
+                        inMeeting={true}
+                        forceVisible={true}
+                      />
                     </div>
-                    <AnimatePresence>
-                      {isAutosaving && (
-                        <motion.span
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="text-xs text-zinc-500"
-                        >
-                          Saving...
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <Separator className="my-2 bg-zinc-700" />
-                  <textarea
-                    value={notes}
-                    onChange={(e) => {
-                      setNotes(e.target.value);
-                      setIsAutosaving(true);
-                      // Simulate autosave
-                      setTimeout(() => setIsAutosaving(false), 1000);
-                    }}
-                    placeholder="Type your notes here..."
-                    className="min-h-0 flex-1 w-full resize-none border-none bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
-                  />
-                </CardContent>
-              </Card>
+                    
+                    {/* Compact Prompts Card */}
+                    <Card className="shrink-0 border-none bg-zinc-800/30 shadow-lg">
+                      <CardContent className="p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Lightbulb className="h-4 w-4 text-amber-400" />
+                            <h3 className="text-xs font-medium text-zinc-300">
+                              Discussion Prompt
+                            </h3>
+                          </div>
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setCurrentPrompt((prev) => Math.max(0, prev - 1))
+                              }
+                              disabled={currentPrompt === 0}
+                              className="h-6 w-6 hover:bg-zinc-700"
+                            >
+                              <ChevronLeft className="h-3 w-3 text-zinc-400" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setCurrentPrompt((prev) =>
+                                  Math.min(prompts.length - 1, prev + 1),
+                                )
+                              }
+                              disabled={currentPrompt === prompts.length - 1}
+                              className="h-6 w-6 hover:bg-zinc-700"
+                            >
+                              <ChevronRight className="h-3 w-3 text-zinc-400" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Separator className="my-2 bg-zinc-700" />
+                        <AnimatePresence mode="wait">
+                          <motion.p
+                            key={currentPrompt}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="text-xs leading-relaxed text-zinc-300"
+                          >
+                            {prompts[currentPrompt]}
+                          </motion.p>
+                        </AnimatePresence>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="notes"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 min-h-0"
+                  >
+                    <Card className="h-full border-none bg-zinc-800/30 shadow-lg">
+                      <CardContent className="flex h-full flex-col p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <PenLine className="h-4 w-4 text-zinc-400" />
+                            <h3 className="text-xs font-medium text-zinc-300">
+                              Meeting Notes
+                            </h3>
+                          </div>
+                          <AnimatePresence>
+                            {isAutosaving && (
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="text-xs text-zinc-500"
+                              >
+                                Saving...
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        <Separator className="my-2 bg-zinc-700" />
+                        <textarea
+                          value={notes}
+                          onChange={(e) => {
+                            setNotes(e.target.value);
+                            setIsAutosaving(true);
+                            // Simulate autosave
+                            setTimeout(() => setIsAutosaving(false), 1000);
+                          }}
+                          placeholder="Type your notes here..."
+                          className="min-h-0 flex-1 w-full resize-none border-none bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+                        />
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>

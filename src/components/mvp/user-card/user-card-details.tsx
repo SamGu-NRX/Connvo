@@ -41,7 +41,9 @@ export function UserCardDetails({
   const [detailsVisible, setDetailsVisible] = useState(forceOpen ?? false);
 
   const toggleDetails = () => {
-    setDetailsVisible((prev) => !prev);
+    if (!forceOpen) {
+      setDetailsVisible((prev) => !prev);
+    }
   };
 
   const detailsVariants = {
@@ -79,7 +81,7 @@ export function UserCardDetails({
   return (
     <div className={cn("px-5 pb-5", inChat && "px-4 pb-4", className)}>
       <AnimatePresence>
-        {detailsVisible && (
+        {(detailsVisible || forceOpen) && (
           <motion.div
             variants={detailsVariants}
             initial="hidden"
@@ -142,30 +144,32 @@ export function UserCardDetails({
         )}
       </AnimatePresence>
 
-      {/* Toggle button */}
-      <motion.div whileTap={{ scale: 0.98 }}>
-        <Button
-          variant="ghost"
-          onClick={toggleDetails}
-          className={cn(
-            "w-full border transition-colors duration-200",
-            "bg-gray-50 dark:bg-gray-800/50",
-            "hover:bg-gray-100 dark:hover:bg-gray-800",
-            "border-gray-100 dark:border-gray-800",
-            detailsVisible && "bg-gray-100 dark:bg-gray-800",
-          )}
-        >
-          <span className="flex-1 text-sm">
-            {detailsVisible ? "Hide Details" : "View Details"}
-          </span>
-          <motion.div
-            animate={{ rotate: detailsVisible ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
+      {/* Toggle button - hide when forceOpen is true */}
+      {!forceOpen && (
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Button
+            variant="ghost"
+            onClick={toggleDetails}
+            className={cn(
+              "w-full border transition-colors duration-200",
+              "bg-gray-50 dark:bg-gray-800/50",
+              "hover:bg-gray-100 dark:hover:bg-gray-800",
+              "border-gray-100 dark:border-gray-800",
+              detailsVisible && "bg-gray-100 dark:bg-gray-800",
+            )}
           >
-            <ChevronDown className="h-4 w-4 opacity-70" />
-          </motion.div>
-        </Button>
-      </motion.div>
+            <span className="flex-1 text-sm">
+              {detailsVisible ? "Hide Details" : "View Details"}
+            </span>
+            <motion.div
+              animate={{ rotate: detailsVisible ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronDown className="h-4 w-4 opacity-70" />
+            </motion.div>
+          </Button>
+        </motion.div>
+      )}
     </div>
   );
 }
