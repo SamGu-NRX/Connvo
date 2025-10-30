@@ -46,7 +46,7 @@ export default function HomePage() {
 
   const handleStartQueue = (type: string) => {
     if (!user) {
-      router.push("/auth/signin");
+      router.push("/auth/login");
       return;
     }
     if (type === "casual") {
