@@ -96,10 +96,28 @@ export const upsertUser = mutation({
         lastSeenAt: now,
         updatedAt: now,
       });
+      
+      // Ensure profile exists for existing user
+      const existingProfile = await ctx.db
+        .query("profiles")
+        .withIndex("by_user", (q) => q.eq("userId", existingUser._id))
+        .unique();
+      
+      if (!existingProfile) {
+        // Create default profile if it doesn't exist
+        await ctx.db.insert("profiles", {
+          userId: existingUser._id,
+          displayName: args.displayName || args.email.split('@')[0],
+          languages: [],
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      
       return existingUser._id;
     } else {
       // Create new user
-      return await ctx.db.insert("users", {
+      const userId = await ctx.db.insert("users", {
         workosUserId: args.workosUserId,
         email: args.email,
         displayName: args.displayName,
@@ -110,6 +128,17 @@ export const upsertUser = mutation({
         createdAt: now,
         updatedAt: now,
       });
+      
+      // Create default profile for new user
+      await ctx.db.insert("profiles", {
+        userId: userId,
+        displayName: args.displayName || args.email.split('@')[0],
+        languages: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+      
+      return userId;
     }
   },
 });

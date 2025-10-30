@@ -14,19 +14,17 @@ function useAuth() {
   const { accessToken, loading: tokenLoading, error: tokenError } = useAccessToken();
   
   const loading = (isLoading ?? false) || (tokenLoading ?? false);
-  const authenticated = !!user && !!accessToken && !loading;
+  const authenticated = !!user && !!accessToken && !loading && !tokenError;
 
-  const stableAccessToken = useRef<string | null>(null);
-  if (accessToken && !tokenError) {
-    stableAccessToken.current = accessToken;
-  }
-
+  // Use useCallback with accessToken as dependency to always return current token
   const fetchAccessToken = useCallback(async () => {
-    if (stableAccessToken.current && !tokenError) {
-      return stableAccessToken.current;
+    // Return the current access token if available and valid
+    if (accessToken && !tokenError) {
+      return accessToken;
     }
+    // Return null if no valid token (will cause Convex to treat as unauthenticated)
     return null;
-  }, [tokenError]);
+  }, [accessToken, tokenError]);
 
   return {
     isLoading: loading,
@@ -59,6 +57,17 @@ function UpsertUserOnAuth() {
   }, [user, accessToken, authLoading, tokenLoading, error]);
 
   useEffect(() => {
+    console.log('[UpsertUserOnAuth] Effect triggered:', {
+      ready,
+      didRun: didRun.current,
+      hasUser: !!user,
+      userId: user?.id,
+      hasAccessToken: !!accessToken,
+      authLoading,
+      tokenLoading,
+      error,
+    });
+
     if (!ready || didRun.current) return;
     
     // Add a small delay to ensure Convex auth context is fully initialized
@@ -71,6 +80,12 @@ function UpsertUserOnAuth() {
         .join(" ")
         .trim();
 
+      console.log('[UpsertUserOnAuth] Attempting to upsert user:', {
+        workosUserId: String(user?.id),
+        email: String(user?.email ?? ""),
+        displayName,
+      });
+
       const attemptUpsert = async (): Promise<void> => {
         try {
           await upsertUser({
@@ -80,21 +95,21 @@ function UpsertUserOnAuth() {
             orgId: undefined,
             orgRole: undefined,
           });
-          console.log("User upserted successfully");
+          console.log("[UpsertUserOnAuth] User upserted successfully");
         } catch (err) {
-          console.warn("User upsert failed:", err);
+          console.error("[UpsertUserOnAuth] User upsert failed:", err);
           
           // Retry with exponential backoff for auth errors
           if (retryCount.current < maxRetries) {
             retryCount.current += 1;
             const delay = Math.pow(2, retryCount.current) * 500; // 1s, 2s, 4s
-            console.log(`Retrying user upsert in ${delay}ms (attempt ${retryCount.current}/${maxRetries})`);
+            console.log(`[UpsertUserOnAuth] Retrying user upsert in ${delay}ms (attempt ${retryCount.current}/${maxRetries})`);
             
             await new Promise(resolve => setTimeout(resolve, delay));
             didRun.current = false; // Allow retry
             return attemptUpsert();
           } else {
-            console.error("User upsert failed after max retries. User may need to refresh.");
+            console.error("[UpsertUserOnAuth] User upsert failed after max retries. User may need to refresh.");
           }
         }
       };

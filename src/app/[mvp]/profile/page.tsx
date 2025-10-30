@@ -57,6 +57,28 @@ export default function ProfilePage() {
   const updateProfile = useMutation(api.profiles.mutations.updateProfile);
   
   const [isSaving, setIsSaving] = useState(false);
+
+  // Debug logging - track profile page state
+  useEffect(() => {
+    console.log('[ProfilePage] State:', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      isAuthenticated,
+      authLoading,
+      convexUser: convexUser ? {
+        _id: convexUser._id,
+        email: convexUser.email,
+        displayName: convexUser.displayName,
+      } : null,
+      profile: profile ? {
+        _id: profile._id,
+        userId: profile.userId,
+        displayName: profile.displayName,
+      } : null,
+      profileQuerySkipped: !isAuthenticated,
+    });
+  }, [user, isAuthenticated, authLoading, convexUser, profile]);
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),

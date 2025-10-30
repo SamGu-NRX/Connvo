@@ -25,17 +25,51 @@ export function useWorkOSAuth() {
   const createOrUpdateUser = useMutation(api.users.mutations.upsertUser);
 
   const loading = authLoading || tokenLoading || convexLoading;
-  const isAuthenticated = !!user && !!accessToken && convexAuthenticated;
+  
+  // FIX: Use WorkOS auth state directly instead of waiting for convexAuthenticated
+  // This breaks the circular dependency where queries need auth but auth needs queries
+  const hasWorkOSAuth = !!user && !!accessToken && !authLoading && !tokenLoading;
+  const isAuthenticated = hasWorkOSAuth;
 
-  // Skip Convex user query until authenticated to avoid UNAUTHORIZED errors
+  // Query Convex user using WorkOS auth state
   const convexUser = useQuery(
     api.users.queries.getCurrentUser,
-    isAuthenticated ? {} : undefined,
+    hasWorkOSAuth ? {} : undefined,
   );
 
-  // Sync WorkOS user with Convex database
+  // Debug logging - track authentication state
   useEffect(() => {
-    if (isAuthenticated && user && !convexUser) {
+    console.log('[useWorkOSAuth] Auth State:', {
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      hasAccessToken: !!accessToken,
+      accessTokenLength: accessToken?.length,
+      authLoading,
+      tokenLoading,
+      convexLoading,
+      convexAuthenticated, // ⚠️ THIS IS THE KEY VALUE
+      isAuthenticated,
+      hasConvexUser: !!convexUser,
+      convexUserId: convexUser?._id,
+      // Breakdown of isAuthenticated calculation:
+      calculation: {
+        hasUserCheck: !!user,
+        hasAccessTokenCheck: !!accessToken,
+        convexAuthenticatedCheck: convexAuthenticated,
+        result: !!user && !!accessToken && convexAuthenticated,
+      }
+    });
+  }, [user, accessToken, authLoading, tokenLoading, convexLoading, convexAuthenticated, isAuthenticated, convexUser]);
+
+  // Sync WorkOS user with Convex database
+  // Use hasWorkOSAuth instead of isAuthenticated to avoid circular dependency
+  useEffect(() => {
+    if (hasWorkOSAuth && user && !convexUser) {
+      console.log('[useWorkOSAuth] Syncing user to Convex...', {
+        workosUserId: user.id,
+        email: user.email,
+      });
       const syncUser = async () => {
         try {
           const wUser = user as Partial<WorkOSUser>;
@@ -49,14 +83,15 @@ export function useWorkOSAuth() {
             orgId: wUser.organizationId,
             orgRole: wUser.role,
           });
+          console.log('[useWorkOSAuth] User sync completed successfully');
         } catch (error) {
-          console.error("Failed to sync user:", error);
+          console.error("[useWorkOSAuth] Failed to sync user:", error);
         }
       };
 
       syncUser();
     }
-  }, [isAuthenticated, user, convexUser, createOrUpdateUser]);
+  }, [hasWorkOSAuth, user, convexUser, createOrUpdateUser]);
 
   return {
     // Authentication state
