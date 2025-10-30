@@ -53,11 +53,15 @@ export default function SmartConnectionEngine({
         avatar: "/placeholder.svg?height=100&width=100",
         bio: "Software Engineer | AI Enthusiast",
         profession: "Software Engineer",
+        company: "TechCorp Inc.",
+        school: "Stanford University",
+        experience: 5,
         tag: "AI Specialist",
+        connectionType: "collaboration" as const,
         sharedInterests: [
           { type: "academic", name: "Machine Learning" },
-          { type: "passion", name: "Open Source" },
-          { type: "hobby", name: "Hiking" },
+          { type: "industry", name: "Open Source" },
+          { type: "skill", name: "Hiking" },
         ],
         upvotes: 42,
       });

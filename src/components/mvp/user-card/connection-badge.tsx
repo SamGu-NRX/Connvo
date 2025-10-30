@@ -54,6 +54,12 @@ export function ConnectionBadge({
   className,
   showLabel = true,
 }: ConnectionBadgeProps) {
+  // Safety check: return null if type is invalid
+  if (!type || !connectionTypeInfo[type]) {
+    console.warn(`Invalid connection type: ${type}`);
+    return null;
+  }
+
   const info = connectionTypeInfo[type];
 
   return (

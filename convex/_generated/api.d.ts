@@ -96,6 +96,7 @@ import type * as schema_webrtc from "../schema/webrtc.js";
 import type * as system_idempotency from "../system/idempotency.js";
 import type * as system_maintenance from "../system/maintenance.js";
 import type * as system_rateLimit from "../system/rateLimit.js";
+import type * as test_authDebug from "../test/authDebug.js";
 import type * as test_helpers from "../test/helpers.js";
 import type * as test_index from "../test/index.js";
 import type * as test_mocks from "../test/mocks.js";
@@ -253,6 +254,7 @@ declare const fullApi: ApiFromModules<{
   "system/idempotency": typeof system_idempotency;
   "system/maintenance": typeof system_maintenance;
   "system/rateLimit": typeof system_rateLimit;
+  "test/authDebug": typeof test_authDebug;
   "test/helpers": typeof test_helpers;
   "test/index": typeof test_index;
   "test/mocks": typeof test_mocks;

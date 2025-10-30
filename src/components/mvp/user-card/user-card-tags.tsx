@@ -16,11 +16,16 @@ export function UserCardTags({
   inChat = false,
   className,
 }: UserCardTagsProps) {
+  // Safety check: ensure we have valid data before rendering
+  if (!connectionType && experience === undefined) {
+    return null;
+  }
+
   return (
     <div className={cn("mb-3 px-5", inChat && "px-4", className)}>
       <div className="flex flex-wrap items-center gap-2">
-        <ExperienceBadge years={experience} />
-        <ConnectionBadge type={connectionType} />
+        {experience !== undefined && <ExperienceBadge years={experience} />}
+        {connectionType && <ConnectionBadge type={connectionType} />}
       </div>
     </div>
   );
