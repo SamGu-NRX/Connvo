@@ -45,11 +45,13 @@ export function Sidebar() {
           </div>
         </ScrollArea>
         <div className="mt-auto p-4">
-          <Button variant="outline" className="w-full" asChild>
-            <TransitionLink href="/signout">
-              <LogOut className="mr-2 h-4 w-4" />
-              Log out
-            </TransitionLink>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => window.location.href = '/api/auth/signout'}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
           </Button>
         </div>
       </div>

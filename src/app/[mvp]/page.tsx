@@ -93,7 +93,7 @@ export default function HomePage() {
           className="mb-6 text-center"
         >
           <h1 className="bg-emerald-400 bg-clip-text pb-1 text-4xl font-bold text-transparent md:text-5xl dark:bg-emerald-300">
-            Welcome to LinkedUp, {user?.firstName || user?.email || "Guest"}
+            Welcome to Connvo, {user?.firstName || user?.email || "Guest"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
             Connect with professionals and casual contacts through voice calls

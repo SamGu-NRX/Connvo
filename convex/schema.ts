@@ -20,6 +20,7 @@ import { webrtcTables } from "./schema/webrtc";
 import { systemTables } from "./schema/system";
 import { offlineTables } from "./schema/offline";
 import { legacyTables } from "./schema/legacy";
+import { userSettings } from "./schema/userSettings";
 
 export default defineSchema({
   ...userTables,
@@ -33,4 +34,5 @@ export default defineSchema({
   ...systemTables,
   ...offlineTables,
   ...legacyTables,
+  userSettings,
 });
