@@ -33,8 +33,8 @@ export default function RootLayout({
   return (
     <div className={`${inter.className} antialiased`}>
       <Providers>
-        <div className="relative flex min-h-screen flex-col">
-          <header className="bg-background/80 sticky top-0 z-50 flex h-16 items-center gap-4 border-b px-6 backdrop-blur-xs transition-colors duration-300">
+        <div className="relative flex h-screen flex-col overflow-hidden">
+          <header className="bg-background/80 flex h-16 shrink-0 items-center gap-4 border-b px-6 backdrop-blur-xs transition-colors duration-300">
             <div className="relative z-10">
               <Link
                 className="flex items-center gap-2 font-semibold transition-all duration-300 hover:opacity-80"
@@ -63,9 +63,7 @@ export default function RootLayout({
 
             <div className="flex flex-1 flex-col overflow-hidden">
               <main className="flex-1 overflow-y-auto p-6 transition-all duration-300">
-                <div className="relative min-h-[calc(100vh-10rem)] w-full">
-                  {children}
-                </div>
+                {children}
               </main>
               <div className="md:hidden">
                 <MobileNavigation />
