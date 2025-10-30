@@ -107,6 +107,33 @@ Set `CONVEX_URL` to the same value as `CONVEX_URL_DEV` if your deployment requir
 
 With Git Sync enabled, Mintlify automatically ingests the updated OpenAPI spec whenever CI commits new documentation changes.
 
+## Production Custom Domain
+
+Mintlify can serve the LinkedUp docs on a branded subdomain (e.g. `docs.linkedup.com`) in production. Complete these steps after Git Sync is working:
+
+1. **Mintlify settings**
+   - Open the Mintlify dashboard → *Settings → Custom domain*.
+   - Enter the desired hostname (`docs.linkedup.com`) and save. Mintlify will show the required DNS values once the domain is queued.
+
+2. **DNS configuration**
+   - In the DNS provider for `linkedup.com` add a CNAME record:
+     ```
+     Host: docs
+     Type: CNAME
+     Target: cname.vercel-dns.com.
+     TTL: default
+     ```
+   - Propagation can take several minutes. Use `dig docs.linkedup.com CNAME` to confirm it resolves to `cname.vercel-dns.com`.
+
+3. **Verification**
+   - Back in the Mintlify dashboard, click *Verify* next to the custom domain once DNS has propagated.
+   - Mintlify issues the TLS certificate automatically; the status will change to “Active” when HTTPS is ready.
+
+4. **Post-deploy checklist**
+   - Run `pnpm run update:api-docs:prod` to regenerate the OpenAPI spec with the production servers prioritized.
+   - Trigger a Mintlify rebuild (either via Git Sync or the dashboard) so the latest content is published at `https://docs.linkedup.com`.
+   - Spot-check a few endpoints in the API playground to ensure CORS/auth headers still resolve correctly when accessed via the custom domain.
+
 ## Maintenance Procedures (Task 10.x)
 
 - **When to regenerate:** after deploying Convex changes that modify function validators, HTTP actions, or when new endpoints are added.
