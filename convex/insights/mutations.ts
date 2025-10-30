@@ -17,7 +17,87 @@ import { RecommendationV, LinkV } from "@convex/types/validators/prompt";
 import type { AIInsight } from "@convex/types/entities/prompt";
 
 /**
- * Creates insights for a user and meeting (internal use)
+ * @summary Creates or updates insights for a user and meeting (internal use).
+ * @description Stores AI-generated insights including summary, action items, recommendations, and resource links for a specific user-meeting pair. If insights already exist for this combination, they are updated with the new data rather than creating duplicates. This ensures each user has exactly one insight record per meeting. Called internally by the insight generation actions.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_abc123",
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy.",
+ *     "actionItems": [
+ *       "Follow up on the AI model training pipeline discussion",
+ *       "Share the user research findings document"
+ *     ],
+ *     "recommendations": [
+ *       {
+ *         "type": "learning",
+ *         "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *         "confidence": 0.7
+ *       },
+ *       {
+ *         "type": "networking",
+ *         "content": "Consider connecting with other participants to continue the conversation",
+ *         "confidence": 0.8
+ *       }
+ *     ],
+ *     "links": [
+ *       {
+ *         "type": "resource",
+ *         "url": "https://example.com/resources/ai-ml",
+ *         "title": "Learn more about ai-ml"
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "insights_ck9hx2g1v0001"
+ * }
+ * ```
+ * @example datamodel
+ * ```json
+ * {
+ *   "insight": {
+ *     "_id": "insights_ck9hx2g1v0001",
+ *     "_creationTime": 1714066800000,
+ *     "userId": "user_abc123",
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy.",
+ *     "actionItems": [
+ *       "Follow up on the AI model training pipeline discussion",
+ *       "Share the user research findings document"
+ *     ],
+ *     "recommendations": [
+ *       {
+ *         "type": "learning",
+ *         "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *         "confidence": 0.7
+ *       },
+ *       {
+ *         "type": "networking",
+ *         "content": "Consider connecting with other participants to continue the conversation",
+ *         "confidence": 0.8
+ *       }
+ *     ],
+ *     "links": [
+ *       {
+ *         "type": "resource",
+ *         "url": "https://example.com/resources/ai-ml",
+ *         "title": "Learn more about ai-ml"
+ *       }
+ *     ],
+ *     "createdAt": 1714066800000
+ *   }
+ * }
+ * ```
  */
 export const createInsights = internalMutation({
   args: {
@@ -68,7 +148,68 @@ export const createInsights = internalMutation({
 });
 
 /**
- * Batch creates insights for multiple users (internal use)
+ * @summary Batch creates or updates insights for multiple users (internal use).
+ * @description Efficiently creates or updates insights for multiple user-meeting pairs in a single transaction. For each insight, checks if one already exists for that user-meeting combination and updates it if found, otherwise creates a new record. This is useful for bulk insight generation operations while maintaining the constraint of one insight per user-meeting pair.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "insights": [
+ *       {
+ *         "userId": "user_abc123",
+ *         "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *         "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml.",
+ *         "actionItems": [
+ *           "Follow up on the AI model training pipeline discussion"
+ *         ],
+ *         "recommendations": [
+ *           {
+ *             "type": "learning",
+ *             "content": "Consider exploring advanced topics in ai-ml",
+ *             "confidence": 0.7
+ *           }
+ *         ],
+ *         "links": [
+ *           {
+ *             "type": "resource",
+ *             "url": "https://example.com/resources/ai-ml",
+ *             "title": "Learn more about ai-ml"
+ *           }
+ *         ]
+ *       },
+ *       {
+ *         "userId": "user_xyz789",
+ *         "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *         "summary": "This 45-minute meeting involved 2 participants and covered topics including product-strategy.",
+ *         "actionItems": [
+ *           "Share the user research findings document"
+ *         ],
+ *         "recommendations": [
+ *           {
+ *             "type": "networking",
+ *             "content": "Consider connecting with other participants",
+ *             "confidence": 0.8
+ *           }
+ *         ],
+ *         "links": []
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     "insights_ck9hx2g1v0001",
+ *     "insights_ck9hx2g1v0002"
+ *   ]
+ * }
+ * ```
  */
 export const batchCreateInsights = internalMutation({
   args: {
@@ -126,7 +267,45 @@ export const batchCreateInsights = internalMutation({
 });
 
 /**
- * Updates insights with user feedback (marks as read, rates usefulness, etc.)
+ * @summary Updates insights with user feedback on usefulness and quality.
+ * @description Allows users to provide feedback on their insights including marking as read, rating usefulness, providing a 1-5 star rating, and adding notes. Enforces ownership verification to ensure users can only provide feedback on their own insights. Feedback is stored in the recommendations metadata for future AI model improvements. This helps the system learn which types of insights are most valuable to users.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "insightId": "insights_ck9hx2g1v0001",
+ *     "feedback": {
+ *       "read": true,
+ *       "useful": true,
+ *       "rating": 4,
+ *       "notes": "The action items were very helpful, but some recommendations were too generic"
+ *     }
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Access denied: Not the owner of this resource",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "resourceId": "insights_ck9hx2g1v0001",
+ *     "userId": "user_abc123"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const updateInsightsFeedback = mutation({
   args: {
@@ -171,7 +350,39 @@ export const updateInsightsFeedback = mutation({
 });
 
 /**
- * Deletes insights (user can delete their own insights)
+ * @summary Deletes a user's insight record.
+ * @description Allows users to permanently delete their own insights. Enforces ownership verification to ensure users can only delete their own insights. This is useful when users want to remove outdated or irrelevant insights from their history. The deletion is permanent and cannot be undone.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "insightId": "insights_ck9hx2g1v0001"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Access denied: Not the owner of this resource",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "resourceId": "insights_ck9hx2g1v0001",
+ *     "userId": "user_abc123"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const deleteInsights = mutation({
   args: {
@@ -195,7 +406,42 @@ export const deleteInsights = mutation({
 });
 
 /**
- * Cleans up old insights (internal use)
+ * @summary Cleans up old insights in batches (internal use).
+ * @description Deletes insights older than the specified age in configurable batch sizes to manage database size and comply with data retention policies. Processes insights in batches to avoid transaction timeouts. Returns the number of insights deleted and whether more remain to be cleaned up, allowing for incremental cleanup via scheduled jobs.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "olderThanMs": 7776000000,
+ *     "batchSize": 50
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "deleted": 50,
+ *     "remaining": true
+ *   }
+ * }
+ * ```
+ * @example response-complete
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "deleted": 23,
+ *     "remaining": false
+ *   }
+ * }
+ * ```
  */
 export const cleanupOldInsights = internalMutation({
   args: {

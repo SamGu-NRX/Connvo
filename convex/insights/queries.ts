@@ -39,7 +39,78 @@ export const getInsightsByUserAndMeeting = internalQuery({
 });
 
 /**
- * Gets user's insights for a specific meeting with privacy controls
+ * @summary Gets the authenticated user's personal insights for a specific meeting.
+ * @description Retrieves AI-generated insights including summary, action items, recommendations, and resource links for the current user's participation in a meeting. Enforces privacy controls by verifying the user was a participant in the meeting before returning insights. Returns null if no insights have been generated yet. Each user only sees their own personalized insights, maintaining per-user data isolation.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "insights_ck9hx2g1v0001",
+ *     "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy, user-research. Key points were documented in the shared notes.",
+ *     "actionItems": [
+ *       "Follow up on the AI model training pipeline discussion",
+ *       "Share the user research findings document",
+ *       "Schedule next sprint planning session"
+ *     ],
+ *     "recommendations": [
+ *       {
+ *         "type": "learning",
+ *         "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *         "confidence": 0.7
+ *       },
+ *       {
+ *         "type": "networking",
+ *         "content": "Consider connecting with other participants to continue the conversation",
+ *         "confidence": 0.8
+ *       }
+ *     ],
+ *     "links": [
+ *       {
+ *         "type": "resource",
+ *         "url": "https://example.com/resources/ai-ml",
+ *         "title": "Learn more about ai-ml"
+ *       }
+ *     ],
+ *     "createdAt": 1714066800000,
+ *     "meetingTitle": "Product Strategy Sync",
+ *     "meetingDate": 1714066200000
+ *   }
+ * }
+ * ```
+ * @example response-not-found
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Access denied: Not a meeting participant",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "userId": "user_abc123"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const getMeetingInsights = query({
   args: {
@@ -140,7 +211,68 @@ export const getMeetingInsights = query({
 });
 
 /**
- * Lists all insights for the current user
+ * @summary Lists all insights for the authenticated user with pagination.
+ * @description Retrieves a paginated list of all insights generated for the current user across all their meetings. Results are ordered by creation time (most recent first) and enriched with meeting metadata including title and date. Supports pagination via limit and offset parameters for efficient loading of large insight histories.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "limit": 10,
+ *     "offset": 0
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "insights_ck9hx2g1v0001",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy.",
+ *       "actionItems": [
+ *         "Follow up on the AI model training pipeline discussion",
+ *         "Share the user research findings document"
+ *       ],
+ *       "recommendations": [
+ *         {
+ *           "type": "learning",
+ *           "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *           "confidence": 0.7
+ *         }
+ *       ],
+ *       "createdAt": 1714066800000,
+ *       "meetingTitle": "Product Strategy Sync",
+ *       "meetingDate": 1714066200000
+ *     },
+ *     {
+ *       "_id": "insights_ck9hx2g1v0002",
+ *       "_creationTime": 1714063200000,
+ *       "meetingId": "me_xyz789",
+ *       "summary": "This 30-minute meeting involved 3 participants and covered topics including design-systems, frontend-architecture.",
+ *       "actionItems": [
+ *         "Review the component library documentation",
+ *         "Schedule design review session"
+ *       ],
+ *       "recommendations": [
+ *         {
+ *           "type": "networking",
+ *           "content": "Consider connecting with other participants to continue the conversation",
+ *           "confidence": 0.8
+ *         }
+ *       ],
+ *       "createdAt": 1714063200000,
+ *       "meetingTitle": "Design System Review",
+ *       "meetingDate": 1714062600000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getUserInsights = query({
   args: {
@@ -185,7 +317,80 @@ export const getUserInsights = query({
 });
 
 /**
- * Gets insights by ID with ownership verification
+ * @summary Gets a specific insight by ID with ownership verification.
+ * @description Retrieves detailed insight information including all recommendations, action items, and links. Enforces ownership verification to ensure users can only access their own insights. Returns null if the insight doesn't exist. Enriched with meeting metadata including title and date for context.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "insightId": "insights_ck9hx2g1v0001"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "insights_ck9hx2g1v0001",
+ *     "_creationTime": 1714066800000,
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "summary": "This 45-minute meeting involved 2 participants and covered topics including ai-ml, product-strategy, user-research. Key points were documented in the shared notes.",
+ *     "actionItems": [
+ *       "Follow up on the AI model training pipeline discussion",
+ *       "Share the user research findings document",
+ *       "Schedule next sprint planning session"
+ *     ],
+ *     "recommendations": [
+ *       {
+ *         "type": "learning",
+ *         "content": "Consider exploring advanced topics in ai-ml to deepen your expertise",
+ *         "confidence": 0.7
+ *       },
+ *       {
+ *         "type": "networking",
+ *         "content": "Consider connecting with other participants to continue the conversation",
+ *         "confidence": 0.8
+ *       }
+ *     ],
+ *     "links": [
+ *       {
+ *         "type": "resource",
+ *         "url": "https://example.com/resources/ai-ml",
+ *         "title": "Learn more about ai-ml"
+ *       }
+ *     ],
+ *     "createdAt": 1714066800000,
+ *     "meetingTitle": "Product Strategy Sync",
+ *     "meetingDate": 1714066200000
+ *   }
+ * }
+ * ```
+ * @example response-not-found
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Access denied: Not the owner of this resource",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "resourceId": "insights_ck9hx2g1v0001",
+ *     "userId": "user_abc123"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const getInsightById = query({
   args: {
@@ -225,7 +430,51 @@ export const getInsightById = query({
 });
 
 /**
- * Gets connection recommendations from insights
+ * @summary Gets connection and follow-up recommendations from user's insights.
+ * @description Extracts connection-type and follow-up recommendations from the user's recent insights across all meetings. Results are sorted by confidence score and creation time, providing the most relevant networking opportunities. Enriched with meeting context to help users understand where each recommendation originated. Useful for building a networking action list.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "limit": 5
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "type": "connection",
+ *       "content": "Consider connecting with other participants to continue the conversation",
+ *       "confidence": 0.8,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "meetingTitle": "Product Strategy Sync",
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "type": "follow-up",
+ *       "content": "Schedule a follow-up meeting to track progress on action items",
+ *       "confidence": 0.75,
+ *       "meetingId": "me_xyz789",
+ *       "meetingTitle": "Design System Review",
+ *       "createdAt": 1714063200000
+ *     },
+ *     {
+ *       "type": "connection",
+ *       "content": "Reach out to discuss shared interests in ai-ml and product-strategy",
+ *       "confidence": 0.7,
+ *       "meetingId": "me_abc456",
+ *       "meetingTitle": "Tech Innovation Discussion",
+ *       "createdAt": 1714059600000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getConnectionRecommendations = query({
   args: {

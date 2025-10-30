@@ -116,19 +116,19 @@ This plan systematically adds comprehensive docstrings with test-validated examp
     - Add tests for contextual prompts if needed
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 7. Document insights domain (convex/insights/)
-  - [ ] 7.1 Add docstrings to convex/insights/generation.ts functions
+- [x] 7. Document insights domain (convex/insights/)
+  - [x] 7.1 Add docstrings to convex/insights/generation.ts functions
     - Document `generateInsights`, `generateParticipantInsights`
     - Add request/response examples showing AI-generated insights
     - Include examples of action items and recommendations
     - _Requirements: 1.3, 2.1, 2.2, 6.1_
 
-  - [ ] 7.2 Add docstrings to convex/insights/queries.ts functions
+  - [x] 7.2 Add docstrings to convex/insights/queries.ts functions
     - Document `getMeetingInsights`, `getUserInsights`, `getInsightById`, `getConnectionRecommendations`, `getInsightsByUserAndMeeting`
     - Add request/response examples showing privacy-controlled access
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 7.3 Add docstrings to convex/insights/mutations.ts functions
+  - [x] 7.3 Add docstrings to convex/insights/mutations.ts functions
     - Document `createInsights`, `batchCreateInsights`, `updateInsightsFeedback`, `deleteInsights`, `cleanupOldInsights`
     - Add request/response examples showing insight management
     - _Requirements: 1.3, 2.1, 2.2_
