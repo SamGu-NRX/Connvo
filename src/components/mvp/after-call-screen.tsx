@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import {
   Download,
   TrendingUp,
   Sparkles,
+  ArrowLeft,
 } from "lucide-react";
 import { Id } from "@convex/_generated/dataModel";
 
@@ -25,25 +27,27 @@ interface AfterCallScreenProps {
 }
 
 const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
+  const router = useRouter();
+  
   // Check if this is a valid Convex ID or a demo
   const isDemo = typeof meetingId === 'string' && !meetingId.startsWith('j');
   
   // Query meeting details - skip if demo
   const meeting = useQuery(
     api.meetings.queries.getMeeting,
-    isDemo ? undefined : { meetingId: meetingId as Id<"meetings"> }
+    isDemo ? "skip" : { meetingId: meetingId as Id<"meetings"> }
   );
 
   // Query transcript segments - skip if demo
   const transcriptSegments = useQuery(
     api.transcripts.queries.getTranscriptSegments,
-    isDemo ? undefined : { meetingId: meetingId as Id<"meetings">, limit: 1000 }
+    isDemo ? "skip" : { meetingId: meetingId as Id<"meetings">, limit: 1000 }
   );
 
   // Query notes - skip if demo
   const notes = useQuery(
     api.notes.queries.getMeetingNotes,
-    isDemo ? undefined : { meetingId: meetingId as Id<"meetings"> }
+    isDemo ? "skip" : { meetingId: meetingId as Id<"meetings"> }
   );
 
   // Calculate insights from transcript data
@@ -76,8 +80,8 @@ const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
     });
 
     const sentimentScores = segments
-      .filter(s => s.sentiment)
-      .map(s => s.sentiment!.score);
+      .filter(s => s.sentiment !== undefined && s.sentiment !== null)
+      .map(s => typeof s.sentiment === 'number' ? s.sentiment : 0);
     const averageSentiment = sentimentScores.length > 0
       ? sentimentScores.reduce((sum, score) => sum + score, 0) / sentimentScores.length
       : 0;
@@ -235,6 +239,19 @@ const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Return to App Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => router.push("/app")}
+              variant="outline"
+              size="lg"
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Return to App
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -386,7 +403,7 @@ const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
             </div>
           </CardHeader>
           <CardContent>
-            {transcriptSegments.length > 0 ? (
+            {transcriptSegments && transcriptSegments.length > 0 ? (
               <ScrollArea className="h-64">
                 <div className="space-y-3 pr-4">
                   {transcriptSegments.slice(0, 10).map((segment) => (
@@ -436,6 +453,19 @@ const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
             </CardContent>
           </Card>
         )}
+
+        {/* Return to App Button */}
+        <div className="flex justify-end">
+          <Button
+            onClick={() => router.push("/app")}
+            variant="outline"
+            size="lg"
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Return to App
+          </Button>
+        </div>
       </div>
     </div>
   );

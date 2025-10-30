@@ -5,8 +5,9 @@
  * Full transcript functionality is implemented in other tasks.
  */
 
-import { internalQuery } from "@convex/_generated/server";
+import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
+import { assertMeetingAccess } from "@convex/auth/guards";
 import {
   TranscriptV,
   TranscriptSegmentV,
@@ -17,9 +18,46 @@ import type {
 } from "@convex/types/entities/transcript";
 
 /**
+ * Gets transcript segments for a meeting (public, with auth)
+ */
+export const getTranscriptSegments = query({
+  args: {
+    meetingId: v.id("meetings"),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(TranscriptSegmentV.full),
+  handler: async (
+    ctx,
+    { meetingId, limit = 100 },
+  ): Promise<TranscriptSegment[]> => {
+    // Verify user has access to this meeting
+    await assertMeetingAccess(ctx, meetingId);
+
+    const take = Math.max(1, Math.min(Math.floor(limit ?? 100), 1000));
+    const docs = await ctx.db
+      .query("transcriptSegments")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .order("asc")
+      .take(take);
+    return docs.map((d) => ({
+      _id: d._id,
+      _creationTime: d._creationTime,
+      meetingId: d.meetingId,
+      startMs: d.startMs,
+      endMs: d.endMs,
+      speakers: d.speakers ?? [],
+      text: d.text ?? "",
+      topics: d.topics ?? [],
+      sentiment: d.sentiment,
+      createdAt: d.createdAt ?? d._creationTime,
+    }));
+  },
+});
+
+/**
  * Gets transcript segments for a meeting (internal use)
  */
-export const getTranscriptSegments = internalQuery({
+export const getTranscriptSegmentsInternal = internalQuery({
   args: {
     meetingId: v.id("meetings"),
     limit: v.optional(v.number()),
