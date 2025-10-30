@@ -18,7 +18,79 @@ import { internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 
 /**
- * Streaming transcript processor with intelligent batching
+ * @summary Processes high-frequency transcript streams with intelligent batching
+ * @description Internal action that handles real-time transcription streams from
+ * speech-to-text services. Implements adaptive batching and coalescing strategies
+ * based on stream configuration. Validates meeting is active before processing,
+ * respects max latency constraints, and records performance metrics. Returns
+ * throughput and latency statistics for monitoring.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "chunks": [
+ *       {
+ *         "speakerId": "user_alice_123",
+ *         "text": "I think we should",
+ *         "confidence": 0.88,
+ *         "startTime": 1698765432000,
+ *         "endTime": 1698765433000,
+ *         "language": "en"
+ *       },
+ *       {
+ *         "speakerId": "user_alice_123",
+ *         "text": "prioritize this feature.",
+ *         "confidence": 0.91,
+ *         "startTime": 1698765433100,
+ *         "endTime": 1698765434500,
+ *         "language": "en"
+ *       }
+ *     ],
+ *     "streamConfig": {
+ *       "batchSize": 20,
+ *       "coalescingWindowMs": 250,
+ *       "maxLatencyMs": 1000,
+ *       "enableCoalescing": true
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "processed": 2,
+ *     "batches": 1,
+ *     "performance": {
+ *       "totalLatencyMs": 145,
+ *       "averageLatencyPerChunk": 72.5,
+ *       "throughputChunksPerSecond": 13.79
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": false,
+ *     "processed": 0,
+ *     "batches": 0,
+ *     "performance": {
+ *       "totalLatencyMs": 0,
+ *       "averageLatencyPerChunk": 0,
+ *       "throughputChunksPerSecond": 0
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const processTranscriptStream = internalAction({
   args: {
@@ -181,7 +253,35 @@ export const processTranscriptStream = internalAction({
 });
 
 /**
- * Updates streaming performance metrics
+ * @summary Updates streaming performance metrics with aggregated statistics
+ * @description Internal mutation that records transcript streaming performance data
+ * including throughput (chunks/sec), latency samples, and rolling aggregates (sum,
+ * count, average). Maintains time-series metrics for monitoring dashboards and
+ * alerting. Updates meeting state with latest streaming activity timestamp.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "metrics": {
+ *       "chunksProcessed": 25,
+ *       "batchesProcessed": 2,
+ *       "latencyMs": 145,
+ *       "throughputChunksPerSecond": 13.79,
+ *       "timestamp": 1698765432000
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const updateStreamingMetrics = internalMutation({
   args: {
@@ -312,7 +412,52 @@ export const updateStreamingMetrics = internalMutation({
 });
 
 /**
- * Manages transcript streaming backpressure
+ * @summary Manages transcript streaming backpressure with adaptive throttling
+ * @description Internal action that analyzes current streaming load (throughput,
+ * latency, queue depth) and recommends adaptive strategies to prevent system
+ * overload. Returns throttling decisions, recommended batch sizes, and coalescing
+ * windows. Creates critical alerts when performance thresholds are exceeded.
+ * Implements four action levels: continue, throttle, pause, and alert.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "currentLoad": {
+ *       "chunksPerSecond": 35,
+ *       "averageLatencyMs": 280,
+ *       "queueDepth": 45
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "shouldThrottle": true,
+ *     "recommendedBatchSize": 15,
+ *     "recommendedCoalescingWindow": 350,
+ *     "action": "throttle"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-critical
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "shouldThrottle": true,
+ *     "recommendedBatchSize": 10,
+ *     "recommendedCoalescingWindow": 500,
+ *     "action": "pause"
+ *   }
+ * }
+ * ```
  */
 export const manageStreamingBackpressure = internalAction({
   args: {
@@ -403,7 +548,30 @@ export const manageStreamingBackpressure = internalAction({
 });
 
 /**
- * Cleans up old streaming metrics
+ * @summary Cleans up old streaming performance metrics
+ * @description Internal maintenance mutation that removes streaming metrics older
+ * than the specified retention period (default 24 hours). Helps manage storage
+ * costs for high-frequency time-series data. Creates audit log entries for
+ * compliance tracking. Used by scheduled maintenance jobs.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "olderThanMs": 86400000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "deleted": 1247
+ *   }
+ * }
+ * ```
  */
 export const cleanupStreamingMetrics = internalMutation({
   args: {
@@ -449,7 +617,51 @@ export const cleanupStreamingMetrics = internalMutation({
 });
 
 /**
- * Gets streaming performance statistics
+ * @summary Gets streaming performance statistics for a meeting
+ * @description Internal query that calculates aggregate streaming performance metrics
+ * over a time window (default 1 hour). Returns average and peak throughput, average
+ * latency, total chunks processed, batch count, and an overall performance grade
+ * (excellent/good/fair/poor). Used for monitoring dashboards and performance analysis.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "timeRangeMs": 3600000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "averageThroughput": 28.5,
+ *     "peakThroughput": 45.2,
+ *     "averageLatency": 165,
+ *     "totalChunksProcessed": 102600,
+ *     "totalBatches": 87,
+ *     "performanceGrade": "good"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-no-data
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "averageThroughput": 0,
+ *     "peakThroughput": 0,
+ *     "averageLatency": 0,
+ *     "totalChunksProcessed": 0,
+ *     "totalBatches": 0,
+ *     "performanceGrade": "fair"
+ *   }
+ * }
+ * ```
  */
 export const getStreamingStats = internalQuery({
   args: {

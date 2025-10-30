@@ -14,7 +14,28 @@ import { internal } from "@convex/_generated/api";
 import { metadataRecordV } from "@convex/lib/validators";
 
 /**
- * Internal: Clears existing segments for a meeting (idempotent pre-aggregation)
+ * @summary Clears existing transcript segments for a meeting
+ * @description Internal mutation that deletes all transcript segments for a specific
+ * meeting. Used before re-aggregation to ensure idempotency and prevent duplicate
+ * segments. Returns the count of deleted segments. Called by aggregation action
+ * before processing new segments.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": 42
+ * }
+ * ```
  */
 export const clearTranscriptSegmentsForMeeting = internalMutation({
   args: { meetingId: v.id("meetings") },
@@ -32,7 +53,47 @@ export const clearTranscriptSegmentsForMeeting = internalMutation({
 });
 
 /**
- * Internal: Inserts a batch of transcript segments
+ * @summary Inserts a batch of transcript segments
+ * @description Internal mutation that writes multiple processed transcript segments
+ * to the database in a single transaction. Each segment includes time range, speaker
+ * IDs, aggregated text, extracted topics, and optional sentiment scores. Used by
+ * aggregation action to efficiently store processed segments. Returns count of
+ * inserted segments.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "segments": [
+ *       {
+ *         "startMs": 1698765432000,
+ *         "endMs": 1698765445000,
+ *         "speakers": ["user_alice_123"],
+ *         "text": "Let's discuss the Q4 roadmap priorities and action items.",
+ *         "topics": ["action", "plan"],
+ *         "sentiment": 0.75
+ *       },
+ *       {
+ *         "startMs": 1698765446000,
+ *         "endMs": 1698765458000,
+ *         "speakers": ["user_bob_456"],
+ *         "text": "I agree. We should set a deadline for the feature freeze.",
+ *         "topics": ["deadline", "decision"],
+ *         "sentiment": 0.65
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": 2
+ * }
+ * ```
  */
 export const writeTranscriptSegmentsBatch = internalMutation({
   args: {
@@ -69,7 +130,32 @@ export const writeTranscriptSegmentsBatch = internalMutation({
 });
 
 /**
- * Aggregates transcript chunks into searchable segments
+ * @summary Aggregates raw transcript chunks into searchable segments
+ * @description Internal action that processes all transcript chunks for a meeting and
+ * creates coalesced segments grouped by speaker and time proximity (5-second gap
+ * threshold). Extracts topics using keyword matching, skips interim results, and
+ * creates audit log entries. Clears existing segments first for idempotency. Used
+ * after meeting completion to prepare transcripts for search and insights generation.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "segmentsCreated": 47
+ *   }
+ * }
+ * ```
  */
 export const aggregateTranscriptSegments = internalAction({
   args: { meetingId: v.id("meetings") },
@@ -213,7 +299,30 @@ export const aggregateTranscriptSegments = internalAction({
 });
 
 /**
- * Internal: Cleanup old transcript segments (default 365 days)
+ * @summary Cleans up old transcript segments for data retention
+ * @description Internal maintenance mutation that removes transcript segments older
+ * than the specified retention period (default 365 days). Creates audit log entries
+ * for compliance tracking. Used by scheduled maintenance jobs to manage storage
+ * costs while maintaining longer retention than raw chunks.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "olderThanMs": 31536000000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "deleted": 1847
+ *   }
+ * }
+ * ```
  */
 export const cleanupOldTranscriptSegments = internalMutation({
   args: { olderThanMs: v.optional(v.number()) },
