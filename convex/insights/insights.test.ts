@@ -7,18 +7,17 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { convexTest, type TestConvex } from "convex-test";
 import { api, internal } from "@convex/_generated/api";
-import schema from "@convex/schema";
 import type { Id } from "@convex/_generated/dataModel";
+import { createTestEnvironment } from "../test/helpers";
 
-type TestServer = TestConvex<typeof schema>;
+type TestServer = ReturnType<typeof createTestEnvironment>;
 
 describe("Insights Module", () => {
   let t: TestServer;
 
   beforeEach(() => {
-    t = convexTest(schema);
+    t = createTestEnvironment();
   });
 
   describe("Post-call insight generation", () => {

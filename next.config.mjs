@@ -17,6 +17,7 @@ const nextConfig = {
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
+    turbopackFileSystemCacheForDev: true,
     parallelServerCompiles: true,
     // serverActions: {
     //   allowedOrigins: ["app.localhost:3000"],

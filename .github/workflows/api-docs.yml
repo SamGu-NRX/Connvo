@@ -1,0 +1,61 @@
+name: Update API Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "convex/**"
+      - "scripts/**"
+      - "docs/**"
+      - "mint.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "redocly.yaml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  update-api-docs:
+    runs-on: ubuntu-latest
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+      CONVEX_URL: ${{ secrets.CONVEX_URL_DEV }}
+      CONVEX_URL_DEV: ${{ secrets.CONVEX_URL_DEV }}
+      CONVEX_URL_STAGING: ${{ secrets.CONVEX_URL_STAGING }}
+      CONVEX_URL_PROD: ${{ secrets.CONVEX_URL_PROD }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate OpenAPI spec
+        run: pnpm run update:api-docs:dev
+
+      - name: Show documentation diff
+        run: git diff --stat
+
+      - name: Commit updated documentation
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update API documentation"
+          commit_author_name: github-actions[bot]
+          commit_author_email: 41898282+github-actions[bot]@users.noreply.github.com

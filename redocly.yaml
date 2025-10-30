@@ -1,0 +1,4 @@
+extends:
+  - minimal
+rules:
+  no-unused-components: off

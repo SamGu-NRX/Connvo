@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: Connvo HTTP API
+  version: 0.1.0
+  description: |
+    HTTP endpoints exposed by the Connvo Convex deployment. These routes are consumable by
+    third-party services (e.g., GetStream webhooks) and operational tooling. The majority of the
+    application logic is accessed via Convex client functions and is not represented as RESTful
+    endpoints.
+servers:
+  - url: https://{deployment}.convex.cloud
+    description: Convex deployment base URL
+    variables:
+      deployment:
+        default: your-convex-slug
+        description: Convex deployment slug (e.g., `connvo-12345`)
+paths:
+  /api/health:
+    get:
+      summary: Service health probe
+      description: Lightweight health endpoint for monitoring or uptime checks.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is responsive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                success:
+                  value:
+                    status: healthy
+                    timestamp: 1700000000000
+                    version: 1.0.0
+  /api/webhooks/getstream:
+    post:
+      summary: Ingest GetStream webhook event
+      description: |
+        Dispatches incoming GetStream Video webhooks to Convex mutations. Payloads are validated
+        and then routed to internal handlers for meeting lifecycle updates, recording management,
+        and transcription state changes.
+      operationId: postStreamWebhook
+      security:
+        - streamSignature: []
+      parameters:
+        - name: x-signature
+          in: header
+          description: >-
+            HMAC-SHA256 signature issued by GetStream. Provide either this header or `signature`.
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamWebhookPayload'
+            examples:
+              callSessionStarted:
+                summary: Call session started event
+                value:
+                  type: call.session_started
+                  call:
+                    id: 9d3f97ab-2c01-4b4a-bfbf-b570dfd493c0
+                  call_session:
+                    id: aa28cb4f-007d-4b3a-8fb2-40db46024c3b
+              memberJoined:
+                summary: Member joined event
+                value:
+                  type: call.member_joined
+                  call:
+                    id: 9d3f97ab-2c01-4b4a-bfbf-b570dfd493c0
+                  user:
+                    id: auth0|123456
+      responses:
+        '200':
+          description: Webhook accepted for processing.
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                ok:
+                  value: OK
+        '401':
+          description: Signature validation failed.
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                invalidSignature:
+                  value: Invalid signature
+        '500':
+          description: Convex failed to process the webhook.
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                failure:
+                  value: Processing failed
+components:
+  securitySchemes:
+    streamSignature:
+      type: apiKey
+      in: header
+      name: x-signature
+      description: >-
+        Shared secret HMAC signature provided by GetStream. Matches `STREAM_SECRET` env variable.
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+        timestamp:
+          type: integer
+          format: int64
+          description: Milliseconds since Unix epoch when the health check was generated.
+        version:
+          type: string
+          description: Application semantic version included in health response.
+    StreamWebhookPayload:
+      type: object
+      description: Subset of fields delivered by GetStream webhook events.
+      properties:
+        type:
+          type: string
+          description: Event type emitted by GetStream (e.g., `call.session_started`).
+        call:
+          type: object
+          properties:
+            id:
+              type: string
+        call_session:
+          type: object
+          properties:
+            id:
+              type: string
+            duration_ms:
+              type: integer
+              format: int64
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+        call_recording:
+          type: object
+          properties:
+            id:
+              type: string
+            url:
+              type: string
+              format: uri
+      additionalProperties: true
+      required:
+        - type

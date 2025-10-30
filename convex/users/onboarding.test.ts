@@ -1,7 +1,4 @@
-import { convexTest } from "convex-test";
 import { expect, test, describe, beforeEach, afterEach } from "vitest";
-import schema from "../schema";
-import { modules } from "../../convex-tests/test/setup.js";
 import { api } from "@convex/_generated/api";
 import { Doc, Id } from "@convex/_generated/dataModel";
 import {
@@ -11,7 +8,7 @@ import {
   setupTestMocks,
   cleanupTestMocks,
   resetAllMocks,
-} from "../../convex-tests/test/helpers.js";
+} from "../test/helpers";
 
 describe("Onboarding Mutation", () => {
   let t: ReturnType<typeof createTestEnvironment>;

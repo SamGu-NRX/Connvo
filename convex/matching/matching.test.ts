@@ -7,16 +7,15 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { convexTest, type TestConvex } from "convex-test";
 import type { UserIdentity } from "convex/server";
 import { api } from "@convex/_generated/api";
-import schema from "@convex/schema";
 import type { Id } from "@convex/_generated/dataModel";
 import type { QueueStatus } from "@convex/types/entities/matching";
+import { createTestEnvironment } from "../test/helpers";
 
 const HOURS = 60 * 60 * 1000;
 
-type TestServer = TestConvex<typeof schema>;
+type TestServer = ReturnType<typeof createTestEnvironment>;
 type AuthedTestServer = ReturnType<TestServer["withIdentity"]>;
 
 describe("Matching System", () => {
@@ -25,7 +24,7 @@ describe("Matching System", () => {
   let userB: UserContext;
 
   beforeEach(async () => {
-    t = convexTest(schema);
+    t = createTestEnvironment();
 
     userA = await createUserContext(t, {
       workosUserId: "test-user-1",
@@ -76,7 +75,7 @@ describe("Matching System", () => {
 
       await userA.auth.mutation(api.matching.queue.cancelQueueEntry, { queueId });
       const cancelled = await userA.auth.query(api.matching.queue.getQueueStatus, {});
-      expect(cancelled?.status).toBe("cancelled");
+      expect(cancelled).toBeNull();
     });
   });
 

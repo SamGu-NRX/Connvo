@@ -1,0 +1,42 @@
+---
+title: "Authentication"
+description: "Authenticate with LinkedUp using WorkOS-issued bearer tokens and deploy keys."
+---
+
+# Authentication
+
+LinkedUp relies on WorkOS to authenticate end users and Convex deploy keys to protect privileged endpoints. The OpenAPI specification ships with two security schemes:
+
+- `bearerAuth` &mdash; for user-level access with JSON Web Tokens (JWTs) obtained from WorkOS.
+- `convexDeploy` &mdash; for administrative automation using the `Convex <deploy-key>` header format.
+
+## WorkOS user login flow
+
+1. Redirect users to the WorkOS-hosted login page using your `WORKOS_CLIENT_ID`.
+2. After a successful login, WorkOS sends the user back to your `NEXT_PUBLIC_WORKOS_REDIRECT_URI` with an authorization code.
+3. Exchange the authorization code for a session token with the WorkOS SDK or REST API.
+4. Store the resulting JWT securely (for example in HTTP-only cookies on web clients) and supply it to API calls as `Authorization: Bearer <token>`.
+
+## Obtaining bearer tokens for testing
+
+During development you can generate tokens by signing in through the local LinkedUp app. Copy the token from the browser dev tools (or use a server-side session exchange) and set it in Mintlify's API playground under the `bearerAuth` security input.
+
+```bash
+curl https://your-deployment.convex.cloud/api/run/users/getCurrent \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <user-token>" \
+  -d '{"args": {}, "format": "json"}'
+```
+
+## Using deploy keys
+
+Deploy keys unlock admin-only endpoints such as schema migrations or data backfills. Add them to requests as `Authorization: Convex <deploy-key>` and keep them out of client-side code, documentation examples, and public repositories.
+
+## Security best practices
+
+- Never hardcode real tokens into documentation or example requests. Use placeholders like `<user-token>` or `<deploy-key>`.
+- Scope deploy keys to the narrowest environment (development, staging, production) required.
+- Rotate keys regularly and immediately on suspected compromise.
+- Audit logs for unusual API activity, especially around admin endpoints.
+
+With the security schemes defined in the OpenAPI document, Mintlify prompts readers for the correct credentials before executing requests in the playground.

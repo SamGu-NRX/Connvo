@@ -8,10 +8,6 @@
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    // "types": [
-    //   "styled-components",
-    //   "node"
-    // ],
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -24,10 +20,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-        // "./*"
-      ],
+      "@/*": ["./src/*"],
       "@convex/*": ["./convex/*"]
     }
   },

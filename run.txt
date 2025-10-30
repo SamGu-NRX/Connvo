@@ -1,0 +1,862 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v3.2.4 /Users/samgu/Programming Projects/Connvo
+
+ ✓ |convex| convex/test/schemaValidation.test.ts (13 tests) 21ms
+stdout | convex/test/realWorldScenarios.test.ts > Real-World Scenario Tests > Performance SLO Validation > should meet query performance targets
+Query performance: avg=0ms, max=0ms
+
+ ✓ |convex| convex/test/realWorldScenarios.test.ts (6 tests) 33ms
+stdout | convex/types/__tests__/monitoringTools.test.ts > Type System Monitoring Tools > Health Monitoring > should generate comprehensive health report
+Health Report Summary: {
+  totalValidators: [33m36[39m,
+  failedValidators: [33m1[39m,
+  warnings: [33m0[39m,
+  compilationTime: [32m'0.57ms'[39m,
+  validationTime: [32m'0.02ms'[39m
+}
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should ingest single transcript chunk successfully
+rateLimitRemaining in return: [33m49[39m
+
+stdout | convex/types/__tests__/monitoringTools.test.ts > Type System Monitoring Tools > Health Monitoring > should check system health status
+Health Status: {
+  healthy: [33mfalse[39m,
+  issueCount: [33m1[39m,
+  issues: [ [32m'1 validators failed validation'[39m ]
+}
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should ingest single transcript chunk successfully
+result.rateLimitRemaining in test: [33m49[39m
+
+stdout | convex/types/__tests__/monitoringTools.test.ts > Type System Monitoring Tools > Performance Monitoring > should track performance metrics
+Performance Metrics: {
+  validatorCount: [33m36[39m,
+  averageTime: [32m'0.000ms'[39m,
+  maxTime: [32m'0.000ms'[39m,
+  totalTime: [32m'0.006ms'[39m
+}
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle time-bucketed sharding correctly
+rateLimitRemaining in return: [33m49[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle time-bucketed sharding correctly
+rateLimitRemaining in return: [33m48[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle time-bucketed sharding correctly
+rateLimitRemaining in return: [33m47[39m
+
+stdout | convex/types/__tests__/monitoringTools.test.ts > Type System Monitoring Tools > Report Generation > should export report to markdown
+Markdown Report Length: [33m624[39m characters
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m49[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m48[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m47[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m46[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m45[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m44[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m43[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m42[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m41[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m40[39m
+
+stdout | convex/types/__tests__/monitoringTools.test.ts > Type System Monitoring Tools > Report Generation > should include recommendations
+Recommendations: [ [32m'Fix 1 failed validators'[39m ]
+
+stdout | convex/types/__tests__/typeAlignment.test.ts > CI/CD Validation Report > Generate comprehensive validation report
+Validation Performance: {
+  totalValidators: [33m12[39m,
+  averageTime: [32m'0.00ms'[39m,
+  maxTime: [32m'0.00ms'[39m,
+  totalTime: [32m'0.01ms'[39m
+}
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m39[39m
+
+stdout | convex/types/__tests__/typeAlignment.test.ts > Type Exploration Tools > Explore User validator structure
+User validator exploration: { complexity: [33m17[39m, dependencies: [ [32m'table:users'[39m ] }
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m38[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m37[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m36[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m35[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m34[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m33[39m
+
+ ✓ |convex| convex/types/__tests__/typeAlignment.test.ts (16 tests) 6ms
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m32[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m31[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m30[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m29[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m28[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m27[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m26[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m25[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m24[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m23[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m22[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m21[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m20[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m19[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m18[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m17[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m16[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m15[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m14[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m13[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m12[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m11[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m10[39m
+
+stderr | convex/types/__tests__/monitoringTools.test.ts > Type System Monitoring Tools > Integration with CI/CD > should provide CI-friendly health check
+Type system health check failed: [ [32m'1 validators failed validation'[39m ]
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m9[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m8[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m7[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m6[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m5[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m4[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m3[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m2[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m1[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should enforce rate limits
+rateLimitRemaining in return: [33m0[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should calculate transcript statistics correctly
+rateLimitRemaining in return: [33m49[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should calculate transcript statistics correctly
+rateLimitRemaining in return: [33m48[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should calculate transcript statistics correctly
+rateLimitRemaining in return: [33m47[39m
+
+ ✓ |convex| convex/types/__tests__/monitoringTools.test.ts (15 tests) 36ms
+ ✓ |convex| convex/users/onboarding.test.ts (4 tests) 85ms
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should cleanup old transcripts
+rateLimitRemaining in return: [33m49[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m49[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m48[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m47[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m46[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m45[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m44[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m43[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m42[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m41[39m
+
+stdout | convex/transcripts/ingestion.test.ts > Transcript Ingestion Pipeline > should handle concurrent ingestion without conflicts
+rateLimitRemaining in return: [33m40[39m
+
+ ✓ |convex| convex/transcripts/ingestion.test.ts (9 tests) 107ms
+ ✓ |convex| convex/auth/guards.test.ts (17 tests) 110ms
+stdout | convex/auth/permissions.test.ts > Dynamic Permission Management > Subscription Permission Validation > should enforce role-based permissions
+participantValidation: { granted: [33mfalse[39m, metadata: {}, permissions: [ [32m'read'[39m, [32m'write'[39m ] }
+
+ ✓ |convex| convex/matching/matching.test.ts (4 tests) 189ms
+ ✓ |convex| convex/insights/insights.test.ts (4 tests) 211ms
+ ✓ |convex| convex/prompts/prompts.test.ts (5 tests) 274ms
+stdout | convex/auth/permissions.test.ts
+Retry attempt 1/4 after 1076.3917385364214ms delay
+
+stderr | convex/auth/permissions.test.ts
+Error when running scheduled function meetings/stream/index:createStreamRoom Error: Idempotent result missing
+    at handler [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:240:13[90m)[39m
+    at invokeFunction [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:50:14[90m)[39m
+    at invokeAction [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:187:18[90m)[39m
+    at Object.actionFromPath [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1229:31[90m)[39m
+    at Object.fun [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1285:24[90m)[39m
+    at Timeout._onTimeout [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:828:25[90m)[39m
+
+ ❯ |convex| convex/auth/permissions.test.ts (18 tests | 3 failed) 279ms
+   ✓ Dynamic Permission Management > Subscription Permission Validation > should grant permissions for meeting participants 114ms
+   ✓ Dynamic Permission Management > Subscription Permission Validation > should deny permissions for non-participants 2ms
+   ✓ Dynamic Permission Management > Subscription Permission Validation > should enforce role-based permissions 2ms
+   ✓ Dynamic Permission Management > Real-Time Subscription Management > should establish meeting notes subscription with proper permissions 120ms
+   ✓ Dynamic Permission Management > Real-Time Subscription Management > should establish transcript subscription only for active meetings 10ms
+   ✓ Dynamic Permission Management > Real-Time Subscription Management > should deny transcript subscription for inactive meetings 1ms
+   ✓ Dynamic Permission Management > Real-Time Subscription Management > should validate subscription permissions in real-time 1ms
+   ✓ Dynamic Permission Management > Dynamic Permission Updates > should revoke permissions when participant is removed 1ms
+   ✓ Dynamic Permission Management > Dynamic Permission Updates > should update permissions when participant role changes 1ms
+   ✓ Dynamic Permission Management > Dynamic Permission Updates > should revoke transcript access when meeting ends 2ms
+   ✓ Dynamic Permission Management > Audit Logging > should surface subscription audit entries when available 6ms
+   ✓ Dynamic Permission Management > Audit Logging > should surface permission revocation entries when available 1ms
+   ✓ Dynamic Permission Management > Audit Logging > should surface role change entries when available 1ms
+   ✓ Dynamic Permission Management > Performance and Scalability > should handle multiple concurrent subscription validations 2ms
+   × Dynamic Permission Management > Performance and Scalability > should efficiently validate subscription permissions 5ms
+     → expected false to be true // Object.is equality
+   × Dynamic Permission Management > Edge Cases and Error Handling > should handle invalid resource types gracefully 7ms
+     → expected 'Should have thrown validation error' to contain 'Unknown resource type'
+   × Dynamic Permission Management > Edge Cases and Error Handling > should handle non-existent meetings gracefully 1ms
+     → expected 'Validator error: Expected ID for tabl…' to contain 'not found'
+   ✓ Dynamic Permission Management > Edge Cases and Error Handling > should handle subscription validation for expired permissions 1ms
+stderr | convex/meetings/stream/index.ts:234:19
+Failed to create GetStream call: Error: GetStream credentials not configured. Set STREAM_API_KEY and STREAM_SECRET environment variables.
+    at resolveCredentials [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:59:11[90m)[39m
+    at getStreamVideoClient [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:87:30[90m)[39m
+    at getStreamCall [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:97:10[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:108:30
+    at CircuitBreaker.execute [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/resilience.ts:135:28[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:107:54
+    at withRetry [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/resilience.ts:62:20[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:105:32
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at withActionIdempotency [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/idempotency.ts:251:20[90m)[39m
+
+stderr | convex/meetings/stream/index.ts:234:19
+Failed to create GetStream call: Error: GetStream credentials not configured. Set STREAM_API_KEY and STREAM_SECRET environment variables.
+    at resolveCredentials [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:59:11[90m)[39m
+    at getStreamVideoClient [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:87:30[90m)[39m
+    at getStreamCall [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:97:10[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:108:30
+    at CircuitBreaker.execute [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/resilience.ts:135:28[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:107:54
+    at withRetry [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/resilience.ts:62:20[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:105:32
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at withActionIdempotency [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/idempotency.ts:251:20[90m)[39m
+
+stderr | convex/meetings/stream/index.ts:234:19
+Failed to create GetStream call: Error: GetStream credentials not configured. Set STREAM_API_KEY and STREAM_SECRET environment variables.
+    at resolveCredentials [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:59:11[90m)[39m
+    at getStreamVideoClient [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:87:30[90m)[39m
+    at getStreamCall [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/getstreamServer.ts:97:10[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:108:30
+    at CircuitBreaker.execute [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/resilience.ts:135:28[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:107:54
+    at withRetry [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/resilience.ts:62:20[90m)[39m
+    at [90m/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:105:32
+    at withActionIdempotency [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/lib/idempotency.ts:251:20[90m)[39m
+    at handler [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/meetings/stream/index.ts:65:19[90m)[39m
+
+stderr | Timeout._onTimeout (/Users/samgu/Programming Projects/Connvo/node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:831:33)
+Error when running scheduled function meetings/stream/index:createStreamRoom Error: Patch on non-existent document with ID "10011;idempotencyKeys"
+    at performAsyncSyscall [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/syscall.js:28:11[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at patch [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/database_impl.js:80:3[90m)[39m
+    at Object.patch [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/database_impl.js:113:64[90m)[39m
+    at handler [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/system/idempotency.ts:56:5[90m)[39m
+    at invokeFunction [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:50:14[90m)[39m
+    at invokeMutation [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:36:18[90m)[39m
+    at runTransaction [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1177:31[90m)[39m
+    at Object.mutationFromPath [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1209:20[90m)[39m
+    at Object.mutation [as runMutation] [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1242:20[90m)[39m
+
+stderr | Timeout._onTimeout (/Users/samgu/Programming Projects/Connvo/node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:831:33)
+Error when running scheduled function meetings/stream/index:createStreamRoom Error: Patch on non-existent document with ID "10012;idempotencyKeys"
+    at performAsyncSyscall [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/syscall.js:28:11[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at patch [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/database_impl.js:80:3[90m)[39m
+    at Object.patch [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/database_impl.js:113:64[90m)[39m
+    at handler [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/system/idempotency.ts:56:5[90m)[39m
+    at invokeFunction [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:50:14[90m)[39m
+    at invokeMutation [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:36:18[90m)[39m
+    at runTransaction [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1177:31[90m)[39m
+    at Object.mutationFromPath [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1209:20[90m)[39m
+    at Object.mutation [as runMutation] [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1242:20[90m)[39m
+
+stderr | Timeout._onTimeout (/Users/samgu/Programming Projects/Connvo/node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:831:33)
+Error when running scheduled function meetings/stream/index:createStreamRoom Error: Patch on non-existent document with ID "10010;idempotencyKeys"
+    at performAsyncSyscall [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/syscall.js:28:11[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at patch [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/database_impl.js:80:3[90m)[39m
+    at Object.patch [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/database_impl.js:113:64[90m)[39m
+    at handler [90m(/Users/samgu/Programming Projects/Connvo/[39mconvex/system/idempotency.ts:56:5[90m)[39m
+    at invokeFunction [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:50:14[90m)[39m
+    at invokeMutation [90m(file:///Users/samgu/Programming%20Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex@1.27.0_react@19.1.1/node_modules/[4mconvex[24m/dist/esm/server/impl/registration_impl.js:36:18[90m)[39m
+    at runTransaction [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1177:31[90m)[39m
+    at Object.mutationFromPath [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1209:20[90m)[39m
+    at Object.mutation [as runMutation] [90m(/Users/samgu/Programming Projects/Connvo/[39mnode_modules/[4m.pnpm[24m/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/[4mconvex-test[24m/dist/index.js:1242:20[90m)[39m
+
+stdout | convex/types/__tests__/propertyBasedTests.test.ts > Performance Property Tests > Validator performance scales linearly
+Validator performance scaling: {
+  sizes: [ [33m10[39m, [33m50[39m, [33m100[39m, [33m500[39m ],
+  timings: [ [32m'0.05ms'[39m, [32m'0.00ms'[39m, [32m'0.00ms'[39m, [32m'0.00ms'[39m ],
+  sizeRatio: [33m50[39m,
+  timeRatio: [32m'0.03'[39m
+}
+
+ ✓ |convex| convex/types/__tests__/propertyBasedTests.test.ts (12 tests) 24ms
+stdout | convex/types/__tests__/functionTypeConsistency.test.ts > Performance and Scalability Validation > Large validator collections perform well
+Validated 100 functions in 0.03ms (avg: 0.00ms per function)
+
+ ✓ |convex| convex/types/__tests__/functionTypeConsistency.test.ts (16 tests) 4ms
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Compile-time Performance > TypeScript compilation time impact
+Validated 27 validators in 0.12ms
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Compile-time Performance > Validator performance scales linearly
+Performance scaling: {
+  sizes: [ [33m10[39m, [33m25[39m, [33m50[39m, [33m100[39m ],
+  timings: [ [32m'0.00ms'[39m, [32m'0.00ms'[39m, [32m'0.01ms'[39m, [32m'0.01ms'[39m ],
+  sizeRatio: [33m10[39m,
+  timeRatio: [32m'2.82'[39m
+}
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Compile-time Performance > Complex validator performance
+Complex validators validated in 0.00ms
+
+ ✓ |convex| convex/notes/operations.test.ts (65 tests) 8ms
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Runtime Performance > ArrayBuffer operations are efficient
+ArrayBuffer operations: 0.010ms per operation (1000 iterations)
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Runtime Performance > Large embedding vector performance
+Large vector processing: 0.07ms per vector (100 vectors, 3072 dimensions)
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Runtime Performance > Memory usage remains bounded
+Memory monitoring not available in this environment
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Bundle Size Impact > Validator objects are lightweight
+Validator size: 1.28KB
+Validator size: 0.40KB
+Validator size: 1.56KB
+Validator size: 1.19KB
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Scalability Validation > Performance with 100+ validators
+Scalability test: 0.02ms total, 0.000ms per validator (100 validators)
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Scalability Validation > Concurrent validation performance
+Concurrent validation: 0.49ms for 12 validators
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Real-world Performance Scenarios > Function definition performance simulation
+Function simulation: 0.00ms per function (4 functions)
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Real-world Performance Scenarios > Development workflow performance
+Development workflow: 0.00ms per cycle (10 cycles, 5 validators each)
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Performance Regression Detection > Baseline performance metrics
+Single validator validation: 0.006ms (expected < 1ms)
+Pagination validator creation: 0.011ms (expected < 2ms)
+ArrayBuffer conversion: 0.016ms (expected < 1ms)
+
+stdout | convex/types/__tests__/validatorConsistency.test.ts > Validator Consistency for Function Usage > Performance Validation > Large validator collections perform well
+Validated 27 validators in 0.01ms
+
+stdout | convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Performance Regression Detection > Performance consistency across runs
+Performance consistency: avg=0.00ms, min=0.00ms, max=0.01ms, variance=0.01ms
+
+ ✓ |convex| convex/types/__tests__/validatorConsistency.test.ts (20 tests) 6ms
+ ❯ |convex| convex/types/__tests__/performanceValidation.test.ts (14 tests | 1 failed) 27ms
+   ✓ Performance Validation > Compile-time Performance > TypeScript compilation time impact 1ms
+   ✓ Performance Validation > Compile-time Performance > Validator performance scales linearly 0ms
+   ✓ Performance Validation > Compile-time Performance > Complex validator performance 0ms
+   ✓ Performance Validation > Runtime Performance > ArrayBuffer operations are efficient 11ms
+   ✓ Performance Validation > Runtime Performance > Large embedding vector performance 8ms
+   ✓ Performance Validation > Runtime Performance > Memory usage remains bounded 1ms
+   ✓ Performance Validation > Bundle Size Impact > Type definitions have zero runtime footprint 0ms
+   ✓ Performance Validation > Bundle Size Impact > Validator objects are lightweight 0ms
+   ✓ Performance Validation > Scalability Validation > Performance with 100+ validators 0ms
+   ✓ Performance Validation > Scalability Validation > Concurrent validation performance 1ms
+   ✓ Performance Validation > Real-world Performance Scenarios > Function definition performance simulation 0ms
+   ✓ Performance Validation > Real-world Performance Scenarios > Development workflow performance 0ms
+   ✓ Performance Validation > Performance Regression Detection > Baseline performance metrics 0ms
+   × Performance Validation > Performance Regression Detection > Performance consistency across runs 3ms
+     → expected 0.010625000000004547 to be less than 0.01
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |convex| convex/auth/permissions.test.ts > Dynamic Permission Management > Performance and Scalability > should efficiently validate subscription permissions
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ convex/auth/permissions.test.ts:525:30
+    523|       expect(results).toHaveLength(20);
+    524|       results.forEach((result) => {
+    525|         expect(result.valid).toBe(true);
+       |                              ^
+    526|       });
+    527| 
+ ❯ convex/auth/permissions.test.ts:524:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |convex| convex/auth/permissions.test.ts > Dynamic Permission Management > Edge Cases and Error Handling > should handle invalid resource types gracefully
+AssertionError: expected 'Should have thrown validation error' to contain 'Unknown resource type'
+
+Expected: [32m"Unknown resource type"[39m
+Received: [31m"Should have thrown validation error"[39m
+
+ ❯ convex/auth/permissions.test.ts:547:25
+    545|       } catch (error) {
+    546|         const message = error instanceof Error ? error.message : Strin…
+    547|         expect(message).toContain("Unknown resource type");
+       |                         ^
+    548|       }
+    549|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |convex| convex/auth/permissions.test.ts > Dynamic Permission Management > Edge Cases and Error Handling > should handle non-existent meetings gracefully
+AssertionError: expected 'Validator error: Expected ID for tabl…' to contain 'not found'
+
+Expected: [32m"not found"[39m
+Received: [31m"Validator error: Expected ID for table "meetings", got `fake-meeting-id`"[39m
+
+ ❯ convex/auth/permissions.test.ts:564:25
+    562|       } catch (error) {
+    563|         const message = error instanceof Error ? error.message : Strin…
+    564|         expect(message).toContain("not found");
+       |                         ^
+    565|       }
+    566|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  |convex| convex/types/__tests__/performanceValidation.test.ts > Performance Validation > Performance Regression Detection > Performance consistency across runs
+AssertionError: expected 0.010625000000004547 to be less than 0.01
+ ❯ convex/types/__tests__/performanceValidation.test.ts:504:24
+    502|       // Performance should be consistent (low variance)
+    503|       // Allow for more variance in test environments
+    504|       expect(variance).toBeLessThan(Math.max(avgTime * 2, 0.01)); // V…
+       |                        ^
+    505|     });
+    506|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 19 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should establish meeting notes subscription with proper permissions". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should establish meeting notes subscription with proper permissions". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10010;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10012;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1254:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:14
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should surface subscription audit entries when available". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:821:28
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ runNextTicks node:internal/process/task_queues:65:5
+ ❯ listOnTimeout node:internal/timers:569:9
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:833:32
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ processTicksAndRejections node:internal/process/task_queues:105:5
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1254:24
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:833:32
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ processTicksAndRejections node:internal/process/task_queues:105:5
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1254:24
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: Write outside of transaction 10007;_scheduled_functions
+ ❯ DatabaseFake._addWrite node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:75:19
+ ❯ DatabaseFake.patch node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:111:14
+ ❯ node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:833:32
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1171:24
+ ❯ invokeFunction ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:50:36
+ ❯ invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:36:24
+ ❯ Function.func.invokeMutation ../../Programming%20Projects/Connvo/node_modules/.pnpm/convex@1.27.0_react@19.1.1/node_modules/convex/dist/esm/server/impl/registration_impl.js:119:38
+ ❯ runTransaction node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1177:39
+ ❯ processTicksAndRejections node:internal/process/task_queues:105:5
+ ❯ handler node_modules/.pnpm/convex-test@0.0.38_convex@1.27.0_react@19.1.1_/node_modules/convex-test/dist/index.js:1254:24
+
+This error originated in "convex/auth/permissions.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  2 failed | 14 passed (16)
+      Tests  4 failed | 234 passed (238)
+     Errors  19 errors
+   Start at  22:52:42
+   Duration  904ms (transform 1.02s, setup 555ms, collect 2.08s, tests 1.42s, environment 426ms, prepare 1.17s)
+

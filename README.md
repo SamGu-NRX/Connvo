@@ -144,6 +144,15 @@ Before you begin, ensure you have met the following requirements:
 
 ---
 
+## API Documentation
+
+- The Convex OpenAPI spec lives at `docs/api-reference/convex-openapi.yaml` and is generated with `pnpm run update:api-docs:dev`.
+- See `docs/API_DOCUMENTATION.md` for environment setup, validation commands, and troubleshooting tips.
+- Mintlify reads the spec via `mint.json`; run `mintlify dev` after regeneration to preview the developer portal locally.
+- CI automatically refreshes the documentation on pushes to `main` when the `Update API Docs` workflow secrets are configured.
+
+---
+
 ## Algorithms & Matching Pipeline
 
 We employ a combination of **xgBoost** (for our “PTM” pipeline) and vector-based methods (via **pgvector** + **OpenAI** semantic embeddings) to produce high-quality matches. You can find our specific methodology in [`docs/MatchingPipeline.pdf`](./docs/MatchingPipeline.pdf):
