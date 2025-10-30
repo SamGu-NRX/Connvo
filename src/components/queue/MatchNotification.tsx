@@ -54,7 +54,7 @@ export default function MatchNotification({
       exit={{ opacity: 0, y: -50 }}
       className="bg-background/80 flex items-center justify-center backdrop-blur-xs"
     >
-      <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg">
+      <div className="bg-card w-full max-w-md rounded-lg p-6 dark:shadow-lg">
         <h2 className="mb-4 text-center text-2xl font-bold">Match Found!</h2>
         <UserCard user={user} />
         <div className="mt-6 flex justify-center space-x-4">
