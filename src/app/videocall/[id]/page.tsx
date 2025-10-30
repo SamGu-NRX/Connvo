@@ -346,7 +346,9 @@ export default function VideoMeeting() {
   }, [timeManager]);
 
   if (isCallEnded) {
-    return <AfterCallScreen />;
+    // This is a demo page - pass a placeholder ID
+    // In real implementation, this would come from the URL params
+    return <AfterCallScreen meetingId={"demo_meeting" as any} />;
   }
 
   return (
