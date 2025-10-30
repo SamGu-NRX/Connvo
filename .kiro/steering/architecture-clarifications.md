@@ -1,13 +1,13 @@
 ---
-description: Key architectural clarifications for LinkedUp project
+description: Key architectural clarifications for Connvo project
 globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.md"]
 ---
 
-# LinkedUp Architecture Clarifications
+# Connvo Architecture Clarifications
 
 ## Hybrid Backend Architecture
 
-LinkedUp uses a **hybrid backend architecture** combining:
+Connvo uses a **hybrid backend architecture** combining:
 
 1. **Next.js App Directory API Routes** (`/src/app/api/`)
    - Traditional REST endpoints for external integrations
@@ -23,7 +23,7 @@ LinkedUp uses a **hybrid backend architecture** combining:
 
 ## Tiered Video Calling System
 
-LinkedUp implements a **tiered video calling approach**:
+Connvo implements a **tiered video calling approach**:
 
 ### Free Tier - WebRTC/Custom Pipeline
 

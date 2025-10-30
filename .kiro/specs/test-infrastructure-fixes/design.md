@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document outlines the technical approach for fixing the comprehensive testing infrastructure issues in the LinkedUp project. The current test suite has 77 failed tests out of 216 total tests, with failures spanning multiple categories: convex-test library compatibility, operational transform logic errors, test infrastructure problems, and type system validation issues.
+This design document outlines the technical approach for fixing the comprehensive testing infrastructure issues in the Connvo project. The current test suite has 77 failed tests out of 216 total tests, with failures spanning multiple categories: convex-test library compatibility, operational transform logic errors, test infrastructure problems, and type system validation issues.
 
 The goal is to achieve a robust, reliable test suite with 95%+ pass rate that properly validates all backend functionality, real-time features, and type safety.
 
@@ -614,4 +614,4 @@ Type validation is detecting drift in the Transcript entity and validator failur
 - **CI/CD Integration**: 100% test automation
 - **Documentation Coverage**: All test patterns documented
 
-This comprehensive design addresses all identified testing issues and provides a robust foundation for reliable, fast, and maintainable tests that will support the LinkedUp project's continued development and quality assurance.
+This comprehensive design addresses all identified testing issues and provides a robust foundation for reliable, fast, and maintainable tests that will support the Connvo project's continued development and quality assurance.

@@ -1,7 +1,7 @@
 /**
  * Convex Database Schema
  *
- * This schema defines all collections for the LinkedUp application migration
+ * This schema defines all collections for the Connvo application migration
  * from Drizzle ORM + PostgreSQL/Supabase to Convex.
  *
  * Requirements: 3.1, 3.2, 3.3

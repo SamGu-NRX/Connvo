@@ -1,6 +1,6 @@
 # Authentication and Authorization System
 
-This directory contains the authentication and authorization infrastructure for the LinkedUp Convex backend, implementing enterprise-grade security with WorkOS integration.
+This directory contains the authentication and authorization infrastructure for the Connvo Convex backend, implementing enterprise-grade security with WorkOS integration.
 
 ## Overview
 

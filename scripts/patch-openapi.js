@@ -10,10 +10,12 @@ if (!fs.existsSync(SPEC_PATH)) {
 }
 
 const TAG_DESCRIPTIONS = {
-  Users: "Identity, profile, and authentication operations for LinkedUp users.",
+  Users: "Identity, profile, and authentication operations for Connvo users.",
   Meetings: "Scheduling, managing, and retrieving meeting data.",
-  Transcripts: "Endpoints for accessing call transcripts and transcription controls.",
-  Insights: "AI-generated insights, summaries, and analytics derived from meetings.",
+  Transcripts:
+    "Endpoints for accessing call transcripts and transcription controls.",
+  Insights:
+    "AI-generated insights, summaries, and analytics derived from meetings.",
   Prompts: "Prompt management and AI conversation guidance.",
   Notes: "Collaborative meeting notes and follow-up documentation.",
   WebRTC: "Real-time communication, session signalling, and media utilities.",
@@ -44,15 +46,20 @@ const spec = yaml.load(raw);
 
 spec.info = {
   ...(spec.info || {}),
-  title: "LinkedUp Convex API",
-  version: spec.info && spec.info.version && spec.info.version !== "0.0.0" ? spec.info.version : "1.0.0",
+  title: "Connvo Convex API",
+  version:
+    spec.info && spec.info.version && spec.info.version !== "0.0.0"
+      ? spec.info.version
+      : "1.0.0",
   description:
     (spec.info && spec.info.description) ||
-    "HTTP interface for LinkedUp's Convex backend, exposing vetted query, mutation, and action endpoints.",
+    "HTTP interface for Connvo's Convex backend, exposing vetted query, mutation, and action endpoints.",
 };
 
 if (Array.isArray(spec.tags)) {
-  spec.tags = spec.tags.filter((tag) => tag && !["query", "mutation", "action"].includes(tag.name));
+  spec.tags = spec.tags.filter(
+    (tag) => tag && !["query", "mutation", "action"].includes(tag.name),
+  );
 } else {
   spec.tags = [];
 }
@@ -75,7 +82,10 @@ for (const [pathKey, methods] of Object.entries(spec.paths)) {
 
     if (!/\/health/i.test(pathKey)) {
       operation.security = operation.security || [];
-      const hasBearer = operation.security.some((item) => item && Object.prototype.hasOwnProperty.call(item, "bearerAuth"));
+      const hasBearer = operation.security.some(
+        (item) =>
+          item && Object.prototype.hasOwnProperty.call(item, "bearerAuth"),
+      );
       if (!hasBearer) {
         operation.security.push({ bearerAuth: [] });
       }

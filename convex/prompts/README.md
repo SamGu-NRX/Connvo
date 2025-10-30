@@ -1,6 +1,6 @@
 # Prompts Module
 
-This module implements AI-powered conversation prompts for LinkedUp meetings, including pre-call idea generation and in-call contextual prompts.
+This module implements AI-powered conversation prompts for Connvo meetings, including pre-call idea generation and in-call contextual prompts.
 
 ## Features
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design outlines the implementation of an automated OpenAPI specification workflow and Mintlify integration for the LinkedUp Convex backend. The solution uses Convex's official `convex-helpers open-api-spec` command to generate the OpenAPI specification directly from the deployment, then enhances it for Mintlify integration.
+This design outlines the implementation of an automated OpenAPI specification workflow and Mintlify integration for the Connvo Convex backend. The solution uses Convex's official `convex-helpers open-api-spec` command to generate the OpenAPI specification directly from the deployment, then enhances it for Mintlify integration.
 
 **Critical Design Principles**:
 
@@ -73,20 +73,24 @@ The workflow has three phases:
 ## Detailed Workflow
 
 ### Step 1: Prerequisites
+
 - Ensure Node.js and npm are installed locally.
 - Confirm the Convex deployment you want to document is live and that you know its base URL.
 - Review Convex functions to verify they declare argument and return validators so the generator can emit accurate schemas.[^convex-openapi]
 
 ### Step 2: Generate the baseline spec
+
 - Install the Convex helpers CLI (or rely on the dev dependency) and run the generator against the target deployment. This produces `convex-spec.yaml` in the project root.[^convex-openapi]
 
 ```bash
 pnpm add -D convex-helpers
 pnpm exec convex-helpers open-api-spec
 ```
+
 - When Convex functions expose `v.bytes()` validators, run `pnpm exec node scripts/patch-convex-helpers-openapi.js` before generation so the helper treats them as `type: string` with `format: binary` instead of throwing an unsupported error.
 
 ### Step 3: Polish the spec for Mintlify
+
 - Replace any placeholder server URLs (e.g., `{hostUrl}`) with concrete deployment URLs so Mintlify’s playground can send requests to the right environment.[^mint-openapi]
 - Append security schemes under `components.securitySchemes` such as bearer auth for user JWTs and a header-based deploy key, and optionally apply them globally using the `security` array.[^mint-openapi]
 - Layer in request and response examples that match the Convex HTTP payload shape (typically `{ "args": { ... }, "format": "json" }`) so Mintlify renders helpful samples.
@@ -113,6 +117,7 @@ security:
 ```
 
 ### Step 4: Validate and optionally generate SDKs
+
 - Run both Mintlify and general OpenAPI validators to catch structural issues before committing.[^mint-openapi][^redocly-cli]
 
 ```bash
@@ -127,6 +132,7 @@ pnpm exec openapi-generator-cli generate -i convex-spec.yaml -g go -o convex_cli
 ```
 
 ### Step 5: Add the spec to Mintlify
+
 - **Dashboard upload**: Import the YAML file through Mintlify’s API Playground setup so it can auto-generate pages.
 - **docs.json configuration**: Commit the spec within the docs repo (for example `docs/api-reference/convex-spec.yaml`) and reference it via navigation metadata so Mintlify bundles it with the site build.[^mint-openapi]
 
@@ -146,6 +152,7 @@ pnpm exec openapi-generator-cli generate -i convex-spec.yaml -g go -o convex_cli
 ```
 
 ### Step 6: Test the playground
+
 - Execute curl requests against representative endpoints (e.g., `/api/run/{function}`) to confirm responses match the examples you embedded.
 - In Mintlify preview, verify the playground prompts for the expected auth headers and that each endpoint loads with the correct schema and examples.
 
@@ -156,6 +163,7 @@ curl https://your-deployment.convex.cloud/api/run/messages/list \
 ```
 
 ### Step 7: Automate post-processing (optional)
+
 - Wrap generation, URL replacement, and validation in a small helper script so developers can refresh docs with a single command.
 
 ```js
@@ -171,16 +179,20 @@ console.log("Spec moved to", dst);
 ```
 
 ### Step 8: Security and best practices
+
 - Exclude internal or admin-only endpoints from public specs, or mark them with prominent warnings plus dedicated security requirements.
 - Use placeholder tokens (e.g., `<your-token-here>`) in examples and remind readers to keep deploy keys out of version control.
 - Document how to obtain credentials and highlight Convex-specific semantics (e.g., run endpoints, `format` parameter, `logLines` field).
 
 ### Step 9: Caveats and helpful links
+
 - Emphasize that Convex’s OpenAPI generator is currently in beta and focuses on HTTP access patterns, not reactive subscriptions.[^convex-openapi]
 - Link to the Convex OpenAPI reference and Mintlify API Playground docs so maintainers can dig deeper when features evolve.[^mint-openapi]
 
 [^convex-openapi]: Convex documentation — “Generate OpenAPI Specification” and related guidance on limitations and client generation. Retrieved via Context7 `/get-convex/convex-backend`.
+
 [^mint-openapi]: Mintlify documentation — API Playground setup, server configuration, authentication, and validation commands. Retrieved via Context7 `/mintlify/docs`.
+
 [^redocly-cli]: Redocly CLI documentation — migration guidance from swagger-cli and lint command usage. Retrieved via Context7 `/redocly/redocly-cli`.
 
 ## Components and Interfaces
@@ -388,10 +400,10 @@ const env =
   args.find((arg) => arg.startsWith("--env="))?.split("=")[1] || "dev";
 
 const deploymentUrls = {
-  dev: process.env.CONVEX_URL_DEV || "https://linkedup-dev.convex.cloud",
+  dev: process.env.CONVEX_URL_DEV || "https://Connvo-dev.convex.cloud",
   staging:
-    process.env.CONVEX_URL_STAGING || "https://linkedup-staging.convex.cloud",
-  prod: process.env.CONVEX_URL_PROD || "https://linkedup-prod.convex.cloud",
+    process.env.CONVEX_URL_STAGING || "https://Connvo-staging.convex.cloud",
+  prod: process.env.CONVEX_URL_PROD || "https://Connvo-prod.convex.cloud",
 };
 
 enhanceOpenAPISpec({
@@ -512,10 +524,10 @@ validateOpenAPISpec(specPath).catch((error) => {
 ```json
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "LinkedUp API Documentation",
+  "name": "Connvo API Documentation",
   "logo": {
-    "dark": "/public/linkeduplogos/linkedupwhite.svg",
-    "light": "/public/linkeduplogos/linkedupblack.svg"
+    "dark": "/public/Connvologos/Connvowhite.svg",
+    "light": "/public/Connvologos/Connvoblack.svg"
   },
   "favicon": "/public/logo-square.png",
   "colors": {
@@ -530,7 +542,7 @@ validateOpenAPISpec(specPath).catch((error) => {
   "topbarLinks": [
     {
       "name": "Dashboard",
-      "url": "https://app.linkedup.example.com"
+      "url": "https://app.Connvo.example.com"
     }
   ],
   "tabs": [
@@ -550,11 +562,11 @@ validateOpenAPISpec(specPath).catch((error) => {
     }
   ],
   "footerSocials": {
-    "github": "https://github.com/linkedup"
+    "github": "https://github.com/Connvo"
   },
   "openapi": "docs/api-reference/convex-openapi.yaml",
   "api": {
-    "baseUrl": "https://linkedup-dev.convex.cloud",
+    "baseUrl": "https://Connvo-dev.convex.cloud",
     "auth": {
       "method": "bearer",
       "name": "Authorization"
@@ -570,7 +582,7 @@ validateOpenAPISpec(specPath).catch((error) => {
 
 - Single `openapi` field pointing to enhanced spec (Mintlify auto-generates pages)
 - Enable API Playground for all endpoints
-- Use existing LinkedUp branding (logos, colors)
+- Use existing Connvo branding (logos, colors)
 - Keep navigation minimal - Mintlify creates pages from OpenAPI tags
 - Point to dev deployment by default (can be changed for production docs)
 

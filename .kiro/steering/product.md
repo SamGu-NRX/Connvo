@@ -1,6 +1,6 @@
-# **CURRENT** LinkedUp Product Overview (WIP, subject to change)
+# **CURRENT** Connvo Product Overview (WIP, subject to change)
 
-LinkedUp is a professional networking platform designed as the antithesis of LinkedIn. It focuses on authentic, real-time connections through advanced AI-powered collaboration features:
+Connvo is a professional networking platform designed as the antithesis of LinkedIn. It focuses on authentic, real-time connections through advanced AI-powered collaboration features:
 
 ## Core Features
 

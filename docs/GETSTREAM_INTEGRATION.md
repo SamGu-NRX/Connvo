@@ -1,6 +1,6 @@
 # GetStream Video Integration Guide
 
-This document provides a comprehensive guide for the GetStream Video integration in LinkedUp, covering setup, usage, and best practices for paid tier video calling features.
+This document provides a comprehensive guide for the GetStream Video integration in Connvo, covering setup, usage, and best practices for paid tier video calling features.
 
 ## Overview
 

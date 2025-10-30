@@ -1,6 +1,6 @@
-# LinkedUp Deployment Guide
+# Connvo Deployment Guide
 
-This guide covers deployment procedures for the LinkedUp Convex backend across different environments.
+This guide covers deployment procedures for the Connvo Convex backend across different environments.
 
 ## Prerequisites
 
@@ -64,7 +64,7 @@ This guide covers deployment procedures for the LinkedUp Convex backend across d
    WORKOS_CLIENT_ID=client_staging_id_here
    WORKOS_API_KEY=sk_test_staging_key_here
    WORKOS_COOKIE_PASSWORD=staging_secure_password_32_chars_minimum
-   NEXT_PUBLIC_WORKOS_REDIRECT_URI=https://staging.linkedup.com/callback
+   NEXT_PUBLIC_WORKOS_REDIRECT_URI=https://staging.Connvo.com/callback
    CONVEX_DEPLOY_KEY=staging_convex_deploy_key
    NEXT_PUBLIC_CONVEX_URL=https://staging-convex-url.convex.cloud
    ```
@@ -88,7 +88,7 @@ This guide covers deployment procedures for the LinkedUp Convex backend across d
    WORKOS_CLIENT_ID=client_production_id_here
    WORKOS_API_KEY=sk_live_production_key_here
    WORKOS_COOKIE_PASSWORD=production_secure_password_32_chars_minimum
-   NEXT_PUBLIC_WORKOS_REDIRECT_URI=https://linkedup.com/callback
+   NEXT_PUBLIC_WORKOS_REDIRECT_URI=https://Connvo.com/callback
    CONVEX_DEPLOY_KEY=production_convex_deploy_key
    NEXT_PUBLIC_CONVEX_URL=https://production-convex-url.convex.cloud
    ```
@@ -287,6 +287,6 @@ npm run convex:codegen
 
 ### Emergency Contacts
 
-- Platform Team: platform@linkedup.com
-- DevOps Team: devops@linkedup.com
+- Platform Team: platform@Connvo.com
+- DevOps Team: devops@Connvo.com
 - On-call: +1-XXX-XXX-XXXX

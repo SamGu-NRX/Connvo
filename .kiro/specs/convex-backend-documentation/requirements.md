@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the requirements for comprehensive documentation enhancement across the entire LinkedUp Convex backend. The goal is to ensure every public query, mutation, and action has rich docstrings with realistic examples that are validated by tests and automatically integrated into the OpenAPI specification. This builds upon the existing Mintlify documentation infrastructure by ensuring the source functions themselves are thoroughly documented.
+This specification defines the requirements for comprehensive documentation enhancement across the entire Connvo Convex backend. The goal is to ensure every public query, mutation, and action has rich docstrings with realistic examples that are validated by tests and automatically integrated into the OpenAPI specification. This builds upon the existing Mintlify documentation infrastructure by ensuring the source functions themselves are thoroughly documented.
 
 ## Glossary
 
@@ -30,7 +30,7 @@ This specification defines the requirements for comprehensive documentation enha
 
 ### Requirement 2: Realistic Example Payloads
 
-**User Story:** As a developer integrating with LinkedUp, I want to see realistic request and response examples for each endpoint, so that I can quickly understand the data structures and implement correct API calls.
+**User Story:** As a developer integrating with Connvo, I want to see realistic request and response examples for each endpoint, so that I can quickly understand the data structures and implement correct API calls.
 
 #### Acceptance Criteria
 

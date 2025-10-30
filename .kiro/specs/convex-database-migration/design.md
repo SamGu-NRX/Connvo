@@ -1,4 +1,4 @@
-# LinkedUp Backend Migration to Convex — Design Document (v2.0)
+# Connvo Backend Migration to Convex — Design Document (v2.0)
 
 Owner: Platform/Backend
 Date: 2025-09-11
@@ -38,7 +38,7 @@ REVISION NOTES (v2.0):
 
 Summary
 
-- This is the authoritative design for migrating LinkedUp from Drizzle ORM + PostgreSQL/Supabase to Convex and laying a production-grade, reactive foundation for real-time meeting collaboration, AI assistants, and intelligent matching.
+- This is the authoritative design for migrating Connvo from Drizzle ORM + PostgreSQL/Supabase to Convex and laying a production-grade, reactive foundation for real-time meeting collaboration, AI assistants, and intelligent matching.
 - The design prioritizes low latency (sub-100–150ms), scalability (thousands of concurrent meetings), data isolation (per-meeting), and cost/performance efficiency (bounded streams, batching, and sharding).
 - It establishes provider-agnostic abstractions for vectors and AI, and a plug-and-play data model for future “knowledge bank” features.
 

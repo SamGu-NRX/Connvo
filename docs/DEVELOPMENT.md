@@ -1,13 +1,13 @@
-# LinkedUp Development Guide
+# Connvo Development Guide
 
-This guide covers local development setup, coding patterns, and best practices for the LinkedUp Convex backend.
+This guide covers local development setup, coding patterns, and best practices for the Connvo Convex backend.
 
 ## Quick Start
 
 ```bash
 # 1. Clone and setup
 git clone <repository-url>
-cd linkedup
+cd Connvo
 ./scripts/setup-dev.sh
 
 # 2. Start development
