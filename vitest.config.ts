@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vitest/config";
 import path from "path";
 
@@ -19,12 +20,6 @@ export default defineConfig({
       enabled: true,
       tsconfig: "./tsconfig.json",
     },
-    pool: "threads",
-    poolOptions: {
-      threads: {
-        singleThread: true, // Avoid race conditions in Convex tests
-      },
-    },
     projects: [
       {
         test: {
@@ -32,6 +27,9 @@ export default defineConfig({
           include: ["convex/**/*.test.ts", "convex/**/*.spec.ts"],
           environment: "edge-runtime",
           setupFiles: ["./convex/test/setup.ts"],
+          pool: "threads",
+          maxWorkers: 1, // Run tests sequentially to avoid race conditions
+          isolate: false, // Disable isolation for single-threaded execution
           server: {
             deps: {
               inline: ["convex-test"],

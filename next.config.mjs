@@ -2,12 +2,7 @@
 
 /** @type {import('next').NextConfig} */
 
-import withSvgr from "@svgr/webpack";
-
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -21,17 +16,17 @@ const nextConfig = {
     parallelServerCompiles: true,
     // serverActions: {
     //   allowedOrigins: ["app.localhost:3000"],
-    // },
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
+    // },},
+  },
+  // Turbopack config moved to top-level in Next.js 16
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },
-
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
@@ -39,7 +34,7 @@ const nextConfig = {
         {
           loader: "@svgr/webpack",
           options: {
-            svgo: true, // Disable SVGO optimization if you encounter issues
+            svgo: true,
           },
         },
       ],
