@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { ProfileAvatar } from "@/components/app/user-card/profile-avatar";
+import { ProfileAvatar } from "@/components/mvp/user-card/profile-avatar";
 import { MessageCircle } from "lucide-react";
 
 interface MessageModalProps {

@@ -6,7 +6,7 @@ import { X, Check, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { ProfileAvatar } from "@/components/app/user-card/profile-avatar";
+import { ProfileAvatar } from "@/components/mvp/user-card/profile-avatar";
 
 interface ScheduleModalProps {
   isOpen: boolean;

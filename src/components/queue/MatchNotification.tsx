@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "motion/react";
-import UserCard from "@/components/app/user-card";
+import UserCard from "@/components/mvp/user-card";
 import { Button } from "@/components/ui/button";
 
 interface MatchNotificationProps {

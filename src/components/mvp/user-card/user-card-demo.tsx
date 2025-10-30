@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UserCard } from "@/components/app/user-card";
+import { UserCard } from "@/components/mvp/user-card";
 import { mockUsers } from "@/data/mock-users";
 
 export default function UserCardDemo() {

@@ -18,7 +18,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScheduleCallForm } from "./schedule-call-form"; // Assuming this component exists and works
-import UserCard from "@/components/app/user-card"; // Import UserCard
+import UserCard from "@/components/mvp/user-card"; // Import UserCard
 import type { UserInfo } from "@/types/user"; // Import central types
 import {
   generateAvatarDataUrl,

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import {
   type ConnectionType,
   connectionTypeInfo,
-} from "@/components/app/user-card/connection-badge";
+} from "@/components/mvp/user-card/connection-badge";
 
 interface UserCardDetailsProps {
   bio: string;

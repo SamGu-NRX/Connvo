@@ -3,9 +3,12 @@
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConvexClientProvider } from "@/providers/ConvexClientProvider";
+import { AuthKitProvider } from '@workos-inc/authkit-nextjs/components';
+
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
+    <AuthKitProvider>
     <ConvexClientProvider>
       <ThemeProvider
         attribute="class"
@@ -24,5 +27,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Toaster theme="dark" className="hidden dark:block" />
       </ThemeProvider>
     </ConvexClientProvider>
+    </AuthKitProvider>
   );
 }

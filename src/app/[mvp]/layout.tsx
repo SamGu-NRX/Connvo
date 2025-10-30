@@ -4,8 +4,8 @@
 import "../globals.css";
 import type React from "react";
 import { Inter } from "next/font/google";
-import { MobileNavigation } from "@/components/app/MobileNavigation";
-import { DesktopNavigation } from "@/components/app/DesktopNavigation";
+import { MobileNavigation } from "@/components/mvp/MobileNavigation";
+import { DesktopNavigation } from "@/components/mvp/DesktopNavigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,8 +13,8 @@ import Image from "next/image";
 import { motion } from "motion/react";
 
 import { Providers } from "./providers";
-import { Sidebar } from "@/components/app/dashboard/sidebar";
-import { ModeToggle } from "@/components/app/dashboard/ModeToggle";
+import { Sidebar } from "@/components/mvp/dashboard/sidebar";
+import { ModeToggle } from "@/components/mvp/dashboard/ModeToggle";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 

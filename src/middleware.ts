@@ -1,14 +1,14 @@
-import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
+import { authkitMiddleware } from '@workos-inc/authkit-nextjs';
 
-// Enable server-side protection for /app while keeping unauthenticated paths open.
+// In middleware auth mode, each page is protected by default.
+// Exceptions are configured via the `unauthenticatedPaths` option.
 export default authkitMiddleware({
   middlewareAuth: {
     enabled: true,
-    unauthenticatedPaths: ["/", "/api/auth/:path*", "/auth/:path*"],
+    unauthenticatedPaths: ['/'],
   },
 });
 
-// Apply middleware to root, app, and api routes
-export const config = {
-  matcher: ["/", "/app/:path*", "/api/:path*", "/auth/:path*"],
-};
+// Match against pages that require authentication
+// Leave this out if you want authentication on every page in your application
+export const config = { matcher: ['/', '/account/:page*'] };

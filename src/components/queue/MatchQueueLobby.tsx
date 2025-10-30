@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import QueueStatus from "./QueueStatus";
-import UserCard from "@/components/app/user-card";
+import UserCard from "@/components/mvp/user-card";
 import MatchNotification from "./MatchNotification";
-import ErrorState from "@/components/app/ErrorState";
+import ErrorState from "@/components/mvp/ErrorState";
 import { Button } from "@/components/ui/button";
 
 interface MatchQueueLobbyProps {

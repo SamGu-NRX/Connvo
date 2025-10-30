@@ -7,12 +7,12 @@ import { motion, useInView } from "motion/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { UserInfo } from "@/types/user"; // Use the central type
-import { ConnectionStatusIndicator } from "@/components/app/user-card/connection-status";
-import { UserCardHeader } from "@/components/app/user-card/user-card-header";
-import { UserCardTags } from "@/components/app/user-card/user-card-tags";
-import { UserCardStats } from "@/components/app/user-card/user-card-stats";
-import { UserCardInterests } from "@/components/app/user-card/user-card-interests";
-import { UserCardDetails } from "@/components/app/user-card/user-card-details";
+import { ConnectionStatusIndicator } from "@/components/mvp/user-card/connection-status";
+import { UserCardHeader } from "@/components/mvp/user-card/user-card-header";
+import { UserCardTags } from "@/components/mvp/user-card/user-card-tags";
+import { UserCardStats } from "@/components/mvp/user-card/user-card-stats";
+import { UserCardInterests } from "@/components/mvp/user-card/user-card-interests";
+import { UserCardDetails } from "@/components/mvp/user-card/user-card-details";
 
 // Define props using the central UserInfo type
 export interface UserCardProps {

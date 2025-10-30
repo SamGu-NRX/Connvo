@@ -28,8 +28,8 @@ import { TopBar } from "@/components/video-meeting/top-bar";
 import { VideoArea } from "@/components/video-meeting/video-area";
 import { ChatDialog } from "@/components/video-meeting/chat-dialog";
 import { EndCallDialog } from "@/components/video-meeting/end-call-dialog";
-import UserCard from "@/components/app/user-card";
-import AfterCallScreen from "@/components/app/after-call-screen";
+import UserCard from "@/components/mvp/user-card";
+import AfterCallScreen from "@/components/mvp/after-call-screen";
 import {
   MOCK_USERS,
   MOCK_SPEAKING_STATES,

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import type { UserInfo } from "@/types/user";
 import { cn } from "@/lib/utils";
-import { ProfileAvatar } from "@/components/app/user-card/profile-avatar";
-import { UserCardActions } from "@/components/app/user-card/user-card-actions";
-import { MessageModal } from "@/components/app/user-card/message-modal";
-import { ScheduleModal } from "@/components/app/user-card/schedule-modal";
+import { ProfileAvatar } from "@/components/mvp/user-card/profile-avatar";
+import { UserCardActions } from "@/components/mvp/user-card/user-card-actions";
+import { MessageModal } from "@/components/mvp/user-card/message-modal";
+import { ScheduleModal } from "@/components/mvp/user-card/schedule-modal";
 import { Briefcase } from "lucide-react";
 
 interface UserCardHeaderProps {

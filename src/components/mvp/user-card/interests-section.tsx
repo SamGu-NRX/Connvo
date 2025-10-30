@@ -2,28 +2,27 @@ import { cn } from "@/lib/utils";
 import {
   InterestBadge,
   type Interest,
-} from "@/components/app/user-card/interest-badge";
+} from "@/components/mvp/user-card/interest-badge";
 
-interface UserCardInterestsProps {
+interface InterestsSectionProps {
   sharedInterests?: Interest[];
   interests?: string[];
   inMeeting?: boolean;
   inChat?: boolean;
-  className?: string;
 }
 
-export function UserCardInterests({
+export function InterestsSection({
   sharedInterests = [],
   interests = [],
   inMeeting = false,
   inChat = false,
-  className,
-}: UserCardInterestsProps) {
+}: InterestsSectionProps) {
   const showInterests = inMeeting && interests.length > 0;
   const title = showInterests ? "Interests" : "Shared Interests";
+  const items = showInterests ? interests : sharedInterests;
 
   return (
-    <div className={cn("mb-4 px-5", inChat && "mb-3 px-4", className)}>
+    <div className={cn("mb-4 px-5", inChat && "mb-3 px-4")}>
       <h4 className="mb-2 text-sm font-medium">{title}</h4>
       <div className="flex flex-wrap gap-1.5">
         {showInterests

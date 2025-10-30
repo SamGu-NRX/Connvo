@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DashboardMetrics from "@/components/app/dashboard/DashboardMetrics";
-import MyConnections from "@/components/app/dashboard/MyConnections";
-import ExtendedProfile from "@/components/app/dashboard/ExtendedProfile";
+import DashboardMetrics from "@/components/mvp/dashboard/DashboardMetrics";
+import MyConnections from "@/components/mvp/dashboard/MyConnections";
+import ExtendedProfile from "@/components/mvp/dashboard/ExtendedProfile";
 
 export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
-import type { ConnectionType } from "@/components/app/user-card/connection-badge";
-import { ExperienceBadge } from "@/components/app/user-card/experience-badge";
-import { ConnectionBadge } from "@/components/app/user-card/connection-badge";
+import type { ConnectionType } from "@/components/mvp/user-card/connection-badge";
+import { ExperienceBadge } from "@/components/mvp/user-card/experience-badge";
+import { ConnectionBadge } from "@/components/mvp/user-card/connection-badge";
 
 interface UserCardTagsProps {
   connectionType: ConnectionType;
