@@ -22,8 +22,16 @@ import { createError } from "@convex/lib/errors";
 import { internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { withIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
-import { sendAlert, trackMeetingEvent, AlertTemplates } from "@convex/lib/alerting";
-import { withRetry, RetryPolicies, ResilienceUtils } from "@convex/lib/resilience";
+import {
+  sendAlert,
+  trackMeetingEvent,
+  AlertTemplates,
+} from "@convex/lib/alerting";
+import {
+  withRetry,
+  RetryPolicies,
+  ResilienceUtils,
+} from "@convex/lib/resilience";
 import type {
   Meeting,
   VideoRoomConfig,
@@ -334,6 +342,48 @@ export const createMeeting = mutation({
 
 /**
  * Adds a participant to a meeting with proper validation and role management
+ *
+ * @summary Adds a participant to a meeting
+ * @description Adds a new participant to an existing meeting with the specified role.
+ * Only the meeting host can add participants. Validates that the user exists and is not
+ * already a participant. Cannot add participants to concluded or cancelled meetings.
+ * Updates the meeting's participant count automatically.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "userId": "user_456example",
+ *     "role": "participant"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "participantId": "participant_789example",
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "User is already a participant in this meeting",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "User is already a participant in this meeting"
+ *   }
+ * }
+ * ```
  */
 export const addParticipant = mutation({
   args: {
@@ -416,6 +466,57 @@ export const addParticipant = mutation({
 
 /**
  * Adds multiple participants to a meeting (bulk operation)
+ *
+ * @summary Adds multiple participants to a meeting in bulk
+ * @description Adds multiple participants to an existing meeting in a single operation.
+ * Only the meeting host can add participants. Validates each user and skips those who
+ * are already participants or don't exist. Returns lists of successfully added participants
+ * and skipped entries with reasons. Updates the meeting's participant count automatically.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "participants": [
+ *       {
+ *         "userId": "user_456example",
+ *         "role": "participant"
+ *       },
+ *       {
+ *         "userId": "user_789example",
+ *         "role": "participant"
+ *       },
+ *       {
+ *         "userId": "user_012example",
+ *         "role": "observer"
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "added": [
+ *       "participant_456example",
+ *       "participant_789example"
+ *     ],
+ *     "skipped": [
+ *       {
+ *         "userId": "user_012example",
+ *         "reason": "User not found"
+ *       }
+ *     ],
+ *     "success": true
+ *   }
+ * }
+ * ```
  */
 export const addMultipleParticipants = mutation({
   args: {
@@ -531,6 +632,43 @@ export const addMultipleParticipants = mutation({
 
 /**
  * Removes a participant from a meeting
+ *
+ * @summary Removes a participant from a meeting
+ * @description Removes a participant from an existing meeting. Only the meeting host
+ * can remove participants. Cannot remove the only host from a meeting. Updates the
+ * meeting's participant count automatically.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "userId": "user_456example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Cannot remove the only host from the meeting",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Cannot remove the only host from the meeting"
+ *   }
+ * }
+ * ```
  */
 export const removeParticipant = mutation({
   args: {
@@ -592,6 +730,44 @@ export const removeParticipant = mutation({
 
 /**
  * Updates participant role with validation
+ *
+ * @summary Updates a participant's role in a meeting
+ * @description Changes a participant's role (host or participant) in a meeting.
+ * Only the meeting host can update roles. Cannot demote the only host to participant.
+ * Useful for promoting participants to co-hosts or demoting hosts.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "userId": "user_456example",
+ *     "newRole": "host"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Cannot demote the only host",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Cannot demote the only host"
+ *   }
+ * }
+ * ```
  */
 export const updateParticipantRole = mutation({
   args: {
@@ -648,6 +824,58 @@ export const updateParticipantRole = mutation({
 
 /**
  * Starts a meeting and activates real-time features with hybrid provider support
+ *
+ * @summary Starts a meeting and activates real-time features
+ * @description Transitions a scheduled meeting to active state and initializes video
+ * infrastructure. Supports hybrid architecture: WebRTC for free tier (up to 4 participants)
+ * and GetStream for paid tier (up to 100 participants with recording). Only the meeting
+ * host can start meetings. Provides ICE server configuration for WebRTC or schedules
+ * GetStream room creation. Automatically initializes transcription services.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "webrtcReady": true,
+ *     "videoProvider": "webrtc",
+ *     "roomInfo": {
+ *       "iceServers": [
+ *         {
+ *           "urls": "stun:stun.l.google.com:19302"
+ *         },
+ *         {
+ *           "urls": "stun:stun1.l.google.com:19302"
+ *         }
+ *       ]
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting is already active",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Meeting is already active"
+ *   }
+ * }
+ * ```
  */
 export const startMeeting = mutation({
   args: { meetingId: v.id("meetings") },
@@ -794,6 +1022,46 @@ export const startMeeting = mutation({
 
 /**
  * Ends a meeting and triggers cleanup
+ *
+ * @summary Ends an active meeting
+ * @description Transitions an active meeting to concluded state and triggers post-meeting
+ * processing. Only the meeting host can end meetings. Calculates meeting duration and
+ * schedules cleanup tasks including insights generation, recording processing, and
+ * resource cleanup. Can only end meetings that are currently active.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "duration": 3600000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Can only end active meetings",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Can only end active meetings"
+ *   }
+ * }
+ * ```
  */
 export const endMeeting = mutation({
   args: { meetingId: v.id("meetings") },
@@ -860,6 +1128,62 @@ export const endMeeting = mutation({
 
 /**
  * Gets meeting connection information for participants
+ *
+ * @summary Gets meeting connection information for video calling
+ * @description Retrieves connection details needed for participants to join the video call.
+ * Provides different information based on video provider: ICE servers for WebRTC or
+ * GetStream room ID for paid tier. Includes feature flags for recording, transcription,
+ * and participant limits. Only available for active meetings.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "videoProvider": "webrtc",
+ *     "connectionInfo": {
+ *       "roomId": "webrtc_meeting_123example",
+ *       "iceServers": [
+ *         {
+ *           "urls": "stun:stun.l.google.com:19302"
+ *         },
+ *         {
+ *           "urls": "stun:stun1.l.google.com:19302"
+ *         }
+ *       ]
+ *     },
+ *     "features": {
+ *       "recording": false,
+ *       "transcription": true,
+ *       "maxParticipants": 4
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting is not active",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Meeting is not active"
+ *   }
+ * }
+ * ```
  */
 export const getMeetingConnectionInfo = mutation({
   args: { meetingId: v.id("meetings") },
@@ -954,6 +1278,45 @@ export const getMeetingConnectionInfo = mutation({
 
 /**
  * Handles participant joining (presence update)
+ *
+ * @summary Updates participant presence to joined
+ * @description Updates a participant's presence status to "joined" when they enter
+ * the meeting. Records the join timestamp. Only available for active meetings.
+ * Participants must be invited to the meeting before joining.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "webrtcReady": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Cannot join inactive meeting",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Cannot join inactive meeting"
+ *   }
+ * }
+ * ```
  */
 export const joinMeeting = mutation({
   args: { meetingId: v.id("meetings") },
@@ -994,6 +1357,32 @@ export const joinMeeting = mutation({
 
 /**
  * Handles participant leaving (presence update)
+ *
+ * @summary Updates participant presence to left
+ * @description Updates a participant's presence status to "left" when they exit
+ * the meeting. Records the leave timestamp. Does not remove the participant from
+ * the meeting - they can rejoin if the meeting is still active.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true
+ *   }
+ * }
+ * ```
  */
 export const leaveMeeting = mutation({
   args: { meetingId: v.id("meetings") },
@@ -1020,6 +1409,42 @@ export const leaveMeeting = mutation({
 
 /**
  * Cancels a scheduled meeting
+ *
+ * @summary Cancels a scheduled meeting
+ * @description Transitions a scheduled meeting to cancelled state. Only the meeting
+ * host can cancel meetings. Cannot cancel active meetings (must end them instead).
+ * Cannot cancel meetings that are already concluded or cancelled.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Cannot cancel active meeting - end it instead",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Cannot cancel active meeting - end it instead"
+ *   }
+ * }
+ * ```
  */
 export const cancelMeeting = mutation({
   args: { meetingId: v.id("meetings") },

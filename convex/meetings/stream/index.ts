@@ -18,7 +18,10 @@ import { internal } from "@convex/_generated/api";
 import { createError } from "@convex/lib/errors";
 import { Id, Doc } from "@convex/_generated/dataModel";
 import { requireIdentity } from "@convex/auth/guards";
-import { withActionIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
+import {
+  withActionIdempotency,
+  IdempotencyUtils,
+} from "@convex/lib/idempotency";
 // Alerting helpers are invoked through internal mutations in streamHelpers.
 import {
   withRetry,
@@ -32,13 +35,8 @@ import {
 } from "@convex/lib/getstreamServer";
 import type { StreamCall, StreamRecording } from "@convex/lib/getstreamServer";
 import { User } from "@convex/types/entities/user";
-import {
-  Meeting,
-  VideoRoomFeatures,
-} from "@convex/types/entities/meeting";
-import {
-  StreamApiResponseV,
-} from "@convex/types/validators/stream";
+import { Meeting, VideoRoomFeatures } from "@convex/types/entities/meeting";
+import { StreamApiResponseV } from "@convex/types/validators/stream";
 import type {
   StreamParticipantTokenInternal,
   StreamParticipantTokenPublic,
@@ -52,14 +50,61 @@ const PAID_TIER_MAX_PARTICIPANTS = 100;
 
 /**
  * Creates a GetStream call for paid tier meetings with proper error handling and idempotency
+ *
+ * @summary Creates a GetStream video call for paid tier
+ * @description Initializes a GetStream Video call for paid tier meetings with advanced
+ * features including recording, transcription, screen sharing, and up to 100 participants.
+ * Uses idempotency to prevent duplicate room creation. Configures call settings based on
+ * meeting requirements and updates the meeting record with the GetStream call ID.
+ * Includes circuit breaker and retry logic for resilience against external service failures.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "roomId": "call_meeting_123example_1704067200000",
+ *     "callId": "call_meeting_123example_1704067200000",
+ *     "success": true,
+ *     "features": {
+ *       "recording": true,
+ *       "transcription": true,
+ *       "maxParticipants": 100,
+ *       "screenSharing": true,
+ *       "chat": true
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "GetStream API error: Failed to create call",
+ *   "errorData": {
+ *     "code": "STREAM_ERROR",
+ *     "message": "GetStream API error: Failed to create call",
+ *     "operation": "call creation"
+ *   }
+ * }
+ * ```
  */
 export const createStreamRoom = internalAction({
   args: { meetingId: v.id("meetings") },
   returns: StreamApiResponseV.createRoom,
-  handler: async (
-    ctx,
-    { meetingId },
-  ): Promise<StreamRoomCreationResponse> => {
+  handler: async (ctx, { meetingId }): Promise<StreamRoomCreationResponse> => {
     const startTime = Date.now();
 
     const idem1 = await withActionIdempotency(
@@ -245,6 +290,54 @@ export const createStreamRoom = internalAction({
 
 /**
  * Public action to generate GetStream token for authenticated users
+ *
+ * @summary Generates GetStream JWT token for authenticated user
+ * @description Public-facing action that generates a GetStream JWT token for the
+ * authenticated user to join a paid tier meeting. Resolves the user's identity,
+ * generates a token with appropriate permissions, and returns user details for
+ * the GetStream client. Tokens expire after 1 hour for security.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "role": "participant"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+ *     "userId": "user_workos_123",
+ *     "user": {
+ *       "id": "user_workos_123",
+ *       "name": "Alice Johnson",
+ *       "image": "https://example.com/avatars/alice.jpg"
+ *     },
+ *     "expiresAt": 1704070800,
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting does not have a GetStream call",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Meeting does not have a GetStream call"
+ *   }
+ * }
+ * ```
  */
 export const generateParticipantTokenPublic = action({
   args: {
@@ -304,6 +397,52 @@ export const generateParticipantTokenPublic = action({
 
 /**
  * Generates a GetStream JWT token for a participant with proper permissions
+ *
+ * @summary Generates GetStream JWT token for a specific user (internal)
+ * @description Internal action that generates a GetStream JWT token for a specific
+ * user to join a paid tier meeting. Creates a token with call-specific permissions
+ * and role-based access. Uses idempotency to prevent duplicate token generation.
+ * Includes circuit breaker and retry logic for resilience. Tokens expire after 1 hour.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "userId": "user_123example",
+ *     "role": "host"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+ *     "userId": "user_workos_123",
+ *     "callId": "call_meeting_123example_1704067200000",
+ *     "expiresAt": 1704070800,
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "GetStream API error: Token generation failed",
+ *   "errorData": {
+ *     "code": "STREAM_ERROR",
+ *     "message": "GetStream API error: Token generation failed",
+ *     "operation": "token generation"
+ *   }
+ * }
+ * ```
  */
 export const generateParticipantToken = internalAction({
   args: {
@@ -364,7 +503,9 @@ export const generateParticipantToken = internalAction({
                   user_id: user.workosUserId,
                   // Add custom claims for permissions
                   role: role,
-                  call_cids: [`${STREAM_DEFAULT_CALL_TYPE}:${meeting.streamRoomId}`], // Grant access to specific call
+                  call_cids: [
+                    `${STREAM_DEFAULT_CALL_TYPE}:${meeting.streamRoomId}`,
+                  ], // Grant access to specific call
                 });
 
                 return {
@@ -416,6 +557,54 @@ export const generateParticipantToken = internalAction({
 
 /**
  * Starts recording for a GetStream call with proper configuration
+ *
+ * @summary Starts recording for a paid tier meeting
+ * @description Initiates recording for a GetStream call with configurable quality,
+ * layout, and audio settings. Only available for paid tier meetings using GetStream.
+ * Only the meeting host can start recording. Includes rate limiting (max 3 starts
+ * per minute) and tracks recording metadata. Updates meeting state to reflect
+ * active recording. Includes circuit breaker and retry logic for resilience.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "recordingConfig": {
+ *       "mode": "available",
+ *       "audioOnly": false,
+ *       "quality": "720p",
+ *       "layout": "grid"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "recordingId": "recording_1704067200000",
+ *     "recordingUrl": "https://stream-recordings.example.com/recording_1704067200000.mp4",
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Recording not available for WebRTC meetings (free tier)",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Recording not available for WebRTC meetings (free tier)"
+ *   }
+ * }
+ * ```
  */
 export const startRecording = action({
   args: {
@@ -603,6 +792,51 @@ export const startRecording = action({
 
 /**
  * Stops recording for a GetStream call and retrieves the recording URL
+ *
+ * @summary Stops recording for a paid tier meeting
+ * @description Stops an active recording for a GetStream call and retrieves the
+ * recording URL and metadata. Only the meeting host can stop recording. Includes
+ * rate limiting (max 5 stops per minute) and tracks recording duration. Updates
+ * meeting state to reflect stopped recording. Includes circuit breaker and retry
+ * logic for resilience.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "recordingId": "recording_1704067200000"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "recordingUrl": "https://stream-recordings.example.com/recording_1704067200000.mp4",
+ *     "recordingId": "recording_1704067200000",
+ *     "duration": 3600000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "GetStream API error: Failed to stop recording",
+ *   "errorData": {
+ *     "code": "STREAM_ERROR",
+ *     "message": "GetStream API error: Failed to stop recording",
+ *     "operation": "recording stop"
+ *   }
+ * }
+ * ```
  */
 export const stopRecording = action({
   args: {
@@ -734,13 +968,16 @@ export const stopRecording = action({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
 
-      await ctx.runMutation(internal.meetings.stream.streamHelpers.trackStreamEvent, {
-        meetingId,
-        event: "recording_stop_failed",
-        success: false,
-        duration,
-        error: errorMessage,
-      });
+      await ctx.runMutation(
+        internal.meetings.stream.streamHelpers.trackStreamEvent,
+        {
+          meetingId,
+          event: "recording_stop_failed",
+          success: false,
+          duration,
+          error: errorMessage,
+        },
+      );
 
       console.error("Failed to stop GetStream recording:", error);
       throw createError.streamError("recording stop", errorMessage);
@@ -750,6 +987,45 @@ export const stopRecording = action({
 
 /**
  * Deletes a GetStream room when meeting ends
+ *
+ * @summary Deletes a GetStream call after meeting conclusion
+ * @description Cleans up a GetStream call when a meeting ends. Called internally
+ * as part of post-meeting cleanup. Gracefully handles failures to ensure cleanup
+ * doesn't block other post-meeting processes.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "roomId": "call_meeting_123example_1704067200000"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": false
+ *   }
+ * }
+ * ```
  */
 export const deleteStreamRoom = internalAction({
   args: {
@@ -757,10 +1033,7 @@ export const deleteStreamRoom = internalAction({
     roomId: v.string(),
   },
   returns: StreamApiResponseV.simpleSuccess,
-  handler: async (
-    ctx,
-    { meetingId, roomId },
-  ): Promise<StreamSimpleSuccess> => {
+  handler: async (ctx, { meetingId, roomId }): Promise<StreamSimpleSuccess> => {
     try {
       const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
       await call.delete();

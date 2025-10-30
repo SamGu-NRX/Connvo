@@ -104,6 +104,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.addParticipant"
+            example:
+              args:
+                meetingId: meeting_123example
+                userId: user_456example
+                role: participant
         required: true
       responses:
         "200":
@@ -112,6 +117,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.addParticipant"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  participantId: participant_789example
+                  success: true
         "400":
           description: Failed operation
           content:
@@ -127,7 +139,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleAddParticipant
-      description: Adds a participant to a meeting with proper validation and role management
+      description: |-
+        Only the meeting host can add participants. Validates that the user exists and is not
+        already a participant. Cannot add participants to concluded or cancelled meetings.
+        Updates the meeting's participant count automatically.
   /api/run/meetings/lifecycle/addMultipleParticipants:
     post:
       summary: addMultipleParticipants
@@ -138,6 +153,16 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.addMultipleParticipants"
+            example:
+              args:
+                meetingId: meeting_123example
+                participants:
+                  - userId: user_456example
+                    role: participant
+                  - userId: user_789example
+                    role: participant
+                  - userId: user_012example
+                    role: observer
         required: true
       responses:
         "200":
@@ -146,6 +171,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.addMultipleParticipants"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  added:
+                    - participant_456example
+                    - participant_789example
+                  skipped:
+                    - userId: user_012example
+                      reason: User not found
+                  success: true
         "400":
           description: Failed operation
           content:
@@ -161,7 +198,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleAddMultipleParticipants
-      description: Adds multiple participants to a meeting (bulk operation)
+      description: |-
+        Only the meeting host can add participants. Validates each user and skips those who
+        are already participants or don't exist. Returns lists of successfully added participants
+        and skipped entries with reasons. Updates the meeting's participant count automatically.
   /api/run/meetings/lifecycle/removeParticipant:
     post:
       summary: removeParticipant
@@ -172,6 +212,10 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.removeParticipant"
+            example:
+              args:
+                meetingId: meeting_123example
+                userId: user_456example
         required: true
       responses:
         "200":
@@ -180,6 +224,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.removeParticipant"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value: null
         "400":
           description: Failed operation
           content:
@@ -195,7 +244,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleRemoveParticipant
-      description: Removes a participant from a meeting
+      description: |-
+        can remove participants. Cannot remove the only host from a meeting. Updates the
+        meeting's participant count automatically.
   /api/run/meetings/lifecycle/updateParticipantRole:
     post:
       summary: updateParticipantRole
@@ -206,6 +257,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.updateParticipantRole"
+            example:
+              args:
+                meetingId: meeting_123example
+                userId: user_456example
+                newRole: host
         required: true
       responses:
         "200":
@@ -214,6 +270,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.updateParticipantRole"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value: null
         "400":
           description: Failed operation
           content:
@@ -229,7 +290,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleUpdateParticipantRole
-      description: Updates participant role with validation
+      description: |-
+        Only the meeting host can update roles. Cannot demote the only host to participant.
+        Useful for promoting participants to co-hosts or demoting hosts.
   /api/run/meetings/lifecycle/startMeeting:
     post:
       summary: startMeeting
@@ -240,6 +303,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.startMeeting"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -248,6 +314,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.startMeeting"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  webrtcReady: true
+                  videoProvider: webrtc
+                  roomInfo:
+                    iceServers:
+                      - urls: stun:stun.l.google.com:19302
+                      - urls: stun:stun1.l.google.com:19302
         "400":
           description: Failed operation
           content:
@@ -263,7 +341,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleStartMeeting
-      description: Starts a meeting and activates real-time features with hybrid provider support
+      description: |-
+        infrastructure. Supports hybrid architecture: WebRTC for free tier (up to 4 participants)
+        and GetStream for paid tier (up to 100 participants with recording). Only the meeting
+        host can start meetings. Provides ICE server configuration for WebRTC or schedules
+        GetStream room creation. Automatically initializes transcription services.
   /api/run/meetings/lifecycle/endMeeting:
     post:
       summary: endMeeting
@@ -274,6 +356,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.endMeeting"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -282,6 +367,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.endMeeting"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  duration: 3600000
         "400":
           description: Failed operation
           content:
@@ -297,7 +389,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleEndMeeting
-      description: Ends a meeting and triggers cleanup
+      description: |-
+        processing. Only the meeting host can end meetings. Calculates meeting duration and
+        schedules cleanup tasks including insights generation, recording processing, and
+        resource cleanup. Can only end meetings that are currently active.
   /api/run/meetings/lifecycle/getMeetingConnectionInfo:
     post:
       summary: getMeetingConnectionInfo
@@ -308,6 +403,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.getMeetingConnectionInfo"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -316,6 +414,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.getMeetingConnectionInfo"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  videoProvider: webrtc
+                  connectionInfo:
+                    roomId: webrtc_meeting_123example
+                    iceServers:
+                      - urls: stun:stun.l.google.com:19302
+                      - urls: stun:stun1.l.google.com:19302
+                  features:
+                    recording: false
+                    transcription: true
+                    maxParticipants: 4
         "400":
           description: Failed operation
           content:
@@ -331,7 +445,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleGetMeetingConnectionInfo
-      description: Gets meeting connection information for participants
+      description: |-
+        Provides different information based on video provider: ICE servers for WebRTC or
+        GetStream room ID for paid tier. Includes feature flags for recording, transcription,
+        and participant limits. Only available for active meetings.
   /api/run/meetings/lifecycle/joinMeeting:
     post:
       summary: joinMeeting
@@ -342,6 +459,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.joinMeeting"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -350,6 +470,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.joinMeeting"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  webrtcReady: true
         "400":
           description: Failed operation
           content:
@@ -365,7 +492,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleJoinMeeting
-      description: Handles participant joining (presence update)
+      description: |-
+        the meeting. Records the join timestamp. Only available for active meetings.
+        Participants must be invited to the meeting before joining.
   /api/run/meetings/lifecycle/leaveMeeting:
     post:
       summary: leaveMeeting
@@ -376,6 +505,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.leaveMeeting"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -384,6 +516,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.leaveMeeting"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
         "400":
           description: Failed operation
           content:
@@ -399,7 +537,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleLeaveMeeting
-      description: Handles participant leaving (presence update)
+      description: |-
+        the meeting. Records the leave timestamp. Does not remove the participant from
+        the meeting - they can rejoin if the meeting is still active.
   /api/run/meetings/lifecycle/cancelMeeting:
     post:
       summary: cancelMeeting
@@ -410,6 +550,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.lifecycle.cancelMeeting"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -418,6 +561,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.lifecycle.cancelMeeting"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value: null
         "400":
           description: Failed operation
           content:
@@ -433,7 +581,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleCancelMeeting
-      description: Cancels a scheduled meeting
+      description: |-
+        host can cancel meetings. Cannot cancel active meetings (must end them instead).
+        Cannot cancel meetings that are already concluded or cancelled.
   /api/run/meetings/queries/getMeeting:
     post:
       summary: getMeeting
@@ -503,6 +653,10 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.queries.listUserMeetings"
+            example:
+              args:
+                state: active
+                limit: 20
         required: true
       responses:
         "200":
@@ -511,6 +665,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.queries.listUserMeetings"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  - _id: meeting_123example
+                    organizerId: user_123example
+                    title: Quarterly Planning Meeting
+                    description: Planning the roadmap for next quarter objectives.
+                    scheduledAt: 1704067200000
+                    duration: 3600
+                    state: active
+                    participantCount: 3
+                    createdAt: 1704063600000
+                    updatedAt: 1704063600000
+                    userRole: host
+                    userPresence: joined
+                  - _id: meeting_456example
+                    organizerId: user_789example
+                    title: Product Demo
+                    scheduledAt: 1704070800000
+                    duration: 1800
+                    state: active
+                    participantCount: 2
+                    createdAt: 1704060000000
+                    updatedAt: 1704060000000
+                    userRole: participant
+                    userPresence: joined
         "400":
           description: Failed operation
           content:
@@ -526,7 +708,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsQueriesListUserMeetings
-      description: Lists meetings for authenticated user
+      description: |-
+        with optional filtering by meeting state (scheduled, active, concluded, cancelled).
+        Results are sorted by creation time (newest first) and limited to prevent excessive data transfer.
+        Includes the user's role and presence status for each meeting.
   /api/run/meetings/queries/listMeetingParticipants:
     post:
       summary: listMeetingParticipants
@@ -537,6 +722,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.queries.listMeetingParticipants"
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         "200":
@@ -545,6 +733,39 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.queries.listMeetingParticipants"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  - _id: participant_123example
+                    _creationTime: 1704063600000
+                    meetingId: meeting_123example
+                    userId: user_123example
+                    role: host
+                    presence: joined
+                    joinedAt: 1704067200000
+                    createdAt: 1704063600000
+                    user:
+                      _id: user_123example
+                      displayName: Alice Johnson
+                      avatarUrl: https://example.com/avatars/alice.jpg
+                    webrtcConnected: true
+                    webrtcSessionCount: 1
+                  - _id: participant_456example
+                    _creationTime: 1704063600000
+                    meetingId: meeting_123example
+                    userId: user_456example
+                    role: participant
+                    presence: joined
+                    joinedAt: 1704067300000
+                    createdAt: 1704063600000
+                    user:
+                      _id: user_456example
+                      displayName: Bob Smith
+                      avatarUrl: https://example.com/avatars/bob.jpg
+                    webrtcConnected: true
+                    webrtcSessionCount: 1
         "400":
           description: Failed operation
           content:
@@ -560,7 +781,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsQueriesListMeetingParticipants
-      description: Gets meeting participants with WebRTC session info
+      description: |-
+        and real-time WebRTC connection status. Requires the caller to be a participant
+        in the meeting. Includes WebRTC session count and connection state for each participant.
   /api/run/users/mutations/upsertUser:
     post:
       summary: upsertUser
@@ -4115,6 +4338,10 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.stream.index.generateParticipantTokenPublic"
+            example:
+              args:
+                meetingId: meeting_123example
+                role: participant
         required: true
       responses:
         "200":
@@ -4123,6 +4350,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.stream.index.generateParticipantTokenPublic"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  userId: user_workos_123
+                  user:
+                    id: user_workos_123
+                    name: Alice Johnson
+                    image: https://example.com/avatars/alice.jpg
+                  expiresAt: 1704070800
+                  success: true
         "400":
           description: Failed operation
           content:
@@ -4138,7 +4378,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStreamIndexGenerateParticipantTokenPublic
-      description: Public action to generate GetStream token for authenticated users
+      description: |-
+        authenticated user to join a paid tier meeting. Resolves the user's identity,
+        generates a token with appropriate permissions, and returns user details for
+        the GetStream client. Tokens expire after 1 hour for security.
   /api/run/meetings/stream/index/startRecording:
     post:
       summary: startRecording
@@ -4149,6 +4392,14 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.stream.index.startRecording"
+            example:
+              args:
+                meetingId: meeting_123example
+                recordingConfig:
+                  mode: available
+                  audioOnly: false
+                  quality: 720p
+                  layout: grid
         required: true
       responses:
         "200":
@@ -4157,6 +4408,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.stream.index.startRecording"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  recordingId: recording_1704067200000
+                  recordingUrl: https://stream-recordings.example.com/recording_1704067200000.mp4
+                  success: true
         "400":
           description: Failed operation
           content:
@@ -4172,7 +4431,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStreamIndexStartRecording
-      description: Starts recording for a GetStream call with proper configuration
+      description: |-
+        layout, and audio settings. Only available for paid tier meetings using GetStream.
+        Only the meeting host can start recording. Includes rate limiting (max 3 starts
+        per minute) and tracks recording metadata. Updates meeting state to reflect
+        active recording. Includes circuit breaker and retry logic for resilience.
   /api/run/meetings/stream/index/stopRecording:
     post:
       summary: stopRecording
@@ -4183,6 +4446,10 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_meetings.stream.index.stopRecording"
+            example:
+              args:
+                meetingId: meeting_123example
+                recordingId: recording_1704067200000
         required: true
       responses:
         "200":
@@ -4191,6 +4458,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_meetings.stream.index.stopRecording"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  recordingUrl: https://stream-recordings.example.com/recording_1704067200000.mp4
+                  recordingId: recording_1704067200000
+                  duration: 3600000
         "400":
           description: Failed operation
           content:
@@ -4206,7 +4482,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStreamIndexStopRecording
-      description: Stops recording for a GetStream call and retrieves the recording URL
+      description: |-
+        recording URL and metadata. Only the meeting host can stop recording. Includes
+        rate limiting (max 5 stops per minute) and tracks recording duration. Updates
+        meeting state to reflect stopped recording. Includes circuit breaker and retry
+        logic for resilience.
   /api/run/meetings/webrtc/index/closeSession:
     post:
       summary: closeSession
