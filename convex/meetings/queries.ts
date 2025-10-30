@@ -189,7 +189,61 @@ export const getMeeting = query({
 });
 
 /**
- * Lists meetings for authenticated user
+ * Lists meetings for authenticated user with optional state filtering
+ *
+ * @summary Lists meetings for authenticated user
+ * @description Retrieves all meetings where the authenticated user is a participant,
+ * with optional filtering by meeting state (scheduled, active, concluded, cancelled).
+ * Results are sorted by creation time (newest first) and limited to prevent excessive data transfer.
+ * Includes the user's role and presence status for each meeting.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "state": "active",
+ *     "limit": 20
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "meeting_123example",
+ *       "organizerId": "user_123example",
+ *       "title": "Quarterly Planning Meeting",
+ *       "description": "Planning the roadmap for next quarter objectives.",
+ *       "scheduledAt": 1704067200000,
+ *       "duration": 3600,
+ *       "state": "active",
+ *       "participantCount": 3,
+ *       "createdAt": 1704063600000,
+ *       "updatedAt": 1704063600000,
+ *       "userRole": "host",
+ *       "userPresence": "joined"
+ *     },
+ *     {
+ *       "_id": "meeting_456example",
+ *       "organizerId": "user_789example",
+ *       "title": "Product Demo",
+ *       "scheduledAt": 1704070800000,
+ *       "duration": 1800,
+ *       "state": "active",
+ *       "participantCount": 2,
+ *       "createdAt": 1704060000000,
+ *       "updatedAt": 1704060000000,
+ *       "userRole": "participant",
+ *       "userPresence": "joined"
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const listUserMeetings = query({
   args: {
@@ -273,6 +327,65 @@ export const listUserMeetings = query({
 
 /**
  * Gets meeting participants with WebRTC session info
+ *
+ * @summary Lists meeting participants with connection status
+ * @description Retrieves all participants for a meeting with enriched user details
+ * and real-time WebRTC connection status. Requires the caller to be a participant
+ * in the meeting. Includes WebRTC session count and connection state for each participant.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "participant_123example",
+ *       "_creationTime": 1704063600000,
+ *       "meetingId": "meeting_123example",
+ *       "userId": "user_123example",
+ *       "role": "host",
+ *       "presence": "joined",
+ *       "joinedAt": 1704067200000,
+ *       "createdAt": 1704063600000,
+ *       "user": {
+ *         "_id": "user_123example",
+ *         "displayName": "Alice Johnson",
+ *         "avatarUrl": "https://example.com/avatars/alice.jpg"
+ *       },
+ *       "webrtcConnected": true,
+ *       "webrtcSessionCount": 1
+ *     },
+ *     {
+ *       "_id": "participant_456example",
+ *       "_creationTime": 1704063600000,
+ *       "meetingId": "meeting_123example",
+ *       "userId": "user_456example",
+ *       "role": "participant",
+ *       "presence": "joined",
+ *       "joinedAt": 1704067300000,
+ *       "createdAt": 1704063600000,
+ *       "user": {
+ *         "_id": "user_456example",
+ *         "displayName": "Bob Smith",
+ *         "avatarUrl": "https://example.com/avatars/bob.jpg"
+ *       },
+ *       "webrtcConnected": true,
+ *       "webrtcSessionCount": 1
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const listMeetingParticipants = query({
   args: { meetingId: v.id("meetings") },
@@ -327,6 +440,76 @@ export const listMeetingParticipants = query({
 
 /**
  * Gets meeting state with WebRTC connection info
+ *
+ * @summary Gets meeting runtime state with metrics
+ * @description Retrieves the runtime state of a meeting including active status,
+ * topics, recording settings, and real-time WebRTC session metrics. Includes
+ * participant count and average speaking time calculations. This is an internal
+ * query used by system processes and authorized user queries.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "state_123example",
+ *     "_creationTime": 1704063600000,
+ *     "meetingId": "meeting_123example",
+ *     "active": true,
+ *     "startedAt": 1704067200000,
+ *     "topics": ["AI Strategy", "Product Roadmap"],
+ *     "recordingEnabled": false,
+ *     "speakingStats": {
+ *       "totalMs": 180000,
+ *       "byParticipant": {
+ *         "user_123example": 90000,
+ *         "user_456example": 90000
+ *       }
+ *     },
+ *     "updatedAt": 1704067500000,
+ *     "totalWebRTCSessions": 2,
+ *     "connectedWebRTCSessions": 2,
+ *     "participantCount": 2,
+ *     "averageSpeakingTime": 90000
+ *   }
+ * }
+ * ```
+ *
+ * @example dataModel
+ * ```json
+ * {
+ *   "_id": "state_123example",
+ *   "_creationTime": 1704063600000,
+ *   "meetingId": "meeting_123example",
+ *   "active": true,
+ *   "startedAt": 1704067200000,
+ *   "topics": ["AI Strategy", "Product Roadmap"],
+ *   "recordingEnabled": false,
+ *   "speakingStats": {
+ *     "totalMs": 180000,
+ *     "byParticipant": {
+ *       "user_123example": 90000,
+ *       "user_456example": 90000
+ *     }
+ *   },
+ *   "updatedAt": 1704067500000,
+ *   "totalWebRTCSessions": 2,
+ *   "connectedWebRTCSessions": 2,
+ *   "participantCount": 2,
+ *   "averageSpeakingTime": 90000
+ * }
+ * ```
  */
 export const getMeetingState = internalQuery({
   args: { meetingId: v.id("meetings") },
@@ -383,6 +566,74 @@ export const getMeetingState = internalQuery({
 
 /**
  * Gets active meetings with WebRTC metrics (for monitoring/admin)
+ *
+ * @summary Lists active meetings with session metrics
+ * @description Retrieves all currently active meetings with enriched WebRTC session
+ * data and participant counts. Used for system monitoring and administrative dashboards.
+ * Results are limited to prevent excessive data transfer. This is an internal query
+ * invoked by system processes.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "limit": 50
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "meeting_123example",
+ *       "organizerId": "user_123example",
+ *       "title": "Quarterly Planning Meeting",
+ *       "participantCount": 3,
+ *       "createdAt": 1704063600000,
+ *       "startedAt": 1704067200000,
+ *       "webrtcSessionCount": 3
+ *     },
+ *     {
+ *       "_id": "meeting_456example",
+ *       "organizerId": "user_789example",
+ *       "title": "Product Demo",
+ *       "participantCount": 2,
+ *       "createdAt": 1704060000000,
+ *       "startedAt": 1704067000000,
+ *       "webrtcSessionCount": 2
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example dataModel
+ * ```json
+ * [
+ *   {
+ *     "_id": "meeting_123example",
+ *     "organizerId": "user_123example",
+ *     "title": "Quarterly Planning Meeting",
+ *     "participantCount": 3,
+ *     "createdAt": 1704063600000,
+ *     "startedAt": 1704067200000,
+ *     "webrtcSessionCount": 3
+ *   },
+ *   {
+ *     "_id": "meeting_456example",
+ *     "organizerId": "user_789example",
+ *     "title": "Product Demo",
+ *     "participantCount": 2,
+ *     "createdAt": 1704060000000,
+ *     "startedAt": 1704067000000,
+ *     "webrtcSessionCount": 2
+ *   }
+ * ]
+ * ```
  */
 export const getActiveMeetings = internalQuery({
   args: {
