@@ -14,8 +14,14 @@ interface EnhancementConfig {
 
 type OpenAPISpec = {
   servers?: Array<{ url: string; description?: string }>;
+  info?: {
+    title?: string;
+    version?: string;
+    description?: string;
+  };
   components?: {
     securitySchemes?: Record<string, any>;
+    schemas?: Record<string, any>;
   };
   security?: Array<Record<string, any>>;
   tags?: Array<{ name: string; description?: string }>;
@@ -245,6 +251,8 @@ function ensureTags(spec: OpenAPISpec) {
     }
   }
 
+  ["query", "mutation", "action"].forEach((name) => existingTags.delete(name));
+
   for (const tagDefinition of TAG_DEFINITIONS) {
     existingTags.set(tagDefinition.name, tagDefinition);
   }
@@ -301,9 +309,7 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
         }
       }
 
-      if (!Array.isArray(operation.tags) || operation.tags.length === 0) {
-        operation.tags = [resolveTagForPath(pathKey)];
-      }
+      operation.tags = [resolveTagForPath(pathKey)];
 
        if (!operation.operationId || typeof operation.operationId !== "string") {
         operation.operationId = buildOperationId(method, pathKey);
@@ -388,6 +394,15 @@ function enrichOperationMetadata(spec: OpenAPISpec) {
 
 function enhanceOpenAPISpec(config: EnhancementConfig) {
   const spec = readOpenAPISpec(config.inputPath);
+
+  spec.info = {
+    ...spec.info,
+    title: "LinkedUp Convex API",
+    version: spec.info?.version && spec.info.version !== "0.0.0" ? spec.info.version : "1.0.0",
+    description:
+      spec.info?.description ??
+      "HTTP interface for LinkedUp's Convex backend, exposing all public query, mutation, and action endpoints.",
+  };
 
   const servers = buildServers(config.environment, config.deploymentUrls);
   if (servers.length === 0) {

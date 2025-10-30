@@ -2,10 +2,10 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "LinkedUp API Documentation",
   "logo": {
-    "dark": "/public/linkeduplogos/linkedupwhite.svg",
-    "light": "/public/linkeduplogos/linkedupblack.svg"
+    "dark": "../public/linkeduplogos/linkedupwhite.svg",
+    "light": "../public/linkeduplogos/linkedupblack.svg"
   },
-  "favicon": "/public/logo-square.png",
+  "favicon": "../public/linkeduplogos/linkedupwhite.svg",
   "colors": {
     "primary": "#0D9373",
     "light": "#07C983",
@@ -25,12 +25,6 @@
     "name": "Sign in",
     "url": "https://app.linkedup.example.com/login"
   },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "docs/api-reference/introduction"
-    }
-  ],
   "navigation": [
     {
       "group": "Getting Started",
