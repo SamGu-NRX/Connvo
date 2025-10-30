@@ -40,37 +40,61 @@ export const updateProfile = mutation({
   handler: async (ctx, args) => {
     const identity = await requireIdentity(ctx);
     
+    const now = Date.now();
+    
     // Get existing profile
     const existingProfile = await ctx.db
       .query("profiles")
       .withIndex("by_user", (q) => q.eq("userId", identity.userId))
       .unique();
     
-    if (!existingProfile) {
-      throw new Error("Profile not found. Please contact support.");
+    if (existingProfile) {
+      // Prepare update object - only include defined fields
+      const updateData: Record<string, any> = {
+        updatedAt: now,
+      };
+      
+      if (args.displayName !== undefined) updateData.displayName = args.displayName;
+      if (args.bio !== undefined) updateData.bio = args.bio;
+      if (args.goals !== undefined) updateData.goals = args.goals;
+      if (args.languages !== undefined) updateData.languages = args.languages;
+      if (args.experience !== undefined) updateData.experience = args.experience;
+      if (args.field !== undefined) updateData.field = args.field;
+      if (args.jobTitle !== undefined) updateData.jobTitle = args.jobTitle;
+      if (args.company !== undefined) updateData.company = args.company;
+      if (args.linkedinUrl !== undefined) updateData.linkedinUrl = args.linkedinUrl;
+      if (args.age !== undefined) updateData.age = args.age;
+      if (args.gender !== undefined) updateData.gender = args.gender;
+      
+      // Update profile
+      await ctx.db.patch(existingProfile._id, updateData);
+      
+      return existingProfile._id;
+    } else {
+      // Auto-create profile if it doesn't exist
+      // Get user's email for fallback displayName
+      const user = await ctx.db.get(identity.userId);
+      const fallbackDisplayName = user?.email?.split('@')[0] || 'User';
+      
+      const profileId = await ctx.db.insert("profiles", {
+        userId: identity.userId,
+        displayName: args.displayName || fallbackDisplayName,
+        bio: args.bio,
+        goals: args.goals,
+        languages: args.languages || [],
+        experience: args.experience,
+        field: args.field,
+        jobTitle: args.jobTitle,
+        company: args.company,
+        linkedinUrl: args.linkedinUrl,
+        age: args.age,
+        gender: args.gender,
+        createdAt: now,
+        updatedAt: now,
+      });
+      
+      return profileId;
     }
-    
-    // Prepare update object - only include defined fields
-    const updateData: Record<string, any> = {
-      updatedAt: Date.now(),
-    };
-    
-    if (args.displayName !== undefined) updateData.displayName = args.displayName;
-    if (args.bio !== undefined) updateData.bio = args.bio;
-    if (args.goals !== undefined) updateData.goals = args.goals;
-    if (args.languages !== undefined) updateData.languages = args.languages;
-    if (args.experience !== undefined) updateData.experience = args.experience;
-    if (args.field !== undefined) updateData.field = args.field;
-    if (args.jobTitle !== undefined) updateData.jobTitle = args.jobTitle;
-    if (args.company !== undefined) updateData.company = args.company;
-    if (args.linkedinUrl !== undefined) updateData.linkedinUrl = args.linkedinUrl;
-    if (args.age !== undefined) updateData.age = args.age;
-    if (args.gender !== undefined) updateData.gender = args.gender;
-    
-    // Update profile
-    await ctx.db.patch(existingProfile._id, updateData);
-    
-    return existingProfile._id;
   },
 });
 

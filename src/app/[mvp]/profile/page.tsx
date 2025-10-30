@@ -48,15 +48,16 @@ export default function ProfilePage() {
   const { user, isAuthenticated, loading: authLoading } = useWorkOSAuth();
   const convexUser = useQuery(
     api.users.queries.getCurrentUser,
-    isAuthenticated ? {} : undefined
+    isAuthenticated ? {} : "skip"
   );
   const profile = useQuery(
     api.profiles.queries.getCurrentUserProfile,
-    isAuthenticated ? {} : undefined
+    isAuthenticated ? {} : "skip"
   );
   const updateProfile = useMutation(api.profiles.mutations.updateProfile);
   
   const [isSaving, setIsSaving] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
 
   // Debug logging - track profile page state
   useEffect(() => {
@@ -76,9 +77,11 @@ export default function ProfilePage() {
         userId: profile.userId,
         displayName: profile.displayName,
       } : null,
-      profileQuerySkipped: !isAuthenticated,
+      profileIsUndefined: profile === undefined,
+      profileIsNull: profile === null,
+      formInitialized,
     });
-  }, [user, isAuthenticated, authLoading, convexUser, profile]);
+  }, [user, isAuthenticated, authLoading, convexUser, profile, formInitialized]);
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -92,23 +95,59 @@ export default function ProfilePage() {
     },
   });
   
-  // Update form when profile loads
+  // Update form when profile loads or create default from user data
   useEffect(() => {
-    if (profile) {
-      form.reset({
-        displayName: profile.displayName || "",
-        bio: profile.bio || "",
-        company: profile.company || "",
-        jobTitle: profile.jobTitle || "",
-        field: profile.field || "",
-        linkedinUrl: profile.linkedinUrl || "",
-      });
-    }
-  }, [profile, form]);
+    // Wait until we have definitive data (not undefined)
+    if (profile === undefined || formInitialized) return;
+    
+    console.log('[ProfilePage] Form initialization effect triggered:', {
+      hasProfile: !!profile,
+      profileDisplayName: profile?.displayName,
+      hasUser: !!user,
+      formInitialized,
+    });
+    
+    // Build form data from profile or fallback to user data
+    const formData = {
+      displayName: profile?.displayName ||
+                   convexUser?.displayName ||
+                   [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+                   user?.email?.split('@')[0] ||
+                   "",
+      bio: profile?.bio || "",
+      company: profile?.company || "",
+      jobTitle: profile?.jobTitle || "",
+      field: profile?.field || "",
+      linkedinUrl: profile?.linkedinUrl || "",
+    };
+    
+    console.log('[ProfilePage] Initializing form with data:', formData);
+    
+    // Use reset with keepDefaultValues: false to force update
+    form.reset(formData, {
+      keepDefaultValues: false,
+      keepDirty: false,
+      keepTouched: false
+    });
+    
+    setFormInitialized(true);
+  }, [profile, convexUser, user, formInitialized, form]);
   
   const onSubmit = async (data: ProfileFormValues) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to update your profile");
+      return;
+    }
+    
     setIsSaving(true);
     try {
+      console.log('[ProfilePage] Submitting profile update:', {
+        data,
+        isAuthenticated,
+        hasConvexUser: !!convexUser,
+        hasProfile: !!profile,
+      });
+      
       await updateProfile({
         displayName: data.displayName,
         bio: data.bio || undefined,
@@ -119,14 +158,30 @@ export default function ProfilePage() {
       });
       
       toast.success("Profile updated successfully!");
+      
+      // Mark form as pristine after successful save
+      form.reset(data, { keepValues: true });
     } catch (error) {
-      console.error("Failed to update profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+      console.error("[ProfilePage] Failed to update profile:", error);
+      
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.message.includes("UNAUTHORIZED") || error.message.includes("Authentication required")) {
+          toast.error("Session expired. Please sign in again.");
+        } else if (error.message.includes("Profile not found")) {
+          toast.error("Profile not found. Please try refreshing the page.");
+        } else {
+          toast.error(`Failed to update profile: ${error.message}`);
+        }
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsSaving(false);
     }
   };
   
+  // Loading state: show loading until we have definitive data (not undefined)
   const loading = authLoading || (isAuthenticated && (convexUser === undefined || profile === undefined));
   
   if (loading) {
@@ -333,8 +388,8 @@ export default function ProfilePage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-6"
           >
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isSaving || !form.formState.isDirty}
               className="w-full md:w-auto"
             >

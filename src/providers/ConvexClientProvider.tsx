@@ -18,13 +18,34 @@ function useAuth() {
 
   // Use useCallback with accessToken as dependency to always return current token
   const fetchAccessToken = useCallback(async () => {
+    console.log('[ConvexAuth] fetchAccessToken called:', {
+      hasAccessToken: !!accessToken,
+      tokenLength: accessToken?.length,
+      hasError: !!tokenError,
+      errorMessage: tokenError?.message,
+    });
+    
     // Return the current access token if available and valid
     if (accessToken && !tokenError) {
+      console.log('[ConvexAuth] Returning valid access token');
       return accessToken;
     }
+    
+    console.log('[ConvexAuth] No valid token available, returning null');
     // Return null if no valid token (will cause Convex to treat as unauthenticated)
     return null;
   }, [accessToken, tokenError]);
+
+  // Log auth state changes
+  useEffect(() => {
+    console.log('[ConvexAuth] Auth state changed:', {
+      hasUser: !!user,
+      hasAccessToken: !!accessToken,
+      loading,
+      authenticated,
+      tokenError: tokenError?.message,
+    });
+  }, [user, accessToken, loading, authenticated, tokenError]);
 
   return {
     isLoading: loading,
