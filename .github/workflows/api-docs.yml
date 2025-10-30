@@ -50,23 +50,20 @@ jobs:
       - name: Regenerate OpenAPI spec
         run: pnpm run update:api-docs:dev
 
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git diff --exit-code docs/api-reference/convex-openapi.yaml || echo "has_changes=true" >> $GITHUB_OUTPUT
+
       - name: Show documentation diff
+        if: steps.check_changes.outputs.has_changes == 'true'
         run: git diff --stat
 
-      - name: Pull latest changes from remote
+      - name: Commit and push updated documentation
+        if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git fetch origin main
-          git rebase origin/main || true
-
-      - name: Commit updated documentation
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: |
-            chore: update API documentation
-
-            Co-authored-by: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-            Co-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-          commit_user_name: ${{ github.actor }}
-          commit_user_email: ${{ github.actor }}@users.noreply.github.com
+          git add docs/api-reference/convex-openapi.yaml
+          git commit -m "chore: update API documentation" -m "" -m "Co-authored-by: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>" -m "Co-authored-by: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          git push origin HEAD:main
