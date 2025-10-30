@@ -16,6 +16,7 @@ interface TopBarProps {
   onToggleTimeDisplay: () => void;
   onToggleSidebar: () => void;
   onOpenSettings: () => void;
+  theme?: "light" | "dark";
 }
 
 export function TopBar({
@@ -28,27 +29,32 @@ export function TopBar({
   onToggleTimeDisplay,
   onToggleSidebar,
   onOpenSettings,
+  theme = "dark",
 }: TopBarProps) {
   return (
-    <motion.div className="z-10 flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-900/80 px-6 backdrop-blur-lg">
+    <motion.div className={`z-10 flex h-16 items-center justify-between border-b px-6 backdrop-blur-lg ${
+      theme === "dark"
+        ? "border-zinc-800 bg-zinc-900/80"
+        : "border-zinc-200 bg-white/80"
+    }`}>
       <div className="flex items-center space-x-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          className="h-8 w-8 rounded-full hover:bg-zinc-800/50"
+          className={`h-8 w-8 rounded-full ${theme === "dark" ? "hover:bg-zinc-800/50" : "hover:bg-zinc-100/50"}`}
         >
           {isSidebarOpen ? (
-            <PanelLeftClose className="h-5 w-5 text-zinc-400" />
+            <PanelLeftClose className={`h-5 w-5 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
           ) : (
-            <PanelLeftOpen className="h-5 w-5 text-zinc-400" />
+            <PanelLeftOpen className={`h-5 w-5 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
           )}
         </Button>
         <div>
-          <h3 className="text-sm font-medium text-zinc-200">
+          <h3 className={`text-sm font-medium ${theme === "dark" ? "text-zinc-200" : "text-zinc-800"}`}>
             Meeting with {partner.name}
           </h3>
-          <p className="text-xs text-zinc-400">1-on-1 discussion</p>
+          <p className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>1-on-1 discussion</p>
         </div>
       </div>
 
@@ -59,14 +65,15 @@ export function TopBar({
           timeRemaining={timeRemaining}
           isAlmostOutOfTime={isAlmostOutOfTime}
           onToggleTimeDisplay={onToggleTimeDisplay}
+          theme={theme}
         />
         <Button
           variant="ghost"
           size="icon"
           onClick={onOpenSettings}
-          className="h-8 w-8 rounded-full hover:bg-zinc-800/50"
+          className={`h-8 w-8 rounded-full ${theme === "dark" ? "hover:bg-zinc-800/50" : "hover:bg-zinc-100/50"}`}
         >
-          <Settings className="h-4 w-4 text-zinc-400" />
+          <Settings className={`h-4 w-4 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
         </Button>
       </div>
     </motion.div>

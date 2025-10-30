@@ -12,6 +12,7 @@ interface TimeDisplayProps {
   timeRemaining: number;
   isAlmostOutOfTime: boolean;
   onToggleTimeDisplay: () => void;
+  theme?: "light" | "dark";
 }
 
 export function TimeDisplay({
@@ -20,13 +21,14 @@ export function TimeDisplay({
   timeRemaining,
   isAlmostOutOfTime,
   onToggleTimeDisplay,
+  theme = "dark",
 }: TimeDisplayProps) {
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
         <Label
           htmlFor="time-toggle"
-          className="cursor-pointer text-xs text-zinc-400 select-none"
+          className={`cursor-pointer text-xs select-none ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}
         >
           Show time left
         </Label>
@@ -47,7 +49,7 @@ export function TimeDisplay({
           className={`flex items-center space-x-2 rounded-full px-3 py-1.5 ${
             isAlmostOutOfTime && showTimeLeft
               ? "bg-red-500/20"
-              : "bg-zinc-800/70"
+              : theme === "dark" ? "bg-zinc-800/70" : "bg-zinc-100/70"
           }`}
         >
           <motion.div

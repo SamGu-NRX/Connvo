@@ -13,19 +13,25 @@ interface EndCallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  theme?: "light" | "dark";
 }
 
 export function EndCallDialog({
   open,
   onOpenChange,
   onConfirm,
+  theme = "dark",
 }: EndCallDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-zinc-800 bg-zinc-900 sm:max-w-[400px]">
+      <DialogContent className={`sm:max-w-[400px] ${
+        theme === "dark"
+          ? "border-zinc-800 bg-zinc-900"
+          : "border-zinc-200 bg-white"
+      }`}>
         <DialogHeader>
-          <DialogTitle className="text-zinc-200">End Call</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogTitle className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>End Call</DialogTitle>
+          <DialogDescription className={theme === "dark" ? "text-zinc-400" : "text-zinc-600"}>
             Are you sure you want to end this call? This action cannot be
             undone.
           </DialogDescription>

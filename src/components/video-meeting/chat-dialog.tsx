@@ -16,6 +16,7 @@ interface ChatDialogProps {
   onOpenChange: (open: boolean) => void;
   messages: Message[];
   onSendMessage: (message: string) => void;
+  theme?: "light" | "dark";
 }
 
 export function ChatDialog({
@@ -23,6 +24,7 @@ export function ChatDialog({
   onOpenChange,
   messages,
   onSendMessage,
+  theme = "dark",
 }: ChatDialogProps) {
   const [newMessage, setNewMessage] = useState("");
 
@@ -35,9 +37,13 @@ export function ChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-zinc-800 bg-zinc-900 sm:max-w-[400px]">
+      <DialogContent className={`sm:max-w-[400px] ${
+        theme === "dark"
+          ? "border-zinc-800 bg-zinc-900"
+          : "border-zinc-200 bg-white"
+      }`}>
         <DialogHeader>
-          <DialogTitle className="text-zinc-200">Chat</DialogTitle>
+          <DialogTitle className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>Chat</DialogTitle>
         </DialogHeader>
         <div className="flex h-[400px] flex-col">
           <ScrollArea className="flex-1 px-4">
@@ -47,14 +53,16 @@ export function ChatDialog({
                 className={`mb-4 ${msg.sender === "You" ? "ml-auto text-right" : ""}`}
               >
                 <div className="mb-1 flex items-center space-x-2">
-                  <span className="text-xs text-zinc-400">{msg.sender}</span>
-                  <span className="text-xs text-zinc-500">{msg.timestamp}</span>
+                  <span className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>{msg.sender}</span>
+                  <span className={`text-xs ${theme === "dark" ? "text-zinc-500" : "text-zinc-500"}`}>{msg.timestamp}</span>
                 </div>
                 <div
                   className={`inline-block max-w-[80%] rounded-lg px-3 py-2 ${
                     msg.sender === "You"
                       ? "bg-blue-500 text-white"
-                      : "bg-zinc-800 text-zinc-200"
+                      : theme === "dark"
+                        ? "bg-zinc-800 text-zinc-200"
+                        : "bg-zinc-100 text-zinc-800"
                   }`}
                 >
                   {msg.message}
@@ -62,7 +70,7 @@ export function ChatDialog({
               </div>
             ))}
           </ScrollArea>
-          <div className="mt-4 border-t border-zinc-800 px-4 pt-4">
+          <div className={`mt-4 border-t px-4 pt-4 ${theme === "dark" ? "border-zinc-800" : "border-zinc-200"}`}>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -75,7 +83,11 @@ export function ChatDialog({
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1 rounded-lg border-none bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:ring-2 focus:ring-blue-500"
+                className={`flex-1 rounded-lg border-none px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 ${
+                  theme === "dark"
+                    ? "bg-zinc-800 text-zinc-200"
+                    : "bg-zinc-100 text-zinc-800"
+                }`}
               />
               <Button
                 type="submit"

@@ -367,6 +367,7 @@ export default function VideoMeeting() {
         onToggleTimeDisplay={() => setShowTimeLeft(!showTimeLeft)}
         onToggleSidebar={handleSidebarToggle}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        theme={theme}
       />
 
       <div className="relative flex flex-1 overflow-hidden">
@@ -378,7 +379,11 @@ export default function VideoMeeting() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "tween", duration: 0.2 }}
-              className="sidebar z-10 flex w-80 flex-col space-y-4 overflow-y-auto border-r border-zinc-800 bg-zinc-900/70 p-4 backdrop-blur-lg"
+              className={`sidebar z-10 flex w-80 flex-col space-y-4 overflow-y-auto border-r p-4 backdrop-blur-lg ${
+                theme === "dark"
+                  ? "border-zinc-800 bg-zinc-900/70"
+                  : "border-zinc-200 bg-white/70"
+              }`}
             >
               {/* Tab Navigation */}
               <div className="flex gap-2 shrink-0">
@@ -450,12 +455,12 @@ export default function VideoMeeting() {
                     </div>
                     
                     {/* Compact Prompts Card */}
-                    <Card className="shrink-0 border-none bg-zinc-800/30 shadow-lg">
+                    <Card className={`shrink-0 border-none ${theme === "dark" ? "bg-zinc-800/30 shadow-lg" : "bg-zinc-100/50"}`}>
                       <CardContent className="p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Lightbulb className="h-4 w-4 text-amber-400" />
-                            <h3 className="text-xs font-medium text-zinc-300">
+                            <h3 className={`text-xs font-medium ${theme === "dark" ? "text-zinc-300" : "text-zinc-700"}`}>
                               Discussion Prompt
                             </h3>
                           </div>
@@ -467,9 +472,9 @@ export default function VideoMeeting() {
                                 setCurrentPrompt((prev) => Math.max(0, prev - 1))
                               }
                               disabled={currentPrompt === 0}
-                              className="h-6 w-6 hover:bg-zinc-700"
+                              className={`h-6 w-6 ${theme === "dark" ? "hover:bg-zinc-700" : "hover:bg-zinc-200"}`}
                             >
-                              <ChevronLeft className="h-3 w-3 text-zinc-400" />
+                              <ChevronLeft className={`h-3 w-3 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
                             </Button>
                             <Button
                               variant="ghost"
@@ -480,20 +485,20 @@ export default function VideoMeeting() {
                                 )
                               }
                               disabled={currentPrompt === prompts.length - 1}
-                              className="h-6 w-6 hover:bg-zinc-700"
+                              className={`h-6 w-6 ${theme === "dark" ? "hover:bg-zinc-700" : "hover:bg-zinc-200"}`}
                             >
-                              <ChevronRight className="h-3 w-3 text-zinc-400" />
+                              <ChevronRight className={`h-3 w-3 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
                             </Button>
                           </div>
                         </div>
-                        <Separator className="my-2 bg-zinc-700" />
+                        <Separator className={`my-2 ${theme === "dark" ? "bg-zinc-700" : "bg-zinc-300"}`} />
                         <AnimatePresence mode="wait">
                           <motion.p
                             key={currentPrompt}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="text-xs leading-relaxed text-zinc-300"
+                            className={`text-xs leading-relaxed ${theme === "dark" ? "text-zinc-300" : "text-zinc-700"}`}
                           >
                             {prompts[currentPrompt]}
                           </motion.p>
@@ -510,12 +515,12 @@ export default function VideoMeeting() {
                     transition={{ duration: 0.2 }}
                     className="flex-1 min-h-0"
                   >
-                    <Card className="h-full border-none bg-zinc-800/30 shadow-lg">
+                    <Card className={`h-full border-none ${theme === "dark" ? "bg-zinc-800/30 shadow-lg" : "bg-zinc-100/50"}`}>
                       <CardContent className="flex h-full flex-col p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <PenLine className="h-4 w-4 text-zinc-400" />
-                            <h3 className="text-xs font-medium text-zinc-300">
+                            <PenLine className={`h-4 w-4 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
+                            <h3 className={`text-xs font-medium ${theme === "dark" ? "text-zinc-300" : "text-zinc-700"}`}>
                               Meeting Notes
                             </h3>
                           </div>
@@ -525,14 +530,14 @@ export default function VideoMeeting() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="text-xs text-zinc-500"
+                                className={`text-xs ${theme === "dark" ? "text-zinc-500" : "text-zinc-400"}`}
                               >
                                 Saving...
                               </motion.span>
                             )}
                           </AnimatePresence>
                         </div>
-                        <Separator className="my-2 bg-zinc-700" />
+                        <Separator className={`my-2 ${theme === "dark" ? "bg-zinc-700" : "bg-zinc-300"}`} />
                         <textarea
                           value={notes}
                           onChange={(e) => {
@@ -542,7 +547,11 @@ export default function VideoMeeting() {
                             setTimeout(() => setIsAutosaving(false), 1000);
                           }}
                           placeholder="Type your notes here..."
-                          className="min-h-0 flex-1 w-full resize-none border-none bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+                          className={`min-h-0 flex-1 w-full resize-none border-none bg-transparent text-sm focus:outline-none focus:ring-0 ${
+                            theme === "dark"
+                              ? "text-zinc-300 placeholder:text-zinc-600"
+                              : "text-zinc-700 placeholder:text-zinc-400"
+                          }`}
                         />
                       </CardContent>
                     </Card>
@@ -566,11 +575,14 @@ export default function VideoMeeting() {
             onVideoClick={handleVideoClick}
             isMuted={isMuted}
             isVideoOff={isVideoOff}
+            theme={theme}
           />
 
           {/* Control Bar */}
           <TooltipProvider>
-            <motion.div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center space-x-3 rounded-2xl bg-zinc-900/70 p-2 shadow-xl backdrop-blur-xs">
+            <motion.div className={`absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center space-x-3 rounded-2xl p-2 shadow-xl backdrop-blur-xs ${
+              theme === "dark" ? "bg-zinc-900/70" : "bg-white/70"
+            }`}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -580,7 +592,9 @@ export default function VideoMeeting() {
                     className={`h-11 w-11 rounded-full transition-all duration-200 ${
                       isMuted
                         ? "bg-red-500/90 text-white hover:bg-red-600"
-                        : "bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                        : theme === "dark"
+                          ? "bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                          : "bg-zinc-200/90 text-zinc-700 hover:bg-zinc-300"
                     }`}
                   >
                     {isMuted ? (
@@ -604,7 +618,9 @@ export default function VideoMeeting() {
                     className={`h-11 w-11 rounded-full transition-all duration-200 ${
                       isVideoOff
                         ? "bg-red-500/90 text-white hover:bg-red-600"
-                        : "bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                        : theme === "dark"
+                          ? "bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                          : "bg-zinc-200/90 text-zinc-700 hover:bg-zinc-300"
                     }`}
                   >
                     {isVideoOff ? (
@@ -627,7 +643,11 @@ export default function VideoMeeting() {
                     variant="secondary"
                     size="icon"
                     onClick={() => setIsChatOpen(true)}
-                    className="h-11 w-11 rounded-full bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                    className={`h-11 w-11 rounded-full ${
+                      theme === "dark"
+                        ? "bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                        : "bg-zinc-200/90 text-zinc-700 hover:bg-zinc-300"
+                    }`}
                   >
                     <MessageSquare className="h-5 w-5" />
                   </Button>
@@ -637,7 +657,7 @@ export default function VideoMeeting() {
                 </TooltipContent>
               </Tooltip>
 
-              <Separator orientation="vertical" className="h-8 bg-zinc-600" />
+              <Separator orientation="vertical" className={`h-8 ${theme === "dark" ? "bg-zinc-600" : "bg-zinc-300"}`} />
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -649,7 +669,11 @@ export default function VideoMeeting() {
                       setIsAddTimeRequestOpen(true);
                       handleTimeRequest();
                     }}
-                    className="h-11 w-11 rounded-full bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                    className={`h-11 w-11 rounded-full ${
+                      theme === "dark"
+                        ? "bg-zinc-700/90 text-zinc-100 hover:bg-zinc-600"
+                        : "bg-zinc-200/90 text-zinc-700 hover:bg-zinc-300"
+                    }`}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
@@ -699,11 +723,13 @@ export default function VideoMeeting() {
           onOpenChange={setIsChatOpen}
           messages={messages}
           onSendMessage={(message) => sendMessage(message, "You")}
+          theme={theme}
         />
         <EndCallDialog
           open={isEndCallOpen}
           onOpenChange={setIsEndCallOpen}
           onConfirm={handleEndCall}
+          theme={theme}
         />
         <SettingsDialog
           open={isSettingsOpen}

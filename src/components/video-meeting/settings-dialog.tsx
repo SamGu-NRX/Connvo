@@ -30,21 +30,29 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-zinc-800 bg-zinc-900 sm:max-w-[400px]">
+      <DialogContent className={`sm:max-w-[400px] ${
+        theme === "dark"
+          ? "border-zinc-800 bg-zinc-900"
+          : "border-zinc-200 bg-white"
+      }`}>
         <DialogHeader>
-          <DialogTitle className="text-zinc-200">Call Settings</DialogTitle>
+          <DialogTitle className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>Call Settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label className="text-zinc-200">Video Quality</Label>
-              <p className="text-xs text-zinc-400">Adjust video resolution</p>
+              <Label className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>Video Quality</Label>
+              <p className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>Adjust video resolution</p>
             </div>
             <Select defaultValue="720p">
-              <SelectTrigger className="w-24 border-zinc-700 bg-zinc-800">
+              <SelectTrigger className={`w-24 ${
+                theme === "dark"
+                  ? "border-zinc-700 bg-zinc-800"
+                  : "border-zinc-300 bg-zinc-100"
+              }`}>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="border-zinc-800 bg-zinc-900">
+              <SelectContent className={theme === "dark" ? "border-zinc-800 bg-zinc-900" : "border-zinc-200 bg-white"}>
                 <SelectItem value="1080p">1080p</SelectItem>
                 <SelectItem value="720p">720p</SelectItem>
                 <SelectItem value="480p">480p</SelectItem>
@@ -53,15 +61,15 @@ export function SettingsDialog({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label className="text-zinc-200">Noise Suppression</Label>
-              <p className="text-xs text-zinc-400">Reduce background noise</p>
+              <Label className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>Noise Suppression</Label>
+              <p className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>Reduce background noise</p>
             </div>
             <Switch className="data-[state=checked]:bg-blue-500" />
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label className="text-zinc-200">Auto-gain Control</Label>
-              <p className="text-xs text-zinc-400">
+              <Label className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>Auto-gain Control</Label>
+              <p className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>
                 Automatically adjust mic volume
               </p>
             </div>
@@ -69,8 +77,8 @@ export function SettingsDialog({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label className="text-zinc-200">Theme</Label>
-              <p className="text-xs text-zinc-400">Choose light or dark mode</p>
+              <Label className={theme === "dark" ? "text-zinc-200" : "text-zinc-800"}>Theme</Label>
+              <p className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>Choose light or dark mode</p>
             </div>
             <div className="flex items-center space-x-2">
               <Sun

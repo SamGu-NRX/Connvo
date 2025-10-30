@@ -19,6 +19,7 @@ type VideoContainerProps = {
   onVideoClick: (userId: string) => void;
   isMuted?: boolean;
   isVideoOff?: boolean;
+  theme?: "light" | "dark";
 };
 
 function VideoContainerComp({
@@ -30,6 +31,7 @@ function VideoContainerComp({
   onVideoClick,
   isMuted = false,
   isVideoOff = false,
+  theme = "dark",
 }: VideoContainerProps) {
   const user = users[userId];
   const isSpeaking = speakingStates[userId];
@@ -123,14 +125,18 @@ function VideoContainerComp({
       onClick={() => onVideoClick(userId)}
     >
       <div
-        className={`absolute inset-0 flex items-center justify-center ${isMain ? `bg-zinc-800` : `bg-zinc-900`} `}
+        className={`absolute inset-0 flex items-center justify-center ${
+          theme === "dark"
+            ? isMain ? "bg-zinc-800" : "bg-zinc-900"
+            : isMain ? "bg-zinc-200" : "bg-zinc-300"
+        }`}
       >
         {showVideoOff ? (
           <div className="flex flex-col items-center justify-center text-center">
             <div className="mb-2">
-              <VideoOff className="h-12 w-12 text-zinc-400" />
+              <VideoOff className={`h-12 w-12 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
             </div>
-            <div className="text-sm font-medium text-zinc-300">
+            <div className={`text-sm font-medium ${theme === "dark" ? "text-zinc-300" : "text-zinc-700"}`}>
               {isLocal ? "Your video is off" : displayName}
             </div>
           </div>
@@ -145,12 +151,16 @@ function VideoContainerComp({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-700 to-zinc-900">
+              <div className={`absolute inset-0 flex items-center justify-center ${
+                theme === "dark"
+                  ? "bg-gradient-to-br from-zinc-700 to-zinc-900"
+                  : "bg-gradient-to-br from-zinc-300 to-zinc-400"
+              }`}>
                 <div className="text-center">
-                  <div className="mb-2 text-lg font-semibold text-zinc-100">
+                  <div className={`mb-2 text-lg font-semibold ${theme === "dark" ? "text-zinc-100" : "text-zinc-800"}`}>
                     {displayName}
                   </div>
-                  <div className="text-xs text-zinc-400">Simulated video</div>
+                  <div className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>Simulated video</div>
                 </div>
               </div>
             )}
@@ -185,6 +195,7 @@ interface VideoAreaProps {
   onVideoClick: (userId: string) => void;
   isMuted?: boolean;
   isVideoOff?: boolean;
+  theme?: "light" | "dark";
 }
 
 export function VideoArea({
@@ -195,6 +206,7 @@ export function VideoArea({
   onVideoClick,
   isMuted = false,
   isVideoOff = false,
+  theme = "dark",
 }: VideoAreaProps) {
   // Using top-level VideoContainerComp to avoid remounts (stable component)
 
@@ -209,6 +221,7 @@ export function VideoArea({
           onVideoClick={onVideoClick}
           isMuted={isMuted}
           isVideoOff={isVideoOff}
+          theme={theme}
         />
         <VideoContainerComp
           userId="you"
@@ -218,6 +231,7 @@ export function VideoArea({
           onVideoClick={onVideoClick}
           isMuted={isMuted}
           isVideoOff={isVideoOff}
+          theme={theme}
         />
       </div>
     );
@@ -234,6 +248,7 @@ export function VideoArea({
         onVideoClick={onVideoClick}
         isMuted={isMuted}
         isVideoOff={isVideoOff}
+        theme={theme}
       />
       <div className="absolute right-4 bottom-4 z-30 h-32 w-48 transition-transform duration-200 hover:scale-102">
         <VideoContainerComp
@@ -244,6 +259,7 @@ export function VideoArea({
           onVideoClick={onVideoClick}
           isMuted={isMuted}
           isVideoOff={isVideoOff}
+          theme={theme}
         />
       </div>
     </div>
