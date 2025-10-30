@@ -53,6 +53,13 @@ jobs:
       - name: Show documentation diff
         run: git diff --stat
 
+      - name: Pull latest changes from remote
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git fetch origin main
+          git rebase origin/main || true
+
       - name: Commit updated documentation
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
