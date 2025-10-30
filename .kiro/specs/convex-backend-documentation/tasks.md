@@ -94,19 +94,19 @@ This plan systematically adds comprehensive docstrings with test-validated examp
     - Test operational transform scenarios
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [-] 6. Document AI prompts domain (convex/prompts/)
-  - [-] 6.1 Add docstrings to convex/prompts/actions.ts functions
+- [x] 6. Document AI prompts domain (convex/prompts/)
+  - [x] 6.1 Add docstrings to convex/prompts/actions.ts functions
     - Document `generatePreCallIdeas` (already has examples, verify completeness), `generateContextualPrompts`, `detectLullAndGeneratePrompts`
     - Add request/response examples showing AI-generated prompts
     - Include cache hit examples and error scenarios
     - _Requirements: 1.3, 2.1, 2.2, 6.1_
 
-  - [ ] 6.2 Add docstrings to convex/prompts/queries.ts functions
+  - [x] 6.2 Add docstrings to convex/prompts/queries.ts functions
     - Document `getPreCallPrompts`, `getInCallPrompts`, `subscribeToInCallPrompts`, `getPromptById`, `getPromptsByMeetingAndType`
     - Add request/response examples showing prompt retrieval
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 6.3 Add docstrings to convex/prompts/mutations.ts functions
+  - [x] 6.3 Add docstrings to convex/prompts/mutations.ts functions
     - Document `createPrompt`, `updatePromptFeedback`, `markPromptAsUsed`, `batchCreatePrompts`, `cleanupOldPrompts`
     - Add request/response examples showing prompt lifecycle
     - _Requirements: 1.3, 2.1, 2.2_

@@ -531,7 +531,90 @@ function generateHeuristicPrompts(
 }
 
 /**
- * Generates contextual prompts during active meetings
+ * @summary Generates contextual AI prompts during active meetings based on conversation dynamics
+ * @description Analyzes real-time meeting context including lull detection, speaking time balance, current topics, and participant profiles to generate relevant conversation prompts. Automatically cleans up old in-call prompts to prevent accumulation. Returns empty array if meeting is not active or if no relevant prompts can be generated.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "context": {
+ *       "lullDetected": true,
+ *       "topicShift": false,
+ *       "currentTopics": ["ai-ml", "product-development"],
+ *       "speakingTimeRatios": {
+ *         "user_123": 45000,
+ *         "user_456": 15000
+ *       },
+ *       "lastActivity": 1714066770000,
+ *       "lullDuration": 35000
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     "prompts_ck9hx3g1v0007",
+ *     "prompts_ck9hx3g1v0008",
+ *     "prompts_ck9hx3g1v0009"
+ *   ]
+ * }
+ * ```
+ *
+ * @example datamodel
+ * ```json
+ * {
+ *   "prompts": [
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0007",
+ *       "_creationTime": 1714066805000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "incall",
+ *       "content": "Let's try a different angle. What's one thing you've learned recently that surprised you?",
+ *       "tags": ["lull", "severe", "learning"],
+ *       "relevance": 0.9,
+ *       "createdAt": 1714066805000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0008",
+ *       "_creationTime": 1714066805000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "incall",
+ *       "content": "I'd love to hear everyone's perspective on this. What do you think?",
+ *       "tags": ["balance", "inclusion"],
+ *       "relevance": 0.85,
+ *       "createdAt": 1714066805000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0009",
+ *       "_creationTime": 1714066805000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "incall",
+ *       "content": "Since you both work with ai-ml, what trends are you seeing in that space?",
+ *       "tags": ["interests", "trends"],
+ *       "relevance": 0.8,
+ *       "createdAt": 1714066805000
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response-empty
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": []
+ * }
+ * ```
  */
 export const generateContextualPrompts = internalAction({
   args: {
@@ -615,7 +698,63 @@ export const generateContextualPrompts = internalAction({
 });
 
 /**
- * Detects lulls and triggers contextual prompt generation
+ * @summary Detects conversation lulls and automatically generates contextual prompts
+ * @description Monitors meeting activity to detect periods of silence exceeding 30 seconds. When a lull is detected, automatically triggers contextual prompt generation based on current meeting state, participant profiles, and speaking patterns. Returns lull detection status and any generated prompt IDs. Safe to call repeatedly as it only generates prompts when lull threshold is exceeded.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-lull-detected
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "lullDetected": true,
+ *     "promptsGenerated": 3,
+ *     "promptIds": [
+ *       "prompts_ck9hx3g1v0010",
+ *       "prompts_ck9hx3g1v0011",
+ *       "prompts_ck9hx3g1v0012"
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response-no-lull
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "lullDetected": false,
+ *     "promptsGenerated": 0,
+ *     "promptIds": []
+ *   }
+ * }
+ * ```
+ *
+ * @example response-inactive-meeting
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "lullDetected": false,
+ *     "promptsGenerated": 0,
+ *     "promptIds": []
+ *   }
+ * }
+ * ```
  */
 export const detectLullAndGeneratePrompts = internalAction({
   args: {
