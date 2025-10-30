@@ -42,7 +42,7 @@ export default function MatchQueueLobby({
       setMatchData({
         id: "match123",
         name: "Jane Doe",
-        avatar: "/placeholder.svg?height=100&width=100",
+        avatar: null,
         bio: "Software Engineer | AI Enthusiast",
         sharedInterests: ["AI", "Hiking", "Photography"],
       });

@@ -47,10 +47,10 @@ export function ProfileAvatar({
       <Avatar
         className={cn(
           sizeClasses[size],
-          "border-2",
+          "shadow-lg",
           shouldShowGradient
-            ? `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to} border-transparent`
-            : "border-gray-200 dark:border-gray-700",
+            ? `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to}`
+            : "",
           isSpeaking && "ring-primary ring-2 ring-offset-2",
           onClick && "cursor-pointer",
           className,

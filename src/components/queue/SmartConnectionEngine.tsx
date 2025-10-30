@@ -50,7 +50,7 @@ export default function SmartConnectionEngine({
       setMatchData({
         id: "match123",
         name: "Jane Doe",
-        avatar: "/placeholder.svg?height=100&width=100",
+        avatar: null,
         bio: "Software Engineer | AI Enthusiast",
         profession: "Software Engineer",
         company: "TechCorp Inc.",

@@ -35,7 +35,7 @@ export const mockUsers: UserInfo[] = [
   {
     id: "user2",
     name: "Maya Patel",
-    avatar: "/placeholder.svg?height=200&width=200",
+    avatar: null,
     bio: "Full-stack developer with expertise in React, Node.js, and cloud architecture. I love building scalable applications and mentoring junior developers.",
     profession: "Senior Developer",
     company: "TechNova",
