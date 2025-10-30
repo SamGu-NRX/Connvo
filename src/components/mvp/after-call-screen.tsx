@@ -1,12 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { usePostCallInsights } from "@/hooks/usePostCallInsights";
 import {
   Clock,
   Users,
@@ -26,15 +28,88 @@ const AfterCallScreen = ({ meetingId }: AfterCallScreenProps) => {
   // Check if this is a valid Convex ID or a demo
   const isDemo = typeof meetingId === 'string' && !meetingId.startsWith('j');
   
-  const {
-    meeting,
-    transcriptSegments,
-    notes,
-    insights,
-    isLoading,
-    isProcessing,
-    fullTranscript,
-  } = usePostCallInsights(isDemo ? ("skip" as any) : (meetingId as Id<"meetings">));
+  // Query meeting details - skip if demo
+  const meeting = useQuery(
+    api.meetings.queries.getMeeting,
+    isDemo ? undefined : { meetingId: meetingId as Id<"meetings"> }
+  );
+
+  // Query transcript segments - skip if demo
+  const transcriptSegments = useQuery(
+    api.transcripts.queries.getTranscriptSegments,
+    isDemo ? undefined : { meetingId: meetingId as Id<"meetings">, limit: 1000 }
+  );
+
+  // Query notes - skip if demo
+  const notes = useQuery(
+    api.notes.queries.getMeetingNotes,
+    isDemo ? undefined : { meetingId: meetingId as Id<"meetings"> }
+  );
+
+  // Calculate insights from transcript data
+  const insights = useMemo(() => {
+    if (isDemo) {
+      return {
+        totalDuration: 1500000,
+        totalSegments: 15,
+        uniqueSpeakers: ["User 1", "User 2"],
+        topics: ["Demo", "Testing"],
+        averageSentiment: 0.85,
+        hasNotes: false,
+        notesLength: 0,
+      };
+    }
+
+    const segments = transcriptSegments || [];
+    const totalDuration = segments.length > 0
+      ? segments[segments.length - 1].endMs
+      : 0;
+
+    const speakerSet = new Set<string>();
+    segments.forEach(segment => {
+      segment.speakers.forEach(speaker => speakerSet.add(speaker));
+    });
+
+    const topicSet = new Set<string>();
+    segments.forEach(segment => {
+      segment.topics.forEach(topic => topicSet.add(topic));
+    });
+
+    const sentimentScores = segments
+      .filter(s => s.sentiment)
+      .map(s => s.sentiment!.score);
+    const averageSentiment = sentimentScores.length > 0
+      ? sentimentScores.reduce((sum, score) => sum + score, 0) / sentimentScores.length
+      : 0;
+
+    return {
+      totalDuration,
+      totalSegments: segments.length,
+      uniqueSpeakers: Array.from(speakerSet),
+      topics: Array.from(topicSet),
+      averageSentiment,
+      hasNotes: !!notes,
+      notesLength: notes?.content?.length || 0,
+    };
+  }, [transcriptSegments, notes, isDemo]);
+
+  // Compile full transcript text
+  const fullTranscript = useMemo(() => {
+    if (isDemo || !transcriptSegments) return "";
+    
+    return transcriptSegments
+      .map(segment => {
+        const speakers = segment.speakers.length > 0
+          ? `[${segment.speakers.join(", ")}]: `
+          : "";
+        return `${speakers}${segment.text}`;
+      })
+      .join("\n\n");
+  }, [transcriptSegments, isDemo]);
+
+  const isLoading = !isDemo && meeting === undefined;
+  const isProcessing = !isDemo && meeting?.state === "concluded" &&
+    (transcriptSegments === undefined || transcriptSegments.length === 0);
 
   const handleDownloadTranscript = () => {
     const blob = new Blob([fullTranscript], { type: "text/plain" });

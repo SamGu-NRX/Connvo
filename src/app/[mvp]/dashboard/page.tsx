@@ -20,18 +20,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="bg-background flex min-h-screen flex-col">
-      <div className="container mx-auto p-6">
+    <div className="bg-background flex h-full flex-col">
+      <div className="container mx-auto p-4">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mb-8"
+          className="mb-4"
         >
           <h1 className="text-2xl font-medium tracking-tight">Dashboard</h1>
         </motion.div>
 
-        <Tabs defaultValue="metrics" className="space-y-6">
+        <Tabs defaultValue="metrics" className="space-y-4">
           <TabsList className="bg-background border-border border">
             <TabsTrigger value="metrics" className="text-sm">
               Metrics

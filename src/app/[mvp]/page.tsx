@@ -84,13 +84,13 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="bg-background/80 min-h-screen">
-      <div className="container mx-auto max-w-5xl px-4 py-12 md:py-16">
+    <div className="bg-background/80 h-full">
+      <div className="container mx-auto max-w-5xl px-4 py-4">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-12 text-center"
+          className="mb-6 text-center"
         >
           <h1 className="bg-emerald-400 bg-clip-text pb-1 text-4xl font-bold text-transparent md:text-5xl dark:bg-emerald-300">
             Welcome to LinkedUp, {user?.firstName || user?.email || "Guest"}
@@ -101,7 +101,7 @@ export default function HomePage() {
         </motion.div>
 
         <Tabs defaultValue="queue" className="w-full">
-          <TabsList className="mb-8 grid h-full w-full grid-cols-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+          <TabsList className="mb-4 grid h-full w-full grid-cols-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
             <TabsTrigger
               value="queue"
               className="rounded-lg px-2 py-2 text-sm font-medium"
@@ -126,12 +126,12 @@ export default function HomePage() {
                   Choose your connection type and start matching!
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-8 pt-2">
+              <CardContent className="space-y-4 pt-2">
                 <motion.div
                   variants={container}
                   initial="hidden"
                   animate="show"
-                  className="space-y-6"
+                  className="space-y-4"
                 >
                   <motion.div variants={item}>
                     <div className="rounded-xl bg-emerald-50 p-6 dark:bg-emerald-900/20">
