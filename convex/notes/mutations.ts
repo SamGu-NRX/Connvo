@@ -34,6 +34,81 @@ import {
 
 /**
  * Applies a note operation with operational transform conflict resolution
+ *
+ * @summary Applies a single note operation with OT conflict resolution
+ * @description Processes a collaborative note edit operation using operational transform
+ * to resolve conflicts with concurrent edits. The operation is transformed against any
+ * concurrent operations that occurred after the client's last known state, ensuring
+ * convergence across all clients. Tracks conflicts and returns the transformed operation
+ * along with the new document version.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "operation": {
+ *       "type": "insert",
+ *       "position": 42,
+ *       "content": "Action items:\n- Follow up on Q4 goals\n"
+ *     },
+ *     "clientSequence": 15,
+ *     "expectedVersion": 8
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "serverSequence": 16,
+ *     "transformedOperation": {
+ *       "type": "insert",
+ *       "position": 45,
+ *       "content": "Action items:\n- Follow up on Q4 goals\n"
+ *     },
+ *     "newVersion": 9,
+ *     "conflicts": []
+ *   }
+ * }
+ * ```
+ *
+ * @example response-conflict
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "serverSequence": 18,
+ *     "transformedOperation": {
+ *       "type": "insert",
+ *       "position": 52,
+ *       "content": "Action items:\n- Follow up on Q4 goals\n"
+ *     },
+ *     "newVersion": 10,
+ *     "conflicts": ["noteOp_17"]
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Version mismatch: expected 8, got 10",
+ *   "errorData": {
+ *     "code": "CONFLICT",
+ *     "message": "Version mismatch: expected 8, got 10"
+ *   }
+ * }
+ * ```
  */
 export const applyNoteOperation = mutation({
   args: {
@@ -214,6 +289,105 @@ export const applyNoteOperation = mutation({
 
 /**
  * Batch applies multiple note operations with optimized conflict resolution
+ *
+ * @summary Applies multiple note operations in a single transaction
+ * @description Processes a batch of collaborative note operations efficiently by applying
+ * them sequentially within a single transaction. Each operation is transformed against
+ * concurrent operations from other clients, ensuring consistency. This is more efficient
+ * than individual operations for bulk edits like paste operations or undo/redo sequences.
+ * Returns detailed results for each operation including conflicts detected.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "operations": [
+ *       {
+ *         "operation": {
+ *           "type": "insert",
+ *           "position": 0,
+ *           "content": "Meeting Notes - Q4 Planning\n\n"
+ *         },
+ *         "clientSequence": 10
+ *       },
+ *       {
+ *         "operation": {
+ *           "type": "insert",
+ *           "position": 30,
+ *           "content": "Attendees:\n- Alice\n- Bob\n\n"
+ *         },
+ *         "clientSequence": 11
+ *       },
+ *       {
+ *         "operation": {
+ *           "type": "insert",
+ *           "position": 55,
+ *           "content": "Agenda:\n1. Review Q3 results\n2. Plan Q4 objectives\n"
+ *         },
+ *         "clientSequence": 12
+ *       }
+ *     ],
+ *     "expectedVersion": 5
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "processed": 3,
+ *     "failed": 0,
+ *     "results": [
+ *       {
+ *         "serverSequence": 13,
+ *         "transformedOperation": {
+ *           "type": "insert",
+ *           "position": 0,
+ *           "content": "Meeting Notes - Q4 Planning\n\n"
+ *         },
+ *         "conflicts": []
+ *       },
+ *       {
+ *         "serverSequence": 14,
+ *         "transformedOperation": {
+ *           "type": "insert",
+ *           "position": 30,
+ *           "content": "Attendees:\n- Alice\n- Bob\n\n"
+ *         },
+ *         "conflicts": []
+ *       },
+ *       {
+ *         "serverSequence": 15,
+ *         "transformedOperation": {
+ *           "type": "insert",
+ *           "position": 55,
+ *           "content": "Agenda:\n1. Review Q3 results\n2. Plan Q4 objectives\n"
+ *         },
+ *         "conflicts": []
+ *       }
+ *     ],
+ *     "newVersion": 6
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Version mismatch: expected 5, got 7",
+ *   "errorData": {
+ *     "code": "CONFLICT",
+ *     "message": "Version mismatch: expected 5, got 7"
+ *   }
+ * }
+ * ```
  */
 export const batchApplyNoteOperations = mutation({
   args: {
@@ -404,6 +578,38 @@ export const batchApplyNoteOperations = mutation({
 
 /**
  * Composes consecutive operations from the same author for optimization
+ *
+ * @summary Composes consecutive operations to reduce storage overhead
+ * @description Optimizes the operation history by combining consecutive operations
+ * from the same author into single composite operations. For example, multiple
+ * character insertions at adjacent positions are merged into a single insert operation.
+ * This reduces storage requirements and improves performance for operation replay
+ * during rebasing. Only operations with adjacent sequences from the same author are composed.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "authorId": "user_456example",
+ *     "maxOperations": 100
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "composed": 15,
+ *     "originalCount": 50,
+ *     "newCount": 35
+ *   }
+ * }
+ * ```
  */
 export const composeConsecutiveOperations = internalMutation({
   args: {
@@ -526,6 +732,38 @@ export const composeConsecutiveOperations = internalMutation({
 
 /**
  * Rebases the notes document by reapplying all operations
+ *
+ * @summary Rebuilds the materialized notes document from operation history
+ * @description Reconstructs the notes document by replaying all operations from a
+ * specified sequence number (or from the beginning). This is used for recovery,
+ * consistency verification, and after operation composition. The process applies
+ * each operation in sequence order to ensure the materialized document matches
+ * the operation history. Failed operations are marked but don't stop the rebase.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "fromSequence": 0
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "newVersion": 42,
+ *     "operationsProcessed": 156,
+ *     "contentLength": 2847
+ *   }
+ * }
+ * ```
  */
 export const rebaseNotesDocument = internalMutation({
   args: {
@@ -599,6 +837,50 @@ export const rebaseNotesDocument = internalMutation({
 
 /**
  * Rolls back operations to a specific sequence number
+ *
+ * @summary Rolls back note operations to a previous state
+ * @description Removes all operations after a specified sequence number and rebuilds
+ * the notes document from the remaining operations. This is used for administrative
+ * recovery from errors or malicious edits. Requires host permissions. The rollback
+ * is logged in the audit trail with the reason provided. After removing operations,
+ * the document is rebased from scratch to ensure consistency.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "targetSequence": 100,
+ *     "reason": "Removing spam content added by compromised account"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "operationsRemoved": 23,
+ *     "newVersion": 101
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Insufficient permissions: host role required",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "Insufficient permissions: host role required"
+ *   }
+ * }
+ * ```
  */
 export const rollbackToSequence = mutation({
   args: {
@@ -664,6 +946,36 @@ export const rollbackToSequence = mutation({
 
 /**
  * Cleans up old note operations beyond retention period
+ *
+ * @summary Removes old note operations to manage storage
+ * @description Deletes note operations older than the specified retention period
+ * (default 90 days) while preserving a minimum number of recent operations per
+ * meeting (default 100). This prevents unbounded growth of the operation history
+ * while maintaining enough history for conflict resolution and audit purposes.
+ * Can be run for a specific meeting or across all meetings.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example",
+ *     "olderThanMs": 7776000000,
+ *     "keepMinimumOps": 100
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "deleted": 342
+ *   }
+ * }
+ * ```
  */
 export const cleanupOldNoteOperations = internalMutation({
   args: {

@@ -2381,6 +2381,16 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_transcripts.ingestion.ingestTranscriptChunk"
+            example:
+              args:
+                meetingId: jd7xzqn8h9p2v4k5m6n7p8q9
+                speakerId: user_alice_123
+                text: Let's discuss the Q4 roadmap priorities.
+                confidence: 0.92
+                startTime: 1698765432000
+                endTime: 1698765435500
+                language: en
+                isInterim: false
         required: true
       responses:
         "200":
@@ -2389,6 +2399,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_transcripts.ingestion.ingestTranscriptChunk"
+              example:
+                status: success
+                value:
+                  success: true
+                  sequence: 42
+                  bucketMs: 1698765300000
+                  rateLimitRemaining: 95
         "400":
           description: Failed operation
           content:
@@ -2404,7 +2421,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTranscriptsIngestionIngestTranscriptChunk
-      description: Ingests a transcription chunk with validation, sharding, and rate limiting
+      description: |-
+        validates input parameters, enforces rate limits per user, and stores chunks in
+        time-bucketed shards (5-minute windows) to prevent hot partitions. Allocates
+        globally unique sequence numbers for ordering. Returns rate limit status for
+        client-side throttling.
   /api/run/transcripts/ingestion/getTranscriptChunks:
     post:
       summary: getTranscriptChunks
@@ -2415,6 +2436,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_transcripts.ingestion.getTranscriptChunks"
+            example:
+              args:
+                meetingId: jd7xzqn8h9p2v4k5m6n7p8q9
+                fromSequence: 0
+                limit: 50
+                bucketMs: 1698765300000
         required: true
       responses:
         "200":
@@ -2423,6 +2450,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_transcripts.ingestion.getTranscriptChunks"
+              example:
+                status: success
+                value:
+                  - _id: jh8xzqn8h9p2v4k5m6n7p8r1
+                    sequence: 1
+                    speakerId: user_alice_123
+                    text: Welcome everyone to the meeting.
+                    confidence: 0.95
+                    startMs: 1698765432000
+                    endMs: 1698765434000
+                    wordCount: 5
+                    language: en
+                    createdAt: 1698765434100
+                  - _id: jh8xzqn8h9p2v4k5m6n7p8r2
+                    sequence: 2
+                    speakerId: user_bob_456
+                    text: Thanks for having me.
+                    confidence: 0.89
+                    startMs: 1698765435000
+                    endMs: 1698765437000
+                    wordCount: 4
+                    language: en
+                    createdAt: 1698765437100
         "400":
           description: Failed operation
           content:
@@ -2438,7 +2488,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTranscriptsIngestionGetTranscriptChunks
-      description: Gets transcript chunks for a meeting with pagination
+      description: |-
+        sequence number and time bucket. Supports pagination with configurable limits
+        (max 200 per request). Uses query optimizer for efficient index-backed retrieval.
+        Requires meeting participant access. Returns chunks in ascending sequence order.
   /api/run/transcripts/ingestion/getTranscriptStats:
     post:
       summary: getTranscriptStats
@@ -2449,6 +2502,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_transcripts.ingestion.getTranscriptStats"
+            example:
+              args:
+                meetingId: jd7xzqn8h9p2v4k5m6n7p8q9
         required: true
       responses:
         "200":
@@ -2457,6 +2513,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_transcripts.ingestion.getTranscriptStats"
+              example:
+                status: success
+                value:
+                  totalChunks: 127
+                  totalWords: 1843
+                  averageConfidence: 0.91
+                  duration: 1800000
+                  speakers:
+                    - user_alice_123
+                    - user_bob_456
+                    - user_carol_789
+                  languages:
+                    - en
+                  bucketCount: 6
         "400":
           description: Failed operation
           content:
@@ -2472,7 +2542,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTranscriptsIngestionGetTranscriptStats
-      description: Gets transcript statistics for a meeting
+      description: |-
+        including total chunks, word count, average confidence, duration, unique speakers,
+        languages detected, and bucket count for sharding metrics. Requires meeting
+        participant access. Returns zero values for meetings with no transcripts.
   /api/run/insights/generation/generateInsights:
     post:
       summary: generateInsights
@@ -5672,6 +5745,17 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_notes.mutations.applyNoteOperation"
+            example:
+              args:
+                meetingId: meeting_123example
+                operation:
+                  type: insert
+                  position: 42
+                  content: |
+                    Action items:
+                    - Follow up on Q4 goals
+                clientSequence: 15
+                expectedVersion: 8
         required: true
       responses:
         "200":
@@ -5680,6 +5764,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_notes.mutations.applyNoteOperation"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  serverSequence: 16
+                  transformedOperation:
+                    type: insert
+                    position: 45
+                    content: |
+                      Action items:
+                      - Follow up on Q4 goals
+                  newVersion: 9
+                  conflicts: []
         "400":
           description: Failed operation
           content:
@@ -5695,7 +5794,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesMutationsApplyNoteOperation
-      description: Applies a note operation with operational transform conflict resolution
+      description: |-
+        to resolve conflicts with concurrent edits. The operation is transformed against any
+        concurrent operations that occurred after the client's last known state, ensuring
+        convergence across all clients. Tracks conflicts and returns the transformed operation
+        along with the new document version.
   /api/run/notes/mutations/batchApplyNoteOperations:
     post:
       summary: batchApplyNoteOperations
@@ -5706,6 +5809,35 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_notes.mutations.batchApplyNoteOperations"
+            example:
+              args:
+                meetingId: meeting_123example
+                operations:
+                  - operation:
+                      type: insert
+                      position: 0
+                      content: |+
+                        Meeting Notes - Q4 Planning
+
+                    clientSequence: 10
+                  - operation:
+                      type: insert
+                      position: 30
+                      content: |+
+                        Attendees:
+                        - Alice
+                        - Bob
+
+                    clientSequence: 11
+                  - operation:
+                      type: insert
+                      position: 55
+                      content: |
+                        Agenda:
+                        1. Review Q3 results
+                        2. Plan Q4 objectives
+                    clientSequence: 12
+                expectedVersion: 5
         required: true
       responses:
         "200":
@@ -5714,6 +5846,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_notes.mutations.batchApplyNoteOperations"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  processed: 3
+                  failed: 0
+                  results:
+                    - serverSequence: 13
+                      transformedOperation:
+                        type: insert
+                        position: 0
+                        content: |+
+                          Meeting Notes - Q4 Planning
+
+                      conflicts: []
+                    - serverSequence: 14
+                      transformedOperation:
+                        type: insert
+                        position: 30
+                        content: |+
+                          Attendees:
+                          - Alice
+                          - Bob
+
+                      conflicts: []
+                    - serverSequence: 15
+                      transformedOperation:
+                        type: insert
+                        position: 55
+                        content: |
+                          Agenda:
+                          1. Review Q3 results
+                          2. Plan Q4 objectives
+                      conflicts: []
+                  newVersion: 6
         "400":
           description: Failed operation
           content:
@@ -5729,7 +5898,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesMutationsBatchApplyNoteOperations
-      description: Batch applies multiple note operations with optimized conflict resolution
+      description: |-
+        them sequentially within a single transaction. Each operation is transformed against
+        concurrent operations from other clients, ensuring consistency. This is more efficient
+        than individual operations for bulk edits like paste operations or undo/redo sequences.
+        Returns detailed results for each operation including conflicts detected.
   /api/run/notes/mutations/rollbackToSequence:
     post:
       summary: rollbackToSequence
@@ -5740,6 +5913,11 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Request_notes.mutations.rollbackToSequence"
+            example:
+              args:
+                meetingId: meeting_123example
+                targetSequence: 100
+                reason: Removing spam content added by compromised account
         required: true
       responses:
         "200":
@@ -5748,6 +5926,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Response_notes.mutations.rollbackToSequence"
+              example:
+                status: success
+                errorMessage: ""
+                errorData: {}
+                value:
+                  success: true
+                  operationsRemoved: 23
+                  newVersion: 101
         "400":
           description: Failed operation
           content:
@@ -5763,7 +5949,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesMutationsRollbackToSequence
-      description: Rolls back operations to a specific sequence number
+      description: |-
+        the notes document from the remaining operations. This is used for administrative
+        recovery from errors or malicious edits. Requires host permissions. The rollback
+        is logged in the audit trail with the reason provided. After removing operations,
+        the document is rebased from scratch to ensure consistency.
   /api/run/notes/offline/clearSyncedOperations:
     post:
       summary: clearSyncedOperations
