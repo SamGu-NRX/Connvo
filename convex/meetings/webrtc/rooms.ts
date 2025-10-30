@@ -146,7 +146,52 @@ export const storeRoomConfiguration = internalMutation({
 });
 
 /**
- * Generates participant access token for video room
+ * @summary generateParticipantAccessToken
+ * @description Issues a short-lived access token for the active video room after verifying the caller is a joined meeting participant. The action enforces meeting state (must be `active`), rejects observers, and derives feature flags from the stored room configuration so clients know which controls to enable.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_active12345",
+ *     "sessionId": "session_host_live"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.participant-token",
+ *     "provider": "webrtc",
+ *     "roomId": "room_live_9f3c2a",
+ *     "participantId": "session_host_live",
+ *     "permissions": {
+ *       "canRecord": true,
+ *       "canMute": true,
+ *       "canKick": true,
+ *       "canShare": true
+ *     },
+ *     "success": true
+ *   }
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Observers cannot generate participant tokens for active video participation",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Observers cannot generate participant tokens for active video participation",
+ *     "statusCode": 400
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 type ParticipantAccessTokenResult = {
   token: string;

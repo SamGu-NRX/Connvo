@@ -37,7 +37,7 @@ tags:
 paths:
   /api/run/meetings/lifecycle/createMeeting:
     post:
-      summary: Creates a new meeting with comprehensive setup and hybrid video provider support.
+      summary: createMeeting
       tags:
         - mutation
       requestBody:
@@ -96,7 +96,7 @@ paths:
       description: Creates a new meeting with comprehensive setup and hybrid video provider support.
   /api/run/meetings/lifecycle/addParticipant:
     post:
-      summary: Adds a participant to a meeting with proper validation and role management
+      summary: addParticipant
       tags:
         - mutation
       requestBody:
@@ -130,7 +130,7 @@ paths:
       description: Adds a participant to a meeting with proper validation and role management
   /api/run/meetings/lifecycle/addMultipleParticipants:
     post:
-      summary: Adds multiple participants to a meeting (bulk operation)
+      summary: addMultipleParticipants
       tags:
         - mutation
       requestBody:
@@ -164,7 +164,7 @@ paths:
       description: Adds multiple participants to a meeting (bulk operation)
   /api/run/meetings/lifecycle/removeParticipant:
     post:
-      summary: Removes a participant from a meeting
+      summary: removeParticipant
       tags:
         - mutation
       requestBody:
@@ -198,7 +198,7 @@ paths:
       description: Removes a participant from a meeting
   /api/run/meetings/lifecycle/updateParticipantRole:
     post:
-      summary: Updates participant role with validation
+      summary: updateParticipantRole
       tags:
         - mutation
       requestBody:
@@ -232,7 +232,7 @@ paths:
       description: Updates participant role with validation
   /api/run/meetings/lifecycle/startMeeting:
     post:
-      summary: Starts a meeting and activates real-time features with hybrid provider support
+      summary: startMeeting
       tags:
         - mutation
       requestBody:
@@ -266,7 +266,7 @@ paths:
       description: Starts a meeting and activates real-time features with hybrid provider support
   /api/run/meetings/lifecycle/endMeeting:
     post:
-      summary: Ends a meeting and triggers cleanup
+      summary: endMeeting
       tags:
         - mutation
       requestBody:
@@ -300,7 +300,7 @@ paths:
       description: Ends a meeting and triggers cleanup
   /api/run/meetings/lifecycle/getMeetingConnectionInfo:
     post:
-      summary: Gets meeting connection information for participants
+      summary: getMeetingConnectionInfo
       tags:
         - mutation
       requestBody:
@@ -334,7 +334,7 @@ paths:
       description: Gets meeting connection information for participants
   /api/run/meetings/lifecycle/joinMeeting:
     post:
-      summary: Handles participant joining (presence update)
+      summary: joinMeeting
       tags:
         - mutation
       requestBody:
@@ -368,7 +368,7 @@ paths:
       description: Handles participant joining (presence update)
   /api/run/meetings/lifecycle/leaveMeeting:
     post:
-      summary: Handles participant leaving (presence update)
+      summary: leaveMeeting
       tags:
         - mutation
       requestBody:
@@ -402,7 +402,7 @@ paths:
       description: Handles participant leaving (presence update)
   /api/run/meetings/lifecycle/cancelMeeting:
     post:
-      summary: Cancels a scheduled meeting
+      summary: cancelMeeting
       tags:
         - mutation
       requestBody:
@@ -436,7 +436,7 @@ paths:
       description: Cancels a scheduled meeting
   /api/run/meetings/queries/getMeeting:
     post:
-      summary: Gets meeting details for authenticated user with WebRTC info.
+      summary: getMeeting
       tags:
         - query
       requestBody:
@@ -495,7 +495,7 @@ paths:
       description: Provides aggregated session metrics and the caller's presence/role snapshot.
   /api/run/meetings/queries/listUserMeetings:
     post:
-      summary: Lists meetings for authenticated user
+      summary: listUserMeetings
       tags:
         - query
       requestBody:
@@ -529,7 +529,7 @@ paths:
       description: Lists meetings for authenticated user
   /api/run/meetings/queries/listMeetingParticipants:
     post:
-      summary: Gets meeting participants with WebRTC session info
+      summary: listMeetingParticipants
       tags:
         - query
       requestBody:
@@ -563,7 +563,7 @@ paths:
       description: Gets meeting participants with WebRTC session info
   /api/run/users/mutations/upsertUser:
     post:
-      summary: Create or update user profile from WorkOS authentication
+      summary: upsertUser
       tags:
         - mutation
       requestBody:
@@ -597,7 +597,7 @@ paths:
       description: This is typically called after successful WorkOS authentication
   /api/run/users/mutations/updateUserProfile:
     post:
-      summary: Update user profile information
+      summary: updateUserProfile
       tags:
         - mutation
       requestBody:
@@ -631,7 +631,7 @@ paths:
       description: Requires ownership or admin access
   /api/run/users/mutations/updateUserInterests:
     post:
-      summary: Update user interests
+      summary: updateUserInterests
       tags:
         - mutation
       requestBody:
@@ -665,7 +665,7 @@ paths:
       description: Requires ownership or admin access
   /api/run/users/mutations/deactivateUser:
     post:
-      summary: Deactivate user account
+      summary: deactivateUser
       tags:
         - mutation
       requestBody:
@@ -699,7 +699,7 @@ paths:
       description: Requires ownership or admin access
   /api/run/users/mutations/updateLastSeen:
     post:
-      summary: Update user's last seen timestamp
+      summary: updateLastSeen
       tags:
         - mutation
       requestBody:
@@ -733,7 +733,7 @@ paths:
       description: Used for presence tracking
   /api/run/users/mutations/saveOnboarding:
     post:
-      summary: 'Save onboarding data atomically: profile fields + interests + onboarding flags.'
+      summary: saveOnboarding
       tags:
         - mutation
       requestBody:
@@ -741,6 +741,23 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_users.mutations.saveOnboarding'
+            example:
+              args:
+                age: 25
+                gender: prefer-not-to-say
+                field: Software
+                jobTitle: Engineer
+                company: Acme
+                linkedinUrl: https://linkedin.com/in/test
+                bio: Hello, I build things.
+                interests:
+                  - id: software-engineering
+                    name: Software Engineering
+                    category: industry
+                  - id: startups
+                    name: Startups
+                    category: personal
+                idempotencyKey: onboarding-test-user
         required: true
       responses:
         '200':
@@ -749,6 +766,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_users.mutations.saveOnboarding'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  userId: user_9f3c2ab457
+                  profileId: profiles_d4c1e87a90
+                  interestsCount: 2
+                  onboardingCompleted: true
         '400':
           description: Failed operation
           content:
@@ -764,10 +790,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsSaveOnboarding
-      description: Idempotent via idempotencyKeys.
+      description: Calls a mutation at the path users/mutations.js:saveOnboarding
   /api/run/users/queries/getUserById:
     post:
-      summary: Gets user by ID (internal use)
+      summary: getUserById
       tags:
         - query
       requestBody:
@@ -775,6 +801,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_users.queries.getUserById'
+            example:
+              args:
+                userId: user_9f3c2ab457
         required: true
       responses:
         '200':
@@ -783,6 +812,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_users.queries.getUserById'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  _id: user_9f3c2ab457
+                  _creationTime: 1716403200000
+                  workosUserId: org_user_123
+                  email: member@example.com
+                  displayName: Member Example
+                  orgId: org_abc123
+                  orgRole: member
+                  isActive: true
+                  onboardingComplete: true
+                  onboardingStartedAt: 1716406800000
+                  onboardingCompletedAt: 1716489600000
+                  createdAt: 1716403200000
+                  updatedAt: 1716489600000
         '400':
           description: Failed operation
           content:
@@ -798,10 +845,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersQueriesGetUserById
-      description: Gets user by ID (internal use)
+      description: Calls a query at the path users/queries.js:getUserById
   /api/run/users/queries/getCurrentUser:
     post:
-      summary: Gets current user profile
+      summary: getCurrentUser
       tags:
         - query
       requestBody:
@@ -835,7 +882,7 @@ paths:
       description: Gets current user profile
   /api/run/users/queries/getUserProfile:
     post:
-      summary: Gets user profile by ID (with authorization)
+      summary: getUserProfile
       tags:
         - query
       requestBody:
@@ -869,7 +916,7 @@ paths:
       description: Gets user profile by ID (with authorization)
   /api/run/users/queries/getOnboardingState:
     post:
-      summary: Get onboarding state for the current user.
+      summary: getOnboardingState
       tags:
         - query
       requestBody:
@@ -903,7 +950,7 @@ paths:
       description: Get onboarding state for the current user.
   /api/run/users/queries/listActiveUsersInOrg:
     post:
-      summary: List active users in the same organization (with pagination)
+      summary: listActiveUsersInOrg
       tags:
         - query
       requestBody:
@@ -937,7 +984,7 @@ paths:
       description: Uses index-first query pattern per convex_rules.mdc
   /api/run/realtime/subscriptions/subscribeMeetingNotes:
     post:
-      summary: Real-time meeting notes subscription with permission validation and bandwidth management
+      summary: subscribeMeetingNotes
       tags:
         - query
       requestBody:
@@ -971,7 +1018,7 @@ paths:
       description: Real-time meeting notes subscription with permission validation and bandwidth management
   /api/run/realtime/subscriptions/subscribeTranscriptStream:
     post:
-      summary: Real-time transcript stream subscription with time-bounded access
+      summary: subscribeTranscriptStream
       tags:
         - query
       requestBody:
@@ -1005,7 +1052,7 @@ paths:
       description: Real-time transcript stream subscription with time-bounded access
   /api/run/realtime/subscriptions/subscribeMeetingParticipants:
     post:
-      summary: Real-time meeting participants subscription
+      summary: subscribeMeetingParticipants
       tags:
         - query
       requestBody:
@@ -1039,7 +1086,7 @@ paths:
       description: Real-time meeting participants subscription
   /api/run/realtime/subscriptions/validateSubscription:
     post:
-      summary: Validates subscription permissions in real-time
+      summary: validateSubscription
       tags:
         - query
       requestBody:
@@ -1073,7 +1120,7 @@ paths:
       description: Called periodically by clients to ensure continued access
   /api/run/audit/logging/getAuditLogs:
     post:
-      summary: Public query to list audit logs by resource
+      summary: getAuditLogs
       tags:
         - query
       requestBody:
@@ -1107,7 +1154,7 @@ paths:
       description: Public query to list audit logs by resource
   /api/run/auth/permissions/validateSubscriptionPermissions:
     post:
-      summary: Dynamic Permission Management System
+      summary: validateSubscriptionPermissions
       tags:
         - query
       requestBody:
@@ -1115,6 +1162,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_auth.permissions.validateSubscriptionPermissions'
+            example:
+              args:
+                resourceType: meetingNotes
+                resourceId: me_a12bc34def567890
+                requiredPermissions:
+                  - read
+                  - write
         required: true
       responses:
         '200':
@@ -1123,6 +1177,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_auth.permissions.validateSubscriptionPermissions'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  granted: true
+                  permissions:
+                    - read
+                    - write
+                    - manage
+                    - export
+                  metadata: {}
         '400':
           description: Failed operation
           content:
@@ -1138,15 +1204,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunAuthPermissionsValidateSubscriptionPermissions
-      description: |-
-        This module handles dynamic permission updates and subscription management
-        for real-time access control.
-
-        Requirements: 2.5, 4.1
-        Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
+      description: Calls a query at the path auth/permissions.js:validateSubscriptionPermissions
   /api/run/auth/permissions/refreshSubscriptionPermissions:
     post:
-      summary: Dynamic Permission Management System
+      summary: refreshSubscriptionPermissions
       tags:
         - query
       requestBody:
@@ -1154,6 +1215,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_auth.permissions.refreshSubscriptionPermissions'
+            example:
+              args:
+                subscriptions:
+                  - resourceType: meetingNotes
+                    resourceId: me_a12bc34def567890
+                    permissions:
+                      - read
+                      - write
+                    lastValidated: 1716488400000
+                  - resourceType: transcripts
+                    resourceId: me_a12bc34def567890
+                    permissions:
+                      - read
+                    lastValidated: 1716485000000
         required: true
       responses:
         '200':
@@ -1162,6 +1237,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_auth.permissions.refreshSubscriptionPermissions'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  - resourceType: meetingNotes
+                    resourceId: me_a12bc34def567890
+                    valid: true
+                    updatedPermissions:
+                      - read
+                      - write
+                  - resourceType: transcripts
+                    resourceId: me_a12bc34def567890
+                    valid: true
+                    updatedPermissions:
+                      - read
+                      - export
+                      - manage
         '400':
           description: Failed operation
           content:
@@ -1177,15 +1270,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunAuthPermissionsRefreshSubscriptionPermissions
-      description: |-
-        This module handles dynamic permission updates and subscription management
-        for real-time access control.
-
-        Requirements: 2.5, 4.1
-        Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
+      description: Calls a query at the path auth/permissions.js:refreshSubscriptionPermissions
   /api/run/monitoring/bandwidthManager/checkBandwidthLimit:
     post:
-      summary: Check bandwidth limits for a user request
+      summary: checkBandwidthLimit
       tags:
         - query
       requestBody:
@@ -1219,7 +1307,7 @@ paths:
       description: Check bandwidth limits for a user request
   /api/run/monitoring/bandwidthManager/getBandwidthStats:
     post:
-      summary: Get bandwidth usage statistics
+      summary: getBandwidthStats
       tags:
         - query
       requestBody:
@@ -1253,7 +1341,7 @@ paths:
       description: Get bandwidth usage statistics
   /api/run/monitoring/bandwidthManager/executeWithCircuitBreaker:
     post:
-      summary: Execute operation with circuit breaker protection
+      summary: executeWithCircuitBreaker
       tags:
         - action
       requestBody:
@@ -1287,7 +1375,7 @@ paths:
       description: Execute operation with circuit breaker protection
   /api/run/monitoring/bandwidthManager/getCircuitBreakerStatus:
     post:
-      summary: Get circuit breaker status for all services
+      summary: getCircuitBreakerStatus
       tags:
         - query
       requestBody:
@@ -1321,7 +1409,7 @@ paths:
       description: Get circuit breaker status for all services
   /api/run/monitoring/bandwidthManager/resetCircuitBreaker:
     post:
-      summary: Reset circuit breaker for a service
+      summary: resetCircuitBreaker
       tags:
         - mutation
       requestBody:
@@ -1355,7 +1443,7 @@ paths:
       description: Reset circuit breaker for a service
   /api/run/monitoring/bandwidthManager/shouldShedLoad:
     post:
-      summary: Load shedding based on system load
+      summary: shouldShedLoad
       tags:
         - query
       requestBody:
@@ -1389,7 +1477,7 @@ paths:
       description: Load shedding based on system load
   /api/run/monitoring/performanceQueries/getPerformanceMetrics:
     post:
-      summary: Real-time performance metrics query
+      summary: getPerformanceMetrics
       tags:
         - query
       requestBody:
@@ -1423,7 +1511,7 @@ paths:
       description: Real-time performance metrics query
   /api/run/monitoring/performanceQueries/getSubscriptionMetrics:
     post:
-      summary: WebSocket subscription performance metrics
+      summary: getSubscriptionMetrics
       tags:
         - query
       requestBody:
@@ -1457,7 +1545,7 @@ paths:
       description: WebSocket subscription performance metrics
   /api/run/monitoring/performanceQueries/getFunctionPerformanceBreakdown:
     post:
-      summary: Function-level performance breakdown
+      summary: getFunctionPerformanceBreakdown
       tags:
         - query
       requestBody:
@@ -1491,7 +1579,7 @@ paths:
       description: Function-level performance breakdown
   /api/run/monitoring/performanceQueries/getSLOStatus:
     post:
-      summary: Real-time SLO monitoring with alerting
+      summary: getSLOStatus
       tags:
         - query
       requestBody:
@@ -1525,7 +1613,7 @@ paths:
       description: Real-time SLO monitoring with alerting
   /api/run/monitoring/performanceQueries/getPerformanceTrends:
     post:
-      summary: Performance trend analysis
+      summary: getPerformanceTrends
       tags:
         - query
       requestBody:
@@ -1559,7 +1647,7 @@ paths:
       description: Performance trend analysis
   /api/run/monitoring/performanceQueries/recordCustomMetric:
     post:
-      summary: Record custom performance metric
+      summary: recordCustomMetric
       tags:
         - mutation
       requestBody:
@@ -1593,7 +1681,7 @@ paths:
       description: Record custom performance metric
   /api/run/realtime/batchedOperations/batchApplyNoteOperation:
     post:
-      summary: Batched note operation processing with operational transform
+      summary: batchApplyNoteOperation
       tags:
         - mutation
       requestBody:
@@ -1627,7 +1715,7 @@ paths:
       description: Batched note operation processing with operational transform
   /api/run/realtime/batchedOperations/batchIngestTranscriptChunk:
     post:
-      summary: Batched transcript ingestion with coalescing
+      summary: batchIngestTranscriptChunk
       tags:
         - mutation
       requestBody:
@@ -1661,7 +1749,7 @@ paths:
       description: Batched transcript ingestion with coalescing
   /api/run/realtime/batchedOperations/batchUpdatePresence:
     post:
-      summary: Batched presence updates with latest-state-wins coalescing
+      summary: batchUpdatePresence
       tags:
         - mutation
       requestBody:
@@ -1695,7 +1783,7 @@ paths:
       description: Batched presence updates with latest-state-wins coalescing
   /api/run/realtime/batchedOperations/flushAllBatches:
     post:
-      summary: Flush all pending batches (for testing or shutdown)
+      summary: flushAllBatches
       tags:
         - action
       requestBody:
@@ -1729,7 +1817,7 @@ paths:
       description: Flush all pending batches (for testing or shutdown)
   /api/run/realtime/batchedOperations/getBatchStats:
     post:
-      summary: Get batch processing statistics
+      summary: getBatchStats
       tags:
         - action
       requestBody:
@@ -1763,7 +1851,7 @@ paths:
       description: Get batch processing statistics
   /api/run/realtime/subscriptionManager/establishSubscription:
     post:
-      summary: Establishes a new subscription with comprehensive validation
+      summary: establishSubscription
       tags:
         - mutation
       requestBody:
@@ -1797,7 +1885,7 @@ paths:
       description: Establishes a new subscription with comprehensive validation
   /api/run/realtime/subscriptionManager/validateAndUpdateSubscription:
     post:
-      summary: Validates and updates subscription permissions in real-time
+      summary: validateAndUpdateSubscription
       tags:
         - query
       requestBody:
@@ -1831,7 +1919,7 @@ paths:
       description: Validates and updates subscription permissions in real-time
   /api/run/realtime/subscriptionManager/terminateSubscription:
     post:
-      summary: Terminates subscription and cleans up resources
+      summary: terminateSubscription
       tags:
         - mutation
       requestBody:
@@ -1865,7 +1953,7 @@ paths:
       description: Terminates subscription and cleans up resources
   /api/run/realtime/subscriptionManager/getSubscriptionStats:
     post:
-      summary: Get subscription statistics for monitoring
+      summary: getSubscriptionStats
       tags:
         - query
       requestBody:
@@ -1899,7 +1987,7 @@ paths:
       description: Get subscription statistics for monitoring
   /api/run/realtime/subscriptionActions/validateAndLogSubscription:
     post:
-      summary: 'Subscription Actions: Orchestrate validation + audit logging'
+      summary: validateAndLogSubscription
       tags:
         - action
       requestBody:
@@ -1907,6 +1995,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.subscriptionActions.validateAndLogSubscription'
+            example:
+              args:
+                subscriptionId: sub_meetingNotes_7c88
+                lastValidated: 1716489600000
         required: true
       responses:
         '200':
@@ -1915,6 +2007,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.subscriptionActions.validateAndLogSubscription'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  valid: true
+                  permissions:
+                    - read
+                    - write
+                  shouldReconnect: false
+                  validUntil: 1716493200000
+                  rateLimited: false
+                  resourceType: meetingNotes
+                  resourceId: me_a12bc34def567890
         '400':
           description: Failed operation
           content:
@@ -1930,10 +2036,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionActionsValidateAndLogSubscription
-      description: 'Subscription Actions: Orchestrate validation + audit logging'
+      description: Calls a action at the path realtime/subscriptionActions.js:validateAndLogSubscription
   /api/run/transcripts/ingestion/ingestTranscriptChunk:
     post:
-      summary: Ingests a transcription chunk with validation, sharding, and rate limiting
+      summary: ingestTranscriptChunk
       tags:
         - mutation
       requestBody:
@@ -1967,7 +2073,7 @@ paths:
       description: Ingests a transcription chunk with validation, sharding, and rate limiting
   /api/run/transcripts/ingestion/getTranscriptChunks:
     post:
-      summary: Gets transcript chunks for a meeting with pagination
+      summary: getTranscriptChunks
       tags:
         - mutation
       requestBody:
@@ -2001,7 +2107,7 @@ paths:
       description: Gets transcript chunks for a meeting with pagination
   /api/run/transcripts/ingestion/getTranscriptStats:
     post:
-      summary: Gets transcript statistics for a meeting
+      summary: getTranscriptStats
       tags:
         - mutation
       requestBody:
@@ -2035,7 +2141,7 @@ paths:
       description: Gets transcript statistics for a meeting
   /api/run/insights/generation/generateInsights:
     post:
-      summary: Generates post-call insights for all participants
+      summary: generateInsights
       tags:
         - action
       requestBody:
@@ -2069,7 +2175,7 @@ paths:
       description: Generates post-call insights for all participants
   /api/run/interests/queries/listCatalog:
     post:
-      summary: Interests Catalog Queries
+      summary: listCatalog
       tags:
         - query
       requestBody:
@@ -2077,6 +2183,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_interests.queries.listCatalog'
+            example:
+              args:
+                category: industry
+                limit: 6
         required: true
       responses:
         '200':
@@ -2085,6 +2195,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_interests.queries.listCatalog'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  - key: software-engineering
+                    label: Software Engineering
+                    category: industry
+                    iconName: Code
+                    usageCount: 128
+                  - key: product-management
+                    label: Product Management
+                    category: industry
+                    iconName: Briefcase
+                    usageCount: 94
         '400':
           description: Failed operation
           content:
@@ -2100,10 +2225,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInterestsQueriesListCatalog
-      description: Interests Catalog Queries
+      description: Calls a query at the path interests/queries.js:listCatalog
   /api/run/embeddings/actions/generateEmbedding:
     post:
-      summary: Generate embedding for content (public)
+      summary: generateEmbedding
       tags:
         - action
       requestBody:
@@ -2137,7 +2262,7 @@ paths:
       description: Generate embedding for content (public)
   /api/run/embeddings/index/getEmbedding:
     post:
-      summary: Get Embedding
+      summary: getEmbedding
       tags:
         - query
       requestBody:
@@ -2171,7 +2296,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbedding
   /api/run/embeddings/index/getEmbeddingAnalytics:
     post:
-      summary: Get Embedding Analytics
+      summary: getEmbeddingAnalytics
       tags:
         - query
       requestBody:
@@ -2205,7 +2330,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbeddingAnalytics
   /api/run/embeddings/index/getEmbeddingsByModel:
     post:
-      summary: Get Embeddings By Model
+      summary: getEmbeddingsByModel
       tags:
         - query
       requestBody:
@@ -2239,7 +2364,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbeddingsByModel
   /api/run/embeddings/index/getEmbeddingsBySource:
     post:
-      summary: Get Embeddings By Source
+      summary: getEmbeddingsBySource
       tags:
         - query
       requestBody:
@@ -2273,7 +2398,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbeddingsBySource
   /api/run/embeddings/index/getVectorIndexMeta:
     post:
-      summary: Get Vector Index Meta
+      summary: getVectorIndexMeta
       tags:
         - query
       requestBody:
@@ -2307,7 +2432,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getVectorIndexMeta
   /api/run/embeddings/index/vectorSimilaritySearch:
     post:
-      summary: Vector Similarity Search
+      summary: vectorSimilaritySearch
       tags:
         - query
       requestBody:
@@ -2341,7 +2466,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:vectorSimilaritySearch
   /api/run/embeddings/index/generateEmbedding:
     post:
-      summary: Generate Embedding
+      summary: generateEmbedding
       tags:
         - action
       requestBody:
@@ -2375,7 +2500,7 @@ paths:
       description: Calls a action at the path embeddings/index.js:generateEmbedding
   /api/run/embeddings/queries/getEmbedding:
     post:
-      summary: Get embedding by ID (public)
+      summary: getEmbedding
       tags:
         - query
       requestBody:
@@ -2409,7 +2534,7 @@ paths:
       description: Get embedding by ID (public)
   /api/run/embeddings/queries/getEmbeddingAnalytics:
     post:
-      summary: Get embedding analytics (public)
+      summary: getEmbeddingAnalytics
       tags:
         - query
       requestBody:
@@ -2443,7 +2568,7 @@ paths:
       description: Get embedding analytics (public)
   /api/run/embeddings/queries/getEmbeddingsByModel:
     post:
-      summary: Get embeddings by model (public)
+      summary: getEmbeddingsByModel
       tags:
         - query
       requestBody:
@@ -2477,7 +2602,7 @@ paths:
       description: Get embeddings by model (public)
   /api/run/embeddings/queries/getEmbeddingsBySource:
     post:
-      summary: Get embeddings by source (public)
+      summary: getEmbeddingsBySource
       tags:
         - query
       requestBody:
@@ -2511,7 +2636,7 @@ paths:
       description: Get embeddings by source (public)
   /api/run/embeddings/queries/getVectorIndexMeta:
     post:
-      summary: Get vector index metadata (public)
+      summary: getVectorIndexMeta
       tags:
         - query
       requestBody:
@@ -2545,7 +2670,7 @@ paths:
       description: Get vector index metadata (public)
   /api/run/embeddings/queries/vectorSimilaritySearch:
     post:
-      summary: Perform vector similarity search (public)
+      summary: vectorSimilaritySearch
       tags:
         - query
       requestBody:
@@ -2579,7 +2704,7 @@ paths:
       description: Perform vector similarity search (public)
   /api/run/insights/index/deleteInsights:
     post:
-      summary: Delete Insights
+      summary: deleteInsights
       tags:
         - mutation
       requestBody:
@@ -2613,7 +2738,7 @@ paths:
       description: Calls a mutation at the path insights/index.js:deleteInsights
   /api/run/insights/index/getConnectionRecommendations:
     post:
-      summary: Get Connection Recommendations
+      summary: getConnectionRecommendations
       tags:
         - query
       requestBody:
@@ -2647,7 +2772,7 @@ paths:
       description: Calls a query at the path insights/index.js:getConnectionRecommendations
   /api/run/insights/index/getInsightById:
     post:
-      summary: Get Insight By Id
+      summary: getInsightById
       tags:
         - query
       requestBody:
@@ -2681,7 +2806,7 @@ paths:
       description: Calls a query at the path insights/index.js:getInsightById
   /api/run/insights/index/getMeetingInsights:
     post:
-      summary: Get Meeting Insights
+      summary: getMeetingInsights
       tags:
         - query
       requestBody:
@@ -2715,7 +2840,7 @@ paths:
       description: Calls a query at the path insights/index.js:getMeetingInsights
   /api/run/insights/index/getUserInsights:
     post:
-      summary: Get User Insights
+      summary: getUserInsights
       tags:
         - query
       requestBody:
@@ -2749,7 +2874,7 @@ paths:
       description: Calls a query at the path insights/index.js:getUserInsights
   /api/run/insights/index/updateInsightsFeedback:
     post:
-      summary: Update Insights Feedback
+      summary: updateInsightsFeedback
       tags:
         - mutation
       requestBody:
@@ -2783,7 +2908,7 @@ paths:
       description: Calls a mutation at the path insights/index.js:updateInsightsFeedback
   /api/run/insights/index/generateInsights:
     post:
-      summary: Generate Insights
+      summary: generateInsights
       tags:
         - action
       requestBody:
@@ -2817,7 +2942,7 @@ paths:
       description: Calls a action at the path insights/index.js:generateInsights
   /api/run/insights/mutations/deleteInsights:
     post:
-      summary: Deletes insights (user can delete their own insights)
+      summary: deleteInsights
       tags:
         - mutation
       requestBody:
@@ -2851,7 +2976,7 @@ paths:
       description: Deletes insights (user can delete their own insights)
   /api/run/insights/mutations/updateInsightsFeedback:
     post:
-      summary: Updates insights with user feedback (marks as read, rates usefulness, etc.)
+      summary: updateInsightsFeedback
       tags:
         - mutation
       requestBody:
@@ -2885,7 +3010,7 @@ paths:
       description: Updates insights with user feedback (marks as read, rates usefulness, etc.)
   /api/run/insights/queries/getConnectionRecommendations:
     post:
-      summary: Gets connection recommendations from insights
+      summary: getConnectionRecommendations
       tags:
         - query
       requestBody:
@@ -2919,7 +3044,7 @@ paths:
       description: Gets connection recommendations from insights
   /api/run/insights/queries/getInsightById:
     post:
-      summary: Gets insights by ID with ownership verification
+      summary: getInsightById
       tags:
         - query
       requestBody:
@@ -2953,7 +3078,7 @@ paths:
       description: Gets insights by ID with ownership verification
   /api/run/insights/queries/getMeetingInsights:
     post:
-      summary: Gets user's insights for a specific meeting with privacy controls
+      summary: getMeetingInsights
       tags:
         - query
       requestBody:
@@ -2987,7 +3112,7 @@ paths:
       description: Gets user's insights for a specific meeting with privacy controls
   /api/run/insights/queries/getUserInsights:
     post:
-      summary: Lists all insights for the current user
+      summary: getUserInsights
       tags:
         - query
       requestBody:
@@ -3021,7 +3146,7 @@ paths:
       description: Lists all insights for the current user
   /api/run/matching/analytics/getGlobalMatchingAnalytics:
     post:
-      summary: Get global matching analytics (admin only)
+      summary: getGlobalMatchingAnalytics
       tags:
         - query
       requestBody:
@@ -3055,7 +3180,7 @@ paths:
       description: Get global matching analytics (admin only)
   /api/run/matching/analytics/getMatchHistory:
     post:
-      summary: Get match history for a user
+      summary: getMatchHistory
       tags:
         - query
       requestBody:
@@ -3089,7 +3214,7 @@ paths:
       description: Get match history for a user
   /api/run/matching/analytics/getMatchingStats:
     post:
-      summary: Get matching statistics for a user
+      summary: getMatchingStats
       tags:
         - query
       requestBody:
@@ -3123,7 +3248,7 @@ paths:
       description: Get matching statistics for a user
   /api/run/matching/analytics/optimizeMatchingWeights:
     post:
-      summary: Optimize matching weights based on feedback
+      summary: optimizeMatchingWeights
       tags:
         - action
       requestBody:
@@ -3157,7 +3282,7 @@ paths:
       description: Optimize matching weights based on feedback
   /api/run/matching/analytics/submitMatchFeedback:
     post:
-      summary: Submit feedback for a match
+      summary: submitMatchFeedback
       tags:
         - mutation
       requestBody:
@@ -3191,7 +3316,7 @@ paths:
       description: Submit feedback for a match
   /api/run/matching/engine/runMatchingCycle:
     post:
-      summary: Run matching cycle with shard-based processing for scalability
+      summary: runMatchingCycle
       tags:
         - action
       requestBody:
@@ -3225,7 +3350,7 @@ paths:
       description: Run matching cycle with shard-based processing for scalability
   /api/run/matching/index/calculateCompatibilityScore:
     post:
-      summary: Calculate Compatibility Score
+      summary: calculateCompatibilityScore
       tags:
         - action
       requestBody:
@@ -3259,7 +3384,7 @@ paths:
       description: Calls a action at the path matching/index.js:calculateCompatibilityScore
   /api/run/matching/index/cancelQueueEntry:
     post:
-      summary: Cancel Queue Entry
+      summary: cancelQueueEntry
       tags:
         - mutation
       requestBody:
@@ -3293,7 +3418,7 @@ paths:
       description: Calls a mutation at the path matching/index.js:cancelQueueEntry
   /api/run/matching/index/enterMatchingQueue:
     post:
-      summary: Enter Matching Queue
+      summary: enterMatchingQueue
       tags:
         - mutation
       requestBody:
@@ -3327,7 +3452,7 @@ paths:
       description: Calls a mutation at the path matching/index.js:enterMatchingQueue
   /api/run/matching/index/getGlobalMatchingAnalytics:
     post:
-      summary: Get Global Matching Analytics
+      summary: getGlobalMatchingAnalytics
       tags:
         - query
       requestBody:
@@ -3361,7 +3486,7 @@ paths:
       description: Calls a query at the path matching/index.js:getGlobalMatchingAnalytics
   /api/run/matching/index/getMatchHistory:
     post:
-      summary: Get Match History
+      summary: getMatchHistory
       tags:
         - query
       requestBody:
@@ -3395,7 +3520,7 @@ paths:
       description: Calls a query at the path matching/index.js:getMatchHistory
   /api/run/matching/index/getMatchingStats:
     post:
-      summary: Get Matching Stats
+      summary: getMatchingStats
       tags:
         - query
       requestBody:
@@ -3429,7 +3554,7 @@ paths:
       description: Calls a query at the path matching/index.js:getMatchingStats
   /api/run/matching/index/getQueueStatus:
     post:
-      summary: Get Queue Status
+      summary: getQueueStatus
       tags:
         - query
       requestBody:
@@ -3463,7 +3588,7 @@ paths:
       description: Calls a query at the path matching/index.js:getQueueStatus
   /api/run/matching/index/optimizeMatchingWeights:
     post:
-      summary: Optimize Matching Weights
+      summary: optimizeMatchingWeights
       tags:
         - action
       requestBody:
@@ -3497,7 +3622,7 @@ paths:
       description: Calls a action at the path matching/index.js:optimizeMatchingWeights
   /api/run/matching/index/runMatchingCycle:
     post:
-      summary: Run Matching Cycle
+      summary: runMatchingCycle
       tags:
         - action
       requestBody:
@@ -3531,7 +3656,7 @@ paths:
       description: Calls a action at the path matching/index.js:runMatchingCycle
   /api/run/matching/index/submitMatchFeedback:
     post:
-      summary: Submit Match Feedback
+      summary: submitMatchFeedback
       tags:
         - mutation
       requestBody:
@@ -3565,7 +3690,7 @@ paths:
       description: Calls a mutation at the path matching/index.js:submitMatchFeedback
   /api/run/matching/queue/cancelQueueEntry:
     post:
-      summary: Cancel user's queue entry
+      summary: cancelQueueEntry
       tags:
         - mutation
       requestBody:
@@ -3599,7 +3724,7 @@ paths:
       description: Cancel user's queue entry
   /api/run/matching/queue/enterMatchingQueue:
     post:
-      summary: Enter the matching queue with availability window and constraints
+      summary: enterMatchingQueue
       tags:
         - mutation
       requestBody:
@@ -3633,7 +3758,7 @@ paths:
       description: Enter the matching queue with availability window and constraints
   /api/run/matching/queue/getActiveQueueEntries:
     post:
-      summary: Get active queue entries for matching processing (internal use)
+      summary: getActiveQueueEntries
       tags:
         - query
       requestBody:
@@ -3667,7 +3792,7 @@ paths:
       description: Get active queue entries for matching processing (internal use)
   /api/run/matching/queue/getQueueStatus:
     post:
-      summary: Get current queue status for a user
+      summary: getQueueStatus
       tags:
         - query
       requestBody:
@@ -3701,7 +3826,7 @@ paths:
       description: Get current queue status for a user
   /api/run/matching/queue/updateQueueStatus:
     post:
-      summary: Update queue entry status (internal use for matching engine)
+      summary: updateQueueStatus
       tags:
         - mutation
       requestBody:
@@ -3735,7 +3860,7 @@ paths:
       description: Update queue entry status (internal use for matching engine)
   /api/run/matching/scoring/calculateCompatibilityScore:
     post:
-      summary: Calculate compatibility score between two users (public API)
+      summary: calculateCompatibilityScore
       tags:
         - action
       requestBody:
@@ -3769,7 +3894,7 @@ paths:
       description: Calculate compatibility score between two users (public API)
   /api/run/meetings/stateTracking/updateSpeakingStats:
     post:
-      summary: Updates speaking statistics for a meeting
+      summary: updateSpeakingStats
       tags:
         - mutation
       requestBody:
@@ -3803,7 +3928,7 @@ paths:
       description: Updates speaking statistics for a meeting
   /api/run/meetings/stateTracking/updateCurrentTopics:
     post:
-      summary: Updates current topics being discussed
+      summary: updateCurrentTopics
       tags:
         - mutation
       requestBody:
@@ -3837,7 +3962,7 @@ paths:
       description: Updates current topics being discussed
   /api/run/meetings/stateTracking/recordActivity:
     post:
-      summary: Records activity to reset lull detection
+      summary: recordActivity
       tags:
         - mutation
       requestBody:
@@ -3871,7 +3996,7 @@ paths:
       description: Records activity to reset lull detection
   /api/run/meetings/stream/index/generateParticipantTokenPublic:
     post:
-      summary: Public action to generate GetStream token for authenticated users
+      summary: generateParticipantTokenPublic
       tags:
         - action
       requestBody:
@@ -3905,7 +4030,7 @@ paths:
       description: Public action to generate GetStream token for authenticated users
   /api/run/meetings/stream/index/startRecording:
     post:
-      summary: Starts recording for a GetStream call with proper configuration
+      summary: startRecording
       tags:
         - action
       requestBody:
@@ -3939,7 +4064,7 @@ paths:
       description: Starts recording for a GetStream call with proper configuration
   /api/run/meetings/stream/index/stopRecording:
     post:
-      summary: Stops recording for a GetStream call and retrieves the recording URL
+      summary: stopRecording
       tags:
         - action
       requestBody:
@@ -3973,7 +4098,7 @@ paths:
       description: Stops recording for a GetStream call and retrieves the recording URL
   /api/run/meetings/webrtc/index/closeSession:
     post:
-      summary: Close Session
+      summary: closeSession
       tags:
         - mutation
       requestBody:
@@ -4007,7 +4132,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:closeSession
   /api/run/meetings/webrtc/index/createWebRTCSession:
     post:
-      summary: Create Web RTC Session
+      summary: createWebRTCSession
       tags:
         - mutation
       requestBody:
@@ -4041,7 +4166,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:createWebRTCSession
   /api/run/meetings/webrtc/index/exchangeICECandidate:
     post:
-      summary: Exchange ICE Candidate
+      summary: exchangeICECandidate
       tags:
         - mutation
       requestBody:
@@ -4075,7 +4200,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:exchangeICECandidate
   /api/run/meetings/webrtc/index/exchangeSessionDescription:
     post:
-      summary: Exchange Session Description
+      summary: exchangeSessionDescription
       tags:
         - mutation
       requestBody:
@@ -4109,7 +4234,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:exchangeSessionDescription
   /api/run/meetings/webrtc/index/generateParticipantAccessToken:
     post:
-      summary: Generate Participant Access Token
+      summary: generateParticipantAccessToken
       tags:
         - action
       requestBody:
@@ -4143,7 +4268,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:generateParticipantAccessToken
   /api/run/meetings/webrtc/index/getActiveSessions:
     post:
-      summary: Get Active Sessions
+      summary: getActiveSessions
       tags:
         - query
       requestBody:
@@ -4177,7 +4302,7 @@ paths:
       description: Calls a query at the path meetings/webrtc/index.js:getActiveSessions
   /api/run/meetings/webrtc/index/getPendingSignals:
     post:
-      summary: Get Pending Signals
+      summary: getPendingSignals
       tags:
         - query
       requestBody:
@@ -4211,7 +4336,7 @@ paths:
       description: Calls a query at the path meetings/webrtc/index.js:getPendingSignals
   /api/run/meetings/webrtc/index/handleConnectionFailure:
     post:
-      summary: Handle Connection Failure
+      summary: handleConnectionFailure
       tags:
         - action
       requestBody:
@@ -4245,7 +4370,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:handleConnectionFailure
   /api/run/meetings/webrtc/index/initializeWebRTCRoom:
     post:
-      summary: Initialize Web RTC Room
+      summary: initializeWebRTCRoom
       tags:
         - action
       requestBody:
@@ -4279,7 +4404,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:initializeWebRTCRoom
   /api/run/meetings/webrtc/index/markSignalsProcessed:
     post:
-      summary: Mark Signals Processed
+      summary: markSignalsProcessed
       tags:
         - mutation
       requestBody:
@@ -4313,7 +4438,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:markSignalsProcessed
   /api/run/meetings/webrtc/index/monitorConnectionQuality:
     post:
-      summary: Monitor Connection Quality
+      summary: monitorConnectionQuality
       tags:
         - action
       requestBody:
@@ -4347,7 +4472,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:monitorConnectionQuality
   /api/run/meetings/webrtc/index/updateSessionState:
     post:
-      summary: Update Session State
+      summary: updateSessionState
       tags:
         - mutation
       requestBody:
@@ -4381,7 +4506,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:updateSessionState
   /api/run/meetings/webrtc/rooms/generateParticipantAccessToken:
     post:
-      summary: Generates participant access token for video room
+      summary: generateParticipantAccessToken
       tags:
         - action
       requestBody:
@@ -4389,6 +4514,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_meetings.webrtc.rooms.generateParticipantAccessToken'
+            example:
+              args:
+                meetingId: me_active12345
+                sessionId: session_host_live
         required: true
       responses:
         '200':
@@ -4397,6 +4526,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_meetings.webrtc.rooms.generateParticipantAccessToken'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.participant-token
+                  provider: webrtc
+                  roomId: room_live_9f3c2a
+                  participantId: session_host_live
+                  permissions:
+                    canRecord: true
+                    canMute: true
+                    canKick: true
+                    canShare: true
+                  success: true
         '400':
           description: Failed operation
           content:
@@ -4412,10 +4556,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcRoomsGenerateParticipantAccessToken
-      description: Generates participant access token for video room
+      description: Calls a action at the path meetings/webrtc/rooms.js:generateParticipantAccessToken
   /api/run/meetings/webrtc/rooms/handleConnectionFailure:
     post:
-      summary: Handles WebRTC connection failures with automatic fallback
+      summary: handleConnectionFailure
       tags:
         - action
       requestBody:
@@ -4449,7 +4593,7 @@ paths:
       description: Handles WebRTC connection failures with automatic fallback
   /api/run/meetings/webrtc/rooms/initializeWebRTCRoom:
     post:
-      summary: Initializes WebRTC room for a meeting using the provider abstraction
+      summary: initializeWebRTCRoom
       tags:
         - action
       requestBody:
@@ -4483,7 +4627,7 @@ paths:
       description: Initializes WebRTC room for a meeting using the provider abstraction
   /api/run/meetings/webrtc/rooms/monitorConnectionQuality:
     post:
-      summary: Monitors WebRTC connection quality and provides recommendations
+      summary: monitorConnectionQuality
       tags:
         - action
       requestBody:
@@ -4517,7 +4661,7 @@ paths:
       description: Monitors WebRTC connection quality and provides recommendations
   /api/run/meetings/webrtc/signaling/closeSession:
     post:
-      summary: Closes a WebRTC session
+      summary: closeSession
       tags:
         - mutation
       requestBody:
@@ -4551,7 +4695,7 @@ paths:
       description: Closes a WebRTC session
   /api/run/meetings/webrtc/signaling/createWebRTCSession:
     post:
-      summary: Creates a WebRTC session for a meeting
+      summary: createWebRTCSession
       tags:
         - mutation
       requestBody:
@@ -4585,7 +4729,7 @@ paths:
       description: Creates a WebRTC session for a meeting
   /api/run/meetings/webrtc/signaling/exchangeICECandidate:
     post:
-      summary: Exchanges ICE candidates for WebRTC connection establishment
+      summary: exchangeICECandidate
       tags:
         - mutation
       requestBody:
@@ -4619,7 +4763,7 @@ paths:
       description: Exchanges ICE candidates for WebRTC connection establishment
   /api/run/meetings/webrtc/signaling/exchangeSessionDescription:
     post:
-      summary: Exchanges SDP offer/answer for WebRTC negotiation
+      summary: exchangeSessionDescription
       tags:
         - mutation
       requestBody:
@@ -4653,7 +4797,7 @@ paths:
       description: Exchanges SDP offer/answer for WebRTC negotiation
   /api/run/meetings/webrtc/signaling/getActiveSessions:
     post:
-      summary: Gets active WebRTC sessions for a meeting
+      summary: getActiveSessions
       tags:
         - query
       requestBody:
@@ -4687,7 +4831,7 @@ paths:
       description: Gets active WebRTC sessions for a meeting
   /api/run/meetings/webrtc/signaling/getPendingSignals:
     post:
-      summary: Gets pending WebRTC signals for a user in a meeting
+      summary: getPendingSignals
       tags:
         - query
       requestBody:
@@ -4721,7 +4865,7 @@ paths:
       description: Gets pending WebRTC signals for a user in a meeting
   /api/run/meetings/webrtc/signaling/markSignalsProcessed:
     post:
-      summary: Marks WebRTC signals as processed
+      summary: markSignalsProcessed
       tags:
         - mutation
       requestBody:
@@ -4755,7 +4899,7 @@ paths:
       description: Marks WebRTC signals as processed
   /api/run/meetings/webrtc/signaling/updateSessionState:
     post:
-      summary: Updates WebRTC session state
+      summary: updateSessionState
       tags:
         - mutation
       requestBody:
@@ -4789,7 +4933,7 @@ paths:
       description: Updates WebRTC session state
   /api/run/notes/index/applyNoteOperation:
     post:
-      summary: Apply Note Operation
+      summary: applyNoteOperation
       tags:
         - mutation
       requestBody:
@@ -4823,7 +4967,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:applyNoteOperation
   /api/run/notes/index/batchApplyNoteOperations:
     post:
-      summary: Batch Apply Note Operations
+      summary: batchApplyNoteOperations
       tags:
         - mutation
       requestBody:
@@ -4857,7 +5001,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:batchApplyNoteOperations
   /api/run/notes/index/clearSyncedOperations:
     post:
-      summary: Clear Synced Operations
+      summary: clearSyncedOperations
       tags:
         - mutation
       requestBody:
@@ -4891,7 +5035,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:clearSyncedOperations
   /api/run/notes/index/createOfflineCheckpoint:
     post:
-      summary: Create Offline Checkpoint
+      summary: createOfflineCheckpoint
       tags:
         - mutation
       requestBody:
@@ -4925,7 +5069,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:createOfflineCheckpoint
   /api/run/notes/index/getOfflineQueueStatus:
     post:
-      summary: Get Offline Queue Status
+      summary: getOfflineQueueStatus
       tags:
         - mutation
       requestBody:
@@ -4959,7 +5103,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:getOfflineQueueStatus
   /api/run/notes/index/queueOfflineOperations:
     post:
-      summary: Queue Offline Operations
+      summary: queueOfflineOperations
       tags:
         - mutation
       requestBody:
@@ -4993,7 +5137,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:queueOfflineOperations
   /api/run/notes/index/restoreFromCheckpoint:
     post:
-      summary: Restore From Checkpoint
+      summary: restoreFromCheckpoint
       tags:
         - mutation
       requestBody:
@@ -5027,7 +5171,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:restoreFromCheckpoint
   /api/run/notes/index/retryFailedOperations:
     post:
-      summary: Retry Failed Operations
+      summary: retryFailedOperations
       tags:
         - mutation
       requestBody:
@@ -5061,7 +5205,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:retryFailedOperations
   /api/run/notes/index/rollbackToSequence:
     post:
-      summary: Rollback To Sequence
+      summary: rollbackToSequence
       tags:
         - mutation
       requestBody:
@@ -5095,7 +5239,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:rollbackToSequence
   /api/run/notes/index/syncOfflineOperations:
     post:
-      summary: Sync Offline Operations
+      summary: syncOfflineOperations
       tags:
         - mutation
       requestBody:
@@ -5129,7 +5273,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:syncOfflineOperations
   /api/run/notes/mutations/applyNoteOperation:
     post:
-      summary: Applies a note operation with operational transform conflict resolution
+      summary: applyNoteOperation
       tags:
         - mutation
       requestBody:
@@ -5163,7 +5307,7 @@ paths:
       description: Applies a note operation with operational transform conflict resolution
   /api/run/notes/mutations/batchApplyNoteOperations:
     post:
-      summary: Batch applies multiple note operations with optimized conflict resolution
+      summary: batchApplyNoteOperations
       tags:
         - mutation
       requestBody:
@@ -5197,7 +5341,7 @@ paths:
       description: Batch applies multiple note operations with optimized conflict resolution
   /api/run/notes/mutations/rollbackToSequence:
     post:
-      summary: Rolls back operations to a specific sequence number
+      summary: rollbackToSequence
       tags:
         - mutation
       requestBody:
@@ -5231,7 +5375,7 @@ paths:
       description: Rolls back operations to a specific sequence number
   /api/run/notes/offline/clearSyncedOperations:
     post:
-      summary: Clears synced operations from the offline queue
+      summary: clearSyncedOperations
       tags:
         - mutation
       requestBody:
@@ -5265,7 +5409,7 @@ paths:
       description: Clears synced operations from the offline queue
   /api/run/notes/offline/createOfflineCheckpoint:
     post:
-      summary: Creates a checkpoint for offline operations
+      summary: createOfflineCheckpoint
       tags:
         - mutation
       requestBody:
@@ -5299,7 +5443,7 @@ paths:
       description: Creates a checkpoint for offline operations
   /api/run/notes/offline/getOfflineQueueStatus:
     post:
-      summary: Gets offline operation queue status for a client
+      summary: getOfflineQueueStatus
       tags:
         - mutation
       requestBody:
@@ -5333,7 +5477,7 @@ paths:
       description: Gets offline operation queue status for a client
   /api/run/notes/offline/queueOfflineOperations:
     post:
-      summary: Queues operations for offline sync
+      summary: queueOfflineOperations
       tags:
         - mutation
       requestBody:
@@ -5367,7 +5511,7 @@ paths:
       description: Queues operations for offline sync
   /api/run/notes/offline/restoreFromCheckpoint:
     post:
-      summary: Restores from an offline checkpoint
+      summary: restoreFromCheckpoint
       tags:
         - mutation
       requestBody:
@@ -5401,7 +5545,7 @@ paths:
       description: Restores from an offline checkpoint
   /api/run/notes/offline/retryFailedOperations:
     post:
-      summary: Retries failed offline operations
+      summary: retryFailedOperations
       tags:
         - mutation
       requestBody:
@@ -5435,7 +5579,7 @@ paths:
       description: Retries failed offline operations
   /api/run/notes/offline/syncOfflineOperations:
     post:
-      summary: Syncs queued offline operations with conflict resolution
+      summary: syncOfflineOperations
       tags:
         - mutation
       requestBody:
@@ -5469,7 +5613,7 @@ paths:
       description: Syncs queued offline operations with conflict resolution
   /api/run/profiles/queries/getCurrentUserProfile:
     post:
-      summary: Gets current user's profile
+      summary: getCurrentUserProfile
       tags:
         - query
       requestBody:
@@ -5503,7 +5647,7 @@ paths:
       description: Gets current user's profile
   /api/run/profiles/queries/getProfileByUserIdPublic:
     post:
-      summary: Gets profile by user ID with authorization
+      summary: getProfileByUserIdPublic
       tags:
         - query
       requestBody:
@@ -5537,7 +5681,7 @@ paths:
       description: Gets profile by user ID with authorization
   /api/run/prompts/actions/generatePreCallIdeas:
     post:
-      summary: Generates pre-call ideas with idempotency using meetingId hash
+      summary: generatePreCallIdeas
       tags:
         - action
       requestBody:
@@ -5545,6 +5689,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_prompts.actions.generatePreCallIdeas'
+            example:
+              args:
+                meetingId: me_82f8c0a8bce1a2d5f4e7b6c9
         required: true
       responses:
         '200':
@@ -5553,6 +5700,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_prompts.actions.generatePreCallIdeas'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  promptIds:
+                    - prompts_ck9hx2g1v0001
+                    - prompts_ck9hx2g1v0002
+                    - prompts_ck9hx2g1v0003
+                    - prompts_ck9hx2g1v0004
+                    - prompts_ck9hx2g1v0005
+                    - prompts_ck9hx2g1v0006
+                  generated: true
+                  fromCache: false
         '400':
           description: Failed operation
           content:
@@ -5568,10 +5729,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunPromptsActionsGeneratePreCallIdeas
-      description: Generates pre-call ideas with idempotency using meetingId hash
+      description: Calls a action at the path prompts/actions.js:generatePreCallIdeas
   /api/run/prompts/index/getInCallPrompts:
     post:
-      summary: Get In Call Prompts
+      summary: getInCallPrompts
       tags:
         - query
       requestBody:
@@ -5605,7 +5766,7 @@ paths:
       description: Calls a query at the path prompts/index.js:getInCallPrompts
   /api/run/prompts/index/getPreCallPrompts:
     post:
-      summary: Get Pre Call Prompts
+      summary: getPreCallPrompts
       tags:
         - query
       requestBody:
@@ -5639,7 +5800,7 @@ paths:
       description: Calls a query at the path prompts/index.js:getPreCallPrompts
   /api/run/prompts/index/subscribeToInCallPrompts:
     post:
-      summary: Subscribe To In Call Prompts
+      summary: subscribeToInCallPrompts
       tags:
         - query
       requestBody:
@@ -5673,7 +5834,7 @@ paths:
       description: Calls a query at the path prompts/index.js:subscribeToInCallPrompts
   /api/run/prompts/index/updatePromptFeedback:
     post:
-      summary: Update Prompt Feedback
+      summary: updatePromptFeedback
       tags:
         - mutation
       requestBody:
@@ -5707,7 +5868,7 @@ paths:
       description: Calls a mutation at the path prompts/index.js:updatePromptFeedback
   /api/run/prompts/index/generatePreCallIdeas:
     post:
-      summary: Generate Pre Call Ideas
+      summary: generatePreCallIdeas
       tags:
         - action
       requestBody:
@@ -5741,7 +5902,7 @@ paths:
       description: Calls a action at the path prompts/index.js:generatePreCallIdeas
   /api/run/prompts/mutations/updatePromptFeedback:
     post:
-      summary: Updates prompt feedback when user interacts with it
+      summary: updatePromptFeedback
       tags:
         - mutation
       requestBody:
@@ -5775,7 +5936,7 @@ paths:
       description: Updates prompt feedback when user interacts with it
   /api/run/prompts/queries/getInCallPrompts:
     post:
-      summary: Gets in-call prompts for a meeting with authorization
+      summary: getInCallPrompts
       tags:
         - query
       requestBody:
@@ -5809,7 +5970,7 @@ paths:
       description: Gets in-call prompts for a meeting with authorization
   /api/run/prompts/queries/getPreCallPrompts:
     post:
-      summary: Gets pre-call prompts for a meeting with authorization
+      summary: getPreCallPrompts
       tags:
         - query
       requestBody:
@@ -5843,7 +6004,7 @@ paths:
       description: Gets pre-call prompts for a meeting with authorization
   /api/run/prompts/queries/subscribeToInCallPrompts:
     post:
-      summary: Subscribes to real-time in-call prompts for a meeting
+      summary: subscribeToInCallPrompts
       tags:
         - query
       requestBody:
@@ -5875,162 +6036,6 @@ paths:
         - bearerAuth: []
       operationId: postApiRunPromptsQueriesSubscribeToInCallPrompts
       description: Subscribes to real-time in-call prompts for a meeting
-  /api/run/types/_template/listActiveUsers:
-    post:
-      summary: Template Function - Convex Compliance Example
-      tags:
-        - query
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Request_types._template.listActiveUsers'
-        required: true
-      responses:
-        '200':
-          description: Convex executed your request and returned a result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Response_types._template.listActiveUsers'
-        '400':
-          description: Failed operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-        '500':
-          description: Convex Internal Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-      security:
-        - bearerAuth: []
-      operationId: postApiRunTypesTemplateListActiveUsers
-      description: |-
-        This template demonstrates the proper patterns for Convex functions
-        following all compliance requirements from steering/convex_rules.mdc
-
-        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
-        Compliance: steering/convex_rules.mdc - All best practices
-  /api/run/types/_template/updateUserProfile:
-    post:
-      summary: Template Function - Convex Compliance Example
-      tags:
-        - mutation
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Request_types._template.updateUserProfile'
-        required: true
-      responses:
-        '200':
-          description: Convex executed your request and returned a result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Response_types._template.updateUserProfile'
-        '400':
-          description: Failed operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-        '500':
-          description: Convex Internal Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-      security:
-        - bearerAuth: []
-      operationId: postApiRunTypesTemplateUpdateUserProfile
-      description: |-
-        This template demonstrates the proper patterns for Convex functions
-        following all compliance requirements from steering/convex_rules.mdc
-
-        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
-        Compliance: steering/convex_rules.mdc - All best practices
-  /api/run/types/_template/processUserOnboarding:
-    post:
-      summary: Template Function - Convex Compliance Example
-      tags:
-        - action
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Request_types._template.processUserOnboarding'
-        required: true
-      responses:
-        '200':
-          description: Convex executed your request and returned a result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Response_types._template.processUserOnboarding'
-        '400':
-          description: Failed operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-        '500':
-          description: Convex Internal Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-      security:
-        - bearerAuth: []
-      operationId: postApiRunTypesTemplateProcessUserOnboarding
-      description: |-
-        This template demonstrates the proper patterns for Convex functions
-        following all compliance requirements from steering/convex_rules.mdc
-
-        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
-        Compliance: steering/convex_rules.mdc - All best practices
-  /api/run/types/_template/getUserWithStats:
-    post:
-      summary: Template Function - Convex Compliance Example
-      tags:
-        - query
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Request_types._template.getUserWithStats'
-        required: true
-      responses:
-        '200':
-          description: Convex executed your request and returned a result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Response_types._template.getUserWithStats'
-        '400':
-          description: Failed operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-        '500':
-          description: Convex Internal Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailedResponse'
-      security:
-        - bearerAuth: []
-      operationId: postApiRunTypesTemplateGetUserWithStats
-      description: |-
-        This template demonstrates the proper patterns for Convex functions
-        following all compliance requirements from steering/convex_rules.mdc
-
-        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
-        Compliance: steering/convex_rules.mdc - All best practices
 components:
   securitySchemes:
     bearerAuth:

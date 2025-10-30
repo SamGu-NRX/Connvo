@@ -50,7 +50,7 @@ import { AIContentGenerationV } from "@convex/types/validators/prompt";
  *     ],
  *     "generated": true,
  *     "fromCache": false
- *   },
+ *   }
  * }
  * ```
  * @example response-cache
@@ -70,7 +70,7 @@ import { AIContentGenerationV } from "@convex/types/validators/prompt";
  *     ],
  *     "generated": false,
  *     "fromCache": true
- *   },
+ *   }
  * }
  * ```
  * @example datamodel

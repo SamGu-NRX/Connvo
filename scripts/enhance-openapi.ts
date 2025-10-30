@@ -265,6 +265,11 @@ function removeInternalOperations(spec: OpenAPISpec) {
   if (!spec.paths) return;
 
   for (const pathKey of Object.keys(spec.paths)) {
+    if (/\/types\/_template\//i.test(pathKey)) {
+      delete spec.paths[pathKey];
+      continue;
+    }
+
     const operations = spec.paths[pathKey];
     for (const method of Object.keys(operations)) {
       const operation = operations[method];
@@ -330,21 +335,31 @@ function enrichOperationMetadata(spec: OpenAPISpec) {
     for (const operation of Object.values(methods)) {
       if (!operation || typeof operation !== "object") continue;
 
-      const generatedSummary = humanizeFunctionName(context.exportName);
-      const summary = docInfo?.summary ?? generatedSummary;
+      const methodSummary = context.exportName;
+      operation.summary = methodSummary;
 
-      if (summary) {
-        operation.summary = summary;
+      const docSummary = docInfo?.summary?.trim();
+      const docDescription = docInfo?.description?.trim();
+
+      const descriptionCandidates: Array<string | undefined> = [];
+      if (docDescription && docDescription !== docSummary) {
+        descriptionCandidates.push(docDescription);
+      }
+      if (docSummary && docSummary !== methodSummary) {
+        descriptionCandidates.push(docSummary);
+      }
+      if (typeof operation.description === "string") {
+        const existing = operation.description.trim();
+        if (existing.length > 0 && existing !== methodSummary) {
+          descriptionCandidates.push(existing);
+        }
       }
 
-      const description =
-        docInfo?.description ??
-        operation.description ??
-        summary;
+      const fallbackDescription = `Runs the Convex function \`${context.key}\` (export \`${context.exportName}\`) through the Convex HTTP API.`;
+      const resolvedDescription =
+        descriptionCandidates.find((value) => value && value.length > 0) ?? fallbackDescription;
 
-      if (description) {
-        operation.description = description;
-      }
+      operation.description = resolvedDescription;
 
       const requestContent =
         operation.requestBody?.content &&
