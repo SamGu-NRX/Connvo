@@ -51,7 +51,7 @@ export const MOCK_USERS: { [key: string]: User } = {
   you: {
     id: "you",
     name: "You",
-    avatar: "/placeholder.svg",
+    avatar: null as any,
     role: "Product Manager",
     company: "TechCorp",
     interests: [
@@ -70,7 +70,7 @@ export const MOCK_USERS: { [key: string]: User } = {
   partner: {
     id: "partner",
     name: "John Doe",
-    avatar: "/placeholder.svg",
+    avatar: null as any,
     role: "Senior Engineer",
     company: "TechCorp",
     interests: [

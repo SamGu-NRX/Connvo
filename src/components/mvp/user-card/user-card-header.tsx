@@ -68,7 +68,7 @@ export function UserCardHeader({
 
       <div
         className={cn(
-          "flex items-start p-5 pb-3",
+          "flex items-center gap-4 p-5 pb-3",
           inChat && "p-4 pb-2",
           className,
         )}
@@ -79,36 +79,36 @@ export function UserCardHeader({
           size={inChat ? "md" : "lg"}
           isBot={isBot}
           isSpeaking={isSpeaking}
+          className="shrink-0"
         />
 
-        <div className="ml-4 flex-1">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3
-                className={cn(
-                  "font-semibold tracking-tight",
-                  inChat ? "text-base" : "text-lg",
-                )}
-              >
-                {name}
-              </h3>
-              <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                <Briefcase className="mr-1 h-3 w-3 opacity-70" />
-                {profession}
-                {company && (
-                  <>
-                    <span className="mx-1">•</span>
-                    {company}
-                  </>
-                )}
-              </p>
-            </div>
-
-            <UserCardActions
-              onOpenMessage={() => setMessageModalOpen(true)}
-              onOpenSchedule={() => setScheduleModalOpen(true)}
-            />
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3
+              className={cn(
+                "truncate font-semibold tracking-tight",
+                inChat ? "text-base" : "text-lg",
+              )}
+            >
+              {name}
+            </h3>
+            <p className="flex items-center truncate text-sm text-gray-500 dark:text-gray-400">
+              <Briefcase className="mr-1 h-3 w-3 shrink-0 opacity-70" />
+              <span className="truncate">{profession}</span>
+              {company && (
+                <>
+                  <span className="mx-1 shrink-0">•</span>
+                  <span className="truncate">{company}</span>
+                </>
+              )}
+            </p>
           </div>
+
+          <UserCardActions
+            onOpenMessage={() => setMessageModalOpen(true)}
+            onOpenSchedule={() => setScheduleModalOpen(true)}
+            className="shrink-0"
+          />
         </div>
       </div>
     </>

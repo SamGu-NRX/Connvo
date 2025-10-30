@@ -376,41 +376,44 @@ export default function VideoMeeting() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "tween", duration: 0.2 }}
-              className="sidebar z-10 flex w-72 flex-col space-y-4 border-r border-zinc-800 bg-zinc-900/70 p-4 backdrop-blur-lg"
+              className="sidebar z-10 flex w-80 flex-col space-y-4 overflow-y-auto border-r border-zinc-800 bg-zinc-900/70 p-4 backdrop-blur-lg"
             >
               {/* User Card */}
-              <UserCard
-                user={{
-                  id: MOCK_USERS.partner.id,
-                  name: MOCK_USERS.partner.name,
-                  avatar: MOCK_USERS.partner.avatar || null,
-                  bio: "", // not available in meeting mock
-                  profession: MOCK_USERS.partner.role || "",
-                  company: MOCK_USERS.partner.company || "",
-                  school: "",
-                  experience: 0,
-                  sharedInterests: [],
-                  connectionType: "collaboration",
-                  isBot: false,
-                  status: "online",
-                  // optional fields
-                  interests: MOCK_USERS.partner.interests || [],
-                  connectionStatus:
-                    MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status ===
-                    "excellent"
-                      ? "excellent"
-                      : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]
-                            ?.status === "good"
-                        ? "good"
-                        : "poor",
-                  isSpeaking:
-                    MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
-                  meetingStats: MOCK_USERS.partner.meetingStats,
-                }}
-                inMeeting={true}
-              />
+              <div className="shrink-0">
+                <UserCard
+                  user={{
+                    id: "match123",
+                    name: "Jane Doe",
+                    avatar: null,
+                    bio: "Software Engineer | AI Enthusiast",
+                    profession: "Software Engineer",
+                    company: "TechCorp Inc.",
+                    school: "Stanford University",
+                    experience: 5,
+                    sharedInterests: [
+                      { type: "academic" as const, name: "Machine Learning" },
+                      { type: "industry" as const, name: "Open Source" },
+                      { type: "skill" as const, name: "Hiking" },
+                    ],
+                    connectionType: "collaboration",
+                    isBot: false,
+                    status: "online",
+                    connectionStatus:
+                      MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]?.status ===
+                      "excellent"
+                        ? "excellent"
+                        : MOCK_CONNECTION_STATES[MOCK_USERS.partner.id]
+                              ?.status === "good"
+                          ? "good"
+                          : "poor",
+                    isSpeaking:
+                      MOCK_SPEAKING_STATES[MOCK_USERS.partner.id] || false,
+                  }}
+                  inMeeting={true}
+                />
+              </div>
               {/* Compact Prompts Card */}
-              <Card className="border-none bg-zinc-800/30 shadow-lg">
+              <Card className="shrink-0 border-none bg-zinc-800/30 shadow-lg">
                 <CardContent className="p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -461,8 +464,8 @@ export default function VideoMeeting() {
                 </CardContent>
               </Card>
 
-              <Card className="flex-1 border-none bg-zinc-800/30 shadow-lg">
-                <CardContent className="h-full p-3">
+              <Card className="min-h-0 flex-1 border-none bg-zinc-800/30 shadow-lg">
+                <CardContent className="flex h-full flex-col p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <PenLine className="h-4 w-4 text-zinc-400" />
@@ -493,7 +496,7 @@ export default function VideoMeeting() {
                       setTimeout(() => setIsAutosaving(false), 1000);
                     }}
                     placeholder="Type your notes here..."
-                    className="h-[calc(100%-40px)] w-full resize-none border-none bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 focus:ring-0"
+                    className="min-h-0 flex-1 w-full resize-none border-none bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:ring-0"
                   />
                 </CardContent>
               </Card>
