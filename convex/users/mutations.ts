@@ -286,8 +286,69 @@ export const updateLastSeen = mutation({
 });
 
 /**
- * Save onboarding data atomically: profile fields + interests + onboarding flags.
- * Idempotent via idempotencyKeys.
+ * @summary saveOnboarding
+ * @description Atomically persists a member's onboarding payload – profile metadata, interest selections, and completion flags – while enforcing validation rules and idempotency. The mutation uses a scoped idempotency key so the same payload can be retried without duplicating interests or profiles.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "age": 25,
+ *     "gender": "prefer-not-to-say",
+ *     "field": "Software",
+ *     "jobTitle": "Engineer",
+ *     "company": "Acme",
+ *     "linkedinUrl": "https://linkedin.com/in/test",
+ *     "bio": "Hello, I build things.",
+ *     "interests": [
+ *       { "id": "software-engineering", "name": "Software Engineering", "category": "industry" },
+ *       { "id": "startups", "name": "Startups", "category": "personal" }
+ *     ],
+ *     "idempotencyKey": "onboarding-test-user"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "userId": "user_9f3c2ab457",
+ *     "profileId": "profiles_d4c1e87a90",
+ *     "interestsCount": 2,
+ *     "onboardingCompleted": true
+ *   }
+ * }
+ * ```
+ * @example response-idempotent
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "userId": "user_9f3c2ab457",
+ *     "profileId": "profiles_d4c1e87a90",
+ *     "interestsCount": 2,
+ *     "onboardingCompleted": true
+ *   }
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Invalid interest key: nonexistent",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Invalid interest key: nonexistent",
+ *     "statusCode": 400
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 type SaveOnboardingResult = {
   userId: Id<"users">;

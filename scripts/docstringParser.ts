@@ -126,42 +126,59 @@ export function parseDocstring(raw: string): ParsedDocstring {
 
   flushBuffer();
 
+  const trimEmptyEdges = (rawLines: string[]) => {
+    let start = 0;
+    let end = rawLines.length;
+    while (start < end && rawLines[start].trim().length === 0) start++;
+    while (end > start && rawLines[end - 1].trim().length === 0) end--;
+    return rawLines.slice(start, end);
+  };
+
+  let summary = summaryFromTag;
   const descriptionPieces: string[] = [];
 
   const firstContentIndex = preTagLines.findIndex((line) => line.trim().length > 0);
-  let summary = summaryFromTag;
-
   if (firstContentIndex !== -1) {
     const firstLine = preTagLines[firstContentIndex].trim();
     if (!summary) {
       summary = firstLine;
     }
-    const remainingLines = preTagLines.slice(firstContentIndex + 1);
+    const remainingLines = trimEmptyEdges(preTagLines.slice(firstContentIndex + 1));
     if (remainingLines.length > 0) {
       descriptionPieces.push(remainingLines.join("\n"));
     }
+  } else if (!summary && preTagLines.length > 0) {
+    const trimmedLines = trimEmptyEdges(preTagLines);
+    if (trimmedLines.length > 0) {
+      summary = trimmedLines[0].trim();
+      const remaining = trimEmptyEdges(trimmedLines.slice(1));
+      if (remaining.length > 0) {
+        descriptionPieces.push(remaining.join("\n"));
+      }
+    }
   }
 
-  if (!summary && preTagLines.length > 0) {
-    summary = preTagLines.join("\n").trim();
-  }
-
-  if (summaryFromTag && !descriptionPieces.includes(summaryFromTag)) {
-    descriptionPieces.unshift(summaryFromTag);
-  }
-
-  if (descriptionFromTags.length > 0) {
-    descriptionPieces.push(...descriptionFromTags);
+  for (const descriptionBlock of descriptionFromTags) {
+    const trimmed = descriptionBlock.trim();
+    if (trimmed.length > 0) {
+      descriptionPieces.push(trimmed);
+    }
   }
 
   const description = descriptionPieces
-    .map((piece) => piece.trimEnd())
-    .join("\n")
-    .trim();
+    .map((piece) =>
+      piece
+        .split("\n")
+        .map((line) => line.trimEnd())
+        .join("\n")
+        .trim(),
+    )
+    .filter((piece) => piece.length > 0)
+    .join("\n\n");
 
   return {
     summary: summary?.trim(),
-    description: description.length > 0 ? description : summary?.trim(),
+    description: description.length > 0 ? description : undefined,
     examples,
   };
 }
