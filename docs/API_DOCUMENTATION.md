@@ -1,6 +1,6 @@
 # API Documentation Workflow
 
-This guide explains how LinkedUp generates, validates, and publishes its Convex OpenAPI specification and Mintlify developer portal. Follow these steps whenever you need to refresh the documentation or investigate issues with the pipeline.
+This guide explains how Connvo generates, validates, and publishes its Convex OpenAPI specification and Mintlify developer portal. Follow these steps whenever you need to refresh the documentation or investigate issues with the pipeline.
 
 ## Workflow at a Glance
 
@@ -89,23 +89,50 @@ A GitHub Actions workflow (`.github/workflows/api-docs.yml`) runs on pushes to `
 
 ### Required Repository Secrets
 
-| Secret | Purpose |
-| ------ | ------- |
-| `CONVEX_DEPLOY_KEY` | Authenticates `convex-helpers` against Convex. |
-| `CONVEX_URL_DEV` | Base URL for the development deployment. |
-| `CONVEX_URL_STAGING` | Base URL for the staging deployment (used by enhancement script). |
-| `CONVEX_URL_PROD` | Base URL for the production deployment (used by enhancement script). |
+| Secret               | Purpose                                                              |
+| -------------------- | -------------------------------------------------------------------- |
+| `CONVEX_DEPLOY_KEY`  | Authenticates `convex-helpers` against Convex.                       |
+| `CONVEX_URL_DEV`     | Base URL for the development deployment.                             |
+| `CONVEX_URL_STAGING` | Base URL for the staging deployment (used by enhancement script).    |
+| `CONVEX_URL_PROD`    | Base URL for the production deployment (used by enhancement script). |
 
 Set `CONVEX_URL` to the same value as `CONVEX_URL_DEV` if your deployment requires it for the generator.
 
 ## Mintlify Git Sync (Task 9.2)
 
-1. Sign in to the Mintlify dashboard and create (or select) the LinkedUp project.
+1. Sign in to the Mintlify dashboard and create (or select) the Connvo project.
 2. Enable **Git Sync**, pointing it to the repository branch that stores `mint.json` and the `docs/` directory.
 3. Configure the sync to rebuild when `docs/api-reference/convex-openapi.yaml` changes.
 4. Provide Mintlify with an access token that can read the repository.
 
 With Git Sync enabled, Mintlify automatically ingests the updated OpenAPI spec whenever CI commits new documentation changes.
+
+## Production Custom Domain
+
+Mintlify can serve the Connvo docs on a branded subdomain (e.g. `docs.Connvo.com`) in production. Complete these steps after Git Sync is working:
+
+1. **Mintlify settings**
+   - Open the Mintlify dashboard → _Settings → Custom domain_.
+   - Enter the desired hostname (`docs.Connvo.com`) and save. Mintlify will show the required DNS values once the domain is queued.
+
+2. **DNS configuration**
+   - In the DNS provider for `Connvo.com` add a CNAME record:
+     ```
+     Host: docs
+     Type: CNAME
+     Target: cname.vercel-dns.com.
+     TTL: default
+     ```
+   - Propagation can take several minutes. Use `dig docs.Connvo.com CNAME` to confirm it resolves to `cname.vercel-dns.com`.
+
+3. **Verification**
+   - Back in the Mintlify dashboard, click _Verify_ next to the custom domain once DNS has propagated.
+   - Mintlify issues the TLS certificate automatically; the status will change to “Active” when HTTPS is ready.
+
+4. **Post-deploy checklist**
+   - Run `pnpm run update:api-docs:prod` to regenerate the OpenAPI spec with the production servers prioritized.
+   - Trigger a Mintlify rebuild (either via Git Sync or the dashboard) so the latest content is published at `https://docs.Connvo.com`.
+   - Spot-check a few endpoints in the API playground to ensure CORS/auth headers still resolve correctly when accessed via the custom domain.
 
 ## Maintenance Procedures (Task 10.x)
 

@@ -19,16 +19,12 @@ const isVitestRuntime =
 // Fall back to an empty module map so convex deploy analysis doesn't choke.
 export const modules = (() => {
   try {
-    const glob = (import.meta as ViteImportMeta).glob;
-    if (glob) {
-      return glob("../**/*.{ts,tsx,js,mjs,mts,cts,cjs,jsx}");
-    }
-    if (isVitestRuntime) {
-      throw new Error("import.meta.glob is unavailable in Vitest runtime");
-    }
-    return {};
+    return (import.meta as ViteImportMeta).glob("../**/*.{ts,tsx,js,mjs,mts,cts,cjs,jsx}");
   } catch (error) {
     if (isVitestRuntime) {
+      if ((error as Error).message?.includes("glob")) {
+        throw new Error("import.meta.glob is unavailable in Vitest runtime");
+      }
       throw error;
     }
     return {};

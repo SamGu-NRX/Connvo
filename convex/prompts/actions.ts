@@ -22,7 +22,140 @@ import type {
 import { AIContentGenerationV } from "@convex/types/validators/prompt";
 
 /**
- * Generates pre-call ideas with idempotency using meetingId hash
+ * @summary Generates idempotent AI-assisted pre-call prompts for a meeting.
+ * @description Produces up to six high-signal conversation starters by analyzing participant profiles, shared interests, and meeting metadata. The first invocation seeds prompts and stores an idempotency key; repeated calls return cached prompt IDs unless `forceRegenerate` is true. The heuristic fallback returns general conversation starters when richer participant data is unavailable, matching the datamodel example captured in the Convex tests.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "promptIds": [
+ *       "prompts_ck9hx2g1v0001",
+ *       "prompts_ck9hx2g1v0002",
+ *       "prompts_ck9hx2g1v0003",
+ *       "prompts_ck9hx2g1v0004",
+ *       "prompts_ck9hx2g1v0005",
+ *       "prompts_ck9hx2g1v0006"
+ *     ],
+ *     "generated": true,
+ *     "fromCache": false
+ *   }
+ * }
+ * ```
+ * @example response-cache
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "promptIds": [
+ *       "prompts_ck9hx2g1v0001",
+ *       "prompts_ck9hx2g1v0002",
+ *       "prompts_ck9hx2g1v0003",
+ *       "prompts_ck9hx2g1v0004",
+ *       "prompts_ck9hx2g1v0005",
+ *       "prompts_ck9hx2g1v0006"
+ *     ],
+ *     "generated": false,
+ *     "fromCache": true
+ *   }
+ * }
+ * ```
+ * @example datamodel
+ * ```json
+ * {
+ *   "prompts": [
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0001",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "I noticed you both have experience with ai-ml. What drew you to this field initially?",
+ *       "tags": ["shared-interests", "background"],
+ *       "relevance": 0.9,
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0002",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "You come from different backgrounds (Technology, Product). What perspectives do you think each industry brings to problem-solving?",
+ *       "tags": ["cross-industry", "perspectives"],
+ *       "relevance": 0.85,
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0003",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "Given your mutual interest in ai-ml, what trends are you most excited about right now?",
+ *       "tags": ["shared-interests", "trends"],
+ *       "relevance": 0.8,
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0004",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "If you could collaborate with anyone in your field, who would it be and why?",
+ *       "tags": ["collaboration", "inspiration"],
+ *       "relevance": 0.65,
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0005",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "What's the most interesting project you've worked on recently?",
+ *       "tags": ["projects", "general"],
+ *       "relevance": 0.6,
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0006",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "What's one skill you're currently trying to develop?",
+ *       "tags": ["learning", "development"],
+ *       "relevance": 0.55,
+ *       "createdAt": 1714066800000
+ *     }
+ *   ]
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting with ID me_82f8c0a8bce1a2d5f4e7b6c9 not found",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "Meeting with ID me_82f8c0a8bce1a2d5f4e7b6c9 not found",
+ *     "statusCode": 404,
+ *     "metadata": {
+ *       "id": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *     }
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const generatePreCallIdeas = action({
   args: {
@@ -398,7 +531,90 @@ function generateHeuristicPrompts(
 }
 
 /**
- * Generates contextual prompts during active meetings
+ * @summary Generates contextual AI prompts during active meetings based on conversation dynamics
+ * @description Analyzes real-time meeting context including lull detection, speaking time balance, current topics, and participant profiles to generate relevant conversation prompts. Automatically cleans up old in-call prompts to prevent accumulation. Returns empty array if meeting is not active or if no relevant prompts can be generated.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "context": {
+ *       "lullDetected": true,
+ *       "topicShift": false,
+ *       "currentTopics": ["ai-ml", "product-development"],
+ *       "speakingTimeRatios": {
+ *         "user_123": 45000,
+ *         "user_456": 15000
+ *       },
+ *       "lastActivity": 1714066770000,
+ *       "lullDuration": 35000
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     "prompts_ck9hx3g1v0007",
+ *     "prompts_ck9hx3g1v0008",
+ *     "prompts_ck9hx3g1v0009"
+ *   ]
+ * }
+ * ```
+ *
+ * @example datamodel
+ * ```json
+ * {
+ *   "prompts": [
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0007",
+ *       "_creationTime": 1714066805000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "incall",
+ *       "content": "Let's try a different angle. What's one thing you've learned recently that surprised you?",
+ *       "tags": ["lull", "severe", "learning"],
+ *       "relevance": 0.9,
+ *       "createdAt": 1714066805000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0008",
+ *       "_creationTime": 1714066805000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "incall",
+ *       "content": "I'd love to hear everyone's perspective on this. What do you think?",
+ *       "tags": ["balance", "inclusion"],
+ *       "relevance": 0.85,
+ *       "createdAt": 1714066805000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0009",
+ *       "_creationTime": 1714066805000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "incall",
+ *       "content": "Since you both work with ai-ml, what trends are you seeing in that space?",
+ *       "tags": ["interests", "trends"],
+ *       "relevance": 0.8,
+ *       "createdAt": 1714066805000
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response-empty
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": []
+ * }
+ * ```
  */
 export const generateContextualPrompts = internalAction({
   args: {
@@ -482,7 +698,63 @@ export const generateContextualPrompts = internalAction({
 });
 
 /**
- * Detects lulls and triggers contextual prompt generation
+ * @summary Detects conversation lulls and automatically generates contextual prompts
+ * @description Monitors meeting activity to detect periods of silence exceeding 30 seconds. When a lull is detected, automatically triggers contextual prompt generation based on current meeting state, participant profiles, and speaking patterns. Returns lull detection status and any generated prompt IDs. Safe to call repeatedly as it only generates prompts when lull threshold is exceeded.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-lull-detected
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "lullDetected": true,
+ *     "promptsGenerated": 3,
+ *     "promptIds": [
+ *       "prompts_ck9hx3g1v0010",
+ *       "prompts_ck9hx3g1v0011",
+ *       "prompts_ck9hx3g1v0012"
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response-no-lull
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "lullDetected": false,
+ *     "promptsGenerated": 0,
+ *     "promptIds": []
+ *   }
+ * }
+ * ```
+ *
+ * @example response-inactive-meeting
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "lullDetected": false,
+ *     "promptsGenerated": 0,
+ *     "promptIds": []
+ *   }
+ * }
+ * ```
  */
 export const detectLullAndGeneratePrompts = internalAction({
   args: {

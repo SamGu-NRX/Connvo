@@ -16,7 +16,40 @@ import { AIPromptV } from "@convex/types/validators/prompt";
 import type { AIPrompt } from "@convex/types/entities/prompt";
 
 /**
- * Gets prompts for a meeting by type (internal use)
+ * @summary Gets prompts for a meeting filtered by type (internal use)
+ * @description Retrieves prompts for a specific meeting and type (precall or incall) with deterministic ordering. Used internally by other functions to fetch prompts without authorization checks. Returns up to the specified limit of prompts ordered by creation time.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "type": "precall",
+ *     "limit": 10
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0001",
+ *       "_creationTime": 1714066800000,
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *       "type": "precall",
+ *       "content": "I noticed you both have experience with ai-ml. What drew you to this field initially?",
+ *       "tags": ["shared-interests", "background"],
+ *       "relevance": 0.9,
+ *       "createdAt": 1714066800000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getPromptsByMeetingAndType = internalQuery({
   args: {
@@ -39,7 +72,70 @@ export const getPromptsByMeetingAndType = internalQuery({
 });
 
 /**
- * Gets pre-call prompts for a meeting with authorization
+ * @summary Gets pre-call conversation prompts for a meeting
+ * @description Retrieves AI-generated pre-call prompts for a meeting, sorted by relevance score (highest first). Verifies user has access to the meeting before returning prompts. Includes prompt content, tags, relevance scores, usage status, and user feedback. Useful for displaying conversation starters before a meeting begins.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "limit": 10
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0001",
+ *       "content": "I noticed you both have experience with ai-ml. What drew you to this field initially?",
+ *       "tags": ["shared-interests", "background"],
+ *       "relevance": 0.9,
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0002",
+ *       "content": "You come from different backgrounds (Technology, Product). What perspectives do you think each industry brings to problem-solving?",
+ *       "tags": ["cross-industry", "perspectives"],
+ *       "relevance": 0.85,
+ *       "usedAt": 1714066850000,
+ *       "feedback": "used",
+ *       "createdAt": 1714066800000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx2g1v0003",
+ *       "content": "Given your mutual interest in ai-ml, what trends are you most excited about right now?",
+ *       "tags": ["shared-interests", "trends"],
+ *       "relevance": 0.8,
+ *       "feedback": "upvoted",
+ *       "createdAt": 1714066800000
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "User does not have access to meeting me_82f8c0a8bce1a2d5f4e7b6c9",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "User does not have access to meeting me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "statusCode": 403,
+ *     "metadata": {
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *     }
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const getPreCallPrompts = query({
   args: {
@@ -91,7 +187,62 @@ export const getPreCallPrompts = query({
 });
 
 /**
- * Gets in-call prompts for a meeting with authorization
+ * @summary Gets in-call conversation prompts for an active meeting
+ * @description Retrieves AI-generated in-call prompts for a meeting, sorted by relevance score (highest first). These prompts are dynamically generated during the meeting based on conversation lulls, speaking balance, and topic shifts. Verifies user has access to the meeting before returning prompts. Returns fewer prompts than pre-call (default 5) to avoid overwhelming participants.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "limit": 5
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0007",
+ *       "content": "Let's try a different angle. What's one thing you've learned recently that surprised you?",
+ *       "tags": ["lull", "severe", "learning"],
+ *       "relevance": 0.9,
+ *       "createdAt": 1714066805000
+ *     },
+ *     {
+ *       "_id": "prompts_ck9hx3g1v0008",
+ *       "content": "I'd love to hear everyone's perspective on this. What do you think?",
+ *       "tags": ["balance", "inclusion"],
+ *       "relevance": 0.85,
+ *       "usedAt": 1714066820000,
+ *       "feedback": "used",
+ *       "createdAt": 1714066805000
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "User does not have access to meeting me_82f8c0a8bce1a2d5f4e7b6c9",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "User does not have access to meeting me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "statusCode": 403,
+ *     "metadata": {
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *     }
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const getInCallPrompts = query({
   args: {
@@ -143,7 +294,46 @@ export const getInCallPrompts = query({
 });
 
 /**
- * Gets prompt by ID with authorization (internal use)
+ * @summary Gets a single prompt by ID (internal use)
+ * @description Retrieves a prompt by its unique identifier without authorization checks. Used internally by other functions that need to access prompt data. Returns null if the prompt does not exist.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "promptId": "prompts_ck9hx2g1v0001"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "prompts_ck9hx2g1v0001",
+ *     "_creationTime": 1714066800000,
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "type": "precall",
+ *     "content": "I noticed you both have experience with ai-ml. What drew you to this field initially?",
+ *     "tags": ["shared-interests", "background"],
+ *     "relevance": 0.9,
+ *     "createdAt": 1714066800000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-not-found
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const getPromptById = internalQuery({
   args: { promptId: v.id("prompts") },
@@ -154,7 +344,64 @@ export const getPromptById = internalQuery({
 });
 
 /**
- * Subscribes to real-time in-call prompts for a meeting
+ * @summary Subscribes to real-time in-call prompts for a meeting
+ * @description Provides a reactive subscription to in-call prompts that automatically updates when new prompts are generated during the meeting. Returns the most recent prompts (up to 10) along with a timestamp for tracking updates. Ideal for real-time UI updates in meeting interfaces. Verifies user has access to the meeting.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "prompts": [
+ *       {
+ *         "_id": "prompts_ck9hx3g1v0010",
+ *         "content": "What's your take on what we just discussed?",
+ *         "tags": ["lull", "moderate", "reflection"],
+ *         "relevance": 0.8,
+ *         "createdAt": 1714066830000
+ *       },
+ *       {
+ *         "_id": "prompts_ck9hx3g1v0009",
+ *         "content": "Since you both work with ai-ml, what trends are you seeing in that space?",
+ *         "tags": ["interests", "trends"],
+ *         "relevance": 0.8,
+ *         "usedAt": 1714066825000,
+ *         "feedback": "used",
+ *         "createdAt": 1714066805000
+ *       }
+ *     ],
+ *     "lastUpdated": 1714066835000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "User does not have access to meeting me_82f8c0a8bce1a2d5f4e7b6c9",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "User does not have access to meeting me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "statusCode": 403,
+ *     "metadata": {
+ *       "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9"
+ *     }
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const subscribeToInCallPrompts = query({
   args: {

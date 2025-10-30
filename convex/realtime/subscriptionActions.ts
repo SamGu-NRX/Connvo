@@ -19,6 +19,54 @@ type ValidateResult = {
   resourceId: string;
 };
 
+/**
+ * @summary validateAndLogSubscription
+ * @description Validates a realtime subscription using `subscriptionManager.validateAndUpdateSubscription` and records an audit trail whenever the subscription is rejected. Call this from websocket heartbeats to keep permissions fresh; the result mirrors the registry state so the client can decide whether to reconnect, downgrade, or tear down the stream.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "subscriptionId": "sub_meetingNotes_7c88",
+ *     "lastValidated": 1716489600000
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "valid": true,
+ *     "permissions": ["read", "write"],
+ *     "shouldReconnect": false,
+ *     "validUntil": 1716493200000,
+ *     "rateLimited": false,
+ *     "resourceType": "meetingNotes",
+ *     "resourceId": "me_a12bc34def567890"
+ *   }
+ * }
+ * ```
+ * @example response-denied
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "valid": false,
+ *     "permissions": [],
+ *     "reason": "Subscription not found",
+ *     "shouldReconnect": false,
+ *     "rateLimited": false,
+ *     "resourceType": "unknown",
+ *     "resourceId": "unknown"
+ *   }
+ * }
+ * ```
+ */
 export const validateAndLogSubscription = action({
   args: {
     subscriptionId: v.string(),

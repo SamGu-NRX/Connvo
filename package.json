@@ -24,7 +24,11 @@
     "update:api-docs": "bash scripts/update-api-docs.sh",
     "update:api-docs:dev": "bash scripts/update-api-docs.sh --env=dev",
     "update:api-docs:staging": "bash scripts/update-api-docs.sh --env=staging",
-    "update:api-docs:prod": "bash scripts/update-api-docs.sh --env=prod"
+    "update:api-docs:prod": "bash scripts/update-api-docs.sh --env=prod",
+    "audit:docs": "tsx scripts/audit-docstrings.ts",
+    "audit:docs:json": "tsx scripts/audit-docstrings.ts --json",
+    "validate:docs": "tsx scripts/validate-docstrings.ts",
+    "validate:docs:file": "tsx scripts/validate-docstrings.ts --file="
   },
   "dependencies": {
     "@convex-dev/rate-limiter": "^0.2.14",

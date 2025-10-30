@@ -1,7 +1,7 @@
 /**
  * Convex Cron Jobs Configuration
  *
- * This module defines scheduled jobs for the LinkedUp application
+ * This module defines scheduled jobs for the Connvo application
  * including lull detection, prompt generation, and cleanup tasks.
  *
  * Requirements: 10.2, 14.1

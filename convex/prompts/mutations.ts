@@ -16,7 +16,31 @@ import { Id } from "@convex/_generated/dataModel";
 import type { AIPrompt } from "@convex/types/entities/prompt";
 
 /**
- * Creates a new prompt (internal use)
+ * @summary Creates a new AI-generated prompt (internal use)
+ * @description Inserts a new prompt into the database with the specified meeting ID, type, content, tags, and relevance score. Sets the creation timestamp automatically. Used internally by prompt generation actions. Returns the newly created prompt ID.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "type": "precall",
+ *     "content": "I noticed you both have experience with ai-ml. What drew you to this field initially?",
+ *     "tags": ["shared-interests", "background"],
+ *     "relevance": 0.9
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "prompts_ck9hx2g1v0001"
+ * }
+ * ```
  */
 export const createPrompt = internalMutation({
   args: {
@@ -45,7 +69,65 @@ export const createPrompt = internalMutation({
 });
 
 /**
- * Updates prompt feedback when user interacts with it
+ * @summary Updates user feedback for a prompt
+ * @description Records user interaction with a prompt by setting feedback status (used, dismissed, or upvoted). When feedback is "used", automatically sets the usedAt timestamp. Verifies user has access to the meeting before updating. Useful for tracking prompt effectiveness and user engagement.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "promptId": "prompts_ck9hx2g1v0001",
+ *     "feedback": "used"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example request-dismissed
+ * ```json
+ * {
+ *   "args": {
+ *     "promptId": "prompts_ck9hx2g1v0002",
+ *     "feedback": "dismissed"
+ *   }
+ * }
+ * ```
+ *
+ * @example request-upvoted
+ * ```json
+ * {
+ *   "args": {
+ *     "promptId": "prompts_ck9hx2g1v0003",
+ *     "feedback": "upvoted"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Prompt with ID prompts_ck9hx2g1v9999 not found",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "Prompt with ID prompts_ck9hx2g1v9999 not found",
+ *     "statusCode": 404,
+ *     "metadata": {
+ *       "id": "prompts_ck9hx2g1v9999"
+ *     }
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const updatePromptFeedback = mutation({
   args: {
@@ -87,7 +169,28 @@ export const updatePromptFeedback = mutation({
 });
 
 /**
- * Marks a prompt as used (internal use)
+ * @summary Marks a prompt as used with timestamp (internal use)
+ * @description Updates a prompt's feedback status to "used" and records the usage timestamp. Used internally by systems that track prompt usage without going through the public API. Does not perform authorization checks.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "promptId": "prompts_ck9hx2g1v0001",
+ *     "usedAt": 1714066850000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const markPromptAsUsed = internalMutation({
   args: {
@@ -105,7 +208,45 @@ export const markPromptAsUsed = internalMutation({
 });
 
 /**
- * Batch creates multiple prompts (internal use)
+ * @summary Batch creates multiple prompts efficiently (internal use)
+ * @description Inserts multiple prompts in a single transaction for improved performance. All prompts receive the same creation timestamp for consistency. Used by prompt generation actions to create multiple prompts at once. Returns an array of newly created prompt IDs in the same order as the input.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "prompts": [
+ *       {
+ *         "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *         "type": "precall",
+ *         "content": "I noticed you both have experience with ai-ml. What drew you to this field initially?",
+ *         "tags": ["shared-interests", "background"],
+ *         "relevance": 0.9
+ *       },
+ *       {
+ *         "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *         "type": "precall",
+ *         "content": "Given your mutual interest in ai-ml, what trends are you most excited about right now?",
+ *         "tags": ["shared-interests", "trends"],
+ *         "relevance": 0.8
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     "prompts_ck9hx2g1v0001",
+ *     "prompts_ck9hx2g1v0002"
+ *   ]
+ * }
+ * ```
  */
 export const batchCreatePrompts = internalMutation({
   args: {
@@ -137,7 +278,39 @@ export const batchCreatePrompts = internalMutation({
 });
 
 /**
- * Deletes old prompts for a meeting (cleanup, internal use)
+ * @summary Deletes old prompts to prevent accumulation (internal use)
+ * @description Removes prompts beyond the specified keep count for a meeting and type, ordered by creation time (keeping newest). Used to prevent unlimited prompt accumulation during long meetings. Returns the number of prompts deleted. Typically called after generating new in-call prompts.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "me_82f8c0a8bce1a2d5f4e7b6c9",
+ *     "type": "incall",
+ *     "keepCount": 10
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": 5
+ * }
+ * ```
+ *
+ * @example response-no-cleanup
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": 0
+ * }
+ * ```
  */
 export const cleanupOldPrompts = internalMutation({
   args: {

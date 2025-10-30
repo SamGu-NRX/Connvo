@@ -15,6 +15,49 @@ import { assertMeetingAccess } from "@convex/auth/guards";
 import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
 import { logAudit } from "@convex/lib/audit";
 
+/**
+ * @summary validateSubscriptionPermissions
+ * @description Checks the caller's meeting membership and role to determine whether all required permissions are granted for a realtime subscription. Returns the full permission set calculated from `permissionsForResource` so clients can cache the capabilities alongside a metadata block describing denial reasons. Used during subscription establishment and periodic refreshes.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "resourceType": "meetingNotes",
+ *     "resourceId": "me_a12bc34def567890",
+ *     "requiredPermissions": ["read", "write"]
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "granted": true,
+ *     "permissions": ["read", "write", "manage", "export"],
+ *     "metadata": {}
+ *   }
+ * }
+ * ```
+ * @example response-denied
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "granted": false,
+ *     "permissions": [],
+ *     "metadata": {
+ *       "error": "Access denied: Not a meeting participant"
+ *     }
+ *   }
+ * }
+ * ```
+ */
 export const validateSubscriptionPermissions = query({
   args: {
     resourceType: v.string(),
@@ -52,6 +95,71 @@ export const validateSubscriptionPermissions = query({
   },
 });
 
+/**
+ * @summary refreshSubscriptionPermissions
+ * @description Re-validates a batch of cached realtime subscriptions and returns the up-to-date permission set for each resource. Each item is checked with `assertMeetingAccess`, normalized against the current role, and flagged when it is no longer valid so the client can tear down the feed. Designed to be called on reconnect or timer-based refresh loops.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "subscriptions": [
+ *       {
+ *         "resourceType": "meetingNotes",
+ *         "resourceId": "me_a12bc34def567890",
+ *         "permissions": ["read", "write"],
+ *         "lastValidated": 1716488400000
+ *       },
+ *       {
+ *         "resourceType": "transcripts",
+ *         "resourceId": "me_a12bc34def567890",
+ *         "permissions": ["read"],
+ *         "lastValidated": 1716485000000
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "resourceType": "meetingNotes",
+ *       "resourceId": "me_a12bc34def567890",
+ *       "valid": true,
+ *       "updatedPermissions": ["read", "write"]
+ *     },
+ *     {
+ *       "resourceType": "transcripts",
+ *       "resourceId": "me_a12bc34def567890",
+ *       "valid": true,
+ *       "updatedPermissions": ["read", "export", "manage"]
+ *     }
+ *   ]
+ * }
+ * ```
+ * @example response-invalid
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "resourceType": "meetingNotes",
+ *       "resourceId": "me_deadbeefdeadbeef",
+ *       "valid": false,
+ *       "updatedPermissions": [],
+ *       "reason": "Access denied: Not a meeting participant"
+ *     }
+ *   ]
+ * }
+ * ```
+ */
 export const refreshSubscriptionPermissions = query({
   args: {
     subscriptions: v.array(

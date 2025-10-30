@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
+import { loadDocstringInfo } from "./docstringParser";
 
 type Environment = "dev" | "staging" | "prod";
 
@@ -13,8 +14,14 @@ interface EnhancementConfig {
 
 type OpenAPISpec = {
   servers?: Array<{ url: string; description?: string }>;
+  info?: {
+    title?: string;
+    version?: string;
+    description?: string;
+  };
   components?: {
     securitySchemes?: Record<string, any>;
+    schemas?: Record<string, any>;
   };
   security?: Array<Record<string, any>>;
   tags?: Array<{ name: string; description?: string }>;
@@ -22,15 +29,16 @@ type OpenAPISpec = {
 };
 
 const DEFAULT_DEPLOYMENT_URLS: Record<Environment, string> = {
-  dev: "https://linkedup-dev.convex.cloud",
-  staging: "https://linkedup-staging.convex.cloud",
-  prod: "https://linkedup-prod.convex.cloud",
+  dev: "https://Connvo-dev.convex.cloud",
+  staging: "https://Connvo-staging.convex.cloud",
+  prod: "https://Connvo-prod.convex.cloud",
 };
 
 const TAG_DEFINITIONS: Array<{ name: string; description: string }> = [
   {
     name: "Users",
-    description: "Identity, profile, and authentication operations for LinkedUp users.",
+    description:
+      "Identity, profile, and authentication operations for Connvo users.",
   },
   {
     name: "Meetings",
@@ -38,11 +46,13 @@ const TAG_DEFINITIONS: Array<{ name: string; description: string }> = [
   },
   {
     name: "Transcripts",
-    description: "Endpoints for accessing call transcripts and transcription controls.",
+    description:
+      "Endpoints for accessing call transcripts and transcription controls.",
   },
   {
     name: "Insights",
-    description: "AI-generated insights, summaries, and analytics derived from meetings.",
+    description:
+      "AI-generated insights, summaries, and analytics derived from meetings.",
   },
   {
     name: "Prompts",
@@ -54,11 +64,13 @@ const TAG_DEFINITIONS: Array<{ name: string; description: string }> = [
   },
   {
     name: "WebRTC",
-    description: "Real-time communication, session signalling, and media utilities.",
+    description:
+      "Real-time communication, session signalling, and media utilities.",
   },
   {
     name: "System",
-    description: "General system endpoints such as health checks and diagnostics.",
+    description:
+      "General system endpoints such as health checks and diagnostics.",
   },
 ];
 
@@ -72,10 +84,71 @@ const TAG_PATH_PATTERNS: Array<{ tag: string; matcher: RegExp }> = [
   { tag: "WebRTC", matcher: /webrtc|rtc|session/i },
 ];
 
+interface OperationContext {
+  key: string;
+  exportName: string;
+  filePath: string | null;
+}
+
+function humanizeFunctionName(exportName: string): string {
+  const withSpaces = exportName
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim();
+
+  if (!withSpaces) {
+    return exportName;
+  }
+
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+}
+
+function resolveModuleFilePath(moduleSegments: string[]): string | null {
+  const basePath = path.resolve("convex", ...moduleSegments);
+  const candidates = [`${basePath}.ts`, `${basePath}.tsx`, `${basePath}.js`];
+
+  if (moduleSegments[moduleSegments.length - 1] !== "index") {
+    candidates.push(
+      path.join(basePath, "index.ts"),
+      path.join(basePath, "index.tsx"),
+      path.join(basePath, "index.js"),
+    );
+  }
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function parseOperationContext(pathKey: string): OperationContext | null {
+  const prefix = "/api/run/";
+  if (!pathKey.startsWith(prefix)) return null;
+  const segments = pathKey.slice(prefix.length).split("/").filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const exportName = segments[segments.length - 1];
+  const moduleSegments = segments.slice(0, -1);
+  const key = `${moduleSegments.join("/")}/${exportName}`;
+  const filePath = resolveModuleFilePath(moduleSegments);
+
+  return {
+    key,
+    exportName,
+    filePath,
+  };
+}
+
 function buildOperationId(method: string, pathKey: string): string {
   const segments = pathKey
     .split("/")
-    .filter((segment) => segment.length > 0 && segment !== "{id}" && segment !== "{}")
+    .filter(
+      (segment) => segment.length > 0 && segment !== "{id}" && segment !== "{}",
+    )
     .map((segment) =>
       segment
         .replace(/[{}]/g, "")
@@ -103,14 +176,18 @@ function resolveDeploymentUrls(): Record<Environment, string> {
 
 function readOpenAPISpec(filePath: string): OpenAPISpec {
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Base spec not found at ${filePath}. Run convex-helpers before enhancement.`);
+    throw new Error(
+      `Base spec not found at ${filePath}. Run convex-helpers before enhancement.`,
+    );
   }
 
   const fileContents = fs.readFileSync(filePath, "utf8");
   const parsed = yaml.load(fileContents);
 
   if (!parsed || typeof parsed !== "object") {
-    throw new Error("Unable to parse OpenAPI spec: parsed value is not an object.");
+    throw new Error(
+      "Unable to parse OpenAPI spec: parsed value is not an object.",
+    );
   }
 
   return parsed as OpenAPISpec;
@@ -124,9 +201,12 @@ function writeOpenAPISpec(spec: OpenAPISpec, filePath: string) {
 }
 
 function buildServers(env: Environment, urls: Record<Environment, string>) {
-  const orderedEnvironments: Environment[] = [env, ...(["dev", "staging", "prod"] as Environment[]).filter(
-    (name) => name !== env,
-  )];
+  const orderedEnvironments: Environment[] = [
+    env,
+    ...(["dev", "staging", "prod"] as Environment[]).filter(
+      (name) => name !== env,
+    ),
+  ];
 
   const seen = new Set<string>();
   return orderedEnvironments
@@ -146,7 +226,9 @@ function buildServers(env: Environment, urls: Record<Environment, string>) {
         description: `${name.charAt(0).toUpperCase()}${name.slice(1)} Convex deployment`,
       };
     })
-    .filter((server): server is { url: string; description: string } => Boolean(server));
+    .filter((server): server is { url: string; description: string } =>
+      Boolean(server),
+    );
 }
 
 function applySecuritySchemes(spec: OpenAPISpec) {
@@ -175,7 +257,10 @@ function applySecuritySchemes(spec: OpenAPISpec) {
 }
 
 function ensureTags(spec: OpenAPISpec) {
-  const existingTags = new Map<string, { name: string; description?: string }>();
+  const existingTags = new Map<
+    string,
+    { name: string; description?: string }
+  >();
 
   if (Array.isArray(spec.tags)) {
     for (const tag of spec.tags) {
@@ -184,6 +269,8 @@ function ensureTags(spec: OpenAPISpec) {
       }
     }
   }
+
+  ["query", "mutation", "action"].forEach((name) => existingTags.delete(name));
 
   for (const tagDefinition of TAG_DEFINITIONS) {
     existingTags.set(tagDefinition.name, tagDefinition);
@@ -205,6 +292,11 @@ function removeInternalOperations(spec: OpenAPISpec) {
   if (!spec.paths) return;
 
   for (const pathKey of Object.keys(spec.paths)) {
+    if (/\/types\/_template\//i.test(pathKey)) {
+      delete spec.paths[pathKey];
+      continue;
+    }
+
     const operations = spec.paths[pathKey];
     for (const method of Object.keys(operations)) {
       const operation = operations[method];
@@ -230,22 +322,25 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
 
       if (!/\/health/i.test(pathKey)) {
         operation.security = operation.security ?? [];
-        const hasBearer = operation.security.some((item: any) => item && "bearerAuth" in item);
+        const hasBearer = operation.security.some(
+          (item: any) => item && "bearerAuth" in item,
+        );
         if (!hasBearer) {
           operation.security.push({ bearerAuth: [] });
         }
       }
 
-      if (!Array.isArray(operation.tags) || operation.tags.length === 0) {
-        operation.tags = [resolveTagForPath(pathKey)];
-      }
+      operation.tags = [resolveTagForPath(pathKey)];
 
-       if (!operation.operationId || typeof operation.operationId !== "string") {
+      if (!operation.operationId || typeof operation.operationId !== "string") {
         operation.operationId = buildOperationId(method, pathKey);
       }
 
       if (!operation.description || typeof operation.description !== "string") {
-        if (typeof operation.summary === "string" && operation.summary.trim().length > 0) {
+        if (
+          typeof operation.summary === "string" &&
+          operation.summary.trim().length > 0
+        ) {
           operation.description = operation.summary;
         } else {
           operation.description = `${method.toUpperCase()} ${pathKey}`;
@@ -255,12 +350,93 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
   }
 }
 
+function enrichOperationMetadata(spec: OpenAPISpec) {
+  if (!spec.paths) return;
+
+  for (const [pathKey, methods] of Object.entries(spec.paths)) {
+    const context = parseOperationContext(pathKey);
+    if (!context) continue;
+
+    const docInfo =
+      context.filePath && fs.existsSync(context.filePath)
+        ? loadDocstringInfo(context.filePath, context.exportName)
+        : null;
+
+    for (const operation of Object.values(methods)) {
+      if (!operation || typeof operation !== "object") continue;
+
+      const methodSummary = context.exportName;
+      operation.summary = methodSummary;
+
+      const docSummary = docInfo?.summary?.trim();
+      const docDescription = docInfo?.description?.trim();
+
+      const descriptionCandidates: Array<string | undefined> = [];
+      if (docDescription && docDescription !== docSummary) {
+        descriptionCandidates.push(docDescription);
+      }
+      if (docSummary && docSummary !== methodSummary) {
+        descriptionCandidates.push(docSummary);
+      }
+      if (typeof operation.description === "string") {
+        const existing = operation.description.trim();
+        if (existing.length > 0 && existing !== methodSummary) {
+          descriptionCandidates.push(existing);
+        }
+      }
+
+      const fallbackDescription = `Runs the Convex function \`${context.key}\` (export \`${context.exportName}\`) through the Convex HTTP API.`;
+      const resolvedDescription =
+        descriptionCandidates.find((value) => value && value.length > 0) ??
+        fallbackDescription;
+
+      operation.description = resolvedDescription;
+
+      const requestContent =
+        operation.requestBody?.content &&
+        operation.requestBody.content["application/json"];
+
+      const requestExample = docInfo?.examples?.request?.value;
+      if (requestExample && requestContent) {
+        requestContent.example = requestExample;
+      }
+
+      const successResponse =
+        operation.responses &&
+        (operation.responses["200"] || operation.responses["201"]);
+      const responseContent =
+        successResponse &&
+        successResponse.content &&
+        successResponse.content["application/json"];
+
+      const responseExample = docInfo?.examples?.response?.value;
+      if (responseExample && responseContent) {
+        responseContent.example = responseExample;
+      }
+    }
+  }
+}
+
 function enhanceOpenAPISpec(config: EnhancementConfig) {
   const spec = readOpenAPISpec(config.inputPath);
 
+  spec.info = {
+    ...spec.info,
+    title: "Connvo Convex API",
+    version:
+      spec.info?.version && spec.info.version !== "0.0.0"
+        ? spec.info.version
+        : "1.0.0",
+    description:
+      spec.info?.description ??
+      "HTTP interface for Connvo's Convex backend, exposing all public query, mutation, and action endpoints.",
+  };
+
   const servers = buildServers(config.environment, config.deploymentUrls);
   if (servers.length === 0) {
-    throw new Error("No deployment URLs were resolved. Ensure CONVEX_URL_* variables are set.");
+    throw new Error(
+      "No deployment URLs were resolved. Ensure CONVEX_URL_* variables are set.",
+    );
   }
   spec.servers = servers;
 
@@ -268,6 +444,7 @@ function enhanceOpenAPISpec(config: EnhancementConfig) {
   ensureTags(spec);
   removeInternalOperations(spec);
   assignTagsAndSecurity(spec);
+  enrichOperationMetadata(spec);
 
   writeOpenAPISpec(spec, config.outputPath);
   console.log(`Enhanced OpenAPI spec written to ${config.outputPath}`);
@@ -278,10 +455,16 @@ function parseArgs(): Environment {
   for (const arg of process.argv.slice(2)) {
     if (arg.startsWith("--env=")) {
       const requested = arg.split("=")[1] as Environment;
-      if (requested === "dev" || requested === "staging" || requested === "prod") {
+      if (
+        requested === "dev" ||
+        requested === "staging" ||
+        requested === "prod"
+      ) {
         return requested;
       }
-      throw new Error(`Unsupported environment '${requested}'. Expected dev, staging, or prod.`);
+      throw new Error(
+        `Unsupported environment '${requested}'. Expected dev, staging, or prod.`,
+      );
     }
   }
   return defaultEnv;

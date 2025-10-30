@@ -28,7 +28,52 @@ import type {
 } from "@convex/types/entities/transcript";
 
 /**
- * Ingests a transcription chunk with validation, sharding, and rate limiting
+ * @summary Ingests a single transcription chunk with validation and rate limiting
+ * @description Processes real-time transcription data from speech-to-text services,
+ * validates input parameters, enforces rate limits per user, and stores chunks in
+ * time-bucketed shards (5-minute windows) to prevent hot partitions. Allocates
+ * globally unique sequence numbers for ordering. Returns rate limit status for
+ * client-side throttling.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "speakerId": "user_alice_123",
+ *     "text": "Let's discuss the Q4 roadmap priorities.",
+ *     "confidence": 0.92,
+ *     "startTime": 1698765432000,
+ *     "endTime": 1698765435500,
+ *     "language": "en",
+ *     "isInterim": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "sequence": 42,
+ *     "bucketMs": 1698765300000,
+ *     "rateLimitRemaining": 95
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "RATE_LIMIT_EXCEEDED",
+ *     "message": "Transcript ingestion rate limit exceeded. Try again in 60 seconds."
+ *   }
+ * }
+ * ```
  */
 export const ingestTranscriptChunk = mutation({
   args: {
@@ -77,9 +122,14 @@ export const ingestTranscriptChunk = mutation({
     }
 
     // Enforce rate limits using shared component-backed limiter
-    const rateLimitResult = await enforceUserLimit(ctx, "transcriptIngestion", participant.userId, {
-      throws: true,
-    });
+    const rateLimitResult = await enforceUserLimit(
+      ctx,
+      "transcriptIngestion",
+      participant.userId,
+      {
+        throws: true,
+      },
+    );
 
     // Calculate time bucket (5-minute windows) to prevent hot partitions
     const bucketMs = Math.floor(args.startTime / 300000) * 300000;
@@ -194,7 +244,71 @@ export const ingestTranscriptChunk = mutation({
 });
 
 /**
- * Internal mutation for batch transcript ingestion with optimized performance
+ * @summary Batch ingests multiple transcript chunks with optimized performance
+ * @description Internal mutation for high-throughput transcript ingestion. Processes
+ * multiple chunks in a single transaction, sorts by timestamp for proper sequencing,
+ * validates each chunk, and allocates unique sequence numbers. Includes performance
+ * metrics (processing time, throughput) for monitoring. Used by streaming pipeline
+ * and coalescing operations. Processes chunks in sub-batches of 20 to avoid
+ * transaction timeouts.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "chunks": [
+ *       {
+ *         "speakerId": "user_alice_123",
+ *         "text": "Welcome everyone to the meeting.",
+ *         "confidence": 0.95,
+ *         "startTime": 1698765432000,
+ *         "endTime": 1698765434000,
+ *         "language": "en",
+ *         "isInterim": false
+ *       },
+ *       {
+ *         "speakerId": "user_bob_456",
+ *         "text": "Thanks for having me.",
+ *         "confidence": 0.89,
+ *         "startTime": 1698765435000,
+ *         "endTime": 1698765437000,
+ *         "language": "en",
+ *         "isInterim": false
+ *       }
+ *     ],
+ *     "batchId": "batch_1698765432_abc123"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "processed": 2,
+ *     "failed": 0,
+ *     "batchId": "batch_1698765432_abc123",
+ *     "performance": {
+ *       "processingTimeMs": 145,
+ *       "chunksPerSecond": 13.79
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "MEETING_NOT_FOUND",
+ *     "message": "Meeting jd7xzqn8h9p2v4k5m6n7p8q9 not found"
+ *   }
+ * }
+ * ```
  */
 export const batchIngestTranscriptChunks = internalMutation({
   args: {
@@ -383,8 +497,65 @@ export const batchIngestTranscriptChunks = internalMutation({
 });
 
 /**
- * Coalesced transcript ingestion for high-frequency streams
- * Buffers chunks and processes them in optimized batches
+ * @summary Coalesces and ingests transcript chunks for high-frequency streams
+ * @description Optimizes high-frequency transcription streams by merging consecutive
+ * chunks from the same speaker within a time window (default 250ms). Reduces database
+ * writes and improves query performance by consolidating rapid-fire interim results
+ * into coherent segments. Returns compression metrics showing reduction ratio.
+ * Delegates to batch ingestion after coalescing.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "chunks": [
+ *       {
+ *         "speakerId": "user_alice_123",
+ *         "text": "I think",
+ *         "confidence": 0.88,
+ *         "startTime": 1698765432000,
+ *         "endTime": 1698765432500,
+ *         "language": "en"
+ *       },
+ *       {
+ *         "speakerId": "user_alice_123",
+ *         "text": "we should",
+ *         "confidence": 0.91,
+ *         "startTime": 1698765432600,
+ *         "endTime": 1698765433100,
+ *         "language": "en"
+ *       },
+ *       {
+ *         "speakerId": "user_alice_123",
+ *         "text": "prioritize this feature.",
+ *         "confidence": 0.93,
+ *         "startTime": 1698765433200,
+ *         "endTime": 1698765434500,
+ *         "language": "en"
+ *       }
+ *     ],
+ *     "coalescingWindowMs": 250
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "processed": 1,
+ *     "coalesced": 1,
+ *     "performance": {
+ *       "originalChunks": 3,
+ *       "coalescedChunks": 1,
+ *       "compressionRatio": 0.33
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const coalescedIngestTranscriptChunks = internalMutation({
   args: {
@@ -650,7 +821,67 @@ function coalesceTranscriptChunks(
 }
 
 /**
- * Gets transcript chunks for a meeting with pagination
+ * @summary Gets transcript chunks for a meeting with pagination
+ * @description Retrieves transcript chunks for a meeting with optional filtering by
+ * sequence number and time bucket. Supports pagination with configurable limits
+ * (max 200 per request). Uses query optimizer for efficient index-backed retrieval.
+ * Requires meeting participant access. Returns chunks in ascending sequence order.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9",
+ *     "fromSequence": 0,
+ *     "limit": 50,
+ *     "bucketMs": 1698765300000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": [
+ *     {
+ *       "_id": "jh8xzqn8h9p2v4k5m6n7p8r1",
+ *       "sequence": 1,
+ *       "speakerId": "user_alice_123",
+ *       "text": "Welcome everyone to the meeting.",
+ *       "confidence": 0.95,
+ *       "startMs": 1698765432000,
+ *       "endMs": 1698765434000,
+ *       "wordCount": 5,
+ *       "language": "en",
+ *       "createdAt": 1698765434100
+ *     },
+ *     {
+ *       "_id": "jh8xzqn8h9p2v4k5m6n7p8r2",
+ *       "sequence": 2,
+ *       "speakerId": "user_bob_456",
+ *       "text": "Thanks for having me.",
+ *       "confidence": 0.89,
+ *       "startMs": 1698765435000,
+ *       "endMs": 1698765437000,
+ *       "wordCount": 4,
+ *       "language": "en",
+ *       "createdAt": 1698765437100
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "User is not a participant in this meeting"
+ *   }
+ * }
+ * ```
  */
 export const getTranscriptChunks = mutation({
   args: {
@@ -706,7 +937,32 @@ export const getTranscriptChunks = mutation({
 });
 
 /**
- * Deletes old transcript chunks for cleanup
+ * @summary Deletes old transcript chunks for data retention compliance
+ * @description Internal maintenance function that removes transcript chunks older than
+ * a specified retention period (default 90 days). Can target a specific meeting or
+ * clean up globally. Creates audit log entries for compliance tracking. Used by
+ * scheduled maintenance jobs to manage storage costs and comply with data retention
+ * policies.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "olderThanMs": 7776000000,
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "deleted": 342
+ *   }
+ * }
+ * ```
  */
 export const cleanupOldTranscripts = internalMutation({
   args: {
@@ -761,7 +1017,47 @@ export const cleanupOldTranscripts = internalMutation({
 });
 
 /**
- * Gets transcript statistics for a meeting
+ * @summary Gets comprehensive transcript statistics for a meeting
+ * @description Calculates aggregate statistics for all transcript chunks in a meeting,
+ * including total chunks, word count, average confidence, duration, unique speakers,
+ * languages detected, and bucket count for sharding metrics. Requires meeting
+ * participant access. Returns zero values for meetings with no transcripts.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7xzqn8h9p2v4k5m6n7p8q9"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "totalChunks": 127,
+ *     "totalWords": 1843,
+ *     "averageConfidence": 0.91,
+ *     "duration": 1800000,
+ *     "speakers": ["user_alice_123", "user_bob_456", "user_carol_789"],
+ *     "languages": ["en"],
+ *     "bucketCount": 6
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "User is not a participant in this meeting"
+ *   }
+ * }
+ * ```
  */
 export const getTranscriptStats = mutation({
   args: { meetingId: v.id("meetings") },

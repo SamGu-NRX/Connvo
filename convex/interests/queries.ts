@@ -5,6 +5,44 @@ import { query, internalQuery, internalMutation } from "@convex/_generated/serve
 import { v } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
 
+/**
+ * @summary listCatalog
+ * @description Returns the public interest catalog used during onboarding. Results are limited and optionally filtered by category, with deterministic ordering so the client can render stable UI buckets. The list is denormalized to include icon metadata and usage counts for weighting suggestions.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "category": "industry",
+ *     "limit": 6
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "key": "software-engineering",
+ *       "label": "Software Engineering",
+ *       "category": "industry",
+ *       "iconName": "Code",
+ *       "usageCount": 128
+ *     },
+ *     {
+ *       "key": "product-management",
+ *       "label": "Product Management",
+ *       "category": "industry",
+ *       "iconName": "Briefcase",
+ *       "usageCount": 94
+ *     }
+ *   ]
+ * }
+ * ```
+ */
 export const listCatalog = query({
   args: {
     category: v.optional(v.string()),

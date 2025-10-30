@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "LinkedUp API Documentation",
+  "name": "Connvo API Documentation",
   "logo": {
-    "dark": "/public/linkeduplogos/linkedupwhite.svg",
-    "light": "/public/linkeduplogos/linkedupblack.svg"
+    "dark": "../public/Connvologos/Connvowhite.svg",
+    "light": "../public/Connvologos/Connvoblack.svg"
   },
-  "favicon": "/public/logo-square.png",
+  "favicon": "../public/Connvologos/Connvowhite.svg",
   "colors": {
     "primary": "#0D9373",
     "light": "#07C983",
@@ -18,40 +18,29 @@
   "topbarLinks": [
     {
       "name": "Dashboard",
-      "url": "https://app.linkedup.example.com"
+      "url": "https://app.Connvo.example.com"
     }
   ],
   "cta": {
     "name": "Sign in",
-    "url": "https://app.linkedup.example.com/login"
+    "url": "https://app.Connvo.example.com/login"
   },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "docs/api-reference/introduction"
-    }
-  ],
   "navigation": [
     {
       "group": "Getting Started",
-      "pages": [
-        "docs/introduction",
-        "docs/authentication"
-      ]
+      "pages": ["docs/introduction", "docs/authentication"]
     },
     {
       "group": "API Reference",
-      "pages": [
-        "docs/api-reference/introduction"
-      ]
+      "pages": ["docs/api-reference/introduction"]
     }
   ],
   "footerSocials": {
-    "github": "https://github.com/linkedup"
+    "github": "https://github.com/Connvo"
   },
   "openapi": "docs/api-reference/convex-openapi.yaml",
   "api": {
-    "baseUrl": "https://linkedup-dev.convex.cloud",
+    "baseUrl": "https://Connvo-dev.convex.cloud",
     "auth": {
       "method": "bearer",
       "name": "Authorization"

@@ -85,7 +85,7 @@
   - [x] 5.1 Create `mint.json` in project root
     - Add schema reference
     - Configure name, logo, favicon
-    - Set up colors matching LinkedUp branding
+    - Set up colors matching Connvo branding
     - Add topbar links and CTA button
     - _Requirements: 4.1, 4.2, 4.4_
 
@@ -104,7 +104,7 @@
 
 - [x] 6. Create supporting documentation pages
   - [x] 6.1 Create `docs/introduction.mdx`
-    - Overview of LinkedUp API
+    - Overview of Connvo API
     - Key features and capabilities
     - Link to API reference
     - _Requirements: 6.1, 6.2, 6.5_

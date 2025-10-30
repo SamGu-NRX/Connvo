@@ -2,11 +2,11 @@
 
 ## Introduction
 
-This specification defines the requirements for exposing the LinkedUp Convex backend through an OpenAPI specification that can be integrated with Mintlify for comprehensive API documentation. The system will leverage Convex's beta OpenAPI generation capabilities to create a complete, interactive API reference that includes all public queries, mutations, and actions, while maintaining security best practices and providing an excellent developer experience.
+This specification defines the requirements for exposing the Connvo Convex backend through an OpenAPI specification that can be integrated with Mintlify for comprehensive API documentation. The system will leverage Convex's beta OpenAPI generation capabilities to create a complete, interactive API reference that includes all public queries, mutations, and actions, while maintaining security best practices and providing an excellent developer experience.
 
 ## Glossary
 
-- **Convex Backend**: The reactive backend-as-a-service platform hosting LinkedUp's database and serverless functions
+- **Convex Backend**: The reactive backend-as-a-service platform hosting Connvo's database and serverless functions
 - **OpenAPI Specification**: A standard, language-agnostic interface description for HTTP APIs (formerly Swagger)
 - **Mintlify**: A modern documentation platform that provides interactive API playgrounds and developer portals
 - **Convex Functions API**: HTTP endpoints (`/api/query`, `/api/mutation`, `/api/action`, `/api/run/*`) that allow calling Convex functions via REST
