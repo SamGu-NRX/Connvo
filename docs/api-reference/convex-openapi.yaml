@@ -37,7 +37,7 @@ tags:
 paths:
   /api/run/meetings/lifecycle/createMeeting:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:createMeeting
+      summary: Creates a new meeting with comprehensive setup and hybrid video provider support.
       tags:
         - mutation
       requestBody:
@@ -45,6 +45,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_meetings.lifecycle.createMeeting'
+            example:
+              args:
+                title: Quarterly Planning Meeting
+                description: Planning the roadmap for next quarter objectives.
+                scheduledAt: 1704067200000
+                duration: 3600
+                participantEmails:
+                  - host@example.com
+                  - participant@example.com
+                recordingEnabled: false
+                transcriptionEnabled: true
+                meetingType: small-group
+                maxParticipants: 8
         required: true
       responses:
         '200':
@@ -53,6 +66,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_meetings.lifecycle.createMeeting'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  meetingId: meeting_123example
+                  webrtcReady: true
+                  videoProvider: webrtc
+                  features:
+                    recording: false
+                    transcription: true
+                    maxParticipants: 8
         '400':
           description: Failed operation
           content:
@@ -68,10 +93,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleCreateMeeting
-      description: Calls a mutation at the path meetings/lifecycle.js:createMeeting
+      description: Creates a new meeting with comprehensive setup and hybrid video provider support.
   /api/run/meetings/lifecycle/addParticipant:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:addParticipant
+      summary: Adds a participant to a meeting with proper validation and role management
       tags:
         - mutation
       requestBody:
@@ -102,10 +127,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleAddParticipant
-      description: Calls a mutation at the path meetings/lifecycle.js:addParticipant
+      description: Adds a participant to a meeting with proper validation and role management
   /api/run/meetings/lifecycle/addMultipleParticipants:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:addMultipleParticipants
+      summary: Adds multiple participants to a meeting (bulk operation)
       tags:
         - mutation
       requestBody:
@@ -136,10 +161,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleAddMultipleParticipants
-      description: Calls a mutation at the path meetings/lifecycle.js:addMultipleParticipants
+      description: Adds multiple participants to a meeting (bulk operation)
   /api/run/meetings/lifecycle/removeParticipant:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:removeParticipant
+      summary: Removes a participant from a meeting
       tags:
         - mutation
       requestBody:
@@ -170,10 +195,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleRemoveParticipant
-      description: Calls a mutation at the path meetings/lifecycle.js:removeParticipant
+      description: Removes a participant from a meeting
   /api/run/meetings/lifecycle/updateParticipantRole:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:updateParticipantRole
+      summary: Updates participant role with validation
       tags:
         - mutation
       requestBody:
@@ -204,10 +229,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleUpdateParticipantRole
-      description: Calls a mutation at the path meetings/lifecycle.js:updateParticipantRole
+      description: Updates participant role with validation
   /api/run/meetings/lifecycle/startMeeting:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:startMeeting
+      summary: Starts a meeting and activates real-time features with hybrid provider support
       tags:
         - mutation
       requestBody:
@@ -238,10 +263,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleStartMeeting
-      description: Calls a mutation at the path meetings/lifecycle.js:startMeeting
+      description: Starts a meeting and activates real-time features with hybrid provider support
   /api/run/meetings/lifecycle/endMeeting:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:endMeeting
+      summary: Ends a meeting and triggers cleanup
       tags:
         - mutation
       requestBody:
@@ -272,10 +297,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleEndMeeting
-      description: Calls a mutation at the path meetings/lifecycle.js:endMeeting
+      description: Ends a meeting and triggers cleanup
   /api/run/meetings/lifecycle/getMeetingConnectionInfo:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:getMeetingConnectionInfo
+      summary: Gets meeting connection information for participants
       tags:
         - mutation
       requestBody:
@@ -306,10 +331,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleGetMeetingConnectionInfo
-      description: Calls a mutation at the path meetings/lifecycle.js:getMeetingConnectionInfo
+      description: Gets meeting connection information for participants
   /api/run/meetings/lifecycle/joinMeeting:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:joinMeeting
+      summary: Handles participant joining (presence update)
       tags:
         - mutation
       requestBody:
@@ -340,10 +365,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleJoinMeeting
-      description: Calls a mutation at the path meetings/lifecycle.js:joinMeeting
+      description: Handles participant joining (presence update)
   /api/run/meetings/lifecycle/leaveMeeting:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:leaveMeeting
+      summary: Handles participant leaving (presence update)
       tags:
         - mutation
       requestBody:
@@ -374,10 +399,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleLeaveMeeting
-      description: Calls a mutation at the path meetings/lifecycle.js:leaveMeeting
+      description: Handles participant leaving (presence update)
   /api/run/meetings/lifecycle/cancelMeeting:
     post:
-      summary: Calls a mutation at the path meetings/lifecycle.js:cancelMeeting
+      summary: Cancels a scheduled meeting
       tags:
         - mutation
       requestBody:
@@ -408,10 +433,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsLifecycleCancelMeeting
-      description: Calls a mutation at the path meetings/lifecycle.js:cancelMeeting
+      description: Cancels a scheduled meeting
   /api/run/meetings/queries/getMeeting:
     post:
-      summary: Calls a query at the path meetings/queries.js:getMeeting
+      summary: Gets meeting details for authenticated user with WebRTC info.
       tags:
         - query
       requestBody:
@@ -419,6 +444,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_meetings.queries.getMeeting'
+            example:
+              args:
+                meetingId: meeting_123example
         required: true
       responses:
         '200':
@@ -427,6 +455,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_meetings.queries.getMeeting'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  _id: meeting_123example
+                  _creationTime: 1704063600000
+                  organizerId: user_123example
+                  title: Quarterly Planning Meeting
+                  description: Planning the roadmap for next quarter objectives.
+                  scheduledAt: 1704067200000
+                  duration: 3600
+                  state: scheduled
+                  participantCount: 3
+                  averageRating: 4.6
+                  streamRoomId: stream_room_456
+                  webrtcEnabled: true
+                  activeWebRTCSessions: 2
+                  userRole: host
+                  userPresence: invited
+                  createdAt: 1704063600000
+                  updatedAt: 1704063600000
         '400':
           description: Failed operation
           content:
@@ -442,10 +492,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsQueriesGetMeeting
-      description: Calls a query at the path meetings/queries.js:getMeeting
+      description: Provides aggregated session metrics and the caller's presence/role snapshot.
   /api/run/meetings/queries/listUserMeetings:
     post:
-      summary: Calls a query at the path meetings/queries.js:listUserMeetings
+      summary: Lists meetings for authenticated user
       tags:
         - query
       requestBody:
@@ -476,10 +526,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsQueriesListUserMeetings
-      description: Calls a query at the path meetings/queries.js:listUserMeetings
+      description: Lists meetings for authenticated user
   /api/run/meetings/queries/listMeetingParticipants:
     post:
-      summary: Calls a query at the path meetings/queries.js:listMeetingParticipants
+      summary: Gets meeting participants with WebRTC session info
       tags:
         - query
       requestBody:
@@ -510,10 +560,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsQueriesListMeetingParticipants
-      description: Calls a query at the path meetings/queries.js:listMeetingParticipants
+      description: Gets meeting participants with WebRTC session info
   /api/run/users/mutations/upsertUser:
     post:
-      summary: Calls a mutation at the path users/mutations.js:upsertUser
+      summary: Create or update user profile from WorkOS authentication
       tags:
         - mutation
       requestBody:
@@ -544,10 +594,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsUpsertUser
-      description: Calls a mutation at the path users/mutations.js:upsertUser
+      description: This is typically called after successful WorkOS authentication
   /api/run/users/mutations/updateUserProfile:
     post:
-      summary: Calls a mutation at the path users/mutations.js:updateUserProfile
+      summary: Update user profile information
       tags:
         - mutation
       requestBody:
@@ -578,10 +628,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsUpdateUserProfile
-      description: Calls a mutation at the path users/mutations.js:updateUserProfile
+      description: Requires ownership or admin access
   /api/run/users/mutations/updateUserInterests:
     post:
-      summary: Calls a mutation at the path users/mutations.js:updateUserInterests
+      summary: Update user interests
       tags:
         - mutation
       requestBody:
@@ -612,10 +662,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsUpdateUserInterests
-      description: Calls a mutation at the path users/mutations.js:updateUserInterests
+      description: Requires ownership or admin access
   /api/run/users/mutations/deactivateUser:
     post:
-      summary: Calls a mutation at the path users/mutations.js:deactivateUser
+      summary: Deactivate user account
       tags:
         - mutation
       requestBody:
@@ -646,10 +696,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsDeactivateUser
-      description: Calls a mutation at the path users/mutations.js:deactivateUser
+      description: Requires ownership or admin access
   /api/run/users/mutations/updateLastSeen:
     post:
-      summary: Calls a mutation at the path users/mutations.js:updateLastSeen
+      summary: Update user's last seen timestamp
       tags:
         - mutation
       requestBody:
@@ -680,10 +730,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsUpdateLastSeen
-      description: Calls a mutation at the path users/mutations.js:updateLastSeen
+      description: Used for presence tracking
   /api/run/users/mutations/saveOnboarding:
     post:
-      summary: Calls a mutation at the path users/mutations.js:saveOnboarding
+      summary: 'Save onboarding data atomically: profile fields + interests + onboarding flags.'
       tags:
         - mutation
       requestBody:
@@ -714,10 +764,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersMutationsSaveOnboarding
-      description: Calls a mutation at the path users/mutations.js:saveOnboarding
+      description: Idempotent via idempotencyKeys.
   /api/run/users/queries/getUserById:
     post:
-      summary: Calls a query at the path users/queries.js:getUserById
+      summary: Gets user by ID (internal use)
       tags:
         - query
       requestBody:
@@ -748,10 +798,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersQueriesGetUserById
-      description: Calls a query at the path users/queries.js:getUserById
+      description: Gets user by ID (internal use)
   /api/run/users/queries/getCurrentUser:
     post:
-      summary: Calls a query at the path users/queries.js:getCurrentUser
+      summary: Gets current user profile
       tags:
         - query
       requestBody:
@@ -782,10 +832,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersQueriesGetCurrentUser
-      description: Calls a query at the path users/queries.js:getCurrentUser
+      description: Gets current user profile
   /api/run/users/queries/getUserProfile:
     post:
-      summary: Calls a query at the path users/queries.js:getUserProfile
+      summary: Gets user profile by ID (with authorization)
       tags:
         - query
       requestBody:
@@ -816,10 +866,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersQueriesGetUserProfile
-      description: Calls a query at the path users/queries.js:getUserProfile
+      description: Gets user profile by ID (with authorization)
   /api/run/users/queries/getOnboardingState:
     post:
-      summary: Calls a query at the path users/queries.js:getOnboardingState
+      summary: Get onboarding state for the current user.
       tags:
         - query
       requestBody:
@@ -850,10 +900,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersQueriesGetOnboardingState
-      description: Calls a query at the path users/queries.js:getOnboardingState
+      description: Get onboarding state for the current user.
   /api/run/users/queries/listActiveUsersInOrg:
     post:
-      summary: Calls a query at the path users/queries.js:listActiveUsersInOrg
+      summary: List active users in the same organization (with pagination)
       tags:
         - query
       requestBody:
@@ -884,10 +934,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunUsersQueriesListActiveUsersInOrg
-      description: Calls a query at the path users/queries.js:listActiveUsersInOrg
+      description: Uses index-first query pattern per convex_rules.mdc
   /api/run/realtime/subscriptions/subscribeMeetingNotes:
     post:
-      summary: Calls a query at the path realtime/subscriptions.js:subscribeMeetingNotes
+      summary: Real-time meeting notes subscription with permission validation and bandwidth management
       tags:
         - query
       requestBody:
@@ -918,10 +968,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionsSubscribeMeetingNotes
-      description: Calls a query at the path realtime/subscriptions.js:subscribeMeetingNotes
+      description: Real-time meeting notes subscription with permission validation and bandwidth management
   /api/run/realtime/subscriptions/subscribeTranscriptStream:
     post:
-      summary: Calls a query at the path realtime/subscriptions.js:subscribeTranscriptStream
+      summary: Real-time transcript stream subscription with time-bounded access
       tags:
         - query
       requestBody:
@@ -952,10 +1002,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionsSubscribeTranscriptStream
-      description: Calls a query at the path realtime/subscriptions.js:subscribeTranscriptStream
+      description: Real-time transcript stream subscription with time-bounded access
   /api/run/realtime/subscriptions/subscribeMeetingParticipants:
     post:
-      summary: Calls a query at the path realtime/subscriptions.js:subscribeMeetingParticipants
+      summary: Real-time meeting participants subscription
       tags:
         - query
       requestBody:
@@ -986,10 +1036,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionsSubscribeMeetingParticipants
-      description: Calls a query at the path realtime/subscriptions.js:subscribeMeetingParticipants
+      description: Real-time meeting participants subscription
   /api/run/realtime/subscriptions/validateSubscription:
     post:
-      summary: Calls a query at the path realtime/subscriptions.js:validateSubscription
+      summary: Validates subscription permissions in real-time
       tags:
         - query
       requestBody:
@@ -1020,10 +1070,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionsValidateSubscription
-      description: Calls a query at the path realtime/subscriptions.js:validateSubscription
+      description: Called periodically by clients to ensure continued access
   /api/run/audit/logging/getAuditLogs:
     post:
-      summary: Calls a query at the path audit/logging.js:getAuditLogs
+      summary: Public query to list audit logs by resource
       tags:
         - query
       requestBody:
@@ -1054,10 +1104,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunAuditLoggingGetAuditLogs
-      description: Calls a query at the path audit/logging.js:getAuditLogs
+      description: Public query to list audit logs by resource
   /api/run/auth/permissions/validateSubscriptionPermissions:
     post:
-      summary: Calls a query at the path auth/permissions.js:validateSubscriptionPermissions
+      summary: Dynamic Permission Management System
       tags:
         - query
       requestBody:
@@ -1088,10 +1138,15 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunAuthPermissionsValidateSubscriptionPermissions
-      description: Calls a query at the path auth/permissions.js:validateSubscriptionPermissions
+      description: |-
+        This module handles dynamic permission updates and subscription management
+        for real-time access control.
+
+        Requirements: 2.5, 4.1
+        Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
   /api/run/auth/permissions/refreshSubscriptionPermissions:
     post:
-      summary: Calls a query at the path auth/permissions.js:refreshSubscriptionPermissions
+      summary: Dynamic Permission Management System
       tags:
         - query
       requestBody:
@@ -1122,10 +1177,15 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunAuthPermissionsRefreshSubscriptionPermissions
-      description: Calls a query at the path auth/permissions.js:refreshSubscriptionPermissions
+      description: |-
+        This module handles dynamic permission updates and subscription management
+        for real-time access control.
+
+        Requirements: 2.5, 4.1
+        Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
   /api/run/monitoring/bandwidthManager/checkBandwidthLimit:
     post:
-      summary: Calls a query at the path monitoring/bandwidthManager.js:checkBandwidthLimit
+      summary: Check bandwidth limits for a user request
       tags:
         - query
       requestBody:
@@ -1156,10 +1216,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringBandwidthManagerCheckBandwidthLimit
-      description: Calls a query at the path monitoring/bandwidthManager.js:checkBandwidthLimit
+      description: Check bandwidth limits for a user request
   /api/run/monitoring/bandwidthManager/getBandwidthStats:
     post:
-      summary: Calls a query at the path monitoring/bandwidthManager.js:getBandwidthStats
+      summary: Get bandwidth usage statistics
       tags:
         - query
       requestBody:
@@ -1190,10 +1250,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringBandwidthManagerGetBandwidthStats
-      description: Calls a query at the path monitoring/bandwidthManager.js:getBandwidthStats
+      description: Get bandwidth usage statistics
   /api/run/monitoring/bandwidthManager/executeWithCircuitBreaker:
     post:
-      summary: Calls a action at the path monitoring/bandwidthManager.js:executeWithCircuitBreaker
+      summary: Execute operation with circuit breaker protection
       tags:
         - action
       requestBody:
@@ -1224,10 +1284,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringBandwidthManagerExecuteWithCircuitBreaker
-      description: Calls a action at the path monitoring/bandwidthManager.js:executeWithCircuitBreaker
+      description: Execute operation with circuit breaker protection
   /api/run/monitoring/bandwidthManager/getCircuitBreakerStatus:
     post:
-      summary: Calls a query at the path monitoring/bandwidthManager.js:getCircuitBreakerStatus
+      summary: Get circuit breaker status for all services
       tags:
         - query
       requestBody:
@@ -1258,10 +1318,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringBandwidthManagerGetCircuitBreakerStatus
-      description: Calls a query at the path monitoring/bandwidthManager.js:getCircuitBreakerStatus
+      description: Get circuit breaker status for all services
   /api/run/monitoring/bandwidthManager/resetCircuitBreaker:
     post:
-      summary: Calls a mutation at the path monitoring/bandwidthManager.js:resetCircuitBreaker
+      summary: Reset circuit breaker for a service
       tags:
         - mutation
       requestBody:
@@ -1292,10 +1352,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringBandwidthManagerResetCircuitBreaker
-      description: Calls a mutation at the path monitoring/bandwidthManager.js:resetCircuitBreaker
+      description: Reset circuit breaker for a service
   /api/run/monitoring/bandwidthManager/shouldShedLoad:
     post:
-      summary: Calls a query at the path monitoring/bandwidthManager.js:shouldShedLoad
+      summary: Load shedding based on system load
       tags:
         - query
       requestBody:
@@ -1326,10 +1386,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringBandwidthManagerShouldShedLoad
-      description: Calls a query at the path monitoring/bandwidthManager.js:shouldShedLoad
+      description: Load shedding based on system load
   /api/run/monitoring/performanceQueries/getPerformanceMetrics:
     post:
-      summary: Calls a query at the path monitoring/performanceQueries.js:getPerformanceMetrics
+      summary: Real-time performance metrics query
       tags:
         - query
       requestBody:
@@ -1360,10 +1420,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringPerformanceQueriesGetPerformanceMetrics
-      description: Calls a query at the path monitoring/performanceQueries.js:getPerformanceMetrics
+      description: Real-time performance metrics query
   /api/run/monitoring/performanceQueries/getSubscriptionMetrics:
     post:
-      summary: Calls a query at the path monitoring/performanceQueries.js:getSubscriptionMetrics
+      summary: WebSocket subscription performance metrics
       tags:
         - query
       requestBody:
@@ -1394,10 +1454,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringPerformanceQueriesGetSubscriptionMetrics
-      description: Calls a query at the path monitoring/performanceQueries.js:getSubscriptionMetrics
+      description: WebSocket subscription performance metrics
   /api/run/monitoring/performanceQueries/getFunctionPerformanceBreakdown:
     post:
-      summary: Calls a query at the path monitoring/performanceQueries.js:getFunctionPerformanceBreakdown
+      summary: Function-level performance breakdown
       tags:
         - query
       requestBody:
@@ -1428,10 +1488,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringPerformanceQueriesGetFunctionPerformanceBreakdown
-      description: Calls a query at the path monitoring/performanceQueries.js:getFunctionPerformanceBreakdown
+      description: Function-level performance breakdown
   /api/run/monitoring/performanceQueries/getSLOStatus:
     post:
-      summary: Calls a query at the path monitoring/performanceQueries.js:getSLOStatus
+      summary: Real-time SLO monitoring with alerting
       tags:
         - query
       requestBody:
@@ -1462,10 +1522,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringPerformanceQueriesGetSLOStatus
-      description: Calls a query at the path monitoring/performanceQueries.js:getSLOStatus
+      description: Real-time SLO monitoring with alerting
   /api/run/monitoring/performanceQueries/getPerformanceTrends:
     post:
-      summary: Calls a query at the path monitoring/performanceQueries.js:getPerformanceTrends
+      summary: Performance trend analysis
       tags:
         - query
       requestBody:
@@ -1496,10 +1556,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringPerformanceQueriesGetPerformanceTrends
-      description: Calls a query at the path monitoring/performanceQueries.js:getPerformanceTrends
+      description: Performance trend analysis
   /api/run/monitoring/performanceQueries/recordCustomMetric:
     post:
-      summary: Calls a mutation at the path monitoring/performanceQueries.js:recordCustomMetric
+      summary: Record custom performance metric
       tags:
         - mutation
       requestBody:
@@ -1530,10 +1590,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMonitoringPerformanceQueriesRecordCustomMetric
-      description: Calls a mutation at the path monitoring/performanceQueries.js:recordCustomMetric
+      description: Record custom performance metric
   /api/run/realtime/batchedOperations/batchApplyNoteOperation:
     post:
-      summary: Calls a mutation at the path realtime/batchedOperations.js:batchApplyNoteOperation
+      summary: Batched note operation processing with operational transform
       tags:
         - mutation
       requestBody:
@@ -1564,10 +1624,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsBatchApplyNoteOperation
-      description: Calls a mutation at the path realtime/batchedOperations.js:batchApplyNoteOperation
+      description: Batched note operation processing with operational transform
   /api/run/realtime/batchedOperations/batchIngestTranscriptChunk:
     post:
-      summary: Calls a mutation at the path realtime/batchedOperations.js:batchIngestTranscriptChunk
+      summary: Batched transcript ingestion with coalescing
       tags:
         - mutation
       requestBody:
@@ -1598,10 +1658,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsBatchIngestTranscriptChunk
-      description: Calls a mutation at the path realtime/batchedOperations.js:batchIngestTranscriptChunk
+      description: Batched transcript ingestion with coalescing
   /api/run/realtime/batchedOperations/batchUpdatePresence:
     post:
-      summary: Calls a mutation at the path realtime/batchedOperations.js:batchUpdatePresence
+      summary: Batched presence updates with latest-state-wins coalescing
       tags:
         - mutation
       requestBody:
@@ -1632,10 +1692,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsBatchUpdatePresence
-      description: Calls a mutation at the path realtime/batchedOperations.js:batchUpdatePresence
+      description: Batched presence updates with latest-state-wins coalescing
   /api/run/realtime/batchedOperations/flushAllBatches:
     post:
-      summary: Calls a action at the path realtime/batchedOperations.js:flushAllBatches
+      summary: Flush all pending batches (for testing or shutdown)
       tags:
         - action
       requestBody:
@@ -1666,10 +1726,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsFlushAllBatches
-      description: Calls a action at the path realtime/batchedOperations.js:flushAllBatches
+      description: Flush all pending batches (for testing or shutdown)
   /api/run/realtime/batchedOperations/getBatchStats:
     post:
-      summary: Calls a action at the path realtime/batchedOperations.js:getBatchStats
+      summary: Get batch processing statistics
       tags:
         - action
       requestBody:
@@ -1700,10 +1760,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsGetBatchStats
-      description: Calls a action at the path realtime/batchedOperations.js:getBatchStats
+      description: Get batch processing statistics
   /api/run/realtime/subscriptionManager/establishSubscription:
     post:
-      summary: Calls a mutation at the path realtime/subscriptionManager.js:establishSubscription
+      summary: Establishes a new subscription with comprehensive validation
       tags:
         - mutation
       requestBody:
@@ -1734,10 +1794,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerEstablishSubscription
-      description: Calls a mutation at the path realtime/subscriptionManager.js:establishSubscription
+      description: Establishes a new subscription with comprehensive validation
   /api/run/realtime/subscriptionManager/validateAndUpdateSubscription:
     post:
-      summary: Calls a query at the path realtime/subscriptionManager.js:validateAndUpdateSubscription
+      summary: Validates and updates subscription permissions in real-time
       tags:
         - query
       requestBody:
@@ -1768,10 +1828,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerValidateAndUpdateSubscription
-      description: Calls a query at the path realtime/subscriptionManager.js:validateAndUpdateSubscription
+      description: Validates and updates subscription permissions in real-time
   /api/run/realtime/subscriptionManager/terminateSubscription:
     post:
-      summary: Calls a mutation at the path realtime/subscriptionManager.js:terminateSubscription
+      summary: Terminates subscription and cleans up resources
       tags:
         - mutation
       requestBody:
@@ -1802,10 +1862,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerTerminateSubscription
-      description: Calls a mutation at the path realtime/subscriptionManager.js:terminateSubscription
+      description: Terminates subscription and cleans up resources
   /api/run/realtime/subscriptionManager/getSubscriptionStats:
     post:
-      summary: Calls a query at the path realtime/subscriptionManager.js:getSubscriptionStats
+      summary: Get subscription statistics for monitoring
       tags:
         - query
       requestBody:
@@ -1836,10 +1896,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerGetSubscriptionStats
-      description: Calls a query at the path realtime/subscriptionManager.js:getSubscriptionStats
+      description: Get subscription statistics for monitoring
   /api/run/realtime/subscriptionActions/validateAndLogSubscription:
     post:
-      summary: Calls a action at the path realtime/subscriptionActions.js:validateAndLogSubscription
+      summary: 'Subscription Actions: Orchestrate validation + audit logging'
       tags:
         - action
       requestBody:
@@ -1870,10 +1930,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionActionsValidateAndLogSubscription
-      description: Calls a action at the path realtime/subscriptionActions.js:validateAndLogSubscription
+      description: 'Subscription Actions: Orchestrate validation + audit logging'
   /api/run/transcripts/ingestion/ingestTranscriptChunk:
     post:
-      summary: Calls a mutation at the path transcripts/ingestion.js:ingestTranscriptChunk
+      summary: Ingests a transcription chunk with validation, sharding, and rate limiting
       tags:
         - mutation
       requestBody:
@@ -1904,10 +1964,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTranscriptsIngestionIngestTranscriptChunk
-      description: Calls a mutation at the path transcripts/ingestion.js:ingestTranscriptChunk
+      description: Ingests a transcription chunk with validation, sharding, and rate limiting
   /api/run/transcripts/ingestion/getTranscriptChunks:
     post:
-      summary: Calls a mutation at the path transcripts/ingestion.js:getTranscriptChunks
+      summary: Gets transcript chunks for a meeting with pagination
       tags:
         - mutation
       requestBody:
@@ -1938,10 +1998,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTranscriptsIngestionGetTranscriptChunks
-      description: Calls a mutation at the path transcripts/ingestion.js:getTranscriptChunks
+      description: Gets transcript chunks for a meeting with pagination
   /api/run/transcripts/ingestion/getTranscriptStats:
     post:
-      summary: Calls a mutation at the path transcripts/ingestion.js:getTranscriptStats
+      summary: Gets transcript statistics for a meeting
       tags:
         - mutation
       requestBody:
@@ -1972,10 +2032,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTranscriptsIngestionGetTranscriptStats
-      description: Calls a mutation at the path transcripts/ingestion.js:getTranscriptStats
+      description: Gets transcript statistics for a meeting
   /api/run/insights/generation/generateInsights:
     post:
-      summary: Calls a action at the path insights/generation.js:generateInsights
+      summary: Generates post-call insights for all participants
       tags:
         - action
       requestBody:
@@ -2006,10 +2066,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsGenerationGenerateInsights
-      description: Calls a action at the path insights/generation.js:generateInsights
+      description: Generates post-call insights for all participants
   /api/run/interests/queries/listCatalog:
     post:
-      summary: Calls a query at the path interests/queries.js:listCatalog
+      summary: Interests Catalog Queries
       tags:
         - query
       requestBody:
@@ -2040,10 +2100,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInterestsQueriesListCatalog
-      description: Calls a query at the path interests/queries.js:listCatalog
+      description: Interests Catalog Queries
   /api/run/embeddings/actions/generateEmbedding:
     post:
-      summary: Calls a action at the path embeddings/actions.js:generateEmbedding
+      summary: Generate embedding for content (public)
       tags:
         - action
       requestBody:
@@ -2074,10 +2134,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsActionsGenerateEmbedding
-      description: Calls a action at the path embeddings/actions.js:generateEmbedding
+      description: Generate embedding for content (public)
   /api/run/embeddings/index/getEmbedding:
     post:
-      summary: Calls a query at the path embeddings/index.js:getEmbedding
+      summary: Get Embedding
       tags:
         - query
       requestBody:
@@ -2111,7 +2171,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbedding
   /api/run/embeddings/index/getEmbeddingAnalytics:
     post:
-      summary: Calls a query at the path embeddings/index.js:getEmbeddingAnalytics
+      summary: Get Embedding Analytics
       tags:
         - query
       requestBody:
@@ -2145,7 +2205,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbeddingAnalytics
   /api/run/embeddings/index/getEmbeddingsByModel:
     post:
-      summary: Calls a query at the path embeddings/index.js:getEmbeddingsByModel
+      summary: Get Embeddings By Model
       tags:
         - query
       requestBody:
@@ -2179,7 +2239,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbeddingsByModel
   /api/run/embeddings/index/getEmbeddingsBySource:
     post:
-      summary: Calls a query at the path embeddings/index.js:getEmbeddingsBySource
+      summary: Get Embeddings By Source
       tags:
         - query
       requestBody:
@@ -2213,7 +2273,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getEmbeddingsBySource
   /api/run/embeddings/index/getVectorIndexMeta:
     post:
-      summary: Calls a query at the path embeddings/index.js:getVectorIndexMeta
+      summary: Get Vector Index Meta
       tags:
         - query
       requestBody:
@@ -2247,7 +2307,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:getVectorIndexMeta
   /api/run/embeddings/index/vectorSimilaritySearch:
     post:
-      summary: Calls a query at the path embeddings/index.js:vectorSimilaritySearch
+      summary: Vector Similarity Search
       tags:
         - query
       requestBody:
@@ -2281,7 +2341,7 @@ paths:
       description: Calls a query at the path embeddings/index.js:vectorSimilaritySearch
   /api/run/embeddings/index/generateEmbedding:
     post:
-      summary: Calls a action at the path embeddings/index.js:generateEmbedding
+      summary: Generate Embedding
       tags:
         - action
       requestBody:
@@ -2315,7 +2375,7 @@ paths:
       description: Calls a action at the path embeddings/index.js:generateEmbedding
   /api/run/embeddings/queries/getEmbedding:
     post:
-      summary: Calls a query at the path embeddings/queries.js:getEmbedding
+      summary: Get embedding by ID (public)
       tags:
         - query
       requestBody:
@@ -2346,10 +2406,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsQueriesGetEmbedding
-      description: Calls a query at the path embeddings/queries.js:getEmbedding
+      description: Get embedding by ID (public)
   /api/run/embeddings/queries/getEmbeddingAnalytics:
     post:
-      summary: Calls a query at the path embeddings/queries.js:getEmbeddingAnalytics
+      summary: Get embedding analytics (public)
       tags:
         - query
       requestBody:
@@ -2380,10 +2440,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsQueriesGetEmbeddingAnalytics
-      description: Calls a query at the path embeddings/queries.js:getEmbeddingAnalytics
+      description: Get embedding analytics (public)
   /api/run/embeddings/queries/getEmbeddingsByModel:
     post:
-      summary: Calls a query at the path embeddings/queries.js:getEmbeddingsByModel
+      summary: Get embeddings by model (public)
       tags:
         - query
       requestBody:
@@ -2414,10 +2474,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsQueriesGetEmbeddingsByModel
-      description: Calls a query at the path embeddings/queries.js:getEmbeddingsByModel
+      description: Get embeddings by model (public)
   /api/run/embeddings/queries/getEmbeddingsBySource:
     post:
-      summary: Calls a query at the path embeddings/queries.js:getEmbeddingsBySource
+      summary: Get embeddings by source (public)
       tags:
         - query
       requestBody:
@@ -2448,10 +2508,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsQueriesGetEmbeddingsBySource
-      description: Calls a query at the path embeddings/queries.js:getEmbeddingsBySource
+      description: Get embeddings by source (public)
   /api/run/embeddings/queries/getVectorIndexMeta:
     post:
-      summary: Calls a query at the path embeddings/queries.js:getVectorIndexMeta
+      summary: Get vector index metadata (public)
       tags:
         - query
       requestBody:
@@ -2482,10 +2542,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsQueriesGetVectorIndexMeta
-      description: Calls a query at the path embeddings/queries.js:getVectorIndexMeta
+      description: Get vector index metadata (public)
   /api/run/embeddings/queries/vectorSimilaritySearch:
     post:
-      summary: Calls a query at the path embeddings/queries.js:vectorSimilaritySearch
+      summary: Perform vector similarity search (public)
       tags:
         - query
       requestBody:
@@ -2516,10 +2576,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunEmbeddingsQueriesVectorSimilaritySearch
-      description: Calls a query at the path embeddings/queries.js:vectorSimilaritySearch
+      description: Perform vector similarity search (public)
   /api/run/insights/index/deleteInsights:
     post:
-      summary: Calls a mutation at the path insights/index.js:deleteInsights
+      summary: Delete Insights
       tags:
         - mutation
       requestBody:
@@ -2553,7 +2613,7 @@ paths:
       description: Calls a mutation at the path insights/index.js:deleteInsights
   /api/run/insights/index/getConnectionRecommendations:
     post:
-      summary: Calls a query at the path insights/index.js:getConnectionRecommendations
+      summary: Get Connection Recommendations
       tags:
         - query
       requestBody:
@@ -2587,7 +2647,7 @@ paths:
       description: Calls a query at the path insights/index.js:getConnectionRecommendations
   /api/run/insights/index/getInsightById:
     post:
-      summary: Calls a query at the path insights/index.js:getInsightById
+      summary: Get Insight By Id
       tags:
         - query
       requestBody:
@@ -2621,7 +2681,7 @@ paths:
       description: Calls a query at the path insights/index.js:getInsightById
   /api/run/insights/index/getMeetingInsights:
     post:
-      summary: Calls a query at the path insights/index.js:getMeetingInsights
+      summary: Get Meeting Insights
       tags:
         - query
       requestBody:
@@ -2655,7 +2715,7 @@ paths:
       description: Calls a query at the path insights/index.js:getMeetingInsights
   /api/run/insights/index/getUserInsights:
     post:
-      summary: Calls a query at the path insights/index.js:getUserInsights
+      summary: Get User Insights
       tags:
         - query
       requestBody:
@@ -2689,7 +2749,7 @@ paths:
       description: Calls a query at the path insights/index.js:getUserInsights
   /api/run/insights/index/updateInsightsFeedback:
     post:
-      summary: Calls a mutation at the path insights/index.js:updateInsightsFeedback
+      summary: Update Insights Feedback
       tags:
         - mutation
       requestBody:
@@ -2723,7 +2783,7 @@ paths:
       description: Calls a mutation at the path insights/index.js:updateInsightsFeedback
   /api/run/insights/index/generateInsights:
     post:
-      summary: Calls a action at the path insights/index.js:generateInsights
+      summary: Generate Insights
       tags:
         - action
       requestBody:
@@ -2757,7 +2817,7 @@ paths:
       description: Calls a action at the path insights/index.js:generateInsights
   /api/run/insights/mutations/deleteInsights:
     post:
-      summary: Calls a mutation at the path insights/mutations.js:deleteInsights
+      summary: Deletes insights (user can delete their own insights)
       tags:
         - mutation
       requestBody:
@@ -2788,10 +2848,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsMutationsDeleteInsights
-      description: Calls a mutation at the path insights/mutations.js:deleteInsights
+      description: Deletes insights (user can delete their own insights)
   /api/run/insights/mutations/updateInsightsFeedback:
     post:
-      summary: Calls a mutation at the path insights/mutations.js:updateInsightsFeedback
+      summary: Updates insights with user feedback (marks as read, rates usefulness, etc.)
       tags:
         - mutation
       requestBody:
@@ -2822,10 +2882,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsMutationsUpdateInsightsFeedback
-      description: Calls a mutation at the path insights/mutations.js:updateInsightsFeedback
+      description: Updates insights with user feedback (marks as read, rates usefulness, etc.)
   /api/run/insights/queries/getConnectionRecommendations:
     post:
-      summary: Calls a query at the path insights/queries.js:getConnectionRecommendations
+      summary: Gets connection recommendations from insights
       tags:
         - query
       requestBody:
@@ -2856,10 +2916,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsQueriesGetConnectionRecommendations
-      description: Calls a query at the path insights/queries.js:getConnectionRecommendations
+      description: Gets connection recommendations from insights
   /api/run/insights/queries/getInsightById:
     post:
-      summary: Calls a query at the path insights/queries.js:getInsightById
+      summary: Gets insights by ID with ownership verification
       tags:
         - query
       requestBody:
@@ -2890,10 +2950,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsQueriesGetInsightById
-      description: Calls a query at the path insights/queries.js:getInsightById
+      description: Gets insights by ID with ownership verification
   /api/run/insights/queries/getMeetingInsights:
     post:
-      summary: Calls a query at the path insights/queries.js:getMeetingInsights
+      summary: Gets user's insights for a specific meeting with privacy controls
       tags:
         - query
       requestBody:
@@ -2924,10 +2984,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsQueriesGetMeetingInsights
-      description: Calls a query at the path insights/queries.js:getMeetingInsights
+      description: Gets user's insights for a specific meeting with privacy controls
   /api/run/insights/queries/getUserInsights:
     post:
-      summary: Calls a query at the path insights/queries.js:getUserInsights
+      summary: Lists all insights for the current user
       tags:
         - query
       requestBody:
@@ -2958,10 +3018,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunInsightsQueriesGetUserInsights
-      description: Calls a query at the path insights/queries.js:getUserInsights
+      description: Lists all insights for the current user
   /api/run/matching/analytics/getGlobalMatchingAnalytics:
     post:
-      summary: Calls a query at the path matching/analytics.js:getGlobalMatchingAnalytics
+      summary: Get global matching analytics (admin only)
       tags:
         - query
       requestBody:
@@ -2992,10 +3052,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingAnalyticsGetGlobalMatchingAnalytics
-      description: Calls a query at the path matching/analytics.js:getGlobalMatchingAnalytics
+      description: Get global matching analytics (admin only)
   /api/run/matching/analytics/getMatchHistory:
     post:
-      summary: Calls a query at the path matching/analytics.js:getMatchHistory
+      summary: Get match history for a user
       tags:
         - query
       requestBody:
@@ -3026,10 +3086,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingAnalyticsGetMatchHistory
-      description: Calls a query at the path matching/analytics.js:getMatchHistory
+      description: Get match history for a user
   /api/run/matching/analytics/getMatchingStats:
     post:
-      summary: Calls a query at the path matching/analytics.js:getMatchingStats
+      summary: Get matching statistics for a user
       tags:
         - query
       requestBody:
@@ -3060,10 +3120,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingAnalyticsGetMatchingStats
-      description: Calls a query at the path matching/analytics.js:getMatchingStats
+      description: Get matching statistics for a user
   /api/run/matching/analytics/optimizeMatchingWeights:
     post:
-      summary: Calls a action at the path matching/analytics.js:optimizeMatchingWeights
+      summary: Optimize matching weights based on feedback
       tags:
         - action
       requestBody:
@@ -3094,10 +3154,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingAnalyticsOptimizeMatchingWeights
-      description: Calls a action at the path matching/analytics.js:optimizeMatchingWeights
+      description: Optimize matching weights based on feedback
   /api/run/matching/analytics/submitMatchFeedback:
     post:
-      summary: Calls a mutation at the path matching/analytics.js:submitMatchFeedback
+      summary: Submit feedback for a match
       tags:
         - mutation
       requestBody:
@@ -3128,10 +3188,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingAnalyticsSubmitMatchFeedback
-      description: Calls a mutation at the path matching/analytics.js:submitMatchFeedback
+      description: Submit feedback for a match
   /api/run/matching/engine/runMatchingCycle:
     post:
-      summary: Calls a action at the path matching/engine.js:runMatchingCycle
+      summary: Run matching cycle with shard-based processing for scalability
       tags:
         - action
       requestBody:
@@ -3162,10 +3222,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingEngineRunMatchingCycle
-      description: Calls a action at the path matching/engine.js:runMatchingCycle
+      description: Run matching cycle with shard-based processing for scalability
   /api/run/matching/index/calculateCompatibilityScore:
     post:
-      summary: Calls a action at the path matching/index.js:calculateCompatibilityScore
+      summary: Calculate Compatibility Score
       tags:
         - action
       requestBody:
@@ -3199,7 +3259,7 @@ paths:
       description: Calls a action at the path matching/index.js:calculateCompatibilityScore
   /api/run/matching/index/cancelQueueEntry:
     post:
-      summary: Calls a mutation at the path matching/index.js:cancelQueueEntry
+      summary: Cancel Queue Entry
       tags:
         - mutation
       requestBody:
@@ -3233,7 +3293,7 @@ paths:
       description: Calls a mutation at the path matching/index.js:cancelQueueEntry
   /api/run/matching/index/enterMatchingQueue:
     post:
-      summary: Calls a mutation at the path matching/index.js:enterMatchingQueue
+      summary: Enter Matching Queue
       tags:
         - mutation
       requestBody:
@@ -3267,7 +3327,7 @@ paths:
       description: Calls a mutation at the path matching/index.js:enterMatchingQueue
   /api/run/matching/index/getGlobalMatchingAnalytics:
     post:
-      summary: Calls a query at the path matching/index.js:getGlobalMatchingAnalytics
+      summary: Get Global Matching Analytics
       tags:
         - query
       requestBody:
@@ -3301,7 +3361,7 @@ paths:
       description: Calls a query at the path matching/index.js:getGlobalMatchingAnalytics
   /api/run/matching/index/getMatchHistory:
     post:
-      summary: Calls a query at the path matching/index.js:getMatchHistory
+      summary: Get Match History
       tags:
         - query
       requestBody:
@@ -3335,7 +3395,7 @@ paths:
       description: Calls a query at the path matching/index.js:getMatchHistory
   /api/run/matching/index/getMatchingStats:
     post:
-      summary: Calls a query at the path matching/index.js:getMatchingStats
+      summary: Get Matching Stats
       tags:
         - query
       requestBody:
@@ -3369,7 +3429,7 @@ paths:
       description: Calls a query at the path matching/index.js:getMatchingStats
   /api/run/matching/index/getQueueStatus:
     post:
-      summary: Calls a query at the path matching/index.js:getQueueStatus
+      summary: Get Queue Status
       tags:
         - query
       requestBody:
@@ -3403,7 +3463,7 @@ paths:
       description: Calls a query at the path matching/index.js:getQueueStatus
   /api/run/matching/index/optimizeMatchingWeights:
     post:
-      summary: Calls a action at the path matching/index.js:optimizeMatchingWeights
+      summary: Optimize Matching Weights
       tags:
         - action
       requestBody:
@@ -3437,7 +3497,7 @@ paths:
       description: Calls a action at the path matching/index.js:optimizeMatchingWeights
   /api/run/matching/index/runMatchingCycle:
     post:
-      summary: Calls a action at the path matching/index.js:runMatchingCycle
+      summary: Run Matching Cycle
       tags:
         - action
       requestBody:
@@ -3471,7 +3531,7 @@ paths:
       description: Calls a action at the path matching/index.js:runMatchingCycle
   /api/run/matching/index/submitMatchFeedback:
     post:
-      summary: Calls a mutation at the path matching/index.js:submitMatchFeedback
+      summary: Submit Match Feedback
       tags:
         - mutation
       requestBody:
@@ -3505,7 +3565,7 @@ paths:
       description: Calls a mutation at the path matching/index.js:submitMatchFeedback
   /api/run/matching/queue/cancelQueueEntry:
     post:
-      summary: Calls a mutation at the path matching/queue.js:cancelQueueEntry
+      summary: Cancel user's queue entry
       tags:
         - mutation
       requestBody:
@@ -3536,10 +3596,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingQueueCancelQueueEntry
-      description: Calls a mutation at the path matching/queue.js:cancelQueueEntry
+      description: Cancel user's queue entry
   /api/run/matching/queue/enterMatchingQueue:
     post:
-      summary: Calls a mutation at the path matching/queue.js:enterMatchingQueue
+      summary: Enter the matching queue with availability window and constraints
       tags:
         - mutation
       requestBody:
@@ -3570,10 +3630,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingQueueEnterMatchingQueue
-      description: Calls a mutation at the path matching/queue.js:enterMatchingQueue
+      description: Enter the matching queue with availability window and constraints
   /api/run/matching/queue/getActiveQueueEntries:
     post:
-      summary: Calls a query at the path matching/queue.js:getActiveQueueEntries
+      summary: Get active queue entries for matching processing (internal use)
       tags:
         - query
       requestBody:
@@ -3604,10 +3664,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingQueueGetActiveQueueEntries
-      description: Calls a query at the path matching/queue.js:getActiveQueueEntries
+      description: Get active queue entries for matching processing (internal use)
   /api/run/matching/queue/getQueueStatus:
     post:
-      summary: Calls a query at the path matching/queue.js:getQueueStatus
+      summary: Get current queue status for a user
       tags:
         - query
       requestBody:
@@ -3638,10 +3698,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingQueueGetQueueStatus
-      description: Calls a query at the path matching/queue.js:getQueueStatus
+      description: Get current queue status for a user
   /api/run/matching/queue/updateQueueStatus:
     post:
-      summary: Calls a mutation at the path matching/queue.js:updateQueueStatus
+      summary: Update queue entry status (internal use for matching engine)
       tags:
         - mutation
       requestBody:
@@ -3672,10 +3732,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingQueueUpdateQueueStatus
-      description: Calls a mutation at the path matching/queue.js:updateQueueStatus
+      description: Update queue entry status (internal use for matching engine)
   /api/run/matching/scoring/calculateCompatibilityScore:
     post:
-      summary: Calls a action at the path matching/scoring.js:calculateCompatibilityScore
+      summary: Calculate compatibility score between two users (public API)
       tags:
         - action
       requestBody:
@@ -3706,10 +3766,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMatchingScoringCalculateCompatibilityScore
-      description: Calls a action at the path matching/scoring.js:calculateCompatibilityScore
+      description: Calculate compatibility score between two users (public API)
   /api/run/meetings/stateTracking/updateSpeakingStats:
     post:
-      summary: Calls a mutation at the path meetings/stateTracking.js:updateSpeakingStats
+      summary: Updates speaking statistics for a meeting
       tags:
         - mutation
       requestBody:
@@ -3740,10 +3800,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStateTrackingUpdateSpeakingStats
-      description: Calls a mutation at the path meetings/stateTracking.js:updateSpeakingStats
+      description: Updates speaking statistics for a meeting
   /api/run/meetings/stateTracking/updateCurrentTopics:
     post:
-      summary: Calls a mutation at the path meetings/stateTracking.js:updateCurrentTopics
+      summary: Updates current topics being discussed
       tags:
         - mutation
       requestBody:
@@ -3774,10 +3834,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStateTrackingUpdateCurrentTopics
-      description: Calls a mutation at the path meetings/stateTracking.js:updateCurrentTopics
+      description: Updates current topics being discussed
   /api/run/meetings/stateTracking/recordActivity:
     post:
-      summary: Calls a mutation at the path meetings/stateTracking.js:recordActivity
+      summary: Records activity to reset lull detection
       tags:
         - mutation
       requestBody:
@@ -3808,10 +3868,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStateTrackingRecordActivity
-      description: Calls a mutation at the path meetings/stateTracking.js:recordActivity
+      description: Records activity to reset lull detection
   /api/run/meetings/stream/index/generateParticipantTokenPublic:
     post:
-      summary: Calls a action at the path meetings/stream/index.js:generateParticipantTokenPublic
+      summary: Public action to generate GetStream token for authenticated users
       tags:
         - action
       requestBody:
@@ -3842,10 +3902,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStreamIndexGenerateParticipantTokenPublic
-      description: Calls a action at the path meetings/stream/index.js:generateParticipantTokenPublic
+      description: Public action to generate GetStream token for authenticated users
   /api/run/meetings/stream/index/startRecording:
     post:
-      summary: Calls a action at the path meetings/stream/index.js:startRecording
+      summary: Starts recording for a GetStream call with proper configuration
       tags:
         - action
       requestBody:
@@ -3876,10 +3936,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStreamIndexStartRecording
-      description: Calls a action at the path meetings/stream/index.js:startRecording
+      description: Starts recording for a GetStream call with proper configuration
   /api/run/meetings/stream/index/stopRecording:
     post:
-      summary: Calls a action at the path meetings/stream/index.js:stopRecording
+      summary: Stops recording for a GetStream call and retrieves the recording URL
       tags:
         - action
       requestBody:
@@ -3910,10 +3970,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStreamIndexStopRecording
-      description: Calls a action at the path meetings/stream/index.js:stopRecording
+      description: Stops recording for a GetStream call and retrieves the recording URL
   /api/run/meetings/webrtc/index/closeSession:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/index.js:closeSession
+      summary: Close Session
       tags:
         - mutation
       requestBody:
@@ -3947,7 +4007,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:closeSession
   /api/run/meetings/webrtc/index/createWebRTCSession:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/index.js:createWebRTCSession
+      summary: Create Web RTC Session
       tags:
         - mutation
       requestBody:
@@ -3981,7 +4041,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:createWebRTCSession
   /api/run/meetings/webrtc/index/exchangeICECandidate:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/index.js:exchangeICECandidate
+      summary: Exchange ICE Candidate
       tags:
         - mutation
       requestBody:
@@ -4015,7 +4075,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:exchangeICECandidate
   /api/run/meetings/webrtc/index/exchangeSessionDescription:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/index.js:exchangeSessionDescription
+      summary: Exchange Session Description
       tags:
         - mutation
       requestBody:
@@ -4049,7 +4109,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:exchangeSessionDescription
   /api/run/meetings/webrtc/index/generateParticipantAccessToken:
     post:
-      summary: Calls a action at the path meetings/webrtc/index.js:generateParticipantAccessToken
+      summary: Generate Participant Access Token
       tags:
         - action
       requestBody:
@@ -4083,7 +4143,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:generateParticipantAccessToken
   /api/run/meetings/webrtc/index/getActiveSessions:
     post:
-      summary: Calls a query at the path meetings/webrtc/index.js:getActiveSessions
+      summary: Get Active Sessions
       tags:
         - query
       requestBody:
@@ -4117,7 +4177,7 @@ paths:
       description: Calls a query at the path meetings/webrtc/index.js:getActiveSessions
   /api/run/meetings/webrtc/index/getPendingSignals:
     post:
-      summary: Calls a query at the path meetings/webrtc/index.js:getPendingSignals
+      summary: Get Pending Signals
       tags:
         - query
       requestBody:
@@ -4151,7 +4211,7 @@ paths:
       description: Calls a query at the path meetings/webrtc/index.js:getPendingSignals
   /api/run/meetings/webrtc/index/handleConnectionFailure:
     post:
-      summary: Calls a action at the path meetings/webrtc/index.js:handleConnectionFailure
+      summary: Handle Connection Failure
       tags:
         - action
       requestBody:
@@ -4185,7 +4245,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:handleConnectionFailure
   /api/run/meetings/webrtc/index/initializeWebRTCRoom:
     post:
-      summary: Calls a action at the path meetings/webrtc/index.js:initializeWebRTCRoom
+      summary: Initialize Web RTC Room
       tags:
         - action
       requestBody:
@@ -4219,7 +4279,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:initializeWebRTCRoom
   /api/run/meetings/webrtc/index/markSignalsProcessed:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/index.js:markSignalsProcessed
+      summary: Mark Signals Processed
       tags:
         - mutation
       requestBody:
@@ -4253,7 +4313,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:markSignalsProcessed
   /api/run/meetings/webrtc/index/monitorConnectionQuality:
     post:
-      summary: Calls a action at the path meetings/webrtc/index.js:monitorConnectionQuality
+      summary: Monitor Connection Quality
       tags:
         - action
       requestBody:
@@ -4287,7 +4347,7 @@ paths:
       description: Calls a action at the path meetings/webrtc/index.js:monitorConnectionQuality
   /api/run/meetings/webrtc/index/updateSessionState:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/index.js:updateSessionState
+      summary: Update Session State
       tags:
         - mutation
       requestBody:
@@ -4321,7 +4381,7 @@ paths:
       description: Calls a mutation at the path meetings/webrtc/index.js:updateSessionState
   /api/run/meetings/webrtc/rooms/generateParticipantAccessToken:
     post:
-      summary: Calls a action at the path meetings/webrtc/rooms.js:generateParticipantAccessToken
+      summary: Generates participant access token for video room
       tags:
         - action
       requestBody:
@@ -4352,10 +4412,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcRoomsGenerateParticipantAccessToken
-      description: Calls a action at the path meetings/webrtc/rooms.js:generateParticipantAccessToken
+      description: Generates participant access token for video room
   /api/run/meetings/webrtc/rooms/handleConnectionFailure:
     post:
-      summary: Calls a action at the path meetings/webrtc/rooms.js:handleConnectionFailure
+      summary: Handles WebRTC connection failures with automatic fallback
       tags:
         - action
       requestBody:
@@ -4386,10 +4446,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcRoomsHandleConnectionFailure
-      description: Calls a action at the path meetings/webrtc/rooms.js:handleConnectionFailure
+      description: Handles WebRTC connection failures with automatic fallback
   /api/run/meetings/webrtc/rooms/initializeWebRTCRoom:
     post:
-      summary: Calls a action at the path meetings/webrtc/rooms.js:initializeWebRTCRoom
+      summary: Initializes WebRTC room for a meeting using the provider abstraction
       tags:
         - action
       requestBody:
@@ -4420,10 +4480,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcRoomsInitializeWebRTCRoom
-      description: Calls a action at the path meetings/webrtc/rooms.js:initializeWebRTCRoom
+      description: Initializes WebRTC room for a meeting using the provider abstraction
   /api/run/meetings/webrtc/rooms/monitorConnectionQuality:
     post:
-      summary: Calls a action at the path meetings/webrtc/rooms.js:monitorConnectionQuality
+      summary: Monitors WebRTC connection quality and provides recommendations
       tags:
         - action
       requestBody:
@@ -4454,10 +4514,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcRoomsMonitorConnectionQuality
-      description: Calls a action at the path meetings/webrtc/rooms.js:monitorConnectionQuality
+      description: Monitors WebRTC connection quality and provides recommendations
   /api/run/meetings/webrtc/signaling/closeSession:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/signaling.js:closeSession
+      summary: Closes a WebRTC session
       tags:
         - mutation
       requestBody:
@@ -4488,10 +4548,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingCloseSession
-      description: Calls a mutation at the path meetings/webrtc/signaling.js:closeSession
+      description: Closes a WebRTC session
   /api/run/meetings/webrtc/signaling/createWebRTCSession:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/signaling.js:createWebRTCSession
+      summary: Creates a WebRTC session for a meeting
       tags:
         - mutation
       requestBody:
@@ -4522,10 +4582,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingCreateWebRTCSession
-      description: Calls a mutation at the path meetings/webrtc/signaling.js:createWebRTCSession
+      description: Creates a WebRTC session for a meeting
   /api/run/meetings/webrtc/signaling/exchangeICECandidate:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/signaling.js:exchangeICECandidate
+      summary: Exchanges ICE candidates for WebRTC connection establishment
       tags:
         - mutation
       requestBody:
@@ -4556,10 +4616,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingExchangeICECandidate
-      description: Calls a mutation at the path meetings/webrtc/signaling.js:exchangeICECandidate
+      description: Exchanges ICE candidates for WebRTC connection establishment
   /api/run/meetings/webrtc/signaling/exchangeSessionDescription:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/signaling.js:exchangeSessionDescription
+      summary: Exchanges SDP offer/answer for WebRTC negotiation
       tags:
         - mutation
       requestBody:
@@ -4590,10 +4650,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingExchangeSessionDescription
-      description: Calls a mutation at the path meetings/webrtc/signaling.js:exchangeSessionDescription
+      description: Exchanges SDP offer/answer for WebRTC negotiation
   /api/run/meetings/webrtc/signaling/getActiveSessions:
     post:
-      summary: Calls a query at the path meetings/webrtc/signaling.js:getActiveSessions
+      summary: Gets active WebRTC sessions for a meeting
       tags:
         - query
       requestBody:
@@ -4624,10 +4684,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingGetActiveSessions
-      description: Calls a query at the path meetings/webrtc/signaling.js:getActiveSessions
+      description: Gets active WebRTC sessions for a meeting
   /api/run/meetings/webrtc/signaling/getPendingSignals:
     post:
-      summary: Calls a query at the path meetings/webrtc/signaling.js:getPendingSignals
+      summary: Gets pending WebRTC signals for a user in a meeting
       tags:
         - query
       requestBody:
@@ -4658,10 +4718,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingGetPendingSignals
-      description: Calls a query at the path meetings/webrtc/signaling.js:getPendingSignals
+      description: Gets pending WebRTC signals for a user in a meeting
   /api/run/meetings/webrtc/signaling/markSignalsProcessed:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/signaling.js:markSignalsProcessed
+      summary: Marks WebRTC signals as processed
       tags:
         - mutation
       requestBody:
@@ -4692,10 +4752,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingMarkSignalsProcessed
-      description: Calls a mutation at the path meetings/webrtc/signaling.js:markSignalsProcessed
+      description: Marks WebRTC signals as processed
   /api/run/meetings/webrtc/signaling/updateSessionState:
     post:
-      summary: Calls a mutation at the path meetings/webrtc/signaling.js:updateSessionState
+      summary: Updates WebRTC session state
       tags:
         - mutation
       requestBody:
@@ -4726,10 +4786,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsWebrtcSignalingUpdateSessionState
-      description: Calls a mutation at the path meetings/webrtc/signaling.js:updateSessionState
+      description: Updates WebRTC session state
   /api/run/notes/index/applyNoteOperation:
     post:
-      summary: Calls a mutation at the path notes/index.js:applyNoteOperation
+      summary: Apply Note Operation
       tags:
         - mutation
       requestBody:
@@ -4763,7 +4823,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:applyNoteOperation
   /api/run/notes/index/batchApplyNoteOperations:
     post:
-      summary: Calls a mutation at the path notes/index.js:batchApplyNoteOperations
+      summary: Batch Apply Note Operations
       tags:
         - mutation
       requestBody:
@@ -4797,7 +4857,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:batchApplyNoteOperations
   /api/run/notes/index/clearSyncedOperations:
     post:
-      summary: Calls a mutation at the path notes/index.js:clearSyncedOperations
+      summary: Clear Synced Operations
       tags:
         - mutation
       requestBody:
@@ -4831,7 +4891,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:clearSyncedOperations
   /api/run/notes/index/createOfflineCheckpoint:
     post:
-      summary: Calls a mutation at the path notes/index.js:createOfflineCheckpoint
+      summary: Create Offline Checkpoint
       tags:
         - mutation
       requestBody:
@@ -4865,7 +4925,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:createOfflineCheckpoint
   /api/run/notes/index/getOfflineQueueStatus:
     post:
-      summary: Calls a mutation at the path notes/index.js:getOfflineQueueStatus
+      summary: Get Offline Queue Status
       tags:
         - mutation
       requestBody:
@@ -4899,7 +4959,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:getOfflineQueueStatus
   /api/run/notes/index/queueOfflineOperations:
     post:
-      summary: Calls a mutation at the path notes/index.js:queueOfflineOperations
+      summary: Queue Offline Operations
       tags:
         - mutation
       requestBody:
@@ -4933,7 +4993,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:queueOfflineOperations
   /api/run/notes/index/restoreFromCheckpoint:
     post:
-      summary: Calls a mutation at the path notes/index.js:restoreFromCheckpoint
+      summary: Restore From Checkpoint
       tags:
         - mutation
       requestBody:
@@ -4967,7 +5027,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:restoreFromCheckpoint
   /api/run/notes/index/retryFailedOperations:
     post:
-      summary: Calls a mutation at the path notes/index.js:retryFailedOperations
+      summary: Retry Failed Operations
       tags:
         - mutation
       requestBody:
@@ -5001,7 +5061,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:retryFailedOperations
   /api/run/notes/index/rollbackToSequence:
     post:
-      summary: Calls a mutation at the path notes/index.js:rollbackToSequence
+      summary: Rollback To Sequence
       tags:
         - mutation
       requestBody:
@@ -5035,7 +5095,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:rollbackToSequence
   /api/run/notes/index/syncOfflineOperations:
     post:
-      summary: Calls a mutation at the path notes/index.js:syncOfflineOperations
+      summary: Sync Offline Operations
       tags:
         - mutation
       requestBody:
@@ -5069,7 +5129,7 @@ paths:
       description: Calls a mutation at the path notes/index.js:syncOfflineOperations
   /api/run/notes/mutations/applyNoteOperation:
     post:
-      summary: Calls a mutation at the path notes/mutations.js:applyNoteOperation
+      summary: Applies a note operation with operational transform conflict resolution
       tags:
         - mutation
       requestBody:
@@ -5100,10 +5160,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesMutationsApplyNoteOperation
-      description: Calls a mutation at the path notes/mutations.js:applyNoteOperation
+      description: Applies a note operation with operational transform conflict resolution
   /api/run/notes/mutations/batchApplyNoteOperations:
     post:
-      summary: Calls a mutation at the path notes/mutations.js:batchApplyNoteOperations
+      summary: Batch applies multiple note operations with optimized conflict resolution
       tags:
         - mutation
       requestBody:
@@ -5134,10 +5194,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesMutationsBatchApplyNoteOperations
-      description: Calls a mutation at the path notes/mutations.js:batchApplyNoteOperations
+      description: Batch applies multiple note operations with optimized conflict resolution
   /api/run/notes/mutations/rollbackToSequence:
     post:
-      summary: Calls a mutation at the path notes/mutations.js:rollbackToSequence
+      summary: Rolls back operations to a specific sequence number
       tags:
         - mutation
       requestBody:
@@ -5168,10 +5228,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesMutationsRollbackToSequence
-      description: Calls a mutation at the path notes/mutations.js:rollbackToSequence
+      description: Rolls back operations to a specific sequence number
   /api/run/notes/offline/clearSyncedOperations:
     post:
-      summary: Calls a mutation at the path notes/offline.js:clearSyncedOperations
+      summary: Clears synced operations from the offline queue
       tags:
         - mutation
       requestBody:
@@ -5202,10 +5262,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineClearSyncedOperations
-      description: Calls a mutation at the path notes/offline.js:clearSyncedOperations
+      description: Clears synced operations from the offline queue
   /api/run/notes/offline/createOfflineCheckpoint:
     post:
-      summary: Calls a mutation at the path notes/offline.js:createOfflineCheckpoint
+      summary: Creates a checkpoint for offline operations
       tags:
         - mutation
       requestBody:
@@ -5236,10 +5296,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineCreateOfflineCheckpoint
-      description: Calls a mutation at the path notes/offline.js:createOfflineCheckpoint
+      description: Creates a checkpoint for offline operations
   /api/run/notes/offline/getOfflineQueueStatus:
     post:
-      summary: Calls a mutation at the path notes/offline.js:getOfflineQueueStatus
+      summary: Gets offline operation queue status for a client
       tags:
         - mutation
       requestBody:
@@ -5270,10 +5330,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineGetOfflineQueueStatus
-      description: Calls a mutation at the path notes/offline.js:getOfflineQueueStatus
+      description: Gets offline operation queue status for a client
   /api/run/notes/offline/queueOfflineOperations:
     post:
-      summary: Calls a mutation at the path notes/offline.js:queueOfflineOperations
+      summary: Queues operations for offline sync
       tags:
         - mutation
       requestBody:
@@ -5304,10 +5364,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineQueueOfflineOperations
-      description: Calls a mutation at the path notes/offline.js:queueOfflineOperations
+      description: Queues operations for offline sync
   /api/run/notes/offline/restoreFromCheckpoint:
     post:
-      summary: Calls a mutation at the path notes/offline.js:restoreFromCheckpoint
+      summary: Restores from an offline checkpoint
       tags:
         - mutation
       requestBody:
@@ -5338,10 +5398,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineRestoreFromCheckpoint
-      description: Calls a mutation at the path notes/offline.js:restoreFromCheckpoint
+      description: Restores from an offline checkpoint
   /api/run/notes/offline/retryFailedOperations:
     post:
-      summary: Calls a mutation at the path notes/offline.js:retryFailedOperations
+      summary: Retries failed offline operations
       tags:
         - mutation
       requestBody:
@@ -5372,10 +5432,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineRetryFailedOperations
-      description: Calls a mutation at the path notes/offline.js:retryFailedOperations
+      description: Retries failed offline operations
   /api/run/notes/offline/syncOfflineOperations:
     post:
-      summary: Calls a mutation at the path notes/offline.js:syncOfflineOperations
+      summary: Syncs queued offline operations with conflict resolution
       tags:
         - mutation
       requestBody:
@@ -5406,10 +5466,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineSyncOfflineOperations
-      description: Calls a mutation at the path notes/offline.js:syncOfflineOperations
+      description: Syncs queued offline operations with conflict resolution
   /api/run/profiles/queries/getCurrentUserProfile:
     post:
-      summary: Calls a query at the path profiles/queries.js:getCurrentUserProfile
+      summary: Gets current user's profile
       tags:
         - query
       requestBody:
@@ -5440,10 +5500,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunProfilesQueriesGetCurrentUserProfile
-      description: Calls a query at the path profiles/queries.js:getCurrentUserProfile
+      description: Gets current user's profile
   /api/run/profiles/queries/getProfileByUserIdPublic:
     post:
-      summary: Calls a query at the path profiles/queries.js:getProfileByUserIdPublic
+      summary: Gets profile by user ID with authorization
       tags:
         - query
       requestBody:
@@ -5474,10 +5534,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunProfilesQueriesGetProfileByUserIdPublic
-      description: Calls a query at the path profiles/queries.js:getProfileByUserIdPublic
+      description: Gets profile by user ID with authorization
   /api/run/prompts/actions/generatePreCallIdeas:
     post:
-      summary: Calls a action at the path prompts/actions.js:generatePreCallIdeas
+      summary: Generates pre-call ideas with idempotency using meetingId hash
       tags:
         - action
       requestBody:
@@ -5508,10 +5568,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunPromptsActionsGeneratePreCallIdeas
-      description: Calls a action at the path prompts/actions.js:generatePreCallIdeas
+      description: Generates pre-call ideas with idempotency using meetingId hash
   /api/run/prompts/index/getInCallPrompts:
     post:
-      summary: Calls a query at the path prompts/index.js:getInCallPrompts
+      summary: Get In Call Prompts
       tags:
         - query
       requestBody:
@@ -5545,7 +5605,7 @@ paths:
       description: Calls a query at the path prompts/index.js:getInCallPrompts
   /api/run/prompts/index/getPreCallPrompts:
     post:
-      summary: Calls a query at the path prompts/index.js:getPreCallPrompts
+      summary: Get Pre Call Prompts
       tags:
         - query
       requestBody:
@@ -5579,7 +5639,7 @@ paths:
       description: Calls a query at the path prompts/index.js:getPreCallPrompts
   /api/run/prompts/index/subscribeToInCallPrompts:
     post:
-      summary: Calls a query at the path prompts/index.js:subscribeToInCallPrompts
+      summary: Subscribe To In Call Prompts
       tags:
         - query
       requestBody:
@@ -5613,7 +5673,7 @@ paths:
       description: Calls a query at the path prompts/index.js:subscribeToInCallPrompts
   /api/run/prompts/index/updatePromptFeedback:
     post:
-      summary: Calls a mutation at the path prompts/index.js:updatePromptFeedback
+      summary: Update Prompt Feedback
       tags:
         - mutation
       requestBody:
@@ -5647,7 +5707,7 @@ paths:
       description: Calls a mutation at the path prompts/index.js:updatePromptFeedback
   /api/run/prompts/index/generatePreCallIdeas:
     post:
-      summary: Calls a action at the path prompts/index.js:generatePreCallIdeas
+      summary: Generate Pre Call Ideas
       tags:
         - action
       requestBody:
@@ -5681,7 +5741,7 @@ paths:
       description: Calls a action at the path prompts/index.js:generatePreCallIdeas
   /api/run/prompts/mutations/updatePromptFeedback:
     post:
-      summary: Calls a mutation at the path prompts/mutations.js:updatePromptFeedback
+      summary: Updates prompt feedback when user interacts with it
       tags:
         - mutation
       requestBody:
@@ -5712,10 +5772,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunPromptsMutationsUpdatePromptFeedback
-      description: Calls a mutation at the path prompts/mutations.js:updatePromptFeedback
+      description: Updates prompt feedback when user interacts with it
   /api/run/prompts/queries/getInCallPrompts:
     post:
-      summary: Calls a query at the path prompts/queries.js:getInCallPrompts
+      summary: Gets in-call prompts for a meeting with authorization
       tags:
         - query
       requestBody:
@@ -5746,10 +5806,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunPromptsQueriesGetInCallPrompts
-      description: Calls a query at the path prompts/queries.js:getInCallPrompts
+      description: Gets in-call prompts for a meeting with authorization
   /api/run/prompts/queries/getPreCallPrompts:
     post:
-      summary: Calls a query at the path prompts/queries.js:getPreCallPrompts
+      summary: Gets pre-call prompts for a meeting with authorization
       tags:
         - query
       requestBody:
@@ -5780,10 +5840,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunPromptsQueriesGetPreCallPrompts
-      description: Calls a query at the path prompts/queries.js:getPreCallPrompts
+      description: Gets pre-call prompts for a meeting with authorization
   /api/run/prompts/queries/subscribeToInCallPrompts:
     post:
-      summary: Calls a query at the path prompts/queries.js:subscribeToInCallPrompts
+      summary: Subscribes to real-time in-call prompts for a meeting
       tags:
         - query
       requestBody:
@@ -5814,10 +5874,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunPromptsQueriesSubscribeToInCallPrompts
-      description: Calls a query at the path prompts/queries.js:subscribeToInCallPrompts
+      description: Subscribes to real-time in-call prompts for a meeting
   /api/run/types/_template/listActiveUsers:
     post:
-      summary: Calls a query at the path types/_template.js:listActiveUsers
+      summary: Template Function - Convex Compliance Example
       tags:
         - query
       requestBody:
@@ -5848,10 +5908,15 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTypesTemplateListActiveUsers
-      description: Calls a query at the path types/_template.js:listActiveUsers
+      description: |-
+        This template demonstrates the proper patterns for Convex functions
+        following all compliance requirements from steering/convex_rules.mdc
+
+        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+        Compliance: steering/convex_rules.mdc - All best practices
   /api/run/types/_template/updateUserProfile:
     post:
-      summary: Calls a mutation at the path types/_template.js:updateUserProfile
+      summary: Template Function - Convex Compliance Example
       tags:
         - mutation
       requestBody:
@@ -5882,10 +5947,15 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTypesTemplateUpdateUserProfile
-      description: Calls a mutation at the path types/_template.js:updateUserProfile
+      description: |-
+        This template demonstrates the proper patterns for Convex functions
+        following all compliance requirements from steering/convex_rules.mdc
+
+        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+        Compliance: steering/convex_rules.mdc - All best practices
   /api/run/types/_template/processUserOnboarding:
     post:
-      summary: Calls a action at the path types/_template.js:processUserOnboarding
+      summary: Template Function - Convex Compliance Example
       tags:
         - action
       requestBody:
@@ -5916,10 +5986,15 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTypesTemplateProcessUserOnboarding
-      description: Calls a action at the path types/_template.js:processUserOnboarding
+      description: |-
+        This template demonstrates the proper patterns for Convex functions
+        following all compliance requirements from steering/convex_rules.mdc
+
+        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+        Compliance: steering/convex_rules.mdc - All best practices
   /api/run/types/_template/getUserWithStats:
     post:
-      summary: Calls a query at the path types/_template.js:getUserWithStats
+      summary: Template Function - Convex Compliance Example
       tags:
         - query
       requestBody:
@@ -5950,7 +6025,12 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunTypesTemplateGetUserWithStats
-      description: Calls a query at the path types/_template.js:getUserWithStats
+      description: |-
+        This template demonstrates the proper patterns for Convex functions
+        following all compliance requirements from steering/convex_rules.mdc
+
+        Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+        Compliance: steering/convex_rules.mdc - All best practices
 components:
   securitySchemes:
     bearerAuth:

@@ -33,7 +33,45 @@ import type {
 import type { User } from "@convex/types/entities/user";
 
 /**
- * Creates a new meeting with comprehensive setup and hybrid video provider support
+ * Creates a new meeting with comprehensive setup and hybrid video provider support.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "title": "Quarterly Planning Meeting",
+ *     "description": "Planning the roadmap for next quarter objectives.",
+ *     "scheduledAt": 1704067200000,
+ *     "duration": 3600,
+ *     "participantEmails": [
+ *       "host@example.com",
+ *       "participant@example.com"
+ *     ],
+ *     "recordingEnabled": false,
+ *     "transcriptionEnabled": true,
+ *     "meetingType": "small-group",
+ *     "maxParticipants": 8
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "meetingId": "meeting_123example",
+ *     "webrtcReady": true,
+ *     "videoProvider": "webrtc",
+ *     "features": {
+ *       "recording": false,
+ *       "transcription": true,
+ *       "maxParticipants": 8
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const createMeeting = mutation({
   args: {

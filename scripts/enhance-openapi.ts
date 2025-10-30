@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
+import { loadDocstringInfo } from "./docstringParser";
 
 type Environment = "dev" | "staging" | "prod";
 
@@ -71,6 +72,65 @@ const TAG_PATH_PATTERNS: Array<{ tag: string; matcher: RegExp }> = [
   { tag: "Notes", matcher: /note|summary/i },
   { tag: "WebRTC", matcher: /webrtc|rtc|session/i },
 ];
+
+interface OperationContext {
+  key: string;
+  exportName: string;
+  filePath: string | null;
+}
+
+function humanizeFunctionName(exportName: string): string {
+  const withSpaces = exportName
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim();
+
+  if (!withSpaces) {
+    return exportName;
+  }
+
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+}
+
+function resolveModuleFilePath(moduleSegments: string[]): string | null {
+  const basePath = path.resolve("convex", ...moduleSegments);
+  const candidates = [`${basePath}.ts`, `${basePath}.tsx`, `${basePath}.js`];
+
+  if (moduleSegments[moduleSegments.length - 1] !== "index") {
+    candidates.push(
+      path.join(basePath, "index.ts"),
+      path.join(basePath, "index.tsx"),
+      path.join(basePath, "index.js"),
+    );
+  }
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function parseOperationContext(pathKey: string): OperationContext | null {
+  const prefix = "/api/run/";
+  if (!pathKey.startsWith(prefix)) return null;
+  const segments = pathKey.slice(prefix.length).split("/").filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const exportName = segments[segments.length - 1];
+  const moduleSegments = segments.slice(0, -1);
+  const key = `${moduleSegments.join("/")}/${exportName}`;
+  const filePath = resolveModuleFilePath(moduleSegments);
+
+  return {
+    key,
+    exportName,
+    filePath,
+  };
+}
 
 function buildOperationId(method: string, pathKey: string): string {
   const segments = pathKey
@@ -255,6 +315,62 @@ function assignTagsAndSecurity(spec: OpenAPISpec) {
   }
 }
 
+function enrichOperationMetadata(spec: OpenAPISpec) {
+  if (!spec.paths) return;
+
+  for (const [pathKey, methods] of Object.entries(spec.paths)) {
+    const context = parseOperationContext(pathKey);
+    if (!context) continue;
+
+    const docInfo =
+      context.filePath && fs.existsSync(context.filePath)
+        ? loadDocstringInfo(context.filePath, context.exportName)
+        : null;
+
+    for (const operation of Object.values(methods)) {
+      if (!operation || typeof operation !== "object") continue;
+
+      const generatedSummary = humanizeFunctionName(context.exportName);
+      const summary = docInfo?.summary ?? generatedSummary;
+
+      if (summary) {
+        operation.summary = summary;
+      }
+
+      const description =
+        docInfo?.description ??
+        operation.description ??
+        summary;
+
+      if (description) {
+        operation.description = description;
+      }
+
+      const requestContent =
+        operation.requestBody?.content &&
+        operation.requestBody.content["application/json"];
+
+      const requestExample = docInfo?.examples?.request?.value;
+      if (requestExample && requestContent) {
+        requestContent.example = requestExample;
+      }
+
+      const successResponse =
+        operation.responses &&
+        (operation.responses["200"] || operation.responses["201"]);
+      const responseContent =
+        successResponse &&
+        successResponse.content &&
+        successResponse.content["application/json"];
+
+      const responseExample = docInfo?.examples?.response?.value;
+      if (responseExample && responseContent) {
+        responseContent.example = responseExample;
+      }
+    }
+  }
+}
+
 function enhanceOpenAPISpec(config: EnhancementConfig) {
   const spec = readOpenAPISpec(config.inputPath);
 
@@ -268,6 +384,7 @@ function enhanceOpenAPISpec(config: EnhancementConfig) {
   ensureTags(spec);
   removeInternalOperations(spec);
   assignTagsAndSecurity(spec);
+  enrichOperationMetadata(spec);
 
   writeOpenAPISpec(spec, config.outputPath);
   console.log(`Enhanced OpenAPI spec written to ${config.outputPath}`);
