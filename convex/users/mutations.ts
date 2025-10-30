@@ -42,8 +42,44 @@ const SaveOnboardingResultV = v.object({
 });
 
 /**
- * Create or update user profile from WorkOS authentication
- * This is typically called after successful WorkOS authentication
+ * Creates or updates user from WorkOS authentication
+ *
+ * Upserts a user record based on WorkOS authentication data. If a user with the given WorkOS ID already exists, updates their information; otherwise creates a new user. This is typically called after successful WorkOS authentication to ensure the user exists in the database. Requires authentication token matching the WorkOS user ID being created/updated.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "workosUserId": "org_user_123",
+ *     "email": "member@example.com",
+ *     "displayName": "Member Example",
+ *     "orgId": "org_abc123",
+ *     "orgRole": "member"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "user_9f3c2ab457"
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Cannot create user for different WorkOS ID",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "Cannot create user for different WorkOS ID",
+ *     "statusCode": 403
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const upsertUser = mutation({
   args: {
@@ -98,8 +134,58 @@ export const upsertUser = mutation({
 });
 
 /**
- * Update user profile information
- * Requires ownership or admin access
+ * Updates user profile information
+ *
+ * Updates or creates a user profile with the provided information. If a profile already exists for the user, updates the specified fields; otherwise creates a new profile. Validates input constraints (display name not empty, bio max 1000 characters). Requires the authenticated user to own the profile or have admin privileges.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_9f3c2ab457",
+ *     "displayName": "Updated Name",
+ *     "bio": "Software engineer passionate about building great products.",
+ *     "goals": "Connect with other engineers and learn about new technologies",
+ *     "languages": ["English", "Spanish"],
+ *     "experience": "5 years in software development"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "profiles_d4c1e87a90"
+ * }
+ * ```
+ * @example response-error-validation
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Bio cannot exceed 1000 characters",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Bio cannot exceed 1000 characters",
+ *     "statusCode": 400
+ *   },
+ *   "value": null
+ * }
+ * ```
+ * @example response-error-authorization
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Forbidden: You do not have permission to access this resource",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "Forbidden: You do not have permission to access this resource",
+ *     "statusCode": 403
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const updateUserProfile = mutation({
   args: {
@@ -168,8 +254,55 @@ export const updateUserProfile = mutation({
 });
 
 /**
- * Update user interests
- * Requires ownership or admin access
+ * Updates user interests
+ *
+ * Replaces all existing user interests with the provided list. Validates that all interest keys exist in the interests catalog before applying changes. Removes all existing interests and creates new associations atomically. Requires the authenticated user to own the profile or have admin privileges.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_9f3c2ab457",
+ *     "interests": ["software-engineering", "startups", "machine-learning"]
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error-validation
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Invalid interests: nonexistent-interest",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Invalid interests: nonexistent-interest",
+ *     "field": "interests",
+ *     "statusCode": 400
+ *   },
+ *   "value": null
+ * }
+ * ```
+ * @example response-error-authorization
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Forbidden: You do not have permission to access this resource",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "Forbidden: You do not have permission to access this resource",
+ *     "statusCode": 403
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const updateUserInterests = mutation({
   args: {
@@ -223,8 +356,66 @@ export const updateUserInterests = mutation({
 });
 
 /**
- * Deactivate user account
- * Requires ownership or admin access
+ * Deactivates user account
+ *
+ * Marks a user account as inactive, preventing them from accessing the platform. Validates that the user exists and is not already deactivated. In a complete implementation, this would also cancel active meetings, remove from matching queues, and clean up active sessions. Requires the authenticated user to own the account or have admin privileges.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_9f3c2ab457"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error-not-found
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "User not found: user_9f3c2ab457",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "User not found: user_9f3c2ab457",
+ *     "statusCode": 404
+ *   },
+ *   "value": null
+ * }
+ * ```
+ * @example response-error-validation
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "User is already deactivated",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "User is already deactivated",
+ *     "statusCode": 400
+ *   },
+ *   "value": null
+ * }
+ * ```
+ * @example response-error-authorization
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Forbidden: You do not have permission to access this resource",
+ *   "errorData": {
+ *     "code": "FORBIDDEN",
+ *     "message": "Forbidden: You do not have permission to access this resource",
+ *     "statusCode": 403
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const deactivateUser = mutation({
   args: { userId: v.id("users") },
@@ -258,8 +449,38 @@ export const deactivateUser = mutation({
 });
 
 /**
- * Update user's last seen timestamp
- * Used for presence tracking
+ * Updates user's last seen timestamp
+ *
+ * Updates the lastSeenAt timestamp for the currently authenticated user to the current time. Used for presence tracking and activity monitoring. This is typically called periodically by the client to indicate the user is still active. Requires authentication.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Authentication required",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "Authentication required",
+ *     "statusCode": 401
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const updateLastSeen = mutation({
   args: {},
@@ -286,8 +507,9 @@ export const updateLastSeen = mutation({
 });
 
 /**
- * @summary saveOnboarding
- * @description Atomically persists a member's onboarding payload – profile metadata, interest selections, and completion flags – while enforcing validation rules and idempotency. The mutation uses a scoped idempotency key so the same payload can be retried without duplicating interests or profiles.
+ * Saves user onboarding data
+ *
+ * Atomically persists a member's onboarding payload – profile metadata, interest selections, and completion flags – while enforcing validation rules and idempotency. The mutation uses a scoped idempotency key so the same payload can be retried without duplicating interests or profiles.
  *
  * @example request
  * ```json

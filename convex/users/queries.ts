@@ -40,8 +40,9 @@ export const getUserByIdInternal = internalQuery({
 });
 
 /**
- * @summary getUserById
- * @description Returns the full user document for the supplied `userId`. This wrapper exists for non-sensitive tooling and tests; clients should prefer `getCurrentUser` or scoped profile queries when they need authorization filtering.
+ * Gets user by ID
+ *
+ * Returns the full user document for the supplied `userId`. This wrapper exists for non-sensitive tooling and tests; clients should prefer `getCurrentUser` or scoped profile queries when they need authorization filtering.
  *
  * @example request
  * ```json
@@ -107,7 +108,48 @@ export const getUserByWorkosId = internalQuery({
 });
 
 /**
- * Gets current user profile
+ * Gets current authenticated user
+ *
+ * Returns the full user document for the currently authenticated user based on their WorkOS identity. Returns null if the user is not authenticated, allowing clients to safely subscribe without triggering errors during logged-out states. This is the primary method for retrieving the current user's data in authenticated contexts.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "user_9f3c2ab457",
+ *     "_creationTime": 1716403200000,
+ *     "workosUserId": "org_user_123",
+ *     "email": "member@example.com",
+ *     "displayName": "Member Example",
+ *     "orgId": "org_abc123",
+ *     "orgRole": "member",
+ *     "isActive": true,
+ *     "onboardingComplete": true,
+ *     "onboardingStartedAt": 1716406800000,
+ *     "onboardingCompletedAt": 1716489600000,
+ *     "createdAt": 1716403200000,
+ *     "updatedAt": 1716489600000
+ *   }
+ * }
+ * ```
+ * @example response-unauthenticated
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const getCurrentUser = query({
   args: {},
@@ -127,7 +169,61 @@ export const getCurrentUser = query({
 });
 
 /**
- * Gets user profile by ID (with authorization)
+ * Gets user profile by ID with authorization
+ *
+ * Returns a user profile with privacy-controlled access to organization information. Organization details (orgId, orgRole) are only included if the requesting user is in the same organization or has admin privileges. Returns null if the user does not exist. Requires authentication.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_9f3c2ab457"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "user_9f3c2ab457",
+ *     "displayName": "Member Example",
+ *     "avatarUrl": "https://example.com/avatar.jpg",
+ *     "isActive": true,
+ *     "orgId": "org_abc123",
+ *     "orgRole": "member"
+ *   }
+ * }
+ * ```
+ * @example response-restricted
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "user_9f3c2ab457",
+ *     "displayName": "Member Example",
+ *     "avatarUrl": "https://example.com/avatar.jpg",
+ *     "isActive": true
+ *   }
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Authentication required",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "Authentication required",
+ *     "statusCode": 401
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const getUserProfile = query({
   args: { userId: v.id("users") },
@@ -156,7 +252,57 @@ export const getUserProfile = query({
 });
 
 /**
- * Get onboarding state for the current user.
+ * Gets onboarding state for current user
+ *
+ * Returns the onboarding completion status for the currently authenticated user, including whether they have completed onboarding, whether a profile exists, and the completion timestamp. Used by the frontend to determine which onboarding steps to display. Requires authentication.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ * @example response-complete
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "userId": "user_9f3c2ab457",
+ *     "onboardingComplete": true,
+ *     "profileExists": true,
+ *     "profileId": "profiles_d4c1e87a90",
+ *     "completedAt": 1716489600000
+ *   }
+ * }
+ * ```
+ * @example response-incomplete
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "userId": "user_9f3c2ab457",
+ *     "onboardingComplete": false,
+ *     "profileExists": false
+ *   }
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Authentication required",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "Authentication required",
+ *     "statusCode": 401
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const getOnboardingState = query({
   args: {},
@@ -180,8 +326,73 @@ export const getOnboardingState = query({
 });
 
 /**
- * List active users in the same organization (with pagination)
- * Uses index-first query pattern per convex_rules.mdc
+ * Lists active users in the same organization
+ *
+ * Returns a paginated list of active users within the authenticated user's organization. Only returns public-safe user data (ID, display name, avatar, active status). Uses index-first query pattern for optimal performance. Returns an empty list if the user is not part of an organization. Requires authentication.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "paginationOpts": {
+ *       "numItems": 10,
+ *       "cursor": null
+ *     }
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "page": [
+ *       {
+ *         "_id": "user_9f3c2ab457",
+ *         "displayName": "Member Example",
+ *         "avatarUrl": "https://example.com/avatar1.jpg",
+ *         "isActive": true
+ *       },
+ *       {
+ *         "_id": "user_8e2b1cd346",
+ *         "displayName": "Another Member",
+ *         "avatarUrl": "https://example.com/avatar2.jpg",
+ *         "isActive": true
+ *       }
+ *     ],
+ *     "isDone": false,
+ *     "continueCursor": "cursor_abc123"
+ *   }
+ * }
+ * ```
+ * @example response-empty
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "page": [],
+ *     "isDone": true,
+ *     "continueCursor": null
+ *   }
+ * }
+ * ```
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Authentication required",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "Authentication required",
+ *     "statusCode": 401
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const listActiveUsersInOrg = query({
   args: {
@@ -234,8 +445,53 @@ export const listActiveUsersInOrg = query({
 });
 
 /**
- * Get users by onboarding completion status (internal use)
- * Uses index-first query pattern per convex_rules.mdc
+ * Gets users by onboarding completion status (internal)
+ *
+ * Returns a list of users filtered by their onboarding completion status. Used internally for analytics, monitoring, and administrative tasks. Uses index-first query pattern for optimal performance. Limited to 100 results by default to prevent excessive data retrieval.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "onboardingComplete": true,
+ *     "limit": 50
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "user_9f3c2ab457",
+ *       "_creationTime": 1716403200000,
+ *       "workosUserId": "org_user_123",
+ *       "email": "member@example.com",
+ *       "displayName": "Member Example",
+ *       "orgId": "org_abc123",
+ *       "orgRole": "member",
+ *       "isActive": true,
+ *       "onboardingComplete": true,
+ *       "onboardingStartedAt": 1716406800000,
+ *       "onboardingCompletedAt": 1716489600000,
+ *       "createdAt": 1716403200000,
+ *       "updatedAt": 1716489600000
+ *     }
+ *   ]
+ * }
+ * ```
+ * @example response-empty
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": []
+ * }
+ * ```
  */
 export const getUsersByOnboardingStatus = internalQuery({
   args: {
