@@ -87,7 +87,67 @@ export const getMeetingParticipants = internalQuery({
 });
 
 /**
- * Gets meeting details for authenticated user with WebRTC info
+ * Gets meeting details for authenticated user with WebRTC info.
+ *
+ * Provides aggregated session metrics and the caller's presence/role snapshot.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_123example"
+ *   }
+ * }
+ * ```
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "meeting_123example",
+ *     "_creationTime": 1704063600000,
+ *     "organizerId": "user_123example",
+ *     "title": "Quarterly Planning Meeting",
+ *     "description": "Planning the roadmap for next quarter objectives.",
+ *     "scheduledAt": 1704067200000,
+ *     "duration": 3600,
+ *     "state": "scheduled",
+ *     "participantCount": 3,
+ *     "averageRating": 4.6,
+ *     "streamRoomId": "stream_room_456",
+ *     "webrtcEnabled": true,
+ *     "activeWebRTCSessions": 2,
+ *     "userRole": "host",
+ *     "userPresence": "invited",
+ *     "createdAt": 1704063600000,
+ *     "updatedAt": 1704063600000
+ *   }
+ * }
+ * ```
+ * @example dataModel
+ * ```json
+ * {
+ *   "_id": "meeting_123example",
+ *   "_creationTime": 1704063600000,
+ *   "organizerId": "user_123example",
+ *   "title": "Quarterly Planning Meeting",
+ *   "description": "Planning the roadmap for next quarter objectives.",
+ *   "scheduledAt": 1704067200000,
+ *   "duration": 3600,
+ *   "state": "scheduled",
+ *   "participantCount": 3,
+ *   "averageRating": 4.6,
+ *   "streamRoomId": "stream_room_456",
+ *   "webrtcEnabled": true,
+ *   "activeWebRTCSessions": 2,
+ *   "userRole": "host",
+ *   "userPresence": "invited",
+ *   "createdAt": 1704063600000,
+ *   "updatedAt": 1704063600000
+ * }
+ * ```
  */
 export const getMeeting = query({
   args: { meetingId: v.id("meetings") },
