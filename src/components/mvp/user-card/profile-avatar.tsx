@@ -49,7 +49,7 @@ export function ProfileAvatar({
           sizeClasses[size],
           "shadow-lg",
           shouldShowGradient
-            ? `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to}`
+            ? `bg-linear-to-br ${avatarColors.from} ${avatarColors.to}`
             : "",
           isSpeaking && "ring-primary ring-2 ring-offset-2",
           onClick && "cursor-pointer",

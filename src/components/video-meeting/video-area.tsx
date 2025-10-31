@@ -127,16 +127,24 @@ function VideoContainerComp({
       <div
         className={`absolute inset-0 flex items-center justify-center ${
           theme === "dark"
-            ? isMain ? "bg-zinc-800" : "bg-zinc-900"
-            : isMain ? "bg-zinc-200" : "bg-zinc-300"
+            ? isMain
+              ? "bg-zinc-800"
+              : "bg-zinc-900"
+            : isMain
+              ? "bg-zinc-200"
+              : "bg-zinc-300"
         }`}
       >
         {showVideoOff ? (
           <div className="flex flex-col items-center justify-center text-center">
             <div className="mb-2">
-              <VideoOff className={`h-12 w-12 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`} />
+              <VideoOff
+                className={`h-12 w-12 ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}
+              />
             </div>
-            <div className={`text-sm font-medium ${theme === "dark" ? "text-zinc-300" : "text-zinc-700"}`}>
+            <div
+              className={`text-sm font-medium ${theme === "dark" ? "text-zinc-300" : "text-zinc-700"}`}
+            >
               {isLocal ? "Your video is off" : displayName}
             </div>
           </div>
@@ -151,16 +159,24 @@ function VideoContainerComp({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className={`absolute inset-0 flex items-center justify-center ${
-                theme === "dark"
-                  ? "bg-gradient-to-br from-zinc-700 to-zinc-900"
-                  : "bg-gradient-to-br from-zinc-300 to-zinc-400"
-              }`}>
+              <div
+                className={`absolute inset-0 flex items-center justify-center ${
+                  theme === "dark"
+                    ? "bg-linear-to-br from-zinc-700 to-zinc-900"
+                    : "bg-linear-to-br from-zinc-300 to-zinc-400"
+                }`}
+              >
                 <div className="text-center">
-                  <div className={`mb-2 text-lg font-semibold ${theme === "dark" ? "text-zinc-100" : "text-zinc-800"}`}>
+                  <div
+                    className={`mb-2 text-lg font-semibold ${theme === "dark" ? "text-zinc-100" : "text-zinc-800"}`}
+                  >
                     {displayName}
                   </div>
-                  <div className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}>Simulated video</div>
+                  <div
+                    className={`text-xs ${theme === "dark" ? "text-zinc-400" : "text-zinc-600"}`}
+                  >
+                    Simulated video
+                  </div>
                 </div>
               </div>
             )}

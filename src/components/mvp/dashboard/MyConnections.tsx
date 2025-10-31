@@ -139,7 +139,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
                   >
                     <div className="relative shrink-0">
                       <Avatar
-                        className={`h-9 w-9 ${profile.avatar ? "" : `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to}`}`}
+                        className={`h-9 w-9 ${profile.avatar ? "" : `bg-linear-to-br ${avatarColors.from} ${avatarColors.to}`}`}
                       >
                         {profile.avatar ? (
                           <img
@@ -255,7 +255,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
             onClick={() => setShowUserProfile(true)}
           >
             <Avatar
-              className={`h-9 w-9 ${shouldShowGradient ? `bg-gradient-to-br ${avatarColors.from} ${avatarColors.to}` : ""}`}
+              className={`h-9 w-9 ${shouldShowGradient ? `bg-linear-to-br ${avatarColors.from} ${avatarColors.to}` : ""}`}
             >
               {!shouldShowGradient && activeProfile.avatar ? (
                 <img
@@ -381,7 +381,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
                     onClick={() => setShowUserProfile(true)}
                   >
                     <Avatar
-                      className={`h-9 w-9 ${shouldShowGradient ? `bg-gradient-to-br ${messageAvatarColors.from} ${messageAvatarColors.to}` : ""}`}
+                      className={`h-9 w-9 ${shouldShowGradient ? `bg-linear-to-br ${messageAvatarColors.from} ${messageAvatarColors.to}` : ""}`}
                     >
                       {!shouldShowGradient && activeProfile.avatar ? (
                         <img

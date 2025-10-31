@@ -58,7 +58,7 @@ const GlassCard = ({
     className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 ${className}`}
     {...props}
   >
-    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent dark:from-white/10" />
+    <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent dark:from-white/10" />
     <div className="relative">{children}</div>
   </div>
 );
@@ -121,7 +121,7 @@ const StatCard: React.FC<StatCardProps> = ({
   >
     <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
       <div className="flex items-center gap-4">
-        <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm">
+        <div className="rounded-xl bg-linear-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm">
           <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div>
@@ -154,10 +154,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.1, duration: 0.5 }}
     whileHover={{ y: -8, scale: 1.03 }}
-    className="group"
+    className="group h-full"
   >
-    <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
-      <div className="mb-4 w-fit rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-emerald-500/20 group-hover:to-teal-500/20">
+    <GlassCard className="flex h-full flex-col gap-4 p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
+      <div className="mb-4 w-fit rounded-xl bg-linear-to-br from-emerald-500/10 to-teal-500/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:bg-linear-to-br group-hover:from-emerald-500/20 group-hover:to-teal-500/20">
         <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
       </div>
       <h3 className="mb-3 text-xl font-medium text-slate-900 dark:text-white">
@@ -189,9 +189,9 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.2, duration: 0.5 }}
     whileHover={{ y: -5, scale: 1.02 }}
-    className="group"
+    className="group h-full"
   >
-    <GlassCard className="p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
+    <GlassCard className="flex h-full flex-col p-6 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
       <div className="mb-4 flex gap-1">
         {[...Array(rating)].map((_, i) => (
           <Star key={i} className="h-5 w-5 fill-current text-amber-400" />
@@ -200,8 +200,8 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
       <p className="mb-4 text-slate-600 italic dark:text-slate-300">
         &quot;{text}&quot;
       </p>
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 font-medium text-slate-700 backdrop-blur-sm dark:text-slate-200">
+      <div className="mt-auto flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-emerald-500/20 to-teal-500/20 font-medium text-slate-700 backdrop-blur-sm dark:text-slate-200">
           {name.charAt(0)}
         </div>
         <div>
@@ -217,7 +217,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
 const LiquidGlassBackground = () => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20" />
+      <div className="absolute inset-0 bg-linear-to-br from-emerald-50 via-white to-teal-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/20" />
       <div
         className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
         style={{
@@ -374,8 +374,8 @@ const LandingPage = () => {
                 className="mb-8 inline-block"
               >
                 <GlassCard className="px-6 py-3">
-                  <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-sm font-medium text-transparent dark:from-emerald-400 dark:to-teal-400">
-                    Professional networking reimagined
+                  <span className="bg-linear-to-r from-emerald-600 to-teal-600 bg-clip-text text-sm font-medium text-transparent dark:from-emerald-400 dark:to-teal-400">
+                    People-first networking, at your fingertips
                   </span>
                 </GlassCard>
               </motion.div>
@@ -384,12 +384,12 @@ const LandingPage = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
-                className="mb-8 text-6xl font-light tracking-tight text-slate-900 md:text-7xl lg:text-8xl dark:text-white"
+                className="mb-8 text-4xl font-light tracking-tight text-slate-900 md:text-6xl lg:text-7xl dark:text-white"
               >
-                Professional Networking
+                Meet the people
                 <br />
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-700 bg-clip-text font-medium text-transparent dark:from-emerald-400 dark:to-teal-300">
-                  Without the BS.
+                <span className="bg-linear-to-r from-emerald-600 to-teal-700 bg-clip-text font-medium text-transparent dark:from-emerald-400 dark:to-teal-300">
+                  you were meant to talk to.
                 </span>
               </motion.h1>
 
@@ -399,9 +399,10 @@ const LandingPage = () => {
                 transition={{ delay: 0.6, duration: 0.6 }}
                 className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-slate-600 dark:text-slate-300"
               >
-                Where professionals come to actually connect, not to share
-                inspirational quotes or humble brag about their morning
-                routines.
+                Connvo opens the door to intentional connections. Have authentic
+                "coffee-chat" conversations with peers, mentors, and
+                collaborators who align with your goals, interests, and
+                personality.
               </motion.p>
 
               <motion.div
@@ -425,7 +426,7 @@ const LandingPage = () => {
                     }}
                   />
                   <span className="relative flex items-center gap-2">
-                    Start Real Networking
+                    Start Your First Connvo
                     <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </span>
                 </StartCta>
@@ -453,7 +454,7 @@ const LandingPage = () => {
           >
             <div className="flex flex-col items-center gap-2">
               <GlassCard className="p-2">
-                <div className="h-6 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-transparent" />
+                <div className="h-6 w-1 rounded-full bg-linear-to-b from-emerald-500 to-transparent" />
               </GlassCard>
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Scroll
@@ -482,25 +483,25 @@ const LandingPage = () => {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 icon={UserCheck}
-                value="50K+"
-                label="BS-Free Conversations"
+                value="10+"
+                label="Conversations facilitated"
                 delay={0.1}
               />
               <StatCard
                 icon={Clock}
-                value="92%"
-                label="Less Cringe Than LinkedIn"
+                value="90%"
+                label="Schedule a second call"
                 delay={0.2}
               />
               <StatCard
                 icon={Activity}
                 value="4.8/5"
-                label="User Satisfaction"
+                label="Average call satisfaction"
                 delay={0.3}
               />
               <StatCard
                 icon={Globe}
-                value="120+"
+                value="5+"
                 label="Countries Represented"
                 delay={0.4}
               />
@@ -518,53 +519,55 @@ const LandingPage = () => {
               className="mx-auto mb-16 max-w-3xl text-center"
             >
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-                What makes us different
+                Designed for meaningful conversations.
               </div>
               <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
-                Features That Actually Matter
+                Everything you need for intentional networking. No fluff, no
+                humble brags.
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
-                No fluff. No filler. Just real connection tools.
+                Connvo guides every step—from your first intro to the follow-up
+                message.
               </p>
             </motion.div>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid items-stretch gap-8 md:grid-cols-2 lg:grid-cols-3">
               {[
                 {
-                  icon: Timer,
-                  title: "5-Minute Calls",
+                  icon: Target,
+                  title: "AI matching that understands people",
                   description:
-                    "Because 'quick coffee chats' are never quick. Get straight to the point.",
+                    "Proprietary models blend interests, goals, and complementary personalities to introduce the right people at the right moment.",
                 },
                 {
                   icon: Users,
-                  title: "Smart Matching",
+                  title: "Connections beyond your bubble",
                   description:
-                    "Like dating apps, but for people who want to talk about more than their Myers-Briggs.",
+                    "Discover peers, mentors, and collaborators you would never meet in existing networks or feeds.",
                 },
                 {
                   icon: Shield,
-                  title: "BS Detection",
+                  title: "Safety and compliance first",
                   description:
-                    "Our AI flags corporate buzzwords faster than you can say 'synergy'.",
+                    "SOC and FERPA-aligned guardrails, guided topics, and moderation tools keep every conversation respectful and secure.",
                 },
                 {
                   icon: MessageSquare,
-                  title: "Real Talk Only",
+                  title: "Guided coffee chats",
                   description:
-                    "Save the weather small talk for your next awkward elevator ride.",
+                    "Dynamic icebreakers, suggested questions, and conversation prompts remove first-minute awkwardness.",
                 },
                 {
-                  icon: Award,
-                  title: "Trust Score",
+                  icon: Activity,
+                  title: "Collaborative call workspace",
                   description:
-                    "Earned by being interesting, not by posting motivational quotes.",
+                    "Shared notes, profiles, and action items live beside the call so everyone stays focused and aligned.",
                 },
                 {
-                  icon: TrendingUp,
-                  title: "Actual Growth",
+                  icon: Phone,
+                  title: "Seamless voice or video",
                   description:
-                    "Track connections that matter, not your endorsement count.",
+                    "Launch high-quality calls instantly with hybrid WebRTC + GetStream performance that scales with your team.",
                 },
               ].map((feature, index) => (
                 <FeatureCard key={index} {...feature} index={index} />
@@ -586,34 +589,35 @@ const LandingPage = () => {
               className="mx-auto mb-16 max-w-3xl text-center"
             >
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-                {`Don't take our word for it`}
+                Teams and communities who tried Connvo
               </div>
               <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
-                What Real Humans Say
+                Conversations people keep coming back for
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
-                No paid testimonials. Just honest feedback.
+                Every pilot cohort highlighted deeper connections, faster
+                follow-ups, and less awkward small talk.
               </p>
             </motion.div>
 
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid items-stretch gap-8 md:grid-cols-3">
               {[
                 {
-                  name: "Sarah K.",
-                  role: "Reformed LinkedIn Influencer",
-                  text: "Found my co-founder in 5 minutes. My LinkedIn connection requests are still pending.",
+                  name: "Sara G.",
+                  role: "Startup Founder, ex-SWE",
+                  text: "The personality quiz nailed the kind of people I needed to meet. Our first Connvo call turned into a weekly product strategy session.",
                   rating: 5,
                 },
                 {
                   name: "Alex T.",
-                  role: "Professional Human",
-                  text: "Finally, networking that doesn't feel like a bad LinkedIn post. Actually made meaningful connections.",
+                  role: "University Mentor",
+                  text: "Connvo removes all the friction. Notes, follow-ups, and context are ready the moment the call ends—my mentees feel supported.",
                   rating: 5,
                 },
                 {
-                  name: "Mike R.",
-                  role: "Ex-Corporate Buzzword Expert",
-                  text: "Turns out, real conversations work better than 'touching base' emails. Who knew?",
+                  name: "Shrey S.",
+                  role: "Student",
+                  text: "As a student, Connvo is really tuff. I love matching with like-minded people, and working together on solving real problems.",
                   rating: 5,
                 },
               ].map((testimonial, index) => (
@@ -624,7 +628,7 @@ const LandingPage = () => {
         </section>
 
         {/* Retention Data Visualization */}
-        <section className="py-20">
+        {/* <section className="py-20">
           <div className="container mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -633,13 +637,13 @@ const LandingPage = () => {
               className="mx-auto mb-12 max-w-3xl text-center"
             >
               <div className="mb-4 inline-block rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-                Users stick around
+                Early cohort outcomes
               </div>
               <h2 className="mb-6 text-4xl font-semibold text-gray-900 dark:text-white">
-                Industry-Leading Retention
+                Relationships that keep moving forward
               </h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
-                People who join Connvo actually keep using it. Imagine that.
+                Connvo users return for follow-up conversations, driving 90%+ retention through meaningful matches.
               </p>
             </motion.div>
 
@@ -683,7 +687,7 @@ const LandingPage = () => {
               </div>
             </motion.div>
           </div>
-        </section>
+        </section> */}
 
         {/* Improved CTA Section */}
         <section
@@ -697,11 +701,11 @@ const LandingPage = () => {
               className="mx-auto max-w-4xl text-center"
             >
               <h2 className="mb-6 text-4xl font-semibold">
-                Ready for Real Professional Growth?
+                Ready to create coffee chats that count?
               </h2>
               <p className="mb-10 text-xl text-emerald-100">
-                Join thousands of professionals building meaningful connections
-                through authentic conversations.
+                Sign up to unlock intentional matches, guided conversations, and
+                call follow-ups that nurture real relationships.
               </p>
               <motion.a
                 href="/app"
@@ -729,7 +733,7 @@ const LandingPage = () => {
               <div className="text-center text-gray-600 md:text-right dark:text-gray-300">
                 © {new Date().getFullYear()} Connvo. All rights reserved.
                 <div className="mt-1 text-sm">
-                  No corporate jargon was harmed in the making of this site.
+                  Built to help every conversation feel intentional and human.
                 </div>
               </div>
             </div>
