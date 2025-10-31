@@ -18,8 +18,8 @@ export function SignInButton({ className, children }: SignInButtonProps) {
   }
 
   const handleSignIn = () => {
-    // Redirect to WorkOS AuthKit sign-in
-    window.location.href = "/api/auth/login";
+    // Redirect to the hosted WorkOS AuthKit sign-in flow
+    window.location.href = "/auth/sign-in";
   };
 
   return (

@@ -252,7 +252,7 @@ function StartCta({
       onClick={(e) => {
         e.preventDefault();
         if (loading) return;
-        const dest = user ? "/app" : "/auth/login";
+        const dest = user ? "/app" : "/auth/sign-in";
         handleTransition(e, dest, router);
       }}
       {...props}

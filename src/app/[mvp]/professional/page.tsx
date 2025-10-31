@@ -24,7 +24,7 @@ export default function ProfessionalConnectionPage() {
 
   const handleStartQueue = (type: string) => {
     if (!user) {
-      router.push("/auth/login");
+      router.push("/auth/sign-in");
       return;
     }
     router.push(
