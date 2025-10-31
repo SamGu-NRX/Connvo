@@ -6,7 +6,16 @@ import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
 import { AuthKitProvider, useAuth as useWorkOSAuth, useAccessToken } from "@workos-inc/authkit-nextjs/components";
 import { api } from "@convex/_generated/api";
 
-const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+
+if (!convexUrl) {
+  throw new Error(
+    "ConvexClientProvider requires NEXT_PUBLIC_CONVEX_URL to be defined. " +
+      "Set this environment variable to your Convex deployment URL (e.g. https://your-app.convex.cloud).",
+  );
+}
+
+const convex = new ConvexReactClient(convexUrl);
 
 // Wrapper hook that matches ConvexProviderWithAuthKit's expected interface
 function useAuth() {
