@@ -526,8 +526,8 @@ validateOpenAPISpec(specPath).catch((error) => {
   "$schema": "https://mintlify.com/schema.json",
   "name": "Connvo API Documentation",
   "logo": {
-    "dark": "/public/Connvologos/Connvowhite.svg",
-    "light": "/public/Connvologos/Connvoblack.svg"
+    "dark": "/public/ConnvoLogos/Connvo-white.svg",
+    "light": "/public/ConnvoLogos/Connvo-black.svg"
   },
   "favicon": "/public/logo-square.png",
   "colors": {

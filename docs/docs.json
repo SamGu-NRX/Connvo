@@ -3,15 +3,15 @@
   "theme": "mint",
   "name": "Connvo API Documentation",
   "logo": {
-    "dark": "../public/Connvologos/Connvowhite.svg",
-    "light": "../public/Connvologos/Connvoblack.svg"
+    "dark": "../public/ConnvoLogos/Connvo-white.svg",
+    "light": "../public/ConnvoLogos/Connvo-black.svg"
   },
   "colors": {
     "primary": "#0D9373",
     "light": "#07C983",
     "dark": "#0D9373"
   },
-  "favicon": "../public/Connvologos/Connvowhite.svg",
+  "favicon": "../public/ConnvoLogos/Connvo-white.svg",
   "navigation": {
     "tabs": [
       {

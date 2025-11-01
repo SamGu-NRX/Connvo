@@ -1,67 +1,60 @@
 <h1 align="center">Connvo</h1>
 
 <p align="center">
-  <strong>Professional connections, without the BS.</strong><br>
-  The antithesis of LinkedIn – real-time, genuine professional connections via sleek UI, effective AI-powered smart matching, and live voice/video calls.<br>
-<!--   <a href="https://devpost.com/software/Connvo-d5slpu?ref_content=user-portfolio&ref_feature=in_progress">HackTAMS 2025 Project</a> -->
+  <strong>People-first networking, powered by AI.</strong><br>
+  Connvo recreates the vibe of a coffee chat so you can instantly meet peers, mentors, and collaborators who match your goals, interests, and personality. Connections have never been easier.
 </p>
 
 ---
 
 ## Overview
 
-Connvo was born out of the frustration with platforms like LinkedIn – cluttered interfaces, bot-filled interactions, and an overall unproductive networking environment. We reimagined professional connections by building an app that emphasizes:
+Connvo exists for the moment when a “quick chat” turns into a partnership. We combine an adaptive personality quiz, intentional AI matchmaking, and live collaboration tools so every conversation feels effortless and human.
 
-- **Real Human Interaction:** Instant voice and video calls powered by Stream.
-- **Seamless Onboarding:** Robust authentication and onboarding with Clerk.
-- **Smart Matching:** An ML model that pairs professionals with like-minded peers.
-- **Sleek Design:** A minimalist UI that focuses on productivity and genuine networking.
-
----
-
-<h3 align="center">Lander Page</h3>
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/f5ac64e0-747b-4f27-b7c6-8d4c2a8fd751" alt="Lander Page">
-</p>
-
-<h3 align="center">Smooth Onboarding</h3>
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/75b0f718-e8fb-42e4-bf39-0fed942ffb38" alt="Smooth Onboarding">
-</p>
+- **Intelligent matching:** Proprietary models pair you with people who complement your interests, goals, and communication style.
+- **Guided coffee chats:** Dynamic icebreakers, suggested questions, and live prompts keep conversation flowing from the first minute.
+- **In-call collaboration:** Shared notes, participant context, action items, and transcription live beside the call so everyone stays aligned.
+- **Always-on follow-up:** Recaps, recommended next steps, and future matches arrive automatically after each call.
+- **Compliance-first:** SOC- and FERPA-aligned guardrails, opt-in controls, and content moderation keep conversations on-mission.
 
 ---
 
-## Features
+## Feature Highlights
 
-### Authentic Real-Time Connections
+### Intentional Matchmaking Flow
+An adaptive onboarding flow captures personality insights, availability, and goals. Connvo’s matching engine blends embeddings, heuristics, and feedback signals to introduce the right people at the right moment.
 
-Engage in live voice and video calls that bypass endless text exchanges.
+### Guided Conversation Workspace
+Inside every voice or video session you’ll find shared notes, participant cards, suggested prompts, and optional transcription. No more juggling tools—everything lives in one workspace.
 
+### Real-Time Coffee Chats
+A hybrid WebRTC + Stream media stack delivers reliable audio/video with automatic fallback modes. Launch calls instantly, whether you’re meeting one-to-one or with a small cohort.
+
+### Follow-Up Automations
+After the call, Connvo generates beautiful summaries, action items, and context-aware follow-ups. The more you use the app, the smarter recommendations become.
+
+---
+
+## Screenshots
+
+<h3 align="center">Landing Page</h3>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/0199e27e-8b1f-4ff1-8b69-ce046c0a012a" alt="Real-Time Call Interface" width="600">
+  <img src="https://github.com/user-attachments/assets/f5ac64e0-747b-4f27-b7c6-8d4c2a8fd751" alt="Landing Page" width="720">
 </p>
 
-### Intelligent Matchmaking
-
-Our ML-driven system pairs you with professionals who share your interests and ambitions.
-
+<h3 align="center">Onboarding & Personality Quiz</h3>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/fee31d22-e144-4896-b655-ef38437475e4" alt="Smart Matching Dashboard" width="600">
+  <img src="https://github.com/user-attachments/assets/75b0f718-e8fb-42e4-bf39-0fed942ffb38" alt="Onboarding Flow" width="720">
 </p>
 
-### Sleek, Minimalist UI
-
-A clean, distraction-free environment that lets you focus on building meaningful connections.
-
+<h3 align="center">In-Call Collaboration</h3>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/57167d18-050c-46d6-bcc4-0e5ca0d6f237" alt="Minimalist UI" width="600">
+  <img src="https://github.com/user-attachments/assets/0199e27e-8b1f-4ff1-8b69-ce046c0a012a" alt="Real-Time Call Workspace" width="720">
 </p>
 
 ---
 
-## How We Built It
-
-> _A quick overview of the core technologies powering this project._
+## Architecture & Tech Stack
 
 | **Category**                            | **Technologies**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | :-------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -70,132 +63,110 @@ A clean, distraction-free environment that lets you focus on building meaningful
 | **Authentication** :lock:               | [![Clerk](https://img.shields.io/badge/Clerk-000000?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com/)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | **Real-Time Communication** :satellite: | [![Stream API](https://img.shields.io/badge/Stream%20API-EEEEEE?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgNDAwIDI0MS4xIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImIiIHgxPSIwIiB4Mj0iMzc1LjIiIHkxPSI4LjUiIHkyPSItMzEuOSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzU0YmNmZSIvPjxzdG9wIG9mZnNldD0iLjQiIHN0b3AtY29sb3I9IiMyODVmZjYiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMzYzY4ZjUiLz48L2xpbmVhckdyYWRpZW50PjxjbGlwUGF0aCBpZD0iYSI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGg0MDB2MjQxSDB6Ii8+PC9jbGlwUGF0aD48L2RlZnM+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBjbGlwLXBhdGg9InVybCgjYSkiIGZvbnQtZmFtaWx5PSJub25lIiBmb250LXNpemU9Im5vbmUiIGZvbnQtd2VpZ2h0PSJub25lIiBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6bm9ybWFsIiB0ZXh0LWFuY2hvcj0ibm9uZSI+PHBhdGggZmlsbD0idXJsKCNiKSIgZD0iTTIwMi40IDguOWMtLjcuMi0xLjkuOS0yLjYgMS40LTEuMiAxLTIgMi02LjQgNy45YTg2NjcuNSA4NjY3LjUgMCAwIDEtMjkuNCA0MCAxODU3LjggMTg1Ny44IDAgMCAxLTE1IDIwLjUgNzQyIDc0MiAwIDAgMS05LjUgMTMuMyAxMDY0LjcgMTA2NC43IDAgMCAxLTE4LjggMjYuNSAzMTczLjIgMzE3My4yIDAgMCAxLTE4LjggMjYuNSAzODMzLjggMzgzMy44IDAgMCAwLTE1LjQgMjEuNmMtMTAuOCAxNC42LTEwLjkgMTYuMi0yIDI4bDUuMiA3LjJhODUuMyA4NS4zIDAgMCAwIDEzLjYgMTYuOGMzIDEuNyAzLjYgMS44IDI2LjkgMmwzMC45LjVjMTggLjUgMTcuNy42IDI1LjUtMTBhODQ3Mi45IDg0NzIuOSAwIDAgMSAyMS42LTI5LjIgMTEwMS42IDExMDEuNiAwIDAgMCAxMy42LTE4LjUgMjgwMy43IDI4MDMuNyAwIDAgMCA0MC4zLTU1LjdjNi40LTkgNy42LTExIDcuOS0xNC4yLjMtNC0uMy01LTExLjItMTkuOEwyNDkuMyA2MWwtMzEuNy00M2MtNS44LTcuOC03LjctOS4zLTExLjgtOS40YTggOCAwIDAgMC0zLjQuNE0xOC42IDg2Yy00LjcgMS03LjMgNS40LTUuOCA5LjggMSAyLjguNyAyLjUgMjAgMjguNUw0NS4zIDE0MWMxMy4yIDE3LjggMTMuOCAxOC40IDE2LjYgMTkuNCAzLjYgMS4yIDUuNy0uMiAxMS44LThhOTU4LjQgOTU4LjQgMCAwIDAgMzQuOS00N2MxLjgtMy44IDEuMS03LjgtMS44LTEwLTIuMi0xLjgtNC42LTIuNC0xMi42LTNhODE1IDgxNSAwIDAgMS0yNS0yLjVjLTYuNy0uNS0xNC0xLjItMTkuMi0xLjhhNjI5LjggNjI5LjggMCAwIDAtMzEuNC0ybTM0Ny42IDFhMTc0My44IDE3NDMuOCAwIDAgMC0zMy4yIDMuMyA2MTMuNSA2MTMuNSAwIDAgMC0yMC4yIDJjLTIwLjMgMS43LTE5LjYgMS40LTI5LjEgMTQuNmE3NjUuMiA3NjUuMiAwIDAgMC02My4zIDg5LjNjLTUgNy04LjcgMTIuOC05LjMgMTQuMi0xLjcgNCAuNCA4LjMgNC40IDkuMyAyLjQuNiA2Ny41IDEuMiA3MC45LjcgNS4zLS44IDUuMi0uNyAyMy44LTI1LjdhNjE3Mi42IDYxNzIuNiAwIDAgMSAyOC0zNy45IDQ2OTQuNiA0Njk0LjYgMCAwIDEgMTkuNi0yNy40IDY0Ni40IDY0Ni40IDAgMCAwIDkuOC0xMy44YzEzLjktMTkuNCAxNC43LTIxIDEyLjUtMjUtMS45LTMuNC01LjMtNC4zLTEzLjktMy41TTMuMiAyNDAuNWMtLjEuNCAwIC43LjQuNnYtLjZjLS4yLS40LS4yLS40LS4zIDAiLz48L2c+PC9zdmc+)](#) <br> _Voice/Video Calls_ |
 | **Backend & Database** :floppy_disk:    | [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/) [![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](#) [![Numpy](https://img.shields.io/badge/Numpy-013243?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/) [![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/) [![Drizzle ORM](https://img.shields.io/badge/Drizzle%20ORM-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNzIgNzIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAwLjM4KSI+CiAgICA8cmVjdCB3aWR0aD0iNS4yNTM2NSIgaGVpZ2h0PSIyMi4yODM0IiByeD0iMi42MjY4MyIgdHJhbnNmb3JtPSJtYXRyaXgoMC44NzMwMjggMC40ODc2NyAtMC40OTcyMTIgMC44Njc2MjkgMTYuMDc5MSAzMC4zMjkyKSIgZmlsbD0iI2NmZjY2YiIvPgogICAgPHJlY3Qgd2lkdGg9IjUuMjUzNjUiIGhlaWdodD0iMjIuMjgzNCIgcng9IjIuNjI2ODMiIHRyYW5zZm9ybT0ibWF0cml4KDAuODczMDI4IDAuNDg3NjcgLTAuNDk3MjEyIDAuODY3NjI5IDM0LjMzMDEgMTkpIiBmaWxsPSIjY2ZmNjZiIi8+CiAgICA8cmVjdCB3aWR0aD0iNS4yNTM2NSIgaGVpZ2h0PSIyMi4yODM0IiByeD0iMi42MjY4MyIgdHJhbnNmb3JtPSJtYXRyaXgoMC44NzMwMjggMC40ODc2NyAtMC40OTcyMTIgMC44Njc2MjkgNjIuNDEzMSAxOS4wMDA1KSIgZmlsbD0iI2NmZjY2YiIvPgogICAgPHJlY3Qgd2lkdGg9IjUuMjUzNjUiIGhlaWdodD0iMjIuMjgzNCIgcng9IjIuNjI2ODMiIHRyYW5zZm9ybT0ibWF0cml4KDAuODczMDI4IDAuNDg3NjcgLTAuNDk3MjEyIDAuODY3NjI5IDQ0LjE1NjIgMzAuMzI5MikiIGZpbGw9IiNjZmY2NmIiLz4KICA8L2c+Cjwvc3ZnPgo=)](https://orm.drizzle.team/) <br> _Hosted on [Render](https://render.com/)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **ML Matching Engine** :robot:          | [![XGBoost](https://img.shields.io/badge/XGBoost-EB0028?style=for-the-badge&logo=xgboost&logoColor=white)](https://xgboost.ai/) [![PTM](https://img.shields.io/badge/PTM%20Model-grey?style=for-the-badge&logoColor=white)](#) <br> _Vector-based similarity (dot products, cosine/euclidean distance) \+ semantic analysis using OpenAI_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **ML Matching Engine** :robot:          | [![XGBoost](https://img.shields.io/badge/XGBoost-EB0028?style=for-the-badge&logo=xgboost&logoColor=white)](https://xgboost.ai/) [![PTM](https://img.shields.io/badge/PTM%20Model-grey?style=for-the-badge&logoColor=white)](#) <br> _Vector-based similarity (dot products, cosine/euclidean distance) + semantic analysis using OpenAI_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ---
 
-## Project Structure
+## Getting Started
 
+### Prerequisites
+- Node.js 20+
+- pnpm (`corepack enable` to install)
+- Convex CLI (`npm install -g convex`)
+- Stream and WorkOS accounts (see `.env.example`)
+
+### 1. Install dependencies
+```bash
+pnpm install
 ```
-.
-├── apps
-│   ├── web        # Next.js + Tailwind + Shadcn UI front-end
-│   └── backend    # FastAPI, Python, XGBoost pipeline, etc.
-├── packages
-│   ├── shared     # Shared libraries/config
-│   └── ui         # Reusable UI components (React, TS, Shadcn)
-├── turborepo.json # Turborepo config
-└── ...
+
+### 2. Configure environment variables
+Copy `.env.example` (and optionally `.env.prod`) to `.env`, then fill in:
+
+- WorkOS credentials (`WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, etc.)
+- Stream video credentials (`STREAM_API_KEY`, `STREAM_SECRET`)
+- OpenAI key for embeddings (`OPENAI_API_KEY`)
+- Convex deployment URLs (`CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL`)
+
+### 3. Start Convex locally
+```bash
+pnpm convex:dev
 ```
 
-### Hosting
+This keeps database schema and function changes in sync with your deployment.
 
-- **Front-End** deployed on **Vercel**
-- **Back-End** deployed on **Render**
+### 4. Run the Next.js app
+```bash
+pnpm dev
+```
 
----
-
-## How to Run Locally
-
-### Requirements
-
-Before you begin, ensure you have met the following requirements:
-
-- A modern web browser
-- Node.js installed on your machine
-- A JS package manager (pnpm recommended)
-- Python 3 and pip (for backend services)
-
-1. **Clone** the repo:
-   ```bash
-   git clone https://github.com/SamGu-NRX/Connvo.git
-   cd Connvo
-   ```
-2. **Install dependencies** (using Turborepo + workspaces):
-   ```bash
-   pnpm install --recursive
-   ```
-3. **Setup environment variables** for each app (web, backend):
-   - E.g., `.env.local` for Next.js, `.env` for FastAPI, with your Supabase keys, Clerk keys, etc.
+Now visit `http://localhost:3000` for the web experience and `http://localhost:3000/app` after signing in.
 
 ---
 
-## Development Workflow
+## Developer Scripts
 
-- **Run the dev servers**:
-
-  ```bash
-  npx turbo run dev --parallel
-  ```
-
-  This starts both the front-end (Next.js) and the FastAPI back-end.
-
-- **Build**:
-
-  ```bash
-  npx turbo run build --parallel
-  ```
-
-- **Lint/test**:
-  ```bash
-  npx turbo run lint
-  npx turbo run test
-  ```
+| Command | Description |
+| :--- | :--- |
+| `pnpm dev` | Run Next.js in dev mode with Turbopack |
+| `pnpm convex:dev` | Start Convex locally (required for backend functions & codegen) |
+| `pnpm build` | Production build |
+| `pnpm start` | Run the built app |
+| `pnpm lint` | ESLint |
+| `pnpm test` | Vitest unit + integration suites |
+| `pnpm type-check` | TypeScript project check |
+| `pnpm update:api-docs[:env]` | Regenerate OpenAPI docs from Convex functions |
+| `pnpm audit:docs` | Validate docstrings for API documentation |
 
 ---
 
 ## API Documentation
 
-- The Convex OpenAPI spec lives at `docs/api-reference/convex-openapi.yaml` and is generated with `pnpm run update:api-docs:dev`.
-- See `docs/API_DOCUMENTATION.md` for environment setup, validation commands, and troubleshooting tips.
-- Mintlify reads the spec via `mint.json`; run `mintlify dev` after regeneration to preview the developer portal locally.
-- CI automatically refreshes the documentation on pushes to `main` when the `Update API Docs` workflow secrets are configured.
+- The Convex OpenAPI spec is generated at `docs/api-reference/convex-openapi.yaml`.
+- Run `pnpm update:api-docs:dev` (or `:staging`, `:prod`) to regenerate from docstrings.
+- `docs/API_DOCUMENTATION.md` includes detailed instructions, API descriptions, and troubleshooting.
+- Mintlify consumes the spec via `docs/mint.json`. Start the developer portal locally with `mintlify dev`.
+- CI refreshes documentation on pushes to `main` when the `Update API Docs` workflow secrets are configured.
 
 ---
 
-## Algorithms & Matching Pipeline
+## Matching Pipeline
 
-We employ a combination of **xgBoost** (for our “PTM” pipeline) and vector-based methods (via **pgvector** + **OpenAI** semantic embeddings) to produce high-quality matches. You can find our specific methodology in [`docs/MatchingPipeline.pdf`](./docs/MatchingPipeline.pdf):
+Connvo’s matching engine blends structured preferences, embeddings, and feedback signals:
 
-## Project Status
+1. **Profile Vectorization:** User intents, interests, and communication styles are embedded via OpenAI.
+2. **Compatibility Scoring:** Multi-objective scoring weights complementarity, availability overlap, and historical outcomes.
+3. **Positive Feedback Loop:** Follow-up rates, call duration, and sentiment annotations tune future matchmaking.
 
-### In Progress
+Supporting documentation lives in `docs/MatchingPipeline.pdf`, and the Convex implementation can be explored under `convex/matching/`.
 
-- [ ] Integrate advanced ML algorithms for improved matching.
-- [ ] Expand platform features (B2B meetings, mentor sessions, etc.).
-- [ ] Enhance UI/UX for an even sleeker experience.
-- [ ] Implement ML-based moderation for a safe community.
+---
 
-### Completed
+## Roadmap
 
-- [x] Developed core real-time call functionality with Stream.
-- [x] Implemented secure and smooth onboarding with Clerk.
-- [x] Built a scalable backend on Supabase.
-- [x] Delivered a working demo showcasing our flagship features.
+- [ ] Expand cohort-based matching (3–5 person themed sessions).
+- [ ] Bring end-to-end encryption to live calls.
+- [ ] Deepen analytics and insights for community managers.
+- [ ] Launch automated onboarding journeys for larger org roll-outs.
+- [x] Ship AI-guided prompts and collaborative call workspace.
+- [x] Build SOC- and FERPA-aligned moderation guardrails.
+- [x] Deliver Stream-powered video and transcription pipeline.
 
 ---
 
 ## Lessons Learned
 
-- **API Integration:** Mastering Clerk and Stream in a fast-paced hackathon environment.
-- **Team Collaboration:** Effective communication and problem-solving under pressure.
-- **Scalability Concerns:** Designing an app that's both scalable and modifiable for future growth.
-- **Real-Time Tech:** Handling live calls and ML matching in a production-like setting.
-
----
-
-## What's Next for Connvo
-
-- **New Connection Modes:** Explore B2B meeting opportunities, mentor-client sessions, and more.
-- **Enhanced Matching:** Continuously refine our ML matching for even more effective networking.
-- **User Experience:** Constant UI improvements to ensure a competitive, engaging platform.
-- **Community Building:** Introduce gamified interactions and extended conversation features.
+- **Human-first design wins:** Matching quality improves dramatically when we optimize for conversation outcomes rather than simple profile similarity.
+- **Convex + Next.js accelerates iteration:** Sharing types, validation, and auth context between UI and backend reduced context switching.
+- **Guardrails matter:** SOC/FERPA alignment shaped data flows early, making compliance a feature instead of a retrofit.
+- **Feedback fuels the loop:** Instrumentation around call quality and follow-up behavior is core to improving the model—not an afterthought.
 
 ---
 
 <p align="center">
   <a href="https://nextjs.org/">Next.js</a> •
-  <a href="https://reactjs.org/">React</a> •
-  <a href="https://clerk.dev/">Clerk</a> •
-  <a href="https://getstream.io/">Stream</a>
+  <a href="https://convex.dev/">Convex</a> •
+  <a href="https://workos.com/">WorkOS</a> •
+  <a href="https://getstream.io/video">Stream Video</a> •
+  <a href="https://openai.com/">OpenAI</a>
 </p>
