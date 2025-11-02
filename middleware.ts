@@ -1,6 +1,6 @@
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
-export const middleware = authkitMiddleware({
+const middlewareInstance = authkitMiddleware({
   publicRoutes: [
     "/",
     "/auth/:path*",
@@ -8,6 +8,9 @@ export const middleware = authkitMiddleware({
     "/api/convex/:path*",
   ],
 });
+
+export const middleware = middlewareInstance;
+export default middlewareInstance;
 
 export const config = {
   matcher: [
