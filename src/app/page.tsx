@@ -269,6 +269,7 @@ const LandingPage = () => {
   const { scrollY } = useScroll();
   const parallaxY = useTransform(scrollY, [0, 1000], [0, -150]);
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -279,6 +280,12 @@ const LandingPage = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/app");
+    }
+  }, [loading, user, router]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
