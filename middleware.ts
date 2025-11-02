@@ -1,6 +1,6 @@
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
-export const middleware = authkitMiddleware({
+export default authkitMiddleware({
   publicRoutes: [
     "/",
     "/auth/:path*",
