@@ -27,7 +27,47 @@ import type {
 import { VectorUtils } from "@convex/types/entities/embedding";
 
 /**
- * Create a new embedding (internal)
+ * @summary Creates or updates an embedding
+ * @description Creates a new embedding or updates an existing one if an embedding already exists for the
+ * specified source and model. Validates that vector dimensions match the declared dimensions. Returns the
+ * embedding ID. Automatically sets creation timestamp and version.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "sourceType": "user",
+ *     "sourceId": "user_xyz789",
+ *     "vector": {},
+ *     "model": "text-embedding-3-small",
+ *     "dimensions": 1536,
+ *     "version": "v1",
+ *     "metadata": {
+ *       "generatedAt": "1699564800000",
+ *       "contentLength": "95"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "embedding_abc123"
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR",
+ *     "message": "Vector dimensions mismatch: expected 1536, got 768"
+ *   }
+ * }
+ * ```
  */
 export const createEmbedding = internalMutation({
   args: {
@@ -95,7 +135,43 @@ export const createEmbedding = internalMutation({
 });
 
 /**
- * Update an existing embedding (internal)
+ * @summary Updates an existing embedding
+ * @description Updates vector data, metadata, or version for an existing embedding. When updating the vector,
+ * validates that dimensions match the original embedding dimensions. Metadata updates are merged with existing
+ * metadata. Returns null on success.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "embeddingId": "embedding_abc123",
+ *     "metadata": {
+ *       "updatedAt": "1699565400000",
+ *       "quality": "high"
+ *     },
+ *     "version": "v2"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "Embedding not found"
+ *   }
+ * }
+ * ```
  */
 export const updateEmbedding = internalMutation({
   args: {
@@ -140,7 +216,37 @@ export const updateEmbedding = internalMutation({
 });
 
 /**
- * Delete an embedding (internal)
+ * @summary Deletes an embedding by ID
+ * @description Permanently removes an embedding from the database. Throws an error if the embedding does not
+ * exist. Returns null on successful deletion.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "embeddingId": "embedding_abc123"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "Embedding not found"
+ *   }
+ * }
+ * ```
  */
 export const deleteEmbedding = internalMutation({
   args: { embeddingId: v.id("embeddings") },
@@ -157,7 +263,29 @@ export const deleteEmbedding = internalMutation({
 });
 
 /**
- * Delete embeddings by source (internal)
+ * @summary Deletes all embeddings for a source
+ * @description Removes all embeddings associated with a specific source. Optionally filters by model to delete
+ * only embeddings generated with a specific model. Returns the count of deleted embeddings. Uses indexed query
+ * for optimal performance.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "sourceType": "user",
+ *     "sourceId": "user_xyz789",
+ *     "model": "text-embedding-3-small"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": 3
+ * }
+ * ```
  */
 export const deleteEmbeddingsBySource = internalMutation({
   args: {
@@ -194,7 +322,55 @@ export const deleteEmbeddingsBySource = internalMutation({
 });
 
 /**
- * Batch create/update embeddings (internal)
+ * @summary Batch creates or updates multiple embeddings
+ * @description Processes multiple embedding upsert operations in a single transaction. For each embedding,
+ * creates a new record or updates an existing one if it already exists for the source and model. Validates
+ * vector dimensions for each embedding. Returns counts of created, updated, and failed operations along with
+ * all embedding IDs.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "embeddings": [
+ *       {
+ *         "sourceType": "user",
+ *         "sourceId": "user_abc123",
+ *         "vector": {},
+ *         "model": "text-embedding-3-small",
+ *         "dimensions": 1536,
+ *         "version": "v1",
+ *         "metadata": {}
+ *       },
+ *       {
+ *         "sourceType": "meeting",
+ *         "sourceId": "meeting_xyz789",
+ *         "vector": {},
+ *         "model": "text-embedding-3-small",
+ *         "dimensions": 1536,
+ *         "version": "v1",
+ *         "metadata": {}
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "created": 2,
+ *     "updated": 0,
+ *     "failed": 0,
+ *     "embeddingIds": [
+ *       "embedding_aaa111",
+ *       "embedding_bbb222"
+ *     ]
+ *   }
+ * }
+ * ```
  */
 export const batchUpsertEmbeddings = internalMutation({
   args: {
@@ -293,7 +469,34 @@ export const batchUpsertEmbeddings = internalMutation({
 });
 
 /**
- * Create or update vector index metadata (internal)
+ * @summary Creates or updates vector index metadata
+ * @description Creates new vector index metadata or updates existing metadata if an entry already exists for
+ * the provider and index name. Stores configuration details and status. Automatically manages creation and
+ * update timestamps. Returns the index metadata ID.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "provider": "convex",
+ *     "indexName": "embeddings_v1",
+ *     "config": {
+ *       "dimensions": "1536",
+ *       "metric": "cosine",
+ *       "shards": "4"
+ *     },
+ *     "status": "active"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "vectorIndexMeta_abc123"
+ * }
+ * ```
  */
 export const upsertVectorIndexMeta = internalMutation({
   args: {
@@ -340,7 +543,38 @@ export const upsertVectorIndexMeta = internalMutation({
 });
 
 /**
- * Update vector index status (internal)
+ * @summary Updates vector index status
+ * @description Updates the status of a vector index metadata entry. Automatically updates the timestamp.
+ * Throws an error if the index metadata does not exist. Returns null on success.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "indexMetaId": "vectorIndexMeta_abc123",
+ *     "status": "migrating"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "Vector index metadata not found"
+ *   }
+ * }
+ * ```
  */
 export const updateVectorIndexStatus = internalMutation({
   args: {
@@ -368,7 +602,44 @@ export const updateVectorIndexStatus = internalMutation({
 });
 
 /**
- * Clean up old embeddings (internal)
+ * @summary Cleans up old embeddings based on age
+ * @description Removes embeddings older than the specified time threshold. Optionally filters by model and
+ * source type. Supports dry-run mode to preview deletions without actually removing data. Returns counts of
+ * found and deleted embeddings. Uses indexed query for optimal performance.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "olderThanMs": 2592000000,
+ *     "model": "text-embedding-3-small",
+ *     "sourceType": "meeting",
+ *     "dryRun": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "found": 47,
+ *     "deleted": 47
+ *   }
+ * }
+ * ```
+ *
+ * @example response-dryrun
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "found": 47,
+ *     "deleted": 0
+ *   }
+ * }
+ * ```
  */
 export const cleanupOldEmbeddings = internalMutation({
   args: {
