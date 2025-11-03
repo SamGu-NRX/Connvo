@@ -1,1877 +1,5 @@
 [
   {
-    "timestamp": 1761363078778,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00006497222222239745,
-        "maxValidationTime": 0.00012500000002546585,
-        "totalValidationTime": 0.004750000000058208
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00007730555555301382,
-        "maxValidationTime": 0.00016700000003311288,
-        "totalValidationTime": 0.00541699999996581
-      },
-      "timestamp": 1761363078778
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.0749590000000353,
-      "validationTime": 0.004750000000058208
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363078779,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00005811111111597711,
-        "maxValidationTime": 0.00008400000001529406,
-        "totalValidationTime": 0.004542000000014923
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00006255555555867431,
-        "maxValidationTime": 0.00008400000001529406,
-        "totalValidationTime": 0.004916999999977634
-      },
-      "timestamp": 1761363078779
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.05012499999997999,
-      "validationTime": 0.004542000000014923
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363078781,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00006133333333637993,
-        "maxValidationTime": 0.00012499999991177901,
-        "totalValidationTime": 0.004416999999989457
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.000054249999998824526,
-        "maxValidationTime": 0.00008400000001529406,
-        "totalValidationTime": 0.004541000000017448
-      },
-      "timestamp": 1761363078781
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.045125000000098225,
-      "validationTime": 0.004416999999989457
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363078783,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00017477777776598991,
-        "maxValidationTime": 0.0006249999998999556,
-        "totalValidationTime": 0.01379199999996672
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00031016666667306307,
-        "maxValidationTime": 0.0037079999999605207,
-        "totalValidationTime": 0.018666999999936706
-      },
-      "timestamp": 1761363078783
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.435292000000004,
-      "validationTime": 0.01379199999996672
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098971,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00020022222221882657,
-        "maxValidationTime": 0.0013330000000451037,
-        "totalValidationTime": 0.016000000000076398
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00029755555556221225,
-        "maxValidationTime": 0.0015839999999798238,
-        "totalValidationTime": 0.024167000000034022
-      },
-      "timestamp": 1761363098971
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.6494590000000926,
-      "validationTime": 0.016000000000076398
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098974,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00015175000000845607,
-        "maxValidationTime": 0.0014170000000603977,
-        "totalValidationTime": 0.00858400000004167
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00013997222220988684,
-        "maxValidationTime": 0.0012080000000196378,
-        "totalValidationTime": 0.008666999999945801
-      },
-      "timestamp": 1761363098974
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.09275000000002365,
-      "validationTime": 0.00858400000004167
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098976,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00010755555555874707,
-        "maxValidationTime": 0.00020799999992959783,
-        "totalValidationTime": 0.008166999999957625
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.0004745555555574457,
-        "maxValidationTime": 0.012375000000020009,
-        "totalValidationTime": 0.021624999999971806
-      },
-      "timestamp": 1761363098976
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.09395800000004328,
-      "validationTime": 0.008166999999957625
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098978,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.0001249999999907282,
-        "maxValidationTime": 0.0012910000000374566,
-        "totalValidationTime": 0.007040999999958331
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00012038888889125903,
-        "maxValidationTime": 0.001040999999986525,
-        "totalValidationTime": 0.01779199999998582
-      },
-      "timestamp": 1761363098978
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.11441599999989194,
-      "validationTime": 0.007040999999958331
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098981,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00009255555554609095,
-        "maxValidationTime": 0.00024999999993724487,
-        "totalValidationTime": 0.00687500000003638
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.0001424444444353412,
-        "maxValidationTime": 0.0016249999999899956,
-        "totalValidationTime": 0.008332999999993262
-      },
-      "timestamp": 1761363098981
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.3783329999999978,
-      "validationTime": 0.00687500000003638
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098985,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.0001261666666670812,
-        "maxValidationTime": 0.0005840000000034706,
-        "totalValidationTime": 0.011458000000061475
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00010874999999701786,
-        "maxValidationTime": 0.00029200000005857873,
-        "totalValidationTime": 0.008417000000008557
-      },
-      "timestamp": 1761363098985
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.22583299999996598,
-      "validationTime": 0.011458000000061475
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098993,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00010655555554863995,
-        "maxValidationTime": 0.0002500000000509317,
-        "totalValidationTime": 0.00641700000005585
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.0007050000000074558,
-        "maxValidationTime": 0.017541999999934887,
-        "totalValidationTime": 0.032042000000046755
-      },
-      "timestamp": 1761363098993
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.22983300000009876,
-      "validationTime": 0.00641700000005585
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
-    "timestamp": 1761363098995,
-    "version": "0.1.1",
-    "summary": {
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "warnings": 0,
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00006375000000010307,
-        "maxValidationTime": 0.00012500000002546585,
-        "totalValidationTime": 0.004666000000042914
-      }
-    },
-    "validationReport": {
-      "passed": false,
-      "totalValidators": 36,
-      "failedValidators": 1,
-      "errors": [
-        "CommonV.metadata record validator missing 'keys' or 'values'"
-      ],
-      "warnings": [],
-      "performance": {
-        "validatorCount": 36,
-        "averageValidationTime": 0.00006611111111472685,
-        "maxValidationTime": 0.00012500000002546585,
-        "totalValidationTime": 0.0050420000000030996
-      },
-      "timestamp": 1761363098995
-    },
-    "driftChecks": [
-      {
-        "entityName": "User",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "workosUserId",
-          "email",
-          "orgId",
-          "orgRole",
-          "displayName",
-          "avatarUrl",
-          "isActive",
-          "lastSeenAt",
-          "onboardingComplete",
-          "onboardingStartedAt",
-          "onboardingCompletedAt",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Meeting",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "organizerId",
-          "title",
-          "description",
-          "scheduledAt",
-          "duration",
-          "webrtcEnabled",
-          "streamRoomId",
-          "state",
-          "participantCount",
-          "averageRating",
-          "createdAt",
-          "updatedAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      },
-      {
-        "entityName": "Transcript",
-        "expectedFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "actualFields": [
-          "_id",
-          "_creationTime",
-          "meetingId",
-          "bucketMs",
-          "sequence",
-          "speakerId",
-          "text",
-          "confidence",
-          "startMs",
-          "endMs",
-          "isInterim",
-          "wordCount",
-          "language",
-          "createdAt"
-        ],
-        "missingFields": [],
-        "extraFields": [],
-        "hasDrift": false
-      }
-    ],
-    "performanceMetrics": {
-      "compilationTime": 0.06724999999994452,
-      "validationTime": 0.004666000000042914
-    },
-    "recommendations": [
-      "Fix 1 failed validators"
-    ]
-  },
-  {
     "timestamp": 1761363098996,
     "version": "0.1.1",
     "summary": {
@@ -15594,6 +13722,1878 @@
     "performanceMetrics": {
       "compilationTime": 0.06241700000009587,
       "validationTime": 0.007000000000061846
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821036,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00022924999999279154,
+        "maxValidationTime": 0.0007499999999254214,
+        "totalValidationTime": 0.01495799999997871
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.0002455000000117656,
+        "maxValidationTime": 0.0015419999999721767,
+        "totalValidationTime": 0.019625000000132786
+      },
+      "timestamp": 1762207821035
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.4565419999998994,
+      "validationTime": 0.01495799999997871
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821038,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00022102777777238062,
+        "maxValidationTime": 0.00029200000017226557,
+        "totalValidationTime": 0.012416999999913969
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.0002129444444436659,
+        "maxValidationTime": 0.0003329999999550637,
+        "totalValidationTime": 0.012582999999949607
+      },
+      "timestamp": 1762207821038
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.10379100000000108,
+      "validationTime": 0.012416999999913969
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821040,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00021186111111622571,
+        "maxValidationTime": 0.00029200000017226557,
+        "totalValidationTime": 0.011916999999812106
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00020952777779509942,
+        "maxValidationTime": 0.00029200000017226557,
+        "totalValidationTime": 0.012000000000170985
+      },
+      "timestamp": 1762207821040
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.07862500000010186,
+      "validationTime": 0.011916999999812106
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821041,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00020947222221442038,
+        "maxValidationTime": 0.00029200000017226557,
+        "totalValidationTime": 0.012500000000045475
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.0006053055555589203,
+        "maxValidationTime": 0.014499999999998181,
+        "totalValidationTime": 0.027708000000075117
+      },
+      "timestamp": 1762207821041
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.09750000000008185,
+      "validationTime": 0.012500000000045475
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821044,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00022569444443358103,
+        "maxValidationTime": 0.00041699999997035775,
+        "totalValidationTime": 0.012458000000151515
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.0002141944444562998,
+        "maxValidationTime": 0.00029200000017226557,
+        "totalValidationTime": 0.012208999999984371
+      },
+      "timestamp": 1762207821044
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.11399999999980537,
+      "validationTime": 0.012458000000151515
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821046,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.0002083611111313783,
+        "maxValidationTime": 0.0002500000000509317,
+        "totalValidationTime": 0.01375000000007276
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00022797222221823985,
+        "maxValidationTime": 0.0007920000000467553,
+        "totalValidationTime": 0.012999999999919964
+      },
+      "timestamp": 1762207821046
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.09504199999992125,
+      "validationTime": 0.01375000000007276
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821049,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00021636111111749616,
+        "maxValidationTime": 0.00029200000017226557,
+        "totalValidationTime": 0.012375000000020009
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00021761111111118225,
+        "maxValidationTime": 0.0002919999999448919,
+        "totalValidationTime": 0.012624999999843567
+      },
+      "timestamp": 1762207821049
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.08383400000002439,
+      "validationTime": 0.012375000000020009
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821052,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.000085666666658805,
+        "maxValidationTime": 0.00012500000002546585,
+        "totalValidationTime": 0.007458000000042375
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00008916666664365241,
+        "maxValidationTime": 0.00016699999991942605,
+        "totalValidationTime": 0.007624999999961801
+      },
+      "timestamp": 1762207821052
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.09395800000015697,
+      "validationTime": 0.007458000000042375
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821055,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00026963888889339514,
+        "maxValidationTime": 0.005832999999938693,
+        "totalValidationTime": 0.015499999999974534
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00009849999998500102,
+        "maxValidationTime": 0.00016699999991942605,
+        "totalValidationTime": 0.009790999999950145
+      },
+      "timestamp": 1762207821055
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.07970799999998235,
+      "validationTime": 0.015499999999974534
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821056,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00008558333333515596,
+        "maxValidationTime": 0.00012500000002546585,
+        "totalValidationTime": 0.007790999999997439
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00010766666666641968,
+        "maxValidationTime": 0.00020900000004075991,
+        "totalValidationTime": 0.008417000000008557
+      },
+      "timestamp": 1762207821056
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.09037499999999454,
+      "validationTime": 0.007790999999997439
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821058,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00009605555557199195,
+        "maxValidationTime": 0.0002500000000509317,
+        "totalValidationTime": 0.008166000000073836
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.0000948888889019549,
+        "maxValidationTime": 0.00012500000002546585,
+        "totalValidationTime": 0.008041999999932159
+      },
+      "timestamp": 1762207821058
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.0965000000001055,
+      "validationTime": 0.008166000000073836
+    },
+    "recommendations": [
+      "Fix 1 failed validators"
+    ]
+  },
+  {
+    "timestamp": 1762207821060,
+    "version": "0.1.1",
+    "summary": {
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "warnings": 0,
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00010075000000142609,
+        "maxValidationTime": 0.0002500000000509317,
+        "totalValidationTime": 0.00945899999987887
+      }
+    },
+    "validationReport": {
+      "passed": false,
+      "totalValidators": 36,
+      "failedValidators": 1,
+      "errors": [
+        "CommonV.metadata record validator missing 'keys' or 'values'"
+      ],
+      "warnings": [],
+      "performance": {
+        "validatorCount": 36,
+        "averageValidationTime": 0.00009955555555683936,
+        "maxValidationTime": 0.00016699999991942605,
+        "totalValidationTime": 0.009250000000065484
+      },
+      "timestamp": 1762207821060
+    },
+    "driftChecks": [
+      {
+        "entityName": "User",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "workosUserId",
+          "email",
+          "orgId",
+          "orgRole",
+          "displayName",
+          "avatarUrl",
+          "isActive",
+          "lastSeenAt",
+          "onboardingComplete",
+          "onboardingStartedAt",
+          "onboardingCompletedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Meeting",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "organizerId",
+          "title",
+          "description",
+          "scheduledAt",
+          "duration",
+          "webrtcEnabled",
+          "streamRoomId",
+          "state",
+          "participantCount",
+          "averageRating",
+          "createdAt",
+          "updatedAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      },
+      {
+        "entityName": "Transcript",
+        "expectedFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "actualFields": [
+          "_id",
+          "_creationTime",
+          "meetingId",
+          "bucketMs",
+          "sequence",
+          "speakerId",
+          "text",
+          "confidence",
+          "startMs",
+          "endMs",
+          "isInterim",
+          "wordCount",
+          "language",
+          "createdAt"
+        ],
+        "missingFields": [],
+        "extraFields": [],
+        "hasDrift": false
+      }
+    ],
+    "performanceMetrics": {
+      "compilationTime": 0.09495900000001711,
+      "validationTime": 0.00945899999987887
     },
     "recommendations": [
       "Fix 1 failed validators"

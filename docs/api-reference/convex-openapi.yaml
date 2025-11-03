@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: HTTP interface for Connvo's Convex backend, exposing all public query, mutation, and action endpoints.
 servers:
+  - url: https://Connvo-prod.convex.cloud
+    description: Prod Convex deployment
   - url: https://Connvo-dev.convex.cloud
     description: Dev Convex deployment
   - url: https://Connvo-staging.convex.cloud
     description: Staging Convex deployment
-  - url: https://Connvo-prod.convex.cloud
-    description: Prod Convex deployment
 security:
   - bearerAuth: []
 tags:

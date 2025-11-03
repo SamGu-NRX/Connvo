@@ -227,7 +227,7 @@ This plan systematically adds comprehensive docstrings with test-validated examp
     - Add request/response examples showing audit trail
     - _Requirements: 1.3, 2.1, 2.2_
 
-- [-] 12. Run comprehensive documentation validation
+- [x] 12. Run comprehensive documentation validation
   - Run audit script to verify 100% coverage of public functions
   - Run all example validation tests to ensure accuracy
   - Execute `pnpm run update:api-docs:dev` to generate OpenAPI spec
@@ -235,7 +235,7 @@ This plan systematically adds comprehensive docstrings with test-validated examp
   - Check for duplicate summaries or descriptions
   - _Requirements: 4.1, 4.2, 4.3, 5.1, 5.2_
 
-- [ ] 13. Update documentation generation pipeline
+- [-] 13. Update documentation generation pipeline
   - Verify CI workflow runs successfully with all new docstrings
   - Ensure auto-commit of updated OpenAPI spec works
   - Test documentation generation for staging and prod environments
