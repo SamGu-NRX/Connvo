@@ -9,7 +9,12 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query, action, internalQuery } from "@convex/_generated/server";
+import {
+  mutation,
+  query,
+  action,
+  internalQuery,
+} from "@convex/_generated/server";
 import { requireIdentity } from "@convex/auth/guards";
 import { ConvexError } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
@@ -27,7 +32,43 @@ import { FEATURE_KEYS } from "@convex/matching/index";
 type FeatureKey = keyof CompatibilityFeatures;
 
 /**
- * Submit feedback for a match
+ * @summary Submit feedback for a match
+ * @description Allows users to submit feedback and outcome for a match they participated in.
+ * Updates the match analytics record with the outcome (accepted, declined, completed) and
+ * optional rating and comments. Used to track match success and improve the matching algorithm.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "matchId": "match_jd7user123_jd7user456_1704067200000",
+ *     "outcome": "completed",
+ *     "feedback": {
+ *       "rating": 5,
+ *       "comments": "Great conversation, very insightful!"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "Rating must be between 1 and 5"
+ *   }
+ * }
+ * ```
  */
 export const submitMatchFeedback = mutation({
   args: {
@@ -74,7 +115,49 @@ export const submitMatchFeedback = mutation({
 });
 
 /**
- * Get match history for a user
+ * @summary Get match history for a user
+ * @description Retrieves the authenticated user's match history including outcomes, feedback,
+ * and compatibility features for each match. Supports pagination with limit and offset.
+ * Orders matches by creation time (most recent first).
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "limit": 20,
+ *     "offset": 0
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": [
+ *     {
+ *       "_id": "jd7analytics123",
+ *       "matchId": "match_jd7user123_jd7user456_1704067200000",
+ *       "outcome": "completed",
+ *       "feedback": {
+ *         "rating": 5,
+ *         "comments": "Great conversation!"
+ *       },
+ *       "features": {
+ *         "interestOverlap": 0.85,
+ *         "experienceGap": 1.0,
+ *         "industryMatch": 0.7,
+ *         "timezoneCompatibility": 1.0,
+ *         "vectorSimilarity": 0.88,
+ *         "orgConstraintMatch": 1.0,
+ *         "languageOverlap": 0.9,
+ *         "roleComplementarity": 1.0
+ *       },
+ *       "createdAt": 1704067200000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getMatchHistory = query({
   args: {
@@ -155,7 +238,48 @@ export const getMatchHistory = query({
 });
 
 /**
- * Get matching statistics for a user
+ * @summary Get matching statistics for a user
+ * @description Retrieves comprehensive matching statistics for the authenticated user including
+ * total matches, success rate, average rating, and top compatibility features. Analyzes all
+ * historical matches to provide insights into matching performance.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "totalMatches": 15,
+ *     "acceptedMatches": 12,
+ *     "completedMatches": 10,
+ *     "averageRating": 4.5,
+ *     "successRate": 0.83,
+ *     "topFeatures": [
+ *       {
+ *         "feature": "interestOverlap",
+ *         "averageScore": 0.85,
+ *         "count": 15
+ *       },
+ *       {
+ *         "feature": "vectorSimilarity",
+ *         "averageScore": 0.82,
+ *         "count": 15
+ *       },
+ *       {
+ *         "feature": "roleComplementarity",
+ *         "averageScore": 0.78,
+ *         "count": 15
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
  */
 export const getMatchingStats = query({
   args: {},
@@ -265,7 +389,70 @@ export const getMatchingStats = query({
 });
 
 /**
- * Get global matching analytics (admin only)
+ * @summary Get global matching analytics (admin only)
+ * @description Retrieves system-wide matching analytics including total matches, outcome distribution,
+ * feature importance analysis, and matching trends over time. Requires admin permissions. Used for
+ * monitoring matching system performance and identifying optimization opportunities.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "timeRange": 604800000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "totalMatches": 1250,
+ *     "averageScore": 0.75,
+ *     "outcomeDistribution": {
+ *       "accepted": 980,
+ *       "declined": 150,
+ *       "completed": 820
+ *     },
+ *     "featureImportance": [
+ *       {
+ *         "feature": "interestOverlap",
+ *         "averageScore": 0.82,
+ *         "correlation": 0.78
+ *       },
+ *       {
+ *         "feature": "vectorSimilarity",
+ *         "averageScore": 0.79,
+ *         "correlation": 0.75
+ *       }
+ *     ],
+ *     "matchingTrends": [
+ *       {
+ *         "date": "2024-01-01",
+ *         "matchCount": 180,
+ *         "averageScore": 0.76
+ *       },
+ *       {
+ *         "date": "2024-01-02",
+ *         "matchCount": 175,
+ *         "averageScore": 0.74
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "Admin access required"
+ *   }
+ * }
+ * ```
  */
 export const getGlobalMatchingAnalytics = query({
   args: {
@@ -438,7 +625,52 @@ export const getGlobalMatchingAnalytics = query({
 });
 
 /**
- * Optimize matching weights based on feedback
+ * @summary Optimize matching weights based on feedback
+ * @description Analyzes historical match outcomes and feedback to calculate optimized weights
+ * for compatibility scoring factors. Uses correlation analysis to identify which features best
+ * predict successful matches. Returns optimized weights, estimated improvement, and sample size.
+ * Requires minimum number of samples for statistical validity.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "minSamples": 100
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "optimizedWeights": {
+ *       "interestOverlap": 0.28,
+ *       "experienceGap": 0.12,
+ *       "industryMatch": 0.08,
+ *       "timezoneCompatibility": 0.09,
+ *       "vectorSimilarity": 0.24,
+ *       "orgConstraintMatch": 0.04,
+ *       "languageOverlap": 0.11,
+ *       "roleComplementarity": 0.04
+ *     },
+ *     "improvement": 0.08,
+ *     "sampleSize": 250
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "Insufficient data for optimization. Need at least 100 samples, got 45"
+ *   }
+ * }
+ * ```
  */
 export const optimizeMatchingWeights = action({
   args: {
@@ -549,7 +781,45 @@ export const optimizeMatchingWeights = action({
 });
 
 /**
- * Get matches for weight optimization (internal)
+ * @summary Get matches for weight optimization (internal)
+ * @description Retrieves recent match data with outcomes and feedback for use in weight optimization.
+ * Filters for matches that have been declined or completed (not just accepted). Used internally
+ * by the weight optimization algorithm to analyze match success patterns.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "minSamples": 100
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": [
+ *     {
+ *       "features": {
+ *         "interestOverlap": 0.85,
+ *         "experienceGap": 1.0,
+ *         "industryMatch": 0.7,
+ *         "timezoneCompatibility": 1.0,
+ *         "vectorSimilarity": 0.88,
+ *         "orgConstraintMatch": 1.0,
+ *         "languageOverlap": 0.9,
+ *         "roleComplementarity": 1.0
+ *       },
+ *       "outcome": "completed",
+ *       "feedback": {
+ *         "rating": 5,
+ *         "comments": "Great match!"
+ *       }
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getMatchesForOptimization = internalQuery({
   args: {

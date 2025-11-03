@@ -57,7 +57,66 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
 };
 
 /**
- * Calculate compatibility score between two users (public API)
+ * @summary Calculate compatibility score between two users
+ * @description Calculates a comprehensive compatibility score between two users using multiple
+ * factors including interest overlap, experience gap, industry match, timezone compatibility,
+ * vector similarity, and more. Returns the overall score (0-1), individual feature scores, and
+ * a human-readable explanation. Can optionally use custom weights for scoring factors.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "user1Id": "jd7user123",
+ *     "user2Id": "jd7user456",
+ *     "user1Constraints": {
+ *       "interests": ["technology", "ai", "startups"],
+ *       "roles": ["mentor", "founder"]
+ *     },
+ *     "user2Constraints": {
+ *       "interests": ["ai", "machine-learning", "startups"],
+ *       "roles": ["mentee", "engineer"]
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "score": 0.82,
+ *     "features": {
+ *       "interestOverlap": 0.85,
+ *       "experienceGap": 1.0,
+ *       "industryMatch": 0.7,
+ *       "timezoneCompatibility": 1.0,
+ *       "vectorSimilarity": 0.88,
+ *       "orgConstraintMatch": 1.0,
+ *       "languageOverlap": 0.9,
+ *       "roleComplementarity": 1.0
+ *     },
+ *     "explanation": [
+ *       "Strong interest alignment",
+ *       "Ideal experience gap for mentorship",
+ *       "High semantic profile similarity",
+ *       "Complementary professional roles"
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "User data not found for scoring"
+ *   }
+ * }
+ * ```
  */
 export const calculateCompatibilityScore = action({
   args: {
@@ -119,7 +178,52 @@ export const calculateCompatibilityScore = action({
 });
 
 /**
- * Calculate compatibility score between two users (internal)
+ * @summary Calculate compatibility score between two users (internal)
+ * @description Internal version of compatibility score calculation used by the matching engine.
+ * Identical functionality to the public API but accessible only to internal Convex functions.
+ * Calculates multi-factor compatibility score with optional custom weights.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "user1Id": "jd7user123",
+ *     "user2Id": "jd7user456",
+ *     "user1Constraints": {
+ *       "interests": ["technology", "ai"],
+ *       "roles": ["mentor"]
+ *     },
+ *     "user2Constraints": {
+ *       "interests": ["ai", "machine-learning"],
+ *       "roles": ["mentee"]
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "score": 0.82,
+ *     "features": {
+ *       "interestOverlap": 0.85,
+ *       "experienceGap": 1.0,
+ *       "industryMatch": 0.7,
+ *       "timezoneCompatibility": 1.0,
+ *       "vectorSimilarity": 0.88,
+ *       "orgConstraintMatch": 1.0,
+ *       "languageOverlap": 0.9,
+ *       "roleComplementarity": 1.0
+ *     },
+ *     "explanation": [
+ *       "Strong interest alignment",
+ *       "Ideal experience gap for mentorship"
+ *     ]
+ *   }
+ * }
+ * ```
  */
 export const calculateCompatibilityScoreInternal = internalAction({
   args: {
@@ -174,7 +278,53 @@ export const calculateCompatibilityScoreInternal = internalAction({
 });
 
 /**
- * Get user data needed for scoring calculations
+ * @summary Get user data needed for scoring calculations
+ * @description Retrieves all data needed to calculate compatibility scores for a user including
+ * profile information, interests, and latest embedding vector. Returns null if user not found.
+ * Used internally by scoring functions to gather user data efficiently.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "jd7user123"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "user": {
+ *       "_id": "jd7user123",
+ *       "displayName": "Alice Johnson",
+ *       "orgId": "org_abc123",
+ *       "orgRole": "member"
+ *     },
+ *     "profile": {
+ *       "experience": "senior",
+ *       "languages": ["English", "Spanish"],
+ *       "field": "Technology",
+ *       "company": "TechCorp"
+ *     },
+ *     "interests": ["technology", "ai", "startups", "mentorship"],
+ *     "embedding": {
+ *       "vector": "<ArrayBuffer>",
+ *       "model": "text-embedding-3-small"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-null
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const getUserScoringData = internalQuery({
   args: { userId: v.id("users") },

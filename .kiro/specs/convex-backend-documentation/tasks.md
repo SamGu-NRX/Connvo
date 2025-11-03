@@ -138,23 +138,23 @@ This plan systematically adds comprehensive docstrings with test-validated examp
     - Test privacy controls and per-user isolation
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 8. Document matching domain (convex/matching/)
-  - [ ] 8.1 Add docstrings to convex/matching/queue.ts functions
+- [x] 8. Document matching domain (convex/matching/)
+  - [x] 8.1 Add docstrings to convex/matching/queue.ts functions
     - Document `enterMatchingQueue`, `cancelQueueEntry`, `getQueueStatus`, `getActiveQueueEntries`, `updateQueueStatus`, `cleanupExpiredEntries`
     - Add request/response examples showing queue management
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 8.2 Add docstrings to convex/matching/engine.ts functions
+  - [x] 8.2 Add docstrings to convex/matching/engine.ts functions
     - Document `runMatchingCycle`, `processMatchingShard`, `getShardQueueEntries`, `createMatch`, `logMatchingMetrics`, `updateMatchOutcome`
     - Add request/response examples showing shard-based processing
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 8.3 Add docstrings to convex/matching/scoring.ts functions
+  - [x] 8.3 Add docstrings to convex/matching/scoring.ts functions
     - Document `calculateCompatibilityScore`, `calculateCompatibilityScoreInternal`, `getUserScoringData`
     - Add request/response examples showing compatibility calculations
     - _Requirements: 1.3, 2.1, 2.2_
 
-  - [ ] 8.4 Add docstrings to convex/matching/analytics.ts functions
+  - [x] 8.4 Add docstrings to convex/matching/analytics.ts functions
     - Document `submitMatchFeedback`, `getMatchHistory`, `getMatchingStats`, `getGlobalMatchingAnalytics`, `optimizeMatchingWeights`, `getMatchesForOptimization`
     - Add request/response examples showing analytics data
     - _Requirements: 1.3, 2.1, 2.2_

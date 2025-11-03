@@ -20,7 +20,44 @@ import {
 import type { QueueStatus } from "@convex/types/entities/matching";
 
 /**
- * Enter the matching queue with availability window and constraints
+ * @summary Enter the matching queue with availability window and constraints
+ * @description Adds the authenticated user to the matching queue with specified availability
+ * window and matching constraints. Validates that the user is not already in the queue and
+ * that the availability window is valid. Creates an audit log entry for queue entry.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "availableFrom": 1704067200000,
+ *     "availableTo": 1704070800000,
+ *     "constraints": {
+ *       "interests": ["technology", "ai", "startups"],
+ *       "roles": ["mentor", "founder"],
+ *       "orgConstraints": "different_org"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "jd7abc123def456"
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "User is already in the matching queue"
+ *   }
+ * }
+ * ```
  */
 export const enterMatchingQueue = mutation({
   args: {
@@ -91,7 +128,38 @@ export const enterMatchingQueue = mutation({
 });
 
 /**
- * Cancel user's queue entry
+ * @summary Cancel user's queue entry
+ * @description Cancels the authenticated user's active queue entry by updating its status
+ * to 'cancelled'. Can optionally specify a queue ID, or will find the user's active entry.
+ * Creates an audit log entry for the cancellation.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "queueId": "jd7abc123def456"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "No active queue entry found"
+ *   }
+ * }
+ * ```
  */
 export const cancelQueueEntry = mutation({
   args: {
@@ -141,7 +209,48 @@ export const cancelQueueEntry = mutation({
 });
 
 /**
- * Get current queue status for a user
+ * @summary Get current queue status for a user
+ * @description Retrieves the authenticated user's current queue status including position,
+ * estimated wait time, and availability window. Returns null if the user is not in the queue.
+ * Calculates queue position based on users ahead with similar constraints.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "_id": "jd7abc123def456",
+ *     "_creationTime": 1704067100000,
+ *     "userId": "jd7user123",
+ *     "availableFrom": 1704067200000,
+ *     "availableTo": 1704070800000,
+ *     "constraints": {
+ *       "interests": ["technology", "ai"],
+ *       "roles": ["mentor"]
+ *     },
+ *     "status": "waiting",
+ *     "createdAt": 1704067100000,
+ *     "updatedAt": 1704067100000,
+ *     "estimatedWaitTime": 240000,
+ *     "queuePosition": 3
+ *   }
+ * }
+ * ```
+ *
+ * @example response-null
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const getQueueStatus = query({
   args: {},
@@ -187,7 +296,43 @@ export const getQueueStatus = query({
 });
 
 /**
- * Get active queue entries for matching processing (internal use)
+ * @summary Get active queue entries for matching processing
+ * @description Retrieves waiting queue entries that are currently available or will be available
+ * within the specified time window. Used internally by the matching engine to find candidates
+ * for matching. Orders entries by creation time (FIFO) and limits results.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "limit": 50,
+ *     "timeWindow": 3600000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": [
+ *     {
+ *       "_id": "jd7abc123def456",
+ *       "_creationTime": 1704067100000,
+ *       "userId": "jd7user123",
+ *       "availableFrom": 1704067200000,
+ *       "availableTo": 1704070800000,
+ *       "constraints": {
+ *         "interests": ["technology", "ai"],
+ *         "roles": ["mentor"]
+ *       },
+ *       "status": "waiting",
+ *       "createdAt": 1704067100000,
+ *       "updatedAt": 1704067100000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getActiveQueueEntries = query({
   args: {
@@ -238,7 +383,40 @@ export const getActiveQueueEntries = query({
 });
 
 /**
- * Update queue entry status (internal use for matching engine)
+ * @summary Update queue entry status
+ * @description Updates the status of a queue entry and optionally records the matched user.
+ * Used internally by the matching engine to mark entries as matched, expired, or cancelled.
+ * Creates an audit log entry for the status change.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "queueId": "jd7abc123def456",
+ *     "status": "matched",
+ *     "matchedWith": "jd7user456"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "Queue entry not found"
+ *   }
+ * }
+ * ```
  */
 export const updateQueueStatus = mutation({
   args: {
@@ -283,7 +461,27 @@ export const updateQueueStatus = mutation({
 });
 
 /**
- * Clean up expired queue entries (internal)
+ * @summary Clean up expired queue entries
+ * @description Finds all waiting queue entries whose availability window has passed and updates
+ * their status to 'expired'. Creates audit log entries for each expired entry. Used internally
+ * by the matching engine to maintain queue hygiene.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "expiredCount": 12
+ *   }
+ * }
+ * ```
  */
 export const cleanupExpiredEntries = internalMutation({
   args: {},

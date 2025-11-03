@@ -22,7 +22,34 @@ import { MatchResultV, constraintsV } from "@convex/types/validators/matching";
 import type { CompatibilityFeatures } from "@convex/types/entities/matching";
 
 /**
- * Run matching cycle with shard-based processing for scalability
+ * @summary Run matching cycle with shard-based processing for scalability
+ * @description Executes a complete matching cycle by processing queue entries in parallel shards.
+ * First cleans up expired entries, then processes each shard to find compatible matches. Aggregates
+ * results and logs performance metrics. Returns statistics about matches created and processing time.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "shardCount": 4,
+ *     "minScore": 0.6,
+ *     "maxMatches": 50
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "processedShards": 4,
+ *     "totalMatches": 23,
+ *     "averageScore": 0.78,
+ *     "processingTimeMs": 1250
+ *   }
+ * }
+ * ```
  */
 export const runMatchingCycle = action({
   args: {
@@ -103,7 +130,33 @@ export const runMatchingCycle = action({
 });
 
 /**
- * Process matching for a specific shard
+ * @summary Process matching for a specific shard
+ * @description Processes queue entries assigned to a specific shard by calculating compatibility
+ * scores between users and creating matches for pairs that exceed the minimum score threshold.
+ * Uses optimistic concurrency control to handle race conditions. Returns match count and total score.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "shard": 0,
+ *     "shardCount": 4,
+ *     "minScore": 0.6,
+ *     "maxMatchesPerShard": 12
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "matchCount": 8,
+ *     "totalScore": 6.24
+ *   }
+ * }
+ * ```
  */
 export const processMatchingShard = internalAction({
   args: {
@@ -215,7 +268,41 @@ export const processMatchingShard = internalAction({
 });
 
 /**
- * Get queue entries for a specific shard
+ * @summary Get queue entries for a specific shard
+ * @description Retrieves waiting queue entries assigned to a specific shard based on user ID hash.
+ * Filters entries that are currently available or will be available within 1 hour. Sorts by
+ * creation time (FIFO) and limits results. Used internally by shard-based matching processing.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "shard": 0,
+ *     "shardCount": 4,
+ *     "limit": 50
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": [
+ *     {
+ *       "_id": "jd7abc123def456",
+ *       "userId": "jd7user123",
+ *       "availableFrom": 1704067200000,
+ *       "availableTo": 1704070800000,
+ *       "constraints": {
+ *         "interests": ["technology", "ai"],
+ *         "roles": ["mentor"]
+ *       },
+ *       "createdAt": 1704067100000
+ *     }
+ *   ]
+ * }
+ * ```
  */
 export const getShardQueueEntries = internalQuery({
   args: {
@@ -274,7 +361,54 @@ export const getShardQueueEntries = internalQuery({
 });
 
 /**
- * Create a match with optimistic concurrency control
+ * @summary Create a match with optimistic concurrency control
+ * @description Creates a match between two users by atomically updating both queue entries to
+ * 'matched' status. Uses optimistic concurrency control to handle race conditions where entries
+ * may have been matched by another shard. Records match analytics and creates audit log entries.
+ * Returns true if match was created successfully, false if race condition occurred.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "user1QueueId": "jd7abc123def456",
+ *     "user2QueueId": "jd7xyz789ghi012",
+ *     "matchResult": {
+ *       "user1Id": "jd7user123",
+ *       "user2Id": "jd7user456",
+ *       "score": 0.82,
+ *       "features": {
+ *         "interestOverlap": 0.85,
+ *         "experienceGap": 1.0,
+ *         "industryMatch": 0.7,
+ *         "timezoneCompatibility": 1.0,
+ *         "vectorSimilarity": 0.88,
+ *         "orgConstraintMatch": 1.0,
+ *         "languageOverlap": 0.9,
+ *         "roleComplementarity": 1.0
+ *       },
+ *       "explanation": ["Strong interest alignment", "Ideal experience gap for mentorship"],
+ *       "matchId": "match_jd7user123_jd7user456_1704067200000"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": true
+ * }
+ * ```
+ *
+ * @example response-race-condition
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": false
+ * }
+ * ```
  */
 export const createMatch = internalMutation({
   args: {
@@ -374,7 +508,31 @@ export const createMatch = internalMutation({
 });
 
 /**
- * Log matching cycle metrics
+ * @summary Log matching cycle metrics
+ * @description Records performance metrics for a matching cycle including processing time,
+ * number of matches created, and average match score. Stores metrics in the performanceMetrics
+ * table for monitoring and analytics. Used internally after each matching cycle completes.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "shardCount": 4,
+ *     "totalMatches": 23,
+ *     "averageScore": 0.78,
+ *     "processingTimeMs": 1250,
+ *     "minScore": 0.6
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const logMatchingMetrics = internalMutation({
   args: {
@@ -426,7 +584,44 @@ export const logMatchingMetrics = internalMutation({
 });
 
 /**
- * Update match outcome based on user feedback
+ * @summary Update match outcome based on user feedback
+ * @description Updates the outcome and optional feedback for a match in the analytics record.
+ * Used to track whether matches were accepted, declined, or completed. Creates an audit log
+ * entry for the outcome update. Used internally by the feedback system.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "matchId": "match_jd7user123_jd7user456_1704067200000",
+ *     "userId": "jd7user123",
+ *     "outcome": "completed",
+ *     "feedback": {
+ *       "rating": 5,
+ *       "comments": "Great conversation, very insightful!"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "CONVEX_ERROR",
+ *     "message": "Match analytics record not found"
+ *   }
+ * }
+ * ```
  */
 export const updateMatchOutcome = internalMutation({
   args: {
