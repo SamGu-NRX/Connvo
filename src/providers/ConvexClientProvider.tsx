@@ -81,6 +81,7 @@ function UpsertUserOnAuth() {
   const didRun = useRef(false);
   const retryCount = useRef(0);
   const maxRetries = 3;
+  const currentToken = useRef<string | null>(null);
 
   const ready = useMemo(() => {
     return (
@@ -93,6 +94,14 @@ function UpsertUserOnAuth() {
   }, [user, accessToken, authLoading, tokenLoading, error]);
 
   useEffect(() => {
+    const tokenChanged = currentToken.current !== accessToken;
+
+    if (tokenChanged) {
+      currentToken.current = accessToken ?? null;
+      didRun.current = false;
+      retryCount.current = 0;
+    }
+
     console.log('[UpsertUserOnAuth] Effect triggered:', {
       ready,
       didRun: didRun.current,

@@ -281,12 +281,6 @@ const LandingPage = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/app");
-    }
-  }, [loading, user, router]);
-
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
