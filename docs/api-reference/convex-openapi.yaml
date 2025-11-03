@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: HTTP interface for Connvo's Convex backend, exposing all public query, mutation, and action endpoints.
 servers:
-  - url: https://Connvo-prod.convex.cloud
-    description: Prod Convex deployment
   - url: https://Connvo-dev.convex.cloud
     description: Dev Convex deployment
   - url: https://Connvo-staging.convex.cloud
     description: Staging Convex deployment
+  - url: https://Connvo-prod.convex.cloud
+    description: Prod Convex deployment
 security:
   - bearerAuth: []
 tags:
@@ -2227,6 +2227,18 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.batchedOperations.batchApplyNoteOperation'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                operation:
+                  type: insert
+                  position: 215
+                  content: |-
+
+                    - Capture launch risks
+                  length: 24
+                clientSequence: 12
+                expectedVersion: 57
         required: true
       responses:
         '200':
@@ -2235,6 +2247,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.batchedOperations.batchApplyNoteOperation'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  queued: true
+                  batchSize: 3
+                  serverSequence: 89
         '400':
           description: Failed operation
           content:
@@ -2250,7 +2270,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsBatchApplyNoteOperation
-      description: Batched note operation processing with operational transform
+      description: |-
+        transforms it against concurrent edits before applying it on the server.
+        Returns the provisional server sequence so clients can reconcile on receipt
+        of the processed update.
   /api/run/realtime/batchedOperations/batchIngestTranscriptChunk:
     post:
       summary: batchIngestTranscriptChunk
@@ -2261,6 +2284,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.batchedOperations.batchIngestTranscriptChunk'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                speakerId: user_alice_example
+                text: Let's capture the key decisions from this sprint.
+                confidence: 0.93
+                startMs: 1730668805000
+                endMs: 1730668809000
+                interim: false
         required: true
       responses:
         '200':
@@ -2269,6 +2301,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.batchedOperations.batchIngestTranscriptChunk'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  queued: true
+                  batchSize: 4
         '400':
           description: Failed operation
           content:
@@ -2284,7 +2323,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsBatchIngestTranscriptChunk
-      description: Batched transcript ingestion with coalescing
+      description: |-
+        transcript batch processor, which coalesces interim updates before writing to
+        storage. Requires meeting access and an active meeting session; rejects stale
+        requests when the meeting has ended.
   /api/run/realtime/batchedOperations/batchUpdatePresence:
     post:
       summary: batchUpdatePresence
@@ -2295,6 +2337,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.batchedOperations.batchUpdatePresence'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                presence: joined
+                metadata:
+                  client: web
+                  device: macbook-pro
         required: true
       responses:
         '200':
@@ -2303,6 +2352,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.batchedOperations.batchUpdatePresence'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  queued: true
+                  batchSize: 2
         '400':
           description: Failed operation
           content:
@@ -2318,7 +2374,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsBatchUpdatePresence
-      description: Batched presence updates with latest-state-wins coalescing
+      description: |-
+        processor, which collapses rapid flapping into the latest state before the
+        database is updated. Returns whether the event was queued and the current
+        batch size to assist with debugging.
   /api/run/realtime/batchedOperations/flushAllBatches:
     post:
       summary: flushAllBatches
@@ -2329,6 +2388,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.batchedOperations.flushAllBatches'
+            example:
+              args: {}
         required: true
       responses:
         '200':
@@ -2337,6 +2398,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.batchedOperations.flushAllBatches'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value: null
         '400':
           description: Failed operation
           content:
@@ -2352,7 +2418,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsFlushAllBatches
-      description: Flush all pending batches (for testing or shutdown)
+      description: |-
+        any buffered transcript, note, or presence events are committed before the
+        process exits. Safe to invoke multiple times; no-op if queues are empty.
   /api/run/realtime/batchedOperations/getBatchStats:
     post:
       summary: getBatchStats
@@ -2363,6 +2431,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.batchedOperations.getBatchStats'
+            example:
+              args: {}
         required: true
       responses:
         '200':
@@ -2371,6 +2441,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.batchedOperations.getBatchStats'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  transcripts:
+                    queueSize: 0
+                  noteOps:
+                    queueSize: 2
+                  presence:
+                    queueSize: 1
         '400':
           description: Failed operation
           content:
@@ -2386,7 +2467,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeBatchedOperationsGetBatchStats
-      description: Get batch processing statistics
+      description: |-
+        and presence batch queues. Helpful for dashboards and debugging delayed
+        processing without inspecting logs.
   /api/run/realtime/subscriptionManager/establishSubscription:
     post:
       summary: establishSubscription
@@ -2397,6 +2480,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.subscriptionManager.establishSubscription'
+            example:
+              args:
+                resourceType: meeting_notes
+                resourceId: meeting_84c0example
+                subscriptionId: sub_notes_websocket_123
+                priority: normal
         required: true
       responses:
         '200':
@@ -2405,6 +2494,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.subscriptionManager.establishSubscription'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  success: true
+                  subscriptionId: sub_notes_websocket_123
+                  permissions:
+                    - notes:read
+                    - notes:updates
+                  validUntil: null
+                  rateLimited: false
         '400':
           description: Failed operation
           content:
@@ -2420,7 +2521,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerEstablishSubscription
-      description: Establishes a new subscription with comprehensive validation
+      description: |-
+        bandwidth limits, and registers the subscription in the in-memory registry.
+        Returns the granted permission set so the client can authorize downstream
+        updates. Logs the event to the audit trail.
   /api/run/realtime/subscriptionManager/validateAndUpdateSubscription:
     post:
       summary: validateAndUpdateSubscription
@@ -2431,6 +2535,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.subscriptionManager.validateAndUpdateSubscription'
+            example:
+              args:
+                subscriptionId: sub_notes_websocket_123
+                lastValidated: 1730668805000
         required: true
       responses:
         '200':
@@ -2439,6 +2547,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.subscriptionManager.validateAndUpdateSubscription'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  valid: true
+                  permissions:
+                    - notes:read
+                    - notes:updates
+                  reason: null
+                  shouldReconnect: false
+                  validUntil: 1730672405000
+                  rateLimited: false
+                  resourceType: meeting_notes
+                  resourceId: meeting_84c0example
         '400':
           description: Failed operation
           content:
@@ -2454,7 +2577,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerValidateAndUpdateSubscription
-      description: Validates and updates subscription permissions in real-time
+      description: |-
+        re-computes the permission set, and schedules refreshes when the resource
+        expires. Returns context about whether the client should reconnect and why a
+        subscription might be invalid.
   /api/run/realtime/subscriptionManager/terminateSubscription:
     post:
       summary: terminateSubscription
@@ -2465,6 +2591,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_realtime.subscriptionManager.terminateSubscription'
+            example:
+              args:
+                subscriptionId: sub_notes_websocket_123
+                reason: Client disconnected
         required: true
       responses:
         '200':
@@ -2473,6 +2603,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_realtime.subscriptionManager.terminateSubscription'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value: null
         '400':
           description: Failed operation
           content:
@@ -2488,7 +2623,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunRealtimeSubscriptionManagerTerminateSubscription
-      description: Terminates subscription and cleans up resources
+      description: |-
+        state, and emits an audit log entry. The caller must own the subscription;
+        otherwise the mutation is a no-op to avoid leaking information.
   /api/run/realtime/subscriptionManager/getSubscriptionStats:
     post:
       summary: getSubscriptionStats
@@ -5098,6 +5235,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_meetings.stateTracking.updateSpeakingStats'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                userId: user_alice_example
+                speakingDurationMs: 3150
         required: true
       responses:
         '200':
@@ -5106,6 +5248,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_meetings.stateTracking.updateSpeakingStats'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value: null
         '400':
           description: Failed operation
           content:
@@ -5121,7 +5268,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStateTrackingUpdateSpeakingStats
-      description: Updates speaking statistics for a meeting
+      description: |-
+        detection timers whenever new audio activity is reported. The mutation creates
+        the backing `meetingState` document on first invocation so subsequent calls
+        share the same counters. Requires the caller to have access to the meeting.
   /api/run/meetings/stateTracking/updateCurrentTopics:
     post:
       summary: updateCurrentTopics
@@ -5132,6 +5282,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_meetings.stateTracking.updateCurrentTopics'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                topics:
+                  - roadmap
+                  - staffing
+                  - launch-readiness
         required: true
       responses:
         '200':
@@ -5140,6 +5297,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_meetings.stateTracking.updateCurrentTopics'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value: null
         '400':
           description: Failed operation
           content:
@@ -5155,7 +5317,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStateTrackingUpdateCurrentTopics
-      description: Updates current topics being discussed
+      description: |-
+        in a meeting. Used by prompt generation and insights pipelines to provide
+        contextual suggestions. Validates the caller has access to the meeting and
+        persists the new topic list on the shared `meetingState` document.
   /api/run/meetings/stateTracking/recordActivity:
     post:
       summary: recordActivity
@@ -5166,6 +5331,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_meetings.stateTracking.recordActivity'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                activityType: reaction
+                userId: user_bob_example
         required: true
       responses:
         '200':
@@ -5174,6 +5344,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_meetings.stateTracking.recordActivity'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value: null
         '400':
           description: Failed operation
           content:
@@ -5189,7 +5364,11 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunMeetingsStateTrackingRecordActivity
-      description: Records activity to reset lull detection
+      description: |-
+        messages, screen sharing, or reactions. Resets the lull timer so prompt
+        generation is not triggered incorrectly. Access is restricted to meeting
+        participants, and the mutation gracefully no-ops if the meeting state has
+        not been initialized yet.
   /api/run/meetings/stream/index/generateParticipantTokenPublic:
     post:
       summary: generateParticipantTokenPublic
@@ -6753,6 +6932,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.clearSyncedOperations'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
+                queueId: queue_1730668806123_example
         required: true
       responses:
         '200':
@@ -6761,6 +6945,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.clearSyncedOperations'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  deleted: 3
         '400':
           description: Failed operation
           content:
@@ -6776,7 +6966,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineClearSyncedOperations
-      description: Clears synced operations from the offline queue
+      description: |-
+        offline queue remains compact. Can target a specific queue ID or purge all
+        synced records for a client after a successful reconciliation.
   /api/run/notes/offline/createOfflineCheckpoint:
     post:
       summary: createOfflineCheckpoint
@@ -6787,6 +6979,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.createOfflineCheckpoint'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
+                checkpointData:
+                  sequence: 21
+                  version: 58
+                  contentHash: hash_v58_deadbeef
+                  timestamp: 1730668810456
         required: true
       responses:
         '200':
@@ -6795,6 +6996,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.createOfflineCheckpoint'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  checkpointId: checkpoint_1730668810456_example
+                  success: true
         '400':
           description: Failed operation
           content:
@@ -6810,7 +7018,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineCreateOfflineCheckpoint
-      description: Creates a checkpoint for offline operations
+      description: |-
+        note content after a successful sync. Enables clients to quickly reconcile
+        future offline operations without replaying the entire history.
   /api/run/notes/offline/getOfflineQueueStatus:
     post:
       summary: getOfflineQueueStatus
@@ -6821,6 +7031,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.getOfflineQueueStatus'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
         required: true
       responses:
         '200':
@@ -6829,6 +7043,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.getOfflineQueueStatus'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  totalQueued: 5
+                  pending: 2
+                  syncing: 1
+                  synced: 1
+                  failed: 1
+                  oldestPending: 1730668806123
+                  newestPending: 1730668810456
+                  queueHealth: warning
         '400':
           description: Failed operation
           content:
@@ -6844,7 +7071,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineGetOfflineQueueStatus
-      description: Gets offline operation queue status for a client
+      description: |-
+        failed) so the client can display accurate sync progress. Also returns timing
+        metadata to determine whether the queue is healthy, warning, or critical.
   /api/run/notes/offline/queueOfflineOperations:
     post:
       summary: queueOfflineOperations
@@ -6855,6 +7084,25 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.queueOfflineOperations'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
+                operations:
+                  - type: insert
+                    position: 128
+                    content: |-
+
+                      - Draft OKR outline
+                    length: 21
+                    id: op_e9c4c2f011
+                    authorId: user_alice_example
+                    timestamp: 1730668805000
+                    sequence: 17
+                    clientId: client_web_123
+                    queuedAt: 1730668806000
+                    attempts: 0
+                    status: pending
         required: true
       responses:
         '200':
@@ -6863,6 +7111,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.queueOfflineOperations'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  success: true
+                  queued: 1
+                  queueId: queue_1730668806123_example
         '400':
           description: Failed operation
           content:
@@ -6878,7 +7134,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineQueueOfflineOperations
-      description: Queues operations for offline sync
+      description: |-
+        can be replayed once connectivity is restored. Groups operations under a new
+        queue ID per sync attempt, logs the action for auditability, and ensures the
+        caller is an authorized meeting participant.
   /api/run/notes/offline/restoreFromCheckpoint:
     post:
       summary: restoreFromCheckpoint
@@ -6889,6 +7148,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.restoreFromCheckpoint'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
+                checkpointId: checkpoint_1730668810456_example
         required: true
       responses:
         '200':
@@ -6897,6 +7161,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.restoreFromCheckpoint'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  success: true
+                  checkpoint:
+                    sequence: 21
+                    version: 58
+                    contentHash: hash_v58_deadbeef
+                    timestamp: 1730668810456
         '400':
           description: Failed operation
           content:
@@ -6912,7 +7187,9 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineRestoreFromCheckpoint
-      description: Restores from an offline checkpoint
+      description: |-
+        for the caller's meeting and client combination. Helps reconnecting clients
+        resume syncing from the exact version they previously acknowledged.
   /api/run/notes/offline/retryFailedOperations:
     post:
       summary: retryFailedOperations
@@ -6923,6 +7200,11 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.retryFailedOperations'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
+                queueId: queue_1730668806123_example
         required: true
       responses:
         '200':
@@ -6931,6 +7213,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.retryFailedOperations'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  reset: 2
         '400':
           description: Failed operation
           content:
@@ -6946,7 +7234,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineRetryFailedOperations
-      description: Retries failed offline operations
+      description: |-
+        can retry them on the next sync attempt. Optionally scopes the reset to a
+        single queue ID, updates attempt counters, and records the change in the audit
+        log for traceability.
   /api/run/notes/offline/syncOfflineOperations:
     post:
       summary: syncOfflineOperations
@@ -6957,6 +7248,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Request_notes.offline.syncOfflineOperations'
+            example:
+              args:
+                meetingId: meeting_84c0example
+                clientId: client_web_123
+                queueId: queue_1730668806123_example
+                maxOperations: 50
         required: true
       responses:
         '200':
@@ -6965,6 +7262,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response_notes.offline.syncOfflineOperations'
+              example:
+                status: success
+                errorMessage: ''
+                errorData: {}
+                value:
+                  success: true
+                  synced: 3
+                  failed: 0
+                  conflicts: 0
+                  newVersion: 58
+                  errors: []
+                  remainingInQueue: 0
         '400':
           description: Failed operation
           content:
@@ -6980,7 +7289,10 @@ paths:
       security:
         - bearerAuth: []
       operationId: postApiRunNotesOfflineSyncOfflineOperations
-      description: Syncs queued offline operations with conflict resolution
+      description: |-
+        meeting notes document. Operations are transformed against newer server
+        changes, applied atomically, and the resulting version metadata is returned.
+        Supports replay by queue ID or up to `maxOperations` per invocation.
   /api/run/profiles/queries/getCurrentUserProfile:
     post:
       summary: getCurrentUserProfile

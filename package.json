@@ -25,6 +25,7 @@
     "update:api-docs:dev": "bash scripts/update-api-docs.sh --env=dev",
     "update:api-docs:staging": "bash scripts/update-api-docs.sh --env=staging",
     "update:api-docs:prod": "bash scripts/update-api-docs.sh --env=prod",
+    "test:ci-workflow": "bash scripts/test-ci-workflow.sh",
     "audit:docs": "tsx scripts/audit-docstrings.ts",
     "audit:docs:json": "tsx scripts/audit-docstrings.ts --json",
     "validate:docs": "tsx scripts/validate-docstrings.ts",
