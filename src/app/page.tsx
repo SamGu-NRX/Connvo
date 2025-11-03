@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
+import Image from "next/image";
 import {
   LineChart,
   Line,
@@ -55,10 +56,10 @@ const GlassCard = ({
   [key: string]: any;
 }) => (
   <div
-    className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 ${className}`}
+    className={`relative overflow-hidden rounded-2xl border border-white/40 bg-white/60 shadow-[0_12px_45px_-18px_rgba(15,118,110,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-white/5 dark:shadow-[0_12px_45px_-18px_rgba(8,145,178,0.4)] ${className}`}
     {...props}
   >
-    <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent dark:from-white/10" />
+    <div className="absolute inset-0 bg-linear-to-br from-white/80 via-white/40 to-white/10 dark:from-white/10 dark:via-white/5 dark:to-transparent" />
     <div className="relative">{children}</div>
   </div>
 );
@@ -268,6 +269,7 @@ const LandingPage = () => {
   const { scrollY } = useScroll();
   const parallaxY = useTransform(scrollY, [0, 1000], [0, -150]);
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -298,25 +300,37 @@ const LandingPage = () => {
     }
   };
 
+  const logoSrc =
+    theme === "dark"
+      ? "/ConnvoLogos/Connvo-white.png"
+      : "/ConnvoLogos/Connvo-black.png";
+
   return (
     <div className={`min-h-screen ${theme === "dark" ? "dark" : ""}`}>
       <div className="bg-white transition-colors duration-300 dark:bg-gray-900">
         {/* Modern Glass Nav */}
         <nav className="fixed top-0 z-50 w-full">
-          <div className="mx-6 mt-6">
-            <GlassCard className="mx-auto max-w-6xl px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+          <div className="mx-auto mt-6 w-full max-w-6xl px-6">
+            <GlassCard className="w-full px-6 py-4">
+              <div className="flex items-center">
+                <div className="flex flex-1 items-center gap-3">
+                  <Image
+                    src={logoSrc}
+                    alt="Connvo logo"
+                    width={36}
+                    height={36}
+                    className="h-9 w-auto"
+                    priority
+                  />
                   <span className="text-2xl font-light tracking-tight text-slate-900 dark:text-white">
                     Connvo
                   </span>
                 </div>
 
-                <div className="hidden items-center gap-8 md:flex">
+                <div className="hidden flex-1 items-center justify-center gap-8 md:flex">
                   {[
                     { label: "Features", id: "features" },
                     { label: "Testimonials", id: "testimonials" },
-                    { label: "Pricing", id: "pricing" },
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -328,7 +342,7 @@ const LandingPage = () => {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-1 items-center justify-end gap-3">
                   <button
                     onClick={toggleTheme}
                     className="rounded-xl p-2 transition-colors hover:bg-white/20 dark:hover:bg-white/10"
@@ -360,12 +374,12 @@ const LandingPage = () => {
         <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
           <LiquidGlassBackground />
 
-          <div className="relative z-10 container mx-auto px-6 py-32">
+          <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-32">
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className="mx-auto max-w-5xl text-center"
+              className="mx-auto max-w-6xl text-center"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -445,22 +459,6 @@ const LandingPage = () => {
               </motion.div>
             </motion.div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5, duration: 1 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <GlassCard className="p-2">
-                <div className="h-6 w-1 rounded-full bg-linear-to-b from-emerald-500 to-transparent" />
-              </GlassCard>
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Scroll
-              </span>
-            </div>
-          </motion.div>
         </section>
 
         {/* MacBook Scroll Component */}
@@ -468,7 +466,7 @@ const LandingPage = () => {
 
         {/* Improved Stats Section */}
         <section className="bg-linear-to-b from-emerald-50 to-white py-20 dark:from-gray-800/50 dark:to-gray-900">
-          <div className="container mx-auto px-6">
+          <div className="mx-auto w-full max-w-6xl px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -511,7 +509,7 @@ const LandingPage = () => {
 
         {/* Improved Features Section */}
         <section id="features" className="py-20">
-          <div className="container mx-auto px-6">
+          <div className="mx-auto w-full max-w-6xl px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -581,7 +579,7 @@ const LandingPage = () => {
           id="testimonials"
           className="bg-linear-to-b from-white to-emerald-50 py-20 dark:from-gray-900 dark:to-gray-800/50"
         >
-          <div className="container mx-auto px-6">
+          <div className="mx-auto w-full max-w-6xl px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -629,7 +627,7 @@ const LandingPage = () => {
 
         {/* Retention Data Visualization */}
         {/* <section className="py-20">
-          <div className="container mx-auto px-6">
+          <div className="mx-auto w-full max-w-6xl px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -689,43 +687,81 @@ const LandingPage = () => {
           </div>
         </section> */}
 
-        {/* Improved CTA Section */}
-        <section
-          id="pricing"
-          className="bg-linear-to-r from-emerald-600 to-teal-600 py-20 text-white"
-        >
-          <div className="container mx-auto px-6">
+        {/* Primary CTA */}
+        <section id="start" className="relative overflow-hidden py-28 sm:py-32">
+          <div className="absolute inset-0 -z-20 bg-linear-to-br from-emerald-100/70 via-white/30 to-teal-100/60 dark:from-emerald-900/60 dark:via-slate-950/70 dark:to-emerald-950/60" />
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute -top-40 left-1/4 h-[540px] w-[540px] rounded-full bg-emerald-200/50 blur-3xl dark:bg-emerald-500/25" />
+            <div className="absolute -bottom-48 right-1/5 h-[520px] w-[520px] rounded-full bg-teal-300/45 blur-3xl dark:bg-teal-600/25" />
+            <div className="absolute left-1/2 top-1/2 h-[680px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/30 blur-[160px] dark:bg-emerald-400/10" />
+          </div>
+          <div className="relative mx-auto w-full max-w-[1650px] px-4 sm:px-8 lg:px-12">
             <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              className="mx-auto max-w-4xl text-center"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ amount: 0.35, once: true }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
             >
-              <h2 className="mb-6 text-4xl font-semibold">
-                Ready to create coffee chats that count?
-              </h2>
-              <p className="mb-10 text-xl text-emerald-100">
-                Sign up to unlock intentional matches, guided conversations, and
-                call follow-ups that nurture real relationships.
-              </p>
-              <motion.a
-                href="/app"
-                onClick={(e) => handleTransition(e, "/app", router)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-medium text-emerald-600 shadow-md transition-all hover:bg-gray-100 hover:shadow-lg"
-              >
-                Start Your Journey <ArrowRight className="h-5 w-5" />
-              </motion.a>
+              <div className="relative w-full overflow-hidden rounded-2xl border border-white/60 bg-white/45 px-8 py-16 backdrop-blur-3xl backdrop-saturate-[1.35] sm:px-16 lg:px-24 dark:border-white/20 dark:bg-white/10">
+                <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/60 via-white/20 to-transparent opacity-80 dark:from-white/15 dark:via-white/10" />
+                <div className="pointer-events-none absolute inset-0">
+                  <div className="absolute -top-16 left-0 h-52 w-52 -translate-x-1/3 rounded-full bg-emerald-300/40 blur-2xl dark:bg-emerald-500/20" />
+                  <div className="absolute -bottom-12 right-6 h-48 w-48 translate-x-1/4 rounded-full bg-teal-300/35 blur-2xl dark:bg-teal-500/25" />
+                </div>
+                <div className="relative mx-auto max-w-4xl text-center">
+                  <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-emerald-700 backdrop-blur-sm dark:bg-white/15 dark:text-emerald-200">
+                    The next wave of intentional networking
+                  </span>
+                  <h2 className="mb-6 text-3xl font-semibold text-gray-900 sm:text-4xl md:text-5xl dark:text-white">
+                    Ready to host coffee chats your community will remember?
+                  </h2>
+                  <p className="mx-auto mb-10 max-w-3xl text-lg text-slate-600 sm:text-xl dark:text-slate-300">
+                    Launch Connvo for mentors, students, and teammates in minutes.
+                    Curated matches, guided prompts, and follow-ups come standard—
+                    so your people spend less time scheduling and more time connecting.
+                  </p>
+                  <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <StartCta
+                      className="group relative overflow-hidden rounded-full px-10 py-4 text-base font-medium text-white transition-colors duration-300"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(16,185,129,1) 0%, rgba(13,148,136,1) 100%)",
+                      }}
+                    >
+                      <span className="relative flex items-center gap-2">
+                        Start in Private Beta
+                        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </StartCta>
+                    <motion.a
+                      href="/auth/sign-in"
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => handleTransition(e, "/auth/sign-in", router)}
+                      className="flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/70 px-10 py-4 text-base font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-white/90 dark:border-emerald-400/30 dark:bg-white/10 dark:text-emerald-200 dark:hover:border-emerald-300/50 dark:hover:bg-emerald-500/10"
+                    >
+                      Talk to the team
+                    </motion.a>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </div>
         </section>
 
         {/* Improved Footer */}
         <footer className="border-t border-emerald-100 py-12 dark:border-gray-800">
-          <div className="container mx-auto px-6">
-            <div className="flex flex-col items-center justify-between md:flex-row">
-              <div className="mb-6 flex items-center md:mb-0">
-                <span className="pl-2 text-xl font-medium text-gray-900 dark:text-white">
+          <div className="mx-auto w-full max-w-6xl px-6">
+              <div className="flex flex-col items-center justify-between md:flex-row">
+                <div className="mb-6 flex items-center gap-3 md:mb-0">
+                  <Image
+                    src={logoSrc}
+                    alt="Connvo logo"
+                    width={32}
+                    height={32}
+                    className="h-8 w-auto"
+                  />
+                <span className="text-xl font-medium text-gray-900 dark:text-white">
                   Connvo
                 </span>
               </div>
