@@ -12,7 +12,32 @@ import { v } from "convex/values";
 import { metadataRecordV } from "@convex/lib/validators";
 
 /**
- * Logs data access events for audit trail
+ * @summary Logs data access events for audit trail
+ * @description Records data access events in the audit log for compliance and security monitoring. Tracks read, write, and admin operations on resources. Used internally by authorization guards and data access layers.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "resourceType": "meeting",
+ *     "resourceId": "meeting_xyz789",
+ *     "operationType": "read",
+ *     "metadata": {
+ *       "endpoint": "getMeeting",
+ *       "ipAddress": "192.168.1.100"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const logDataAccessEvent = internalMutation({
   args: {
@@ -42,7 +67,33 @@ export const logDataAccessEvent = internalMutation({
 });
 
 /**
- * Logs authorization events for security monitoring
+ * @summary Logs authorization events for security monitoring
+ * @description Records authorization attempts and outcomes in the audit log. Tracks both successful and failed authorization checks for security analysis and compliance. Used by permission guards to create an audit trail of access control decisions.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "action": "delete_meeting",
+ *     "resourceType": "meeting",
+ *     "resourceId": "meeting_xyz789",
+ *     "success": false,
+ *     "metadata": {
+ *       "reason": "insufficient_permissions",
+ *       "requiredRole": "admin"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const logAuthorizationEvent = internalMutation({
   args: {
@@ -72,7 +123,34 @@ export const logAuthorizationEvent = internalMutation({
 });
 
 /**
- * General audit log creation for arbitrary events
+ * @summary Creates general audit log entry
+ * @description Creates a general-purpose audit log entry for any system event. Supports flexible categorization and metadata for tracking diverse operations across the system. Used for compliance, debugging, and security monitoring.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "actorUserId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "resourceType": "circuit_breaker",
+ *     "resourceId": "external-api",
+ *     "action": "circuit_breaker_reset",
+ *     "category": "system_administration",
+ *     "metadata": {
+ *       "serviceName": "external-api",
+ *       "previousState": "open"
+ *     },
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const createAuditLog = internalMutation({
   args: {
@@ -103,7 +181,85 @@ export const createAuditLog = internalMutation({
 });
 
 /**
- * Public query to list audit logs by resource
+ * @summary Retrieves audit logs with filtering
+ * @description Queries audit logs with optional filtering by resource type, resource ID, actor user, or action. Returns logs in descending timestamp order with configurable limit. Supports multiple query paths using database indexes for efficient retrieval.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "resourceType": "meeting",
+ *     "resourceId": "meeting_xyz789",
+ *     "limit": 20
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "logs": [
+ *       {
+ *         "_id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *         "_creationTime": 1704067200000,
+ *         "actorUserId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *         "resourceType": "meeting",
+ *         "resourceId": "meeting_xyz789",
+ *         "action": "data_read",
+ *         "metadata": {
+ *           "endpoint": "getMeeting"
+ *         },
+ *         "timestamp": 1704067200000
+ *       },
+ *       {
+ *         "_id": "km9yr0s3l6o7r8t9w0x1y2z3",
+ *         "_creationTime": 1704067140000,
+ *         "actorUserId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *         "resourceType": "meeting",
+ *         "resourceId": "meeting_xyz789",
+ *         "action": "auth_join_meeting",
+ *         "metadata": {
+ *           "success": true
+ *         },
+ *         "timestamp": 1704067140000
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "actorUserId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "limit": 50
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "logs": [
+ *       {
+ *         "_id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *         "_creationTime": 1704067200000,
+ *         "actorUserId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *         "resourceType": "meeting",
+ *         "resourceId": "meeting_xyz789",
+ *         "action": "data_read",
+ *         "metadata": {},
+ *         "timestamp": 1704067200000
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
  */
 export const getAuditLogs = query({
   args: {

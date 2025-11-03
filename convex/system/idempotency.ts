@@ -8,6 +8,45 @@ import { v } from "convex/values";
 import { metadataRecordV } from "@convex/lib/validators";
 import type { Id } from "@convex/_generated/dataModel";
 
+/**
+ * @summary Gets idempotency key record
+ * @description Retrieves an idempotency key record by key and scope. Used to check if an operation has already been performed and retrieve cached results. Returns null if the key does not exist.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "key": "create-meeting-abc123",
+ *     "scope": "meetings"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "_id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *     "key": "create-meeting-abc123",
+ *     "scope": "meetings",
+ *     "createdAt": 1704067200000,
+ *     "metadata": {
+ *       "resultType": "inline",
+ *       "resultInline": "meeting_xyz789"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ */
 export const getKey = internalQuery({
   args: { key: v.string(), scope: v.string() },
   returns: v.union(
@@ -28,6 +67,33 @@ export const getKey = internalQuery({
   },
 });
 
+/**
+ * @summary Creates idempotency key record
+ * @description Creates a new idempotency key record to track operation execution. The key-scope combination must be unique. Metadata can store operation results inline or reference storage for large payloads.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "key": "create-meeting-abc123",
+ *     "scope": "meetings",
+ *     "metadata": {
+ *       "resultType": "inline",
+ *       "resultInline": "meeting_xyz789"
+ *     },
+ *     "createdAt": 1704067200000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "jh8xp9r2k5n6q7s8v9w0y1z2"
+ * }
+ * ```
+ */
 export const createKey = internalMutation({
   args: {
     key: v.string(),
@@ -46,6 +112,32 @@ export const createKey = internalMutation({
   },
 });
 
+/**
+ * @summary Updates idempotency key metadata
+ * @description Updates the metadata of an existing idempotency key record. Used to store operation results after execution or update cached data.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *     "metadata": {
+ *       "resultType": "storage",
+ *       "resultRef": "kg0zs1t4m7p8s9u0v1w2x3y4",
+ *       "resultSize": 15420
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ */
 export const patchKey = internalMutation({
   args: {
     id: v.id("idempotencyKeys"),
@@ -58,6 +150,27 @@ export const patchKey = internalMutation({
   },
 });
 
+/**
+ * @summary Deletes idempotency key record
+ * @description Deletes an idempotency key record. Used during cleanup operations or when invalidating cached results.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "id": "jh8xp9r2k5n6q7s8v9w0y1z2"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ */
 export const deleteKey = internalMutation({
   args: { id: v.id("idempotencyKeys") },
   returns: v.null(),
@@ -68,9 +181,52 @@ export const deleteKey = internalMutation({
 });
 
 /**
- * Resolve an idempotency result in a safe, typed way.
- * - If resultType === 'inline', returns inlineValue
- * - If resultType === 'storage', reads the JSON blob and returns json string with size
+ * @summary Resolves idempotency result
+ * @description Resolves and retrieves the result of an idempotent operation. For inline results, returns the stored value directly. For storage-backed results, reads the JSON blob from Convex storage and returns the content with size information.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "key": "create-meeting-abc123",
+ *     "scope": "meetings"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "kind": "inline",
+ *     "inlineValue": "meeting_xyz789"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "kind": "storage",
+ *     "json": "{\"meetingId\":\"meeting_xyz789\",\"participants\":[...]}",
+ *     "size": 15420
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "STORAGE_READ_FAILED",
+ *     "message": "Unable to read stored idempotency result"
+ *   }
+ * }
+ * ```
  */
 export const resolveResult = internalAction({
   args: {
@@ -148,7 +304,42 @@ export const resolveResult = internalAction({
 });
 
 /**
- * Internal rate limit enforcement colocated with idempotency to avoid codegen churn.
+ * @summary Enforces rate limit for user action
+ * @description Enforces rate limiting for a specific user action within a time window. Tracks request counts per user-action-window combination and throws an error when the limit is exceeded. Returns remaining quota and reset time.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "action": "create_meeting",
+ *     "windowMs": 60000,
+ *     "maxCount": 10
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "remaining": 7,
+ *     "resetAt": 1704067260000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "RATE_LIMIT_EXCEEDED",
+ *     "message": "Rate limit exceeded for action 'create_meeting'. Try again in 45 seconds."
+ *   }
+ * }
+ * ```
  */
 export const enforceRateLimit = internalMutation({
   args: {

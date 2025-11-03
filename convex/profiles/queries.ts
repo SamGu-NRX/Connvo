@@ -14,7 +14,45 @@ import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
 import { Id } from "@convex/_generated/dataModel";
 
 /**
- * Gets profile by user ID (internal use)
+ * @summary Gets profile by user ID (internal use)
+ * @description Retrieves a user profile by user ID for internal system operations. This function bypasses authorization checks and should only be called from trusted internal contexts. Returns null if no profile exists for the given user.
+ *
+ * @example request
+ * ```json
+ * { "args": { "userId": "jd7xn8q9k2h5m6p3r4t7w8y9" } }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "_id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *     "userId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "displayName": "Alex Chen",
+ *     "bio": "Product manager passionate about AI and user experience",
+ *     "goals": "Looking to connect with founders and technical leaders",
+ *     "languages": ["English", "Mandarin"],
+ *     "experience": "8 years in product management",
+ *     "age": 32,
+ *     "gender": "prefer-not-to-say",
+ *     "field": "Product Management",
+ *     "jobTitle": "Senior Product Manager",
+ *     "company": "TechCorp",
+ *     "linkedinUrl": "https://linkedin.com/in/alexchen",
+ *     "createdAt": 1704067200000,
+ *     "updatedAt": 1704153600000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const getProfileByUserId = internalQuery({
   args: { userId: v.id("users") },
@@ -54,7 +92,45 @@ export const getProfileByUserId = internalQuery({
 });
 
 /**
- * Gets current user's profile
+ * @summary Gets current user's profile
+ * @description Retrieves the authenticated user's profile data. Returns null if the user is not authenticated or if no profile exists. This function is safe to call from unauthenticated contexts as it returns null instead of throwing errors, making it suitable for reactive subscriptions that may be active during login/logout transitions.
+ *
+ * @example request
+ * ```json
+ * { "args": {} }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "_id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *     "userId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "displayName": "Alex Chen",
+ *     "bio": "Product manager passionate about AI and user experience",
+ *     "goals": "Looking to connect with founders and technical leaders",
+ *     "languages": ["English", "Mandarin"],
+ *     "experience": "8 years in product management",
+ *     "age": 32,
+ *     "gender": "prefer-not-to-say",
+ *     "field": "Product Management",
+ *     "jobTitle": "Senior Product Manager",
+ *     "company": "TechCorp",
+ *     "linkedinUrl": "https://linkedin.com/in/alexchen",
+ *     "createdAt": 1704067200000,
+ *     "updatedAt": 1704153600000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
  */
 export const getCurrentUserProfile = query({
   args: {},
@@ -90,15 +166,15 @@ export const getCurrentUserProfile = query({
     // safely subscribe without triggering errors during logged-out states.
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-    
+
     const workosUserId: string = identity.subject;
-    
+
     // Get the user record to find their userId
     const user = await ctx.db
       .query("users")
       .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
       .unique();
-    
+
     if (!user) return null;
 
     return await ctx.db
@@ -109,7 +185,51 @@ export const getCurrentUserProfile = query({
 });
 
 /**
- * Gets profile by user ID with authorization
+ * @summary Gets profile by user ID with authorization
+ * @description Retrieves a user profile by user ID with proper authorization checks. Only returns public profile fields, excluding sensitive information like age, gender, and LinkedIn URL. Requires authentication. Returns null if the profile does not exist.
+ *
+ * @example request
+ * ```json
+ * { "args": { "userId": "jd7xn8q9k2h5m6p3r4t7w8y9" } }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "_id": "jh8xp9r2k5n6q7s8v9w0y1z2",
+ *     "userId": "jd7xn8q9k2h5m6p3r4t7w8y9",
+ *     "displayName": "Alex Chen",
+ *     "bio": "Product manager passionate about AI and user experience",
+ *     "goals": "Looking to connect with founders and technical leaders",
+ *     "languages": ["English", "Mandarin"],
+ *     "experience": "8 years in product management",
+ *     "field": "Product Management",
+ *     "jobTitle": "Senior Product Manager",
+ *     "company": "TechCorp"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "Authentication required"
+ *   }
+ * }
+ * ```
  */
 export const getProfileByUserIdPublic = query({
   args: { userId: v.id("users") },

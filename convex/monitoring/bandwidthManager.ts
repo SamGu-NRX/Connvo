@@ -312,7 +312,52 @@ class CircuitBreakerRegistry {
 export const circuitBreakerRegistry = new CircuitBreakerRegistry();
 
 /**
- * Check bandwidth limits for a user request
+ * @summary Check bandwidth limits for a user request
+ * @description Validates whether a user request is within bandwidth limits based on their tier (premium, standard, limited). Checks request rate, subscription count, and bytes transferred within a rolling 1-minute window. Returns current usage statistics and retry timing if limits are exceeded.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "requestType": "query",
+ *     "estimatedBytes": 2048
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "allowed": true,
+ *     "currentUsage": {
+ *       "requests": 45,
+ *       "subscriptions": 3,
+ *       "bytes": 92160
+ *     },
+ *     "userTier": "standard"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "allowed": false,
+ *     "reason": "Request rate limit exceeded",
+ *     "retryAfterMs": 15000,
+ *     "currentUsage": {
+ *       "requests": 300,
+ *       "subscriptions": 5,
+ *       "bytes": 1048576
+ *     },
+ *     "userTier": "standard"
+ *   }
+ * }
+ * ```
  */
 export const checkBandwidthLimit = query({
   args: {
@@ -355,7 +400,55 @@ export const checkBandwidthLimit = query({
 });
 
 /**
- * Get bandwidth usage statistics
+ * @summary Get bandwidth usage statistics
+ * @description Retrieves current bandwidth usage statistics for the authenticated user. Optionally includes global system-wide statistics when includeGlobal is true. Returns request counts, subscription counts, bytes transferred, and window timing information.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "includeGlobal": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "userStats": {
+ *       "requestCount": 45,
+ *       "subscriptionCount": 3,
+ *       "bytesTransferred": 92160,
+ *       "windowStart": 1704067200000,
+ *       "priority": "standard"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "userStats": {
+ *       "requestCount": 128,
+ *       "subscriptionCount": 8,
+ *       "bytesTransferred": 524288,
+ *       "windowStart": 1704067200000,
+ *       "priority": "premium"
+ *     },
+ *     "globalStats": {
+ *       "totalRequests": 15420,
+ *       "totalSubscriptions": 342,
+ *       "totalBytesTransferred": 52428800,
+ *       "windowStart": 1704067200000
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const getBandwidthStats = query({
   args: {
@@ -396,7 +489,47 @@ export const getBandwidthStats = query({
 });
 
 /**
- * Execute operation with circuit breaker protection
+ * @summary Execute operation with circuit breaker protection
+ * @description Executes an operation with circuit breaker protection to prevent cascading failures. The circuit breaker tracks failures and automatically opens (blocks requests) when the failure threshold is exceeded. After a recovery period, it enters half-open state to test if the service has recovered.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "serviceName": "external-api",
+ *     "operationId": "fetch-user-data-123",
+ *     "failureThreshold": 5,
+ *     "recoveryTimeMs": 30000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "result": {
+ *       "operationId": "fetch-user-data-123",
+ *       "timestamp": 1704067200000
+ *     },
+ *     "circuitState": "closed"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": false,
+ *     "error": "Circuit breaker is OPEN - service unavailable",
+ *     "circuitState": "open"
+ *   }
+ * }
+ * ```
  */
 export const executeWithCircuitBreaker = action({
   args: {
@@ -455,7 +588,45 @@ export const executeWithCircuitBreaker = action({
 });
 
 /**
- * Get circuit breaker status for all services
+ * @summary Get circuit breaker status for all services
+ * @description Retrieves the current status of all circuit breakers in the system. Returns individual breaker states (open, half-open, closed) and failure counts, along with a summary of breaker distribution. Requires authentication.
+ *
+ * @example request
+ * ```json
+ * { "args": {} }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "breakers": [
+ *       {
+ *         "service": "external-api",
+ *         "state": "closed",
+ *         "failures": 0
+ *       },
+ *       {
+ *         "service": "ai-service",
+ *         "state": "half-open",
+ *         "failures": 3
+ *       },
+ *       {
+ *         "service": "transcription-service",
+ *         "state": "open",
+ *         "failures": 5
+ *       }
+ *     ],
+ *     "summary": {
+ *       "totalBreakers": 3,
+ *       "openBreakers": 1,
+ *       "halfOpenBreakers": 1,
+ *       "closedBreakers": 1
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const getCircuitBreakerStatus = query({
   args: {},
@@ -502,7 +673,39 @@ export const getCircuitBreakerStatus = query({
 });
 
 /**
- * Reset circuit breaker for a service
+ * @summary Reset circuit breaker for a service
+ * @description Manually resets a circuit breaker to its initial closed state, clearing all failure counts. This is an administrative operation that should be used when a service has been manually verified as healthy. Creates an audit log entry for the reset action.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "serviceName": "external-api"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": true,
+ *     "message": "Circuit breaker for external-api has been reset"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "success": false,
+ *     "message": "Circuit breaker for unknown-service not found"
+ *   }
+ * }
+ * ```
  */
 export const resetCircuitBreaker = mutation({
   args: {
@@ -547,7 +750,50 @@ export const resetCircuitBreaker = mutation({
 });
 
 /**
- * Load shedding based on system load
+ * @summary Load shedding based on system load
+ * @description Determines whether a request should be shed (rejected) based on current system load and request priority. Evaluates CPU usage, memory usage, active connections, and queue depth against priority-specific thresholds. Higher priority requests are allowed under higher load conditions.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "requestPriority": "normal"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "shouldShed": false,
+ *     "systemLoad": {
+ *       "cpuUsage": 45.2,
+ *       "memoryUsage": 62.8,
+ *       "activeConnections": 342,
+ *       "queueDepth": 12
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "shouldShed": true,
+ *     "reason": "CPU usage (82.4%) exceeds threshold (75%)",
+ *     "systemLoad": {
+ *       "cpuUsage": 82.4,
+ *       "memoryUsage": 68.1,
+ *       "activeConnections": 687,
+ *       "queueDepth": 58
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const shouldShedLoad = query({
   args: {

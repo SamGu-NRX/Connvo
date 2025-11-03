@@ -49,7 +49,65 @@ import {
 import type { SubscriptionContext } from "@convex/types/domain/realTime";
 
 /**
- * Real-time meeting notes subscription with permission validation and bandwidth management
+ * @summary Subscribes to real-time meeting notes updates
+ * @description Establishes a reactive subscription to collaborative meeting notes with automatic permission validation,
+ * bandwidth management, and intelligent caching. The subscription validates user access on each update and applies
+ * rate limiting to prevent bandwidth exhaustion. Supports cursor-based resumption for reliable reconnection.
+ * Uses query optimization with 30-second cache for frequently accessed notes.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *     "subscriptionId": "notes_sub_1699564800000",
+ *     "cursor": "42_1699564800000"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "content": "# Meeting Notes\n\n## Action Items\n- Review Q4 roadmap\n- Schedule follow-up",
+ *     "version": 42,
+ *     "lastUpdated": 1699564800000,
+ *     "subscriptionValid": true,
+ *     "permissions": ["read", "write"],
+ *     "cursor": "43_1699564850000",
+ *     "rateLimited": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response-rate-limited
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "content": "",
+ *     "version": 0,
+ *     "lastUpdated": 1699564800000,
+ *     "subscriptionValid": true,
+ *     "permissions": ["read", "write"],
+ *     "cursor": "42_1699564800000",
+ *     "rateLimited": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "User is not a participant in this meeting"
+ *   }
+ * }
+ * ```
  */
 export const subscribeMeetingNotes = query({
   args: {
@@ -138,7 +196,81 @@ export const subscribeMeetingNotes = query({
 });
 
 /**
- * Real-time transcript stream subscription with time-bounded access
+ * @summary Subscribes to real-time transcript stream updates
+ * @description Establishes a reactive subscription to live meeting transcripts with sequence-based pagination and
+ * time-bounded access validation. Only active meetings can stream transcripts. Uses intelligent bucketing with
+ * 30-minute time windows for optimized query performance. Supports high-priority bandwidth allocation for
+ * low-latency transcript delivery. Automatically terminates when meeting ends.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *     "fromSequence": 100,
+ *     "limit": 50,
+ *     "subscriptionId": "transcripts_sub_1699564800000"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "transcripts": [
+ *       {
+ *         "_id": "kt8a9b0c1d2e3f4g5h6i7j8k",
+ *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *         "sequence": 100,
+ *         "speakerId": "user_alice123",
+ *         "text": "Let's discuss the quarterly results",
+ *         "timestamp": 1699564800000,
+ *         "confidence": 0.95
+ *       },
+ *       {
+ *         "_id": "lt9b0c1d2e3f4g5h6i7j8k9l",
+ *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *         "sequence": 101,
+ *         "speakerId": "user_bob456",
+ *         "text": "Revenue increased by 15% this quarter",
+ *         "timestamp": 1699564805000,
+ *         "confidence": 0.92
+ *       }
+ *     ],
+ *     "nextSequence": 102,
+ *     "subscriptionValid": true,
+ *     "permissions": ["read"],
+ *     "validUntil": 1699568400000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-rate-limited
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "transcripts": [],
+ *     "nextSequence": 100,
+ *     "subscriptionValid": true,
+ *     "permissions": ["read"],
+ *     "validUntil": 1699568400000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "MEETING_NOT_ACTIVE",
+ *     "message": "Meeting jd7x8y9z0a1b2c3d4e5f6g7h is not currently active"
+ *   }
+ * }
+ * ```
  */
 export const subscribeTranscriptStream = query({
   args: {
@@ -224,7 +356,70 @@ export const subscribeTranscriptStream = query({
 });
 
 /**
- * Real-time meeting participants subscription
+ * @summary Subscribes to real-time meeting participants updates
+ * @description Establishes a reactive subscription to meeting participant list with automatic enrichment of user data
+ * (display name, email, avatar). Updates reactively when participants join, leave, or change roles. Validates
+ * user access and returns role-based permissions for participant management operations.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *     "subscriptionId": "participants_sub_1699564800000"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "participants": [
+ *       {
+ *         "_id": "mt0c1d2e3f4g5h6i7j8k9l0m",
+ *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *         "userId": "user_alice123",
+ *         "role": "host",
+ *         "joinedAt": 1699564700000,
+ *         "status": "active",
+ *         "user": {
+ *           "displayName": "Alice Johnson",
+ *           "email": "alice@example.com",
+ *           "avatarUrl": "https://example.com/avatars/alice.jpg"
+ *         }
+ *       },
+ *       {
+ *         "_id": "nt1d2e3f4g5h6i7j8k9l0m1n",
+ *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *         "userId": "user_bob456",
+ *         "role": "participant",
+ *         "joinedAt": 1699564750000,
+ *         "status": "active",
+ *         "user": {
+ *           "displayName": "Bob Smith",
+ *           "email": "bob@example.com",
+ *           "avatarUrl": "https://example.com/avatars/bob.jpg"
+ *         }
+ *       }
+ *     ],
+ *     "subscriptionValid": true,
+ *     "permissions": ["read", "manage_participants"]
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "User is not a participant in this meeting"
+ *   }
+ * }
+ * ```
  */
 export const subscribeMeetingParticipants = query({
   args: {
@@ -275,8 +470,72 @@ export const subscribeMeetingParticipants = query({
 });
 
 /**
- * Validates subscription permissions in real-time
- * Called periodically by clients to ensure continued access
+ * @summary Validates subscription permissions in real-time
+ * @description Periodically called by clients to verify continued access to subscribed resources. Checks if user
+ * still has permission to access the resource, validates meeting state for transcript subscriptions (must be active),
+ * and returns updated permissions. Provides reconnection guidance when access is revoked or resources become unavailable.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "subscriptionId": "notes_sub_1699564800000",
+ *     "resourceType": "meetingNotes",
+ *     "resourceId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *     "lastValidated": 1699564800000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "valid": true,
+ *     "permissions": ["read", "write"],
+ *     "shouldReconnect": false,
+ *     "validUntil": 1699568400000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-invalid-meeting-ended
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "valid": false,
+ *     "permissions": [],
+ *     "reason": "Meeting is no longer active",
+ *     "shouldReconnect": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response-invalid-access-revoked
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "valid": false,
+ *     "permissions": [],
+ *     "reason": "User is not a participant in this meeting",
+ *     "shouldReconnect": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "UNAUTHORIZED",
+ *     "message": "Authentication required"
+ *   }
+ * }
+ * ```
  */
 export const validateSubscription = query({
   args: {
@@ -355,7 +614,50 @@ export const validateSubscription = query({
 });
 
 /**
- * Terminates subscription when permissions are revoked
+ * @summary Terminates subscription when permissions are revoked
+ * @description Internal mutation that forcibly terminates a user's subscription when access is revoked or resource
+ * becomes unavailable. Logs termination event to audit trail, cleans up subscription tracking state, and notifies
+ * client-side subscription managers. Called automatically when permission changes are detected or meetings end.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_alice123",
+ *     "subscriptionId": "notes_sub_1699564800000",
+ *     "resourceType": "meetingNotes",
+ *     "resourceId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *     "reason": "User removed from meeting"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example datamodel
+ * ```json
+ * {
+ *   "auditLog": {
+ *     "_id": "ot2e3f4g5h6i7j8k9l0m1n2o",
+ *     "actorUserId": "user_alice123",
+ *     "resourceType": "meetingNotes",
+ *     "resourceId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *     "action": "subscription_terminated",
+ *     "metadata": {
+ *       "subscriptionId": "notes_sub_1699564800000",
+ *       "reason": "User removed from meeting",
+ *       "terminatedAt": 1699564900000
+ *     },
+ *     "timestamp": 1699564900000
+ *   }
+ * }
+ * ```
  */
 export const terminateSubscription = internalMutation({
   args: {
