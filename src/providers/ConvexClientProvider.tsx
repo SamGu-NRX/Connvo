@@ -83,7 +83,13 @@ function UpsertUserOnAuth() {
   const maxRetries = 3;
 
   const ready = useMemo(() => {
-    return !!user && !!accessToken && !authLoading && !tokenLoading && !error;
+    return (
+      !!user &&
+      !!accessToken &&
+      !authLoading &&
+      !tokenLoading &&
+      !error
+    );
   }, [user, accessToken, authLoading, tokenLoading, error]);
 
   useEffect(() => {
@@ -99,6 +105,7 @@ function UpsertUserOnAuth() {
     });
 
     if (!ready || didRun.current) return;
+    if (!accessToken) return;
     
     // Add a small delay to ensure Convex auth context is fully initialized
     const timer = setTimeout(async () => {
@@ -148,7 +155,7 @@ function UpsertUserOnAuth() {
     }, 500); // 500ms delay to let Convex auth initialize
 
     return () => clearTimeout(timer);
-  }, [ready, upsertUser, user]);
+  }, [ready, upsertUser, user, accessToken]);
 
   return null;
 }

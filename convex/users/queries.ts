@@ -161,10 +161,18 @@ export const getCurrentUser = query({
     if (!identity) return null;
     const workosUserId: string = identity.subject;
 
-    return await ctx.db
-      .query("users")
-      .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
-      .unique();
+    try {
+      return await ctx.db
+        .query("users")
+        .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
+        .unique();
+    } catch (error) {
+      console.error("[users.getCurrentUser] Failed to fetch user", {
+        workosUserId,
+        error,
+      });
+      return null;
+    }
   },
 });
 
