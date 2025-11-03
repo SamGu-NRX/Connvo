@@ -19,48 +19,60 @@ const convex = new ConvexReactClient(convexUrl);
 
 // Wrapper hook that matches ConvexProviderWithAuthKit's expected interface
 function useAuth() {
-  const { user, loading: isLoading } = useWorkOSAuth();
-  const { accessToken, loading: tokenLoading, error: tokenError } = useAccessToken();
-  
-  const loading = (isLoading ?? false) || (tokenLoading ?? false);
-  const authenticated = !!user && !!accessToken && !loading && !tokenError;
+  const { user, loading: authLoading } = useWorkOSAuth();
+  const {
+    accessToken,
+    loading: tokenLoading,
+    error: tokenError,
+    getAccessToken,
+  } = useAccessToken();
 
-  // Use useCallback with accessToken as dependency to always return current token
+  const loading = (authLoading ?? false) || (tokenLoading ?? false);
+
   const fetchAccessToken = useCallback(async () => {
-    console.log('[ConvexAuth] fetchAccessToken called:', {
-      hasAccessToken: !!accessToken,
-      tokenLength: accessToken?.length,
-      hasError: !!tokenError,
-      errorMessage: tokenError?.message,
-    });
-    
-    // Return the current access token if available and valid
-    if (accessToken && !tokenError) {
-      console.log('[ConvexAuth] Returning valid access token');
-      return accessToken;
-    }
-    
-    console.log('[ConvexAuth] No valid token available, returning null');
-    // Return null if no valid token (will cause Convex to treat as unauthenticated)
-    return null;
-  }, [accessToken, tokenError]);
-
-  // Log auth state changes
-  useEffect(() => {
-    console.log('[ConvexAuth] Auth state changed:', {
+    console.log("[ConvexAuth] getAccessToken invoked", {
       hasUser: !!user,
-      hasAccessToken: !!accessToken,
-      loading,
-      authenticated,
+      authLoading,
+      tokenLoading,
       tokenError: tokenError?.message,
     });
-  }, [user, accessToken, loading, authenticated, tokenError]);
 
-  return {
-    isLoading: loading,
-    isAuthenticated: authenticated,
-    fetchAccessToken,
-  };
+    if (tokenError) {
+      console.error("[ConvexAuth] Access token error detected", tokenError);
+      return null;
+    }
+
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        console.warn("[ConvexAuth] WorkOS returned no access token");
+        return null;
+      }
+      return token;
+    } catch (err) {
+      console.error("[ConvexAuth] Failed to retrieve access token", err);
+      return null;
+    }
+  }, [authLoading, getAccessToken, tokenError, tokenLoading, user]);
+
+  useEffect(() => {
+    console.log("[ConvexAuth] Auth state changed:", {
+      hasUser: !!user,
+      hasAccessToken: !!accessToken,
+      authLoading,
+      tokenLoading,
+      tokenError: tokenError?.message,
+    });
+  }, [user, accessToken, authLoading, tokenLoading, tokenError]);
+
+  return useMemo(
+    () => ({
+      isLoading: loading,
+      user,
+      getAccessToken: fetchAccessToken,
+    }),
+    [loading, user, fetchAccessToken],
+  );
 }
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
