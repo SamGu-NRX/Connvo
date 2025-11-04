@@ -18,7 +18,53 @@ import type {
 } from "@convex/types/entities/transcript";
 
 /**
- * Gets transcript segments for a meeting (public, with auth)
+ * @summary Retrieves transcript segments for an authenticated meeting participant
+ * @description Returns the latest transcript segments for a meeting ordered by
+ * start time. Supports pagination via the optional `limit` parameter (default 100,
+ * max 1000). Requires the caller to have access to the meeting.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "limit": 25
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": [
+ *     {
+ *       "_id": "segment_001example",
+ *       "_creationTime": 1730668805000,
+ *       "meetingId": "meeting_84c0example",
+ *       "startMs": 1730668800000,
+ *       "endMs": 1730668802500,
+ *       "speakers": ["user_alice_example"],
+ *       "text": "Let's align on the launch readiness checklist.",
+ *       "topics": ["launch", "checklist"],
+ *       "sentiment": 0.2,
+ *       "createdAt": 1730668805000
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response-empty
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": []
+ * }
+ * ```
  */
 export const getTranscriptSegments = query({
   args: {

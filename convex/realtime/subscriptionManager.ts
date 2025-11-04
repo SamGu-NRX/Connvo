@@ -94,7 +94,58 @@ class SubscriptionRegistry {
 }
 
 /**
- * Establishes a new subscription with comprehensive validation
+ * @summary Establishes a real-time subscription with permission checks
+ * @description Validates the caller's access to the target resource, enforces
+ * bandwidth limits, and registers the subscription in the in-memory registry.
+ * Returns the granted permission set so the client can authorize downstream
+ * updates. Logs the event to the audit trail.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "resourceType": "meeting_notes",
+ *     "resourceId": "meeting_84c0example",
+ *     "subscriptionId": "sub_notes_websocket_123",
+ *     "priority": "normal"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "subscriptionId": "sub_notes_websocket_123",
+ *     "permissions": [
+ *       "notes:read",
+ *       "notes:updates"
+ *     ],
+ *     "validUntil": null,
+ *     "rateLimited": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response-rate-limited
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": false,
+ *     "subscriptionId": "sub_notes_websocket_123",
+ *     "permissions": [],
+ *     "validUntil": null,
+ *     "rateLimited": true
+ *   }
+ * }
+ * ```
  */
 export const establishSubscription = mutation({
   args: {
@@ -211,7 +262,62 @@ export const establishSubscription = mutation({
 });
 
 /**
- * Validates and updates subscription permissions in real-time
+ * @summary Validates an existing subscription and refreshes permissions
+ * @description Confirms that the subscription is still owned by the caller,
+ * re-computes the permission set, and schedules refreshes when the resource
+ * expires. Returns context about whether the client should reconnect and why a
+ * subscription might be invalid.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "subscriptionId": "sub_notes_websocket_123",
+ *     "lastValidated": 1730668805000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "valid": true,
+ *     "permissions": [
+ *       "notes:read",
+ *       "notes:updates"
+ *     ],
+ *     "reason": null,
+ *     "shouldReconnect": false,
+ *     "validUntil": 1730672405000,
+ *     "rateLimited": false,
+ *     "resourceType": "meeting_notes",
+ *     "resourceId": "meeting_84c0example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-invalid
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "valid": false,
+ *     "permissions": [],
+ *     "reason": "Subscription not found",
+ *     "shouldReconnect": false,
+ *     "validUntil": null,
+ *     "rateLimited": false,
+ *     "resourceType": "unknown",
+ *     "resourceId": "unknown"
+ *   }
+ * }
+ * ```
  */
 export const validateAndUpdateSubscription = query({
   args: {
@@ -360,7 +466,30 @@ export const validateAndUpdateSubscription = query({
 });
 
 /**
- * Terminates subscription and cleans up resources
+ * @summary Terminates an active subscription and releases associated state
+ * @description Removes the subscription from the registry, clears cached query
+ * state, and emits an audit log entry. The caller must own the subscription;
+ * otherwise the mutation is a no-op to avoid leaking information.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "subscriptionId": "sub_notes_websocket_123",
+ *     "reason": "Client disconnected"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const terminateSubscription = mutation({
   args: {
@@ -458,7 +587,38 @@ export const bulkTerminateUserSubscriptions = internalMutation({
 });
 
 /**
- * Get subscription statistics for monitoring
+ * @summary Returns active subscription counts for the authenticated user
+ * @description Provides lightweight metrics grouped by resource type and
+ * priority, along with performance statistics gathered by the subscription
+ * tracker. Useful for observability dashboards and debugging connection churn.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "totalActive": 3,
+ *     "byResourceType": {
+ *       "meeting_notes": 2,
+ *       "transcripts": 1
+ *     },
+ *     "byPriority": {
+ *       "normal": 2,
+ *       "high": 1
+ *     },
+ *     "performanceStats": []
+ *   }
+ * }
+ * ```
  */
 export const getSubscriptionStats = query({
   args: {},

@@ -200,7 +200,49 @@ class BatchProcessorManager {
 }
 
 /**
- * Batched transcript ingestion with coalescing
+ * @summary Queues a transcript chunk for batched ingestion
+ * @description Collects high-frequency transcript chunks and pushes them into the
+ * transcript batch processor, which coalesces interim updates before writing to
+ * storage. Requires meeting access and an active meeting session; rejects stale
+ * requests when the meeting has ended.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "speakerId": "user_alice_example",
+ *     "text": "Let's capture the key decisions from this sprint.",
+ *     "confidence": 0.93,
+ *     "startMs": 1730668805000,
+ *     "endMs": 1730668809000,
+ *     "interim": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "queued": true,
+ *     "batchSize": 4
+ *   }
+ * }
+ * ```
+ *
+ * @example response-inactive-meeting
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting is not active",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const batchIngestTranscriptChunk = mutation({
   args: {
@@ -253,7 +295,54 @@ export const batchIngestTranscriptChunk = mutation({
 });
 
 /**
- * Batched note operation processing with operational transform
+ * @summary Queues a collaborative note operation for batched OT processing
+ * @description Adds a client operation to the note batch processor, which
+ * transforms it against concurrent edits before applying it on the server.
+ * Returns the provisional server sequence so clients can reconcile on receipt
+ * of the processed update.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "operation": {
+ *       "type": "insert",
+ *       "position": 215,
+ *       "content": "\n- Capture launch risks",
+ *       "length": 24
+ *     },
+ *     "clientSequence": 12,
+ *     "expectedVersion": 57
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "queued": true,
+ *     "batchSize": 3,
+ *     "serverSequence": 89
+ *   }
+ * }
+ * ```
+ *
+ * @example response-unauthorized
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Not authorized to access meeting meeting_84c0example",
+ *   "errorData": {
+ *     "code": "AUTH_FORBIDDEN"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const batchApplyNoteOperation = mutation({
   args: {
@@ -302,7 +391,38 @@ export const batchApplyNoteOperation = mutation({
 });
 
 /**
- * Batched presence updates with latest-state-wins coalescing
+ * @summary Queues a presence update for batched processing
+ * @description Adds a presence change (join/leave) to the presence batch
+ * processor, which collapses rapid flapping into the latest state before the
+ * database is updated. Returns whether the event was queued and the current
+ * batch size to assist with debugging.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "presence": "joined",
+ *     "metadata": {
+ *       "client": "web",
+ *       "device": "macbook-pro"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "queued": true,
+ *     "batchSize": 2
+ *   }
+ * }
+ * ```
  */
 export const batchUpdatePresence = mutation({
   args: {
@@ -517,7 +637,27 @@ export const processBatchedPresenceUpdates = internalMutation({
 });
 
 /**
- * Flush all pending batches (for testing or shutdown)
+ * @summary Forces all batch processors to drain their queues immediately
+ * @description Action used by integration tests and shutdown hooks to ensure
+ * any buffered transcript, note, or presence events are committed before the
+ * process exits. Safe to invoke multiple times; no-op if queues are empty.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const flushAllBatches = action({
   args: {},
@@ -530,7 +670,37 @@ export const flushAllBatches = action({
 });
 
 /**
- * Get batch processing statistics
+ * @summary Retrieves the current queue depth for each batch processor
+ * @description Action that exposes lightweight telemetry about transcript, note,
+ * and presence batch queues. Helpful for dashboards and debugging delayed
+ * processing without inspecting logs.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {}
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "transcripts": {
+ *       "queueSize": 0
+ *     },
+ *     "noteOps": {
+ *       "queueSize": 2
+ *     },
+ *     "presence": {
+ *       "queueSize": 1
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const getBatchStats = action({
   args: {},

@@ -27,7 +27,59 @@ import { globalBandwidthManager } from "@convex/lib/batching";
 import { metadataRecordV } from "@convex/lib/validators";
 
 /**
- * Real-time performance metrics query
+ * @summary Retrieves recent execution metrics for Convex functions
+ * @description Returns raw metric samples, aggregated statistics, and current
+ * SLO compliance information for the requested function. Defaults to the last
+ * 60 seconds of data and at most 1,000 samples.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "functionName": "meetings/createMeeting",
+ *     "timeWindowMs": 120000,
+ *     "limit": 200
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "metrics": [
+ *       {
+ *         "functionName": "meetings/createMeeting",
+ *         "executionTimeMs": 42,
+ *         "success": true,
+ *         "errorType": null,
+ *         "timestamp": 1730668805123,
+ *         "traceId": "trace_createMeeting_001"
+ *       }
+ *     ],
+ *     "aggregatedStats": {
+ *       "count": 42,
+ *       "successRate": 0.976,
+ *       "p50": 38,
+ *       "p95": 61,
+ *       "p99": 85,
+ *       "avgExecutionTime": 44,
+ *       "sloBreaches": 1
+ *     },
+ *     "sloCompliance": {
+ *       "queryP95Compliant": true,
+ *       "queryP99Compliant": true,
+ *       "currentP95": 61,
+ *       "currentP99": 85,
+ *       "targetP95": 120,
+ *       "targetP99": 240
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const getPerformanceMetrics = query({
   args: {
@@ -206,7 +258,52 @@ export const createAlertInternal = internalMutation({
 });
 
 /**
- * WebSocket subscription performance metrics
+ * @summary Returns performance metrics for real-time subscriptions
+ * @description Provides latency, throughput, and error metrics for all active
+ * subscriptions owned by the caller (or a specific subscription if provided).
+ * Also includes aggregate subscription counts and bandwidth manager statistics.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "subscriptionId": "sub_notes_websocket_123"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "subscriptions": [
+ *       {
+ *         "subscriptionId": "sub_notes_websocket_123",
+ *         "durationMs": 180000,
+ *         "updateCount": 256,
+ *         "avgLatency": 42,
+ *         "updatesPerSecond": 1.4,
+ *         "errors": 0,
+ *         "lastUpdate": 1730668809123,
+ *         "sloCompliant": true
+ *       }
+ *     ],
+ *     "globalStats": {
+ *       "totalActiveSubscriptions": 4,
+ *       "totalUpdates": 512,
+ *       "avgUpdatesPerSecond": 2.84,
+ *       "sloBreaches": 1
+ *     },
+ *     "bandwidthStats": {
+ *       "activeSubscriptions": 4,
+ *       "totalUpdates": 512
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const getSubscriptionMetrics = query({
   args: {
@@ -286,7 +383,50 @@ export const getSubscriptionMetrics = query({
 });
 
 /**
- * Function-level performance breakdown
+ * @summary Aggregates performance statistics for each Convex function
+ * @description Groups recent metrics by function name and returns call counts,
+ * success rates, latency percentiles, and SLO compliance indicators. Sorted by
+ * call volume to highlight the busiest endpoints first.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "timeWindowMs": 300000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "functions": [
+ *       {
+ *         "functionName": "meetings/createMeeting",
+ *         "callCount": 42,
+ *         "successRate": 0.976,
+ *         "avgExecutionTime": 44,
+ *         "p95ExecutionTime": 61,
+ *         "p99ExecutionTime": 85,
+ *         "errorCount": 1,
+ *         "sloBreaches": 1,
+ *         "sloCompliant": true
+ *       }
+ *     ],
+ *     "summary": {
+ *       "totalFunctions": 8,
+ *       "totalCalls": 180,
+ *       "overallSuccessRate": 0.988,
+ *       "sloCompliantFunctions": 7,
+ *       "sloComplianceRate": 0.875
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const getFunctionPerformanceBreakdown = query({
   args: {
@@ -388,7 +528,46 @@ export const getFunctionPerformanceBreakdown = query({
 });
 
 /**
- * Real-time SLO monitoring with alerting
+ * @summary Evaluates service-level objectives across monitored dimensions
+ * @description Computes health status for each configured SLO (query latency,
+ * subscription latency, error rate, etc.), including breach counts and a
+ * weighted overall score used by the operations dashboard.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "timeWindowMs": 900000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "overall": {
+ *       "status": "warning",
+ *       "score": 82,
+ *       "breaches": 3,
+ *       "totalChecks": 24
+ *     },
+ *     "slos": [
+ *       {
+ *         "name": "query_p95",
+ *         "target": 120,
+ *         "current": 138,
+ *         "status": "warning",
+ *         "breachCount": 2,
+ *         "description": "95th percentile query latency"
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
  */
 export const getSLOStatus = query({
   args: {
@@ -556,7 +735,43 @@ export const getSLOStatus = query({
 });
 
 /**
- * Performance trend analysis
+ * @summary Returns trend data for performance dashboards
+ * @description Buckets metrics into time-series windows so charting tools can
+ * render latency, success rate, and throughput trends. Supports both specific
+ * functions and fleet-wide aggregates.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "functionName": "notes/applyNoteOperation",
+ *     "timeWindowMs": 900000,
+ *     "resolutionMs": 60000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "buckets": [
+ *       {
+ *         "bucketStart": 1730668200000,
+ *         "bucketEnd": 1730668260000,
+ *         "callCount": 18,
+ *         "successRate": 1,
+ *         "avgExecutionTime": 32,
+ *         "p95ExecutionTime": 58,
+ *         "errorCount": 0
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
  */
 export const getPerformanceTrends = query({
   args: {
@@ -661,7 +876,35 @@ export const getPerformanceTrends = query({
 });
 
 /**
- * Record custom performance metric
+ * @summary Records a custom performance datapoint for dashboards
+ * @description Allows feature teams to emit lightweight metrics (counts,
+ * latencies, boolean indicators) without writing custom logging pipelines.
+ * Values are namespaced by service and support optional tags for filtering.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "metricName": "realtime.latency.p95",
+ *     "value": 128,
+ *     "unit": "milliseconds",
+ *     "labels": {
+ *       "resourceType": "meeting_notes",
+ *       "region": "iad"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const recordCustomMetric = mutation({
   args: {
