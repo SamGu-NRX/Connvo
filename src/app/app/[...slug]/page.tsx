@@ -2,12 +2,10 @@ import { redirect } from "next/navigation";
 
 type PageProps = {
   params: {
-    slug?: string[];
+    slug: string[];
   };
   searchParams?: Record<string, string | string[] | undefined>;
 };
-
-const DEFAULT_APP_DESTINATION = "/mvp";
 
 function buildSearch(searchParams?: Record<string, string | string[] | undefined>) {
   if (!searchParams) return "";
@@ -32,11 +30,8 @@ function buildSearch(searchParams?: Record<string, string | string[] | undefined
 }
 
 export default function AppRedirectPage({ params, searchParams }: PageProps) {
-  const segments = params.slug ?? [];
-  const destinationBase =
-    segments.length > 0
-      ? `/mvp/${segments.join("/")}`
-      : DEFAULT_APP_DESTINATION;
+  const segments = params.slug;
+  const destinationBase = `/mvp/${segments.join("/")}`;
 
   const search = buildSearch(searchParams);
 
