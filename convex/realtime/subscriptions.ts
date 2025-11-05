@@ -221,22 +221,25 @@ export const subscribeMeetingNotes = query({
  *   "value": {
  *     "transcripts": [
  *       {
- *         "_id": "kt8a9b0c1d2e3f4g5h6i7j8k",
- *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *         "_id": "transcript_chunk_100",
  *         "sequence": 100,
  *         "speakerId": "user_alice123",
  *         "text": "Let's discuss the quarterly results",
- *         "timestamp": 1699564800000,
- *         "confidence": 0.95
+ *         "confidence": 0.95,
+ *         "startMs": 1699564800000,
+ *         "endMs": 1699564802400,
+ *         "isInterim": false,
+ *         "createdAt": 1699564802500
  *       },
  *       {
- *         "_id": "lt9b0c1d2e3f4g5h6i7j8k9l",
- *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
+ *         "_id": "transcript_chunk_101",
  *         "sequence": 101,
  *         "speakerId": "user_bob456",
  *         "text": "Revenue increased by 15% this quarter",
- *         "timestamp": 1699564805000,
- *         "confidence": 0.92
+ *         "confidence": 0.92,
+ *         "startMs": 1699564802600,
+ *         "endMs": 1699564805100,
+ *         "createdAt": 1699564805200
  *       }
  *     ],
  *     "nextSequence": 102,
@@ -379,11 +382,10 @@ export const subscribeTranscriptStream = query({
  *     "participants": [
  *       {
  *         "_id": "mt0c1d2e3f4g5h6i7j8k9l0m",
- *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
  *         "userId": "user_alice123",
  *         "role": "host",
+ *         "presence": "joined",
  *         "joinedAt": 1699564700000,
- *         "status": "active",
  *         "user": {
  *           "displayName": "Alice Johnson",
  *           "email": "alice@example.com",
@@ -392,11 +394,10 @@ export const subscribeTranscriptStream = query({
  *       },
  *       {
  *         "_id": "nt1d2e3f4g5h6i7j8k9l0m1n",
- *         "meetingId": "jd7x8y9z0a1b2c3d4e5f6g7h",
  *         "userId": "user_bob456",
  *         "role": "participant",
+ *         "presence": "joined",
  *         "joinedAt": 1699564750000,
- *         "status": "active",
  *         "user": {
  *           "displayName": "Bob Smith",
  *           "email": "bob@example.com",

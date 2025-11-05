@@ -38,7 +38,7 @@ import { VectorUtils } from "@convex/types/entities/embedding";
  *   "args": {
  *     "sourceType": "user",
  *     "sourceId": "user_xyz789",
- *     "vector": {},
+ *     "vector": "AAECAwQFBg==",
  *     "model": "text-embedding-3-small",
  *     "dimensions": 1536,
  *     "version": "v1",
@@ -336,7 +336,7 @@ export const deleteEmbeddingsBySource = internalMutation({
  *       {
  *         "sourceType": "user",
  *         "sourceId": "user_abc123",
- *         "vector": {},
+ *         "vector": "AAECAwQFBg==",
  *         "model": "text-embedding-3-small",
  *         "dimensions": 1536,
  *         "version": "v1",
@@ -345,7 +345,7 @@ export const deleteEmbeddingsBySource = internalMutation({
  *       {
  *         "sourceType": "meeting",
  *         "sourceId": "meeting_xyz789",
- *         "vector": {},
+ *         "vector": "AQIDBAUGBw==",
  *         "model": "text-embedding-3-small",
  *         "dimensions": 1536,
  *         "version": "v1",

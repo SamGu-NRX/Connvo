@@ -631,7 +631,7 @@ export const getOfflineQueueStatus = mutation({
  *   "args": {
  *     "meetingId": "meeting_84c0example",
  *     "clientId": "client_web_123",
- *     "queueId": "queue_1730668806123_example"
+ *     "maxRetries": 5
  *   }
  * }
  * ```
@@ -643,7 +643,8 @@ export const getOfflineQueueStatus = mutation({
  *   "errorMessage": "",
  *   "errorData": {},
  *   "value": {
- *     "reset": 2
+ *     "retriedCount": 2,
+ *     "successCount": 2
  *   }
  * }
  * ```
@@ -720,7 +721,7 @@ export const retryFailedOperations = mutation({
  *   "args": {
  *     "meetingId": "meeting_84c0example",
  *     "clientId": "client_web_123",
- *     "queueId": "queue_1730668806123_example"
+ *     "olderThanMs": 900000
  *   }
  * }
  * ```
@@ -732,7 +733,7 @@ export const retryFailedOperations = mutation({
  *   "errorMessage": "",
  *   "errorData": {},
  *   "value": {
- *     "deleted": 3
+ *     "cleared": 3
  *   }
  * }
  * ```
@@ -891,8 +892,7 @@ export const createOfflineCheckpoint = mutation({
  *   "errorMessage": "",
  *   "errorData": {},
  *   "value": {
- *     "success": false,
- *     "checkpoint": null
+ *     "success": false
  *   }
  * }
  * ```

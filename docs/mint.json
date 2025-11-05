@@ -2,10 +2,10 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Connvo API Documentation",
   "logo": {
-    "dark": "../public/ConnvoLogos/Connvo-white.svg",
-    "light": "../public/ConnvoLogos/Connvo-black.svg"
+    "dark": "/images/dark.png",
+    "light": "/images/light.png"
   },
-  "favicon": "../public/ConnvoLogos/Connvo-white.svg",
+  "favicon": "/images/light.svg",
   "colors": {
     "primary": "#0D9373",
     "light": "#07C983",

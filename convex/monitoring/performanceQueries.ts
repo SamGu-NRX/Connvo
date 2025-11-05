@@ -55,7 +55,6 @@ import { metadataRecordV } from "@convex/lib/validators";
  *         "functionName": "meetings/createMeeting",
  *         "executionTimeMs": 42,
  *         "success": true,
- *         "errorType": null,
  *         "timestamp": 1730668805123,
  *         "traceId": "trace_createMeeting_001"
  *       }
@@ -564,6 +563,14 @@ export const getFunctionPerformanceBreakdown = query({
  *         "breachCount": 2,
  *         "description": "95th percentile query latency"
  *       }
+ *     ],
+ *     "alerts": [
+ *       {
+ *         "severity": "warning",
+ *         "message": "query_p95 SLO breach: 138.00 vs target 120",
+ *         "timestamp": 1730668806000,
+ *         "sloName": "query_p95"
+ *       }
  *     ]
  *   }
  * }
@@ -746,7 +753,7 @@ export const getSLOStatus = query({
  *   "args": {
  *     "functionName": "notes/applyNoteOperation",
  *     "timeWindowMs": 900000,
- *     "resolutionMs": 60000
+ *     "bucketSizeMs": 60000
  *   }
  * }
  * ```
@@ -758,17 +765,21 @@ export const getSLOStatus = query({
  *   "errorMessage": "",
  *   "errorData": {},
  *   "value": {
- *     "buckets": [
+ *     "timeSeries": [
  *       {
- *         "bucketStart": 1730668200000,
- *         "bucketEnd": 1730668260000,
+ *         "timestamp": 1730668200000,
+ *         "avgLatency": 32,
+ *         "p95Latency": 58,
  *         "callCount": 18,
  *         "successRate": 1,
- *         "avgExecutionTime": 32,
- *         "p95ExecutionTime": 58,
  *         "errorCount": 0
  *       }
- *     ]
+ *     ],
+ *     "trends": {
+ *       "latencyTrend": "stable",
+ *       "throughputTrend": "increasing",
+ *       "errorTrend": "improving"
+ *     }
  *   }
  * }
  * ```
@@ -887,11 +898,11 @@ export const getPerformanceTrends = query({
  *   "args": {
  *     "metricName": "realtime.latency.p95",
  *     "value": 128,
- *     "unit": "milliseconds",
- *     "labels": {
+ *     "tags": {
  *       "resourceType": "meeting_notes",
  *       "region": "iad"
- *     }
+ *     },
+ *     "timestamp": 1730668809000
  *   }
  * }
  * ```

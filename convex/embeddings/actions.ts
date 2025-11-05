@@ -61,7 +61,7 @@ import OpenAI from "openai";
  *   "status": "success",
  *   "value": {
  *     "embeddingId": "embedding_xyz789",
- *     "vector": {},
+ *     "vector": "AAECAwQFBg==",
  *     "dimensions": 1536,
  *     "model": "text-embedding-3-small",
  *     "processingTime": 342,
@@ -79,7 +79,7 @@ import OpenAI from "openai";
  *     "message": "OpenAI API key not configured",
  *     "value": {
  *       "embeddingId": "",
- *       "vector": {},
+ *       "vector": "",
  *       "dimensions": 0,
  *       "model": "text-embedding-3-small",
  *       "processingTime": 12,
@@ -650,7 +650,7 @@ export const generateMeetingEmbedding = internalAction({
  * ```json
  * {
  *   "args": {
- *     "vector": {},
+ *     "vector": "AAECAwQFBg==",
  *     "sourceTypes": ["user", "meeting"],
  *     "limit": 10,
  *     "threshold": 0.75,
@@ -671,6 +671,7 @@ export const generateMeetingEmbedding = internalAction({
  *       {
  *         "embedding": {
  *           "_id": "embedding_abc123",
+ *           "_creationTime": 1699564801000,
  *           "sourceType": "user",
  *           "sourceId": "user_xyz789",
  *           "model": "text-embedding-3-small",
@@ -678,7 +679,7 @@ export const generateMeetingEmbedding = internalAction({
  *           "version": "v1",
  *           "metadata": {},
  *           "createdAt": 1699564800000,
- *           "vector": {}
+ *           "vector": "AAECAwQFBg=="
  *         },
  *         "score": 0.92,
  *         "sourceData": null
@@ -686,6 +687,7 @@ export const generateMeetingEmbedding = internalAction({
  *       {
  *         "embedding": {
  *           "_id": "embedding_def456",
+ *           "_creationTime": 1699565401000,
  *           "sourceType": "meeting",
  *           "sourceId": "meeting_aaa111",
  *           "model": "text-embedding-3-small",
@@ -693,7 +695,7 @@ export const generateMeetingEmbedding = internalAction({
  *           "version": "v1",
  *           "metadata": {},
  *           "createdAt": 1699565400000,
- *           "vector": {}
+ *           "vector": "AQIDBAUGBw=="
  *         },
  *         "score": 0.87,
  *         "sourceData": null

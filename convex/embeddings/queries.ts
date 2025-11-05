@@ -51,6 +51,7 @@ import {
  *   "status": "success",
  *   "value": {
  *     "_id": "embedding_abc123",
+ *     "_creationTime": 1699564801000,
  *     "sourceType": "user",
  *     "sourceId": "user_xyz789",
  *     "model": "text-embedding-3-small",
@@ -61,7 +62,7 @@ import {
  *       "contentLength": "95"
  *     },
  *     "createdAt": 1699564800000,
- *     "vector": {}
+ *     "vector": "AAECAwQFBg=="
  *   }
  * }
  * ```
@@ -102,6 +103,8 @@ export const getEmbedding = query({
  *     "page": [
  *       {
  *         "_id": "embedding_abc123",
+ *         "_creationTime": 1699564801000,
+ *         "_creationTime": 1699564801000,
  *         "sourceType": "user",
  *         "sourceId": "user_xyz789",
  *         "model": "text-embedding-3-small",
@@ -109,7 +112,7 @@ export const getEmbedding = query({
  *         "version": "v1",
  *         "metadata": {},
  *         "createdAt": 1699564800000,
- *         "vector": {}
+ *         "vector": "AAECAwQFBg=="
  *       }
  *     ],
  *     "isDone": true,
@@ -171,6 +174,7 @@ export const getEmbeddingsBySource = query({
  *     "page": [
  *       {
  *         "_id": "embedding_abc123",
+ *         "_creationTime": 1699564801000,
  *         "sourceType": "user",
  *         "sourceId": "user_xyz789",
  *         "model": "text-embedding-3-small",
@@ -178,10 +182,11 @@ export const getEmbeddingsBySource = query({
  *         "version": "v1",
  *         "metadata": {},
  *         "createdAt": 1699564800000,
- *         "vector": {}
+ *         "vector": "AAECAwQFBg=="
  *       },
  *       {
  *         "_id": "embedding_def456",
+ *         "_creationTime": 1699565401000,
  *         "sourceType": "meeting",
  *         "sourceId": "meeting_aaa111",
  *         "model": "text-embedding-3-small",
@@ -189,7 +194,7 @@ export const getEmbeddingsBySource = query({
  *         "version": "v1",
  *         "metadata": {},
  *         "createdAt": 1699565400000,
- *         "vector": {}
+ *         "vector": "AQIDBAUGBw=="
  *       }
  *     ],
  *     "isDone": false,
@@ -225,7 +230,7 @@ export const getEmbeddingsByModel = query({
  * ```json
  * {
  *   "args": {
- *     "queryVector": {},
+ *     "queryVector": "AAECAwQFBg==",
  *     "sourceTypes": ["user", "meeting"],
  *     "model": "text-embedding-3-small",
  *     "limit": 10,
@@ -242,6 +247,7 @@ export const getEmbeddingsByModel = query({
  *     {
  *       "embedding": {
  *         "_id": "embedding_abc123",
+ *         "_creationTime": 1699564801000,
  *         "sourceType": "user",
  *         "sourceId": "user_xyz789",
  *         "model": "text-embedding-3-small",
@@ -249,7 +255,7 @@ export const getEmbeddingsByModel = query({
  *         "version": "v1",
  *         "metadata": {},
  *         "createdAt": 1699564800000,
- *         "vector": {}
+ *         "vector": "AAECAwQFBg=="
  *       },
  *       "score": 0.92,
  *       "sourceData": null
@@ -257,6 +263,7 @@ export const getEmbeddingsByModel = query({
  *     {
  *       "embedding": {
  *         "_id": "embedding_def456",
+ *         "_creationTime": 1699565401000,
  *         "sourceType": "meeting",
  *         "sourceId": "meeting_aaa111",
  *         "model": "text-embedding-3-small",
@@ -264,7 +271,7 @@ export const getEmbeddingsByModel = query({
  *         "version": "v1",
  *         "metadata": {},
  *         "createdAt": 1699565400000,
- *         "vector": {}
+ *         "vector": "AQIDBAUGBw=="
  *       },
  *       "score": 0.87,
  *       "sourceData": null
@@ -476,6 +483,7 @@ export const getEmbeddingAnalytics = query({
  *     "page": [
  *       {
  *         "_id": "vectorIndexMeta_abc123",
+ *         "_creationTime": 1699564800500,
  *         "provider": "convex",
  *         "indexName": "embeddings_v1",
  *         "config": {
@@ -533,6 +541,7 @@ export const getVectorIndexMeta = query({
  *     {
  *       "embedding": {
  *         "_id": "embedding_abc123",
+ *         "_creationTime": 1699564801000,
  *         "sourceType": "user",
  *         "sourceId": "user_aaa111",
  *         "model": "text-embedding-3-small",
@@ -540,7 +549,7 @@ export const getVectorIndexMeta = query({
  *         "version": "v1",
  *         "metadata": {},
  *         "createdAt": 1699564800000,
- *         "vector": {}
+ *         "vector": "AAECAwQFBg=="
  *       },
  *       "score": 0.89,
  *       "sourceData": null
@@ -644,6 +653,7 @@ export const findSimilarEmbeddingsBySource = internalQuery({
  *   "status": "success",
  *   "value": {
  *     "_id": "embedding_abc123",
+ *     "_creationTime": 1699564801000,
  *     "sourceType": "user",
  *     "sourceId": "user_xyz789",
  *     "model": "text-embedding-3-small",
@@ -651,7 +661,7 @@ export const findSimilarEmbeddingsBySource = internalQuery({
  *     "version": "v1",
  *     "metadata": {},
  *     "createdAt": 1699564800000,
- *     "vector": {},
+ *     "vector": "AAECAwQFBg==",
  *     "sourceDetails": {
  *       "title": "John Doe",
  *       "author": {

@@ -125,7 +125,7 @@ class SubscriptionRegistry {
  *       "notes:read",
  *       "notes:updates"
  *     ],
- *     "validUntil": null,
+ *     "validUntil": 1699568400000,
  *     "rateLimited": false
  *   }
  * }
@@ -141,7 +141,6 @@ class SubscriptionRegistry {
  *     "success": false,
  *     "subscriptionId": "sub_notes_websocket_123",
  *     "permissions": [],
- *     "validUntil": null,
  *     "rateLimited": true
  *   }
  * }
@@ -290,7 +289,6 @@ export const establishSubscription = mutation({
  *       "notes:read",
  *       "notes:updates"
  *     ],
- *     "reason": null,
  *     "shouldReconnect": false,
  *     "validUntil": 1730672405000,
  *     "rateLimited": false,
@@ -311,7 +309,6 @@ export const establishSubscription = mutation({
  *     "permissions": [],
  *     "reason": "Subscription not found",
  *     "shouldReconnect": false,
- *     "validUntil": null,
  *     "rateLimited": false,
  *     "resourceType": "unknown",
  *     "resourceId": "unknown"
