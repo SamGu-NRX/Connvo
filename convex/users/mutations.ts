@@ -91,130 +91,90 @@ export const upsertUser = mutation({
   },
   returns: v.id("users"),
   handler: async (ctx, args): Promise<Id<"users">> => {
-    console.log("[upsertUser] Starting user upsert", {
-      workosUserId: args.workosUserId,
-      email: args.email,
-      hasDisplayName: !!args.displayName,
-    });
-
     // Use lenient authentication check for bootstrap
     // Try to get identity, but don't fail if user is not yet provisioned
     let authIdentity: any = null;
     try {
       authIdentity = await ctx.auth.getUserIdentity();
-      console.log("[upsertUser] Auth identity retrieved successfully");
     } catch (error) {
       // If identity check fails, still proceed if we have valid args
-      // This can happen during initial user provisioning
-      console.warn("[upsertUser] Auth identity not available during upsertUser", {
-        error: error instanceof Error ? error.message : String(error),
-        hint: "This is normal during first-time user setup. If persisting, check CONVEX_DEPLOYMENT_SETUP.md",
-      });
+      console.warn("Auth identity not available during upsertUser, proceeding with args validation");
     }
 
     // Validate that the authenticated user matches the workosUserId being upserted
     if (authIdentity) {
       const authenticatedWorkosId = authIdentity.subject;
       if (authenticatedWorkosId && authenticatedWorkosId !== args.workosUserId) {
-        console.error("[upsertUser] WorkOS ID mismatch", {
-          authenticated: authenticatedWorkosId,
-          requested: args.workosUserId,
-        });
         throw createError.forbidden("Cannot create user for different WorkOS ID");
       }
     }
 
     // Validate required fields
     if (!args.workosUserId || !args.email) {
-      console.error("[upsertUser] Missing required fields", {
-        hasWorkosUserId: !!args.workosUserId,
-        hasEmail: !!args.email,
-      });
       throw createError.validation("workosUserId and email are required");
     }
 
-    try {
-      // Check if user already exists
-      const existingUser = await ctx.db
-        .query("users")
-        .withIndex("by_workos_id", (q) => q.eq("workosUserId", args.workosUserId))
+    // Check if user already exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", args.workosUserId))
+      .unique();
+
+    const now = Date.now();
+
+    if (existingUser) {
+      // Update existing user
+      await ctx.db.patch(existingUser._id, {
+        email: args.email,
+        displayName: args.displayName,
+        orgId: args.orgId,
+        orgRole: args.orgRole,
+        lastSeenAt: now,
+        updatedAt: now,
+      });
+      
+      // Ensure profile exists for existing user
+      const existingProfile = await ctx.db
+        .query("profiles")
+        .withIndex("by_user", (q) => q.eq("userId", existingUser._id))
         .unique();
-
-      const now = Date.now();
-
-      if (existingUser) {
-        console.log("[upsertUser] Updating existing user", {
-          userId: existingUser._id,
-          workosUserId: args.workosUserId,
-        });
-        
-        // Update existing user
-        await ctx.db.patch(existingUser._id, {
-          email: args.email,
-          displayName: args.displayName,
-          orgId: args.orgId,
-          orgRole: args.orgRole,
-          lastSeenAt: now,
-          updatedAt: now,
-        });
-        
-        // Ensure profile exists for existing user
-        const existingProfile = await ctx.db
-          .query("profiles")
-          .withIndex("by_user", (q) => q.eq("userId", existingUser._id))
-          .unique();
-        
-        if (!existingProfile) {
-          console.log("[upsertUser] Creating missing profile for existing user");
-          await ctx.db.insert("profiles", {
-            userId: existingUser._id,
-            displayName: args.displayName || args.email.split('@')[0],
-            languages: [],
-            createdAt: now,
-            updatedAt: now,
-          });
-        }
-        
-        console.log("[upsertUser] ✅ User updated successfully", { userId: existingUser._id });
-        return existingUser._id;
-      } else {
-        console.log("[upsertUser] Creating new user", {
-          workosUserId: args.workosUserId,
-          email: args.email,
-        });
-        
-        // Create new user
-        const userId = await ctx.db.insert("users", {
-          workosUserId: args.workosUserId,
-          email: args.email,
-          displayName: args.displayName,
-          orgId: args.orgId,
-          orgRole: args.orgRole,
-          isActive: true,
-          lastSeenAt: now,
-          createdAt: now,
-          updatedAt: now,
-        });
-        
-        // Create default profile for new user
+      
+      if (!existingProfile) {
+        // Create default profile if it doesn't exist
         await ctx.db.insert("profiles", {
-          userId: userId,
+          userId: existingUser._id,
           displayName: args.displayName || args.email.split('@')[0],
           languages: [],
           createdAt: now,
           updatedAt: now,
         });
-        
-        console.log("[upsertUser] ✅ New user created successfully", { userId });
-        return userId;
       }
-    } catch (error) {
-      console.error("[upsertUser] Database operation failed", {
-        error: error instanceof Error ? error.message : String(error),
+      
+      return existingUser._id;
+    } else {
+      // Create new user
+      const userId = await ctx.db.insert("users", {
         workosUserId: args.workosUserId,
-        hint: "Check Convex logs for more details. If auth-related, see CONVEX_DEPLOYMENT_SETUP.md",
+        email: args.email,
+        displayName: args.displayName,
+        orgId: args.orgId,
+        orgRole: args.orgRole,
+        isActive: true,
+        lastSeenAt: now,
+        createdAt: now,
+        updatedAt: now,
       });
-      throw error;
+      
+      // Create default profile for new user
+      await ctx.db.insert("profiles", {
+        userId: userId,
+        displayName: args.displayName || args.email.split('@')[0],
+        languages: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+      
+      return userId;
     }
   },
 });

@@ -157,27 +157,19 @@ export const getCurrentUser = query({
   handler: async (ctx): Promise<User | null> => {
     // Return null instead of throwing when unauthenticated so clients can
     // safely subscribe without triggering errors during logged-out states.
-    try {
-      const identity = await ctx.auth.getUserIdentity();
-      if (!identity) return null;
-      
-      const workosUserId: string = identity.subject;
-      if (!workosUserId) {
-        console.warn("[users.getCurrentUser] No subject in identity token");
-        return null;
-      }
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const workosUserId: string = identity.subject;
 
+    try {
       return await ctx.db
         .query("users")
         .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
         .unique();
     } catch (error) {
-      // This catches auth configuration errors (e.g., missing WORKOS_CLIENT_ID)
-      // and database query errors. Return null to allow UI to show logged-out state
-      // rather than crashing with "Server Error"
-      console.error("[users.getCurrentUser] Authentication or query failed", {
-        error: error instanceof Error ? error.message : String(error),
-        hint: "If you see 'Server Error', check CONVEX_DEPLOYMENT_SETUP.md",
+      console.error("[users.getCurrentUser] Failed to fetch user", {
+        workosUserId,
+        error,
       });
       return null;
     }
