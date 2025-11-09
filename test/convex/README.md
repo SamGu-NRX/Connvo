@@ -198,7 +198,7 @@ pnpm test
 pnpm test:watch
 
 # Run specific test file
-pnpm test:run convex/test/openapiExamples.test.ts
+pnpm test:run test/convex/openapiExamples.test.ts
 
 # Run with coverage
 pnpm test:run --coverage
@@ -258,7 +258,7 @@ const result = await ctx.validateQuery(...);
 When adding documentation to a new function:
 
 1. Add comprehensive docstrings with examples to the function
-2. Create a test file (or extend existing) in `convex/test/`
+2. Create a test file (or extend existing) in `test/convex/`
 3. Use the example validation pattern
 4. Run tests to ensure examples match behavior
 5. Update this README if introducing new patterns

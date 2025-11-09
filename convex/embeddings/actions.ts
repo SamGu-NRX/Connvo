@@ -372,7 +372,7 @@ export const generateMeetingEmbedding = internalAction({
 
     // Get transcript content if available
     const transcripts = await ctx.runQuery(
-      internal.transcripts.queries.getTranscriptSegments,
+      internal.transcripts.queries.getTranscriptSegmentsInternal,
       {
         meetingId: args.meetingId,
         limit: 50, // Limit to avoid too much content
@@ -381,7 +381,7 @@ export const generateMeetingEmbedding = internalAction({
 
     if (transcripts.length > 0) {
       const transcriptText = transcripts
-        .map((t) => t.text)
+        .map((segment) => segment.text)
         .join(" ")
         .slice(0, 8000); // Limit content length
       contentParts.push(`Transcript: ${transcriptText}`);

@@ -127,12 +127,12 @@ function UpsertUserOnAuth() {
 
     if (!ready || didRun.current) return;
     if (!accessToken) return;
-    
+
     // Add a small delay to ensure Convex auth context is fully initialized
     const timer = setTimeout(async () => {
       if (didRun.current) return;
       didRun.current = true;
-      
+
       const displayName = [user?.firstName, user?.lastName]
         .filter(Boolean)
         .join(" ")
@@ -156,13 +156,13 @@ function UpsertUserOnAuth() {
           console.log("[UpsertUserOnAuth] User upserted successfully");
         } catch (err) {
           console.error("[UpsertUserOnAuth] User upsert failed:", err);
-          
+
           // Retry with exponential backoff for auth errors
           if (retryCount.current < maxRetries) {
             retryCount.current += 1;
             const delay = Math.pow(2, retryCount.current) * 500; // 1s, 2s, 4s
             console.log(`[UpsertUserOnAuth] Retrying user upsert in ${delay}ms (attempt ${retryCount.current}/${maxRetries})`);
-            
+
             await new Promise(resolve => setTimeout(resolve, delay));
             didRun.current = false; // Allow retry
             return attemptUpsert();

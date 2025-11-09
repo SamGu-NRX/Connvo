@@ -25,7 +25,7 @@
 - Added profile existence check for existing users and creates one if missing
 - Default profile uses display name or email username
 
-### 4. Added Debug Tools (`convex/test/profileDebug.ts`)
+### 4. Added Debug Tools (`test/convex/profileDebug.ts`)
 - Created `checkUserProfile` query to check specific user's profile status
 - Created `listUsersWithProfiles` query to audit all users
 - Useful for troubleshooting profile issues in Convex dashboard
@@ -87,7 +87,7 @@ User logs in → WorkOS callback → upsertUser mutation →
 1. `src/providers/ConvexClientProvider.tsx` - JWT token handling
 2. `convex/profiles/queries.ts` - Defensive query pattern
 3. `convex/users/mutations.ts` - Automatic profile creation
-4. `convex/test/profileDebug.ts` - Debug utilities (new file)
+4. `test/convex/profileDebug.ts` - Debug utilities (new file)
 
 ## Verification
 After logging in, check browser console for:
