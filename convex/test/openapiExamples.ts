@@ -1,3 +1,4 @@
+"use node";
 /**
  * OpenAPI example helpers that pull structured data from Convex docstrings.
  *

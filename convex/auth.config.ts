@@ -5,31 +5,29 @@
  * Required for all authenticated mutations and queries.
  */
 
+import type { AuthConfig } from "convex/server";
+
 const clientId = process.env.WORKOS_CLIENT_ID;
 
 if (!clientId) {
   throw new Error(
     "WORKOS_CLIENT_ID environment variable is required. " +
-    "Set it in your Convex Dashboard: Settings → Environment Variables"
+      "Set it in your Convex Dashboard (Settings → Environment Variables) before running Convex.",
   );
 }
 
-const authConfig = {
+const workosProvider = (issuer: string): AuthConfig["providers"][number] => ({
+  type: "customJwt",
+  issuer,
+  algorithm: "RS256",
+  jwks: `https://api.workos.com/sso/jwks/${clientId}`,
+  applicationID: clientId,
+});
+
+const authConfig: AuthConfig = {
   providers: [
-    {
-      type: "customJwt" as const,
-      issuer: `https://api.workos.com/`,
-      algorithm: "RS256" as const,
-      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
-      applicationID: clientId,
-    },
-    {
-      type: "customJwt" as const,
-      issuer: `https://api.workos.com/user_management/${clientId}`,
-      algorithm: "RS256" as const,
-      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
-      applicationID: clientId,
-    },
+    workosProvider("https://api.workos.com/"),
+    workosProvider(`https://api.workos.com/user_management/${clientId}`),
   ],
 };
 
