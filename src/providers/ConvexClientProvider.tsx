@@ -44,10 +44,15 @@ function useAuth() {
 
     try {
       const token = await getAccessToken();
+      console.log("[ConvexAuth] Access token fetch result", {
+        hasToken: !!token,
+        length: token?.length,
+      });
       if (!token) {
         console.warn("[ConvexAuth] WorkOS returned no access token");
         return null;
       }
+      console.log("[ConvexAuth] Returning access token to Convex client");
       return token;
     } catch (err) {
       console.error("[ConvexAuth] Failed to retrieve access token", err);

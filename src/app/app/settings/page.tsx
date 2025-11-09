@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 import { toast } from "sonner";
@@ -31,10 +31,31 @@ import {
 
 export default function SettingsPage() {
   const { isAuthenticated, loading: authLoading } = useWorkOSAuth();
-  const settings = useQuery(
-    api.settings.queries.getCurrentUserSettings,
-    isAuthenticated ? {} : undefined
-  );
+  const convexAuthState = useConvexAuth();
+  const readyForSettingsQuery =
+    isAuthenticated &&
+    !authLoading &&
+    convexAuthState.isAuthenticated &&
+    !convexAuthState.isLoading;
+  const settings = (() => {
+    try {
+      return useQuery(
+        api.settings.queries.getCurrentUserSettings,
+        readyForSettingsQuery ? {} : "skip"
+      );
+    } catch (error) {
+      console.error("[SettingsPage] useQuery threw", {
+        readyForSettingsQuery,
+        authLoading,
+        workosAuthenticated: isAuthenticated,
+        convexAuth: {
+          isAuthenticated: convexAuthState.isAuthenticated,
+          isLoading: convexAuthState.isLoading,
+        },
+      }, error);
+      throw error;
+    }
+  })();
   const updateSettings = useMutation(api.settings.mutations.updateSettings);
   
   // Local state for optimistic updates
@@ -79,7 +100,30 @@ export default function SettingsPage() {
     }
   };
   
-  const loading = authLoading || (isAuthenticated && settings === undefined);
+  const loading =
+    authLoading ||
+    convexAuthState.isLoading ||
+    (readyForSettingsQuery && settings === undefined);
+
+  useEffect(() => {
+    console.log("[SettingsPage] Query readiness", {
+      readyForSettingsQuery,
+      authLoading,
+      workosAuthenticated: isAuthenticated,
+      convexAuthLoading: convexAuthState.isLoading,
+      convexAuthenticated: convexAuthState.isAuthenticated,
+      settingsState: settings
+        ? { hasSettings: true, id: settings._id }
+        : { hasSettings: false, isUndefined: settings === undefined },
+    });
+  }, [
+    readyForSettingsQuery,
+    authLoading,
+    isAuthenticated,
+    convexAuthState.isLoading,
+    convexAuthState.isAuthenticated,
+    settings,
+  ]);
   
   if (loading) {
     return (
