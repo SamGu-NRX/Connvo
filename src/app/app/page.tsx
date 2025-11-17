@@ -1,27 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 import { motion } from "motion/react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Phone,
-  Users,
-  Calendar,
-  Briefcase,
-  Handshake,
-  Lightbulb,
-  TrendingUp,
-} from "lucide-react";
+import { Phone, Briefcase } from "lucide-react";
 
 const container = {
   hidden: { opacity: 0 },
@@ -40,237 +24,87 @@ const item = {
 export default function HomePage() {
   const router = useRouter();
   const { user } = useWorkOSAuth();
-  const [queueType, setQueueType] = useState<"professional" | "casual">(
-    "casual",
-  );
-
-  const handleStartQueue = (type: string) => {
+  const handleStartQueue = (queueType: "casual" | "professional") => {
     if (!user) {
       router.push("/auth/sign-in");
       return;
     }
-    if (type === "casual") {
-      router.push(`/app/smart-connection?type=${type}`);
-    } else {
-      router.push(`/app/professional/${type}`);
-    }
+    router.push(`/app/smart-connection?type=${queueType}`);
   };
 
-  const professionalOptions = [
-    {
-      id: "b2b",
-      title: "B2B Networking",
-      icon: <Briefcase className="mr-2 h-5 w-5" />,
-      description: "Connect with other businesses",
-    },
-    {
-      id: "collaboration",
-      title: "Find Collaborators",
-      icon: <Handshake className="mr-2 h-5 w-5" />,
-      description: "Meet potential project partners",
-    },
-    {
-      id: "mentorship",
-      title: "Seek Mentorship",
-      icon: <Lightbulb className="mr-2 h-5 w-5" />,
-      description: "Learn from industry experts",
-    },
-    {
-      id: "investment",
-      title: "Pitch to Investors",
-      icon: <TrendingUp className="mr-2 h-5 w-5" />,
-      description: "Present your ideas to investors",
-    },
-  ];
-
   return (
-    <div className="bg-background/80 h-full">
-      <div className="container mx-auto max-w-5xl px-4 py-4">
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden px-4 py-4 sm:px-5 md:px-6">
+      <div className="flex h-full flex-col overflow-hidden">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="mb-6 text-center"
+          className="mb-4 overflow-hidden text-left sm:text-center"
         >
-          <h1 className="bg-emerald-400 bg-clip-text pb-1 text-4xl font-bold text-transparent md:text-5xl dark:bg-emerald-300">
+          <h1 className="bg-linear-to-r from-emerald-400 via-emerald-500 to-teal-400 bg-clip-text pb-1 text-4xl font-semibold text-transparent md:text-5xl">
             Welcome to Connvo, {user?.firstName || user?.email || "Guest"}
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
-            Connect with professionals and casual contacts through voice calls
+          <p className="mx-auto mt-3 max-w-2xl text-emerald-900/70 dark:text-emerald-100/70">
+            Connect with professionals and casual contacts through beautifully
+            orchestrated voice calls.
           </p>
         </motion.div>
 
-        <Tabs defaultValue="queue" className="w-full">
-          <TabsList className="mb-4 grid h-full w-full grid-cols-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
-            <TabsTrigger
-              value="queue"
-              className="rounded-lg px-2 py-2 text-sm font-medium"
-            >
-              Queue for Call
-            </TabsTrigger>
-            <TabsTrigger
-              value="quickActions"
-              className="rounded-lg px-2 py-2 text-sm font-medium"
-            >
-              Quick Actions
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="queue">
-            <Card className="overflow-hidden rounded-xl border-none bg-white shadow-lg dark:bg-zinc-900">
-              <CardHeader className="border-b border-zinc-100 pb-2 dark:border-zinc-800">
-                <CardTitle className="text-2xl">
-                  Start a New Connection
-                </CardTitle>
-                <CardDescription>
-                  Choose your connection type and start matching!
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-2">
-                <motion.div
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-4"
-                >
-                  <motion.div variants={item}>
-                    <div className="rounded-xl bg-emerald-50 p-6 dark:bg-emerald-900/20">
-                      <h3 className="mb-3 flex items-center text-xl font-semibold">
-                        <Phone className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        Casual Connection
-                      </h3>
-                      <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-                        Connect with someone for a friendly conversation
-                      </p>
-                      <Button
-                        size="lg"
-                        className="w-full bg-emerald-600 text-white hover:bg-emerald-700 md:w-auto"
-                        onClick={() => handleStartQueue("casual")}
-                      >
-                        Start Casual Matching
-                      </Button>
-                    </div>
-                  </motion.div>
-
-                  <motion.div variants={item}>
-                    <div className="rounded-xl bg-indigo-50 p-6 dark:bg-indigo-900/20">
-                      <h3 className="mb-3 flex items-center text-xl font-semibold">
-                        <Briefcase className="mr-2 h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                        Professional Connections
-                      </h3>
-                      <p className="mb-4 text-zinc-600 dark:text-zinc-400">
-                        Connect with professionals based on your needs
-                      </p>
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {professionalOptions.map((option) => (
-                          <Button
-                            key={option.id}
-                            variant="outline"
-                            className="h-auto justify-start border-zinc-200 py-3 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                            onClick={() => handleStartQueue(option.id)}
-                          >
-                            <div className="flex flex-col items-start text-left">
-                              <span className="flex items-center font-medium">
-                                {option.icon}
-                                {option.title}
-                              </span>
-                              <span className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                                {option.description}
-                              </span>
-                            </div>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="quickActions">
+        <section className="flex h-full flex-col overflow-hidden">
+          <header className="mb-3">
+            <h2 className="text-2xl font-semibold text-emerald-900 dark:text-white">
+              Start a New Connection
+            </h2>
+            <p className="mt-1 text-sm text-emerald-900/70 dark:text-emerald-100/70">
+              Pick a connection style and jump in.
+            </p>
+          </header>
+          <div className="flex-1 overflow-hidden">
             <motion.div
               variants={container}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 gap-6 md:grid-cols-3"
+              className="grid h-full grid-cols-1 gap-3 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid-cols-2"
             >
               <motion.div variants={item}>
-                <Card className="h-full rounded-xl border-none bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl dark:bg-zinc-900">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl">Quick Connect</CardTitle>
-                      <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
-                        <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                    </div>
-                    <CardDescription>
-                      Start a voice call with a matched professional
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      className="w-full bg-emerald-400 hover:bg-emerald-600 dark:bg-emerald-300 dark:hover:bg-emerald-500"
-                      onClick={() => handleStartQueue("casual")}
-                    >
-                      Start Call
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="space-y-2.5 rounded-sm border border-surface bg-white/95 px-4 py-3 dark:bg-emerald-950/40">
+                  <h3 className="flex items-center text-lg font-semibold text-emerald-900 dark:text-emerald-200">
+                    <Phone className="mr-3 h-5 w-5 text-emerald-500 dark:text-emerald-300" />
+                    Casual
+                  </h3>
+                  <p className="text-sm text-emerald-900/70 dark:text-emerald-100/70">
+                    Connect with someone for a friendly, low-key conversation.
+                  </p>
+                  <Button
+                    className="w-full rounded-sm bg-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-emerald-600 md:w-auto"
+                    onClick={() => handleStartQueue("casual")}
+                  >
+                    Start Casual Matching
+                  </Button>
+                </div>
               </motion.div>
 
               <motion.div variants={item}>
-                <Card className="h-full rounded-xl border-none bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl dark:bg-zinc-900">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl">My Network</CardTitle>
-                      <div className="rounded-full bg-green-100 p-2 dark:bg-green-900/30">
-                        <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
-                      </div>
-                    </div>
-                    <CardDescription>
-                      View and manage your connections
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-5">
-                    <Button
-                      variant="outline"
-                      className="w-full border-zinc-200 dark:border-zinc-700"
-                      onClick={() => router.push("app")}
-                    >
-                      View Network
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div variants={item}>
-                <Card className="h-full rounded-xl border-none bg-white shadow-lg transition-shadow duration-300 hover:shadow-xl dark:bg-zinc-900">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl">Upcoming Calls</CardTitle>
-                      <div className="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
-                        <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                      </div>
-                    </div>
-                    <CardDescription>
-                      Your scheduled voice calls
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-5">
-                    <Button
-                      variant="outline"
-                      className="w-full border-zinc-200 dark:border-zinc-700"
-                      onClick={() => router.push("app/schedule")}
-                    >
-                      View Schedule
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div className="space-y-2.5 rounded-sm border border-surface bg-white/95 px-4 py-3 dark:bg-emerald-950/40">
+                  <h3 className="flex items-center text-lg font-semibold text-emerald-900 dark:text-emerald-200">
+                    <Briefcase className="mr-3 h-5 w-5 text-sky-500 dark:text-sky-300" />
+                    Professional
+                  </h3>
+                  <p className="text-sm text-emerald-900/70 dark:text-emerald-100/70">
+                    Get matched with professionals tailored to your goals.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-sm border border-surface bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-900/80 transition-colors duration-200 hover:bg-emerald-50/60 dark:bg-emerald-950/50 dark:text-emerald-100/80 dark:hover:bg-emerald-900/60 md:w-auto"
+                    onClick={() => handleStartQueue("professional")}
+                  >
+                    Start Professional Matching
+                  </Button>
+                </div>
               </motion.div>
             </motion.div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </section>
       </div>
     </div>
   );

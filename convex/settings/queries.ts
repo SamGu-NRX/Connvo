@@ -34,33 +34,12 @@ export const getCurrentUserSettings = query({
     v.null()
   ),
   handler: async (ctx) => {
-    const rawIdentity = await ctx.auth.getUserIdentity();
-    if (!rawIdentity) {
-      console.warn("[settings.getCurrentUserSettings] Missing auth identity", {
-        hasIdentity: false,
-      });
-    } else {
-      console.log("[settings.getCurrentUserSettings] Auth identity detected", {
-        workosUserId: rawIdentity.subject,
-        hasTokenEmail: !!rawIdentity.email,
-      });
-    }
-
     const identity = await requireIdentity(ctx);
-    console.log("[settings.getCurrentUserSettings] Identity resolved", {
-      userId: identity.userId,
-      workosUserId: identity.workosUserId,
-    });
     
     const settings = await ctx.db
       .query("userSettings")
       .withIndex("by_user", (q) => q.eq("userId", identity.userId))
       .unique();
-
-    console.log("[settings.getCurrentUserSettings] Query result", {
-      userId: identity.userId,
-      hasSettings: !!settings,
-    });
     
     return settings;
   },
