@@ -186,26 +186,30 @@ export default function ProfilePage() {
   
   if (loading) {
     return (
-      <div className="container mx-auto p-4 md:p-8">
-        <Skeleton className="mb-8 h-10 w-48" />
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Skeleton className="h-96" />
-          <Skeleton className="h-96" />
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden">
+        <div className="flex h-full flex-col overflow-hidden px-4 py-4 sm:px-5 md:px-6">
+          <Skeleton className="mb-4 h-9 w-40" />
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <Skeleton className="h-96 rounded-sm" />
+            <Skeleton className="h-96 rounded-sm" />
+          </div>
         </div>
       </div>
     );
   }
-  
+
   if (!isAuthenticated || !user) {
     return (
-      <div className="container mx-auto p-4 md:p-8">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Please log in to view your profile.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden">
+        <div className="flex h-full flex-col px-4 py-4 sm:px-5 md:px-6">
+          <Card className="rounded-sm bg-white/95 before:hidden dark:bg-emerald-950/30">
+            <CardContent className="pt-4">
+              <p className="text-center text-emerald-900/70 dark:text-emerald-100/70">
+                Please log in to view your profile.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -217,44 +221,50 @@ export default function ProfilePage() {
   const initials = displayName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <motion.h1
-        className="mb-8 text-3xl font-bold"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        My Profile
-      </motion.h1>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Personal Information Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Manage your personal details</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-6 flex items-center space-x-4">
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage src={user.profilePictureUrl} alt={displayName} />
-                      <AvatarFallback>{initials}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Profile picture managed by WorkOS
-                      </p>
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden">
+      <div className="flex h-full flex-col overflow-hidden px-4 py-4 sm:px-5 md:px-6">
+        <motion.h1
+          className="mb-4 text-3xl font-semibold text-emerald-900 dark:text-emerald-200"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          My Profile
+        </motion.h1>
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex h-full flex-col overflow-hidden"
+          >
+            <div className="grid flex-1 grid-cols-1 gap-2 overflow-y-auto md:grid-cols-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <Card className="flex h-full flex-col rounded-sm bg-white/95 before:hidden dark:bg-emerald-950/30">
+                  <CardHeader className="pb-2.5">
+                    <CardTitle className="text-lg font-semibold text-emerald-900 dark:text-emerald-200">
+                      Personal Information
+                    </CardTitle>
+                    <CardDescription className="text-sm text-emerald-900/70 dark:text-emerald-100/70">
+                      Manage your personal details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2.5">
+                    <div className="mb-4 flex items-center gap-4">
+                      <Avatar className="h-16 w-16 rounded-sm">
+                        <AvatarImage src={user.profilePictureUrl} alt={displayName} />
+                        <AvatarFallback>{initials}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Profile picture managed by WorkOS
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-4">
+
                     <FormField
                       control={form.control}
                       name="displayName"
@@ -268,15 +278,15 @@ export default function ProfilePage() {
                         </FormItem>
                       )}
                     />
-                    
-                    <div className="space-y-2">
+
+                    <div className="space-y-1.5">
                       <Label>Email</Label>
                       <Input value={user.email} disabled />
                       <p className="text-xs text-muted-foreground">
                         Email is managed by your authentication provider
                       </p>
                     </div>
-                    
+
                     <FormField
                       control={form.control}
                       name="bio"
@@ -284,39 +294,37 @@ export default function ProfilePage() {
                         <FormItem>
                           <FormLabel>Bio</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Tell us about yourself" 
-                              {...field} 
+                            <Textarea
+                              className="max-h-40 resize-y"
+                              placeholder="Tell us about yourself"
                               rows={4}
+                              {...field}
                             />
                           </FormControl>
-                          <FormDescription>
-                            Max 500 characters
-                          </FormDescription>
+                          <FormDescription>Max 500 characters</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-            
-            {/* Professional Information Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Professional Information</CardTitle>
-                  <CardDescription>
-                    Manage your professional details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card className="flex h-full flex-col rounded-sm bg-white/95 before:hidden dark:bg-emerald-950/30">
+                  <CardHeader className="pb-2.5">
+                    <CardTitle className="text-lg font-semibold text-emerald-900 dark:text-emerald-200">
+                      Professional Information
+                    </CardTitle>
+                    <CardDescription className="text-sm text-emerald-900/70 dark:text-emerald-100/70">
+                      Manage your professional details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2.5">
                     <FormField
                       control={form.control}
                       name="company"
@@ -330,7 +338,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="jobTitle"
@@ -344,7 +352,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="field"
@@ -358,7 +366,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="linkedinUrl"
@@ -366,38 +374,37 @@ export default function ProfilePage() {
                         <FormItem>
                           <FormLabel>LinkedIn URL</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="https://linkedin.com/in/username" 
-                              {...field} 
+                            <Input
+                              placeholder="https://linkedin.com/in/username"
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-          
-          {/* Save Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6"
-          >
-            <Button
-              type="submit"
-              disabled={isSaving || !form.formState.isDirty}
-              className="w-full md:w-auto"
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-4 flex justify-end"
             >
-              {isSaving ? "Saving..." : "Save Changes"}
-            </Button>
-          </motion.div>
-        </form>
-      </Form>
+              <Button
+                type="submit"
+                disabled={isSaving || !form.formState.isDirty}
+                className="w-full rounded-sm bg-emerald-500/85 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-emerald-500 disabled:opacity-60 md:w-auto"
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </motion.div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

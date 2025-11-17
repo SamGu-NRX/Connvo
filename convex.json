@@ -1,5 +1,11 @@
 {
   "node": {
     "18": true
-  }
+  },
+  "authInfo": [
+    {
+      "applicationID": "convex",
+      "domain": "https://api.workos.com"
+    }
+  ]
 }

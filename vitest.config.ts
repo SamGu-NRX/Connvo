@@ -24,14 +24,9 @@ export default defineConfig({
       {
         test: {
           name: "convex",
-          include: [
-            "convex/**/*.test.ts",
-            "convex/**/*.spec.ts",
-            "test/convex/**/*.test.ts",
-            "test/convex/**/*.spec.ts",
-          ],
+          include: ["convex/**/*.test.ts", "convex/**/*.spec.ts"],
           environment: "edge-runtime",
-          setupFiles: ["./test/convex/setup.ts"],
+          setupFiles: ["./convex/test/setup.ts"],
           pool: "threads",
           maxWorkers: 1, // Run tests sequentially to avoid race conditions
           isolate: false, // Disable isolation for single-threaded execution
