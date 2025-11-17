@@ -3,7 +3,7 @@
  * Run this from the Convex dashboard to diagnose profile issues
  */
 
-import { query } from "../_generated/server";
+import { query } from "../../convex/_generated/server";
 import { v } from "convex/values";
 
 /**

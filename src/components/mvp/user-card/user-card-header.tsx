@@ -16,6 +16,7 @@ interface UserCardHeaderProps {
   onMessage: (message: string) => void;
   onSchedule: (date: Date, duration: number, topic: string) => void;
   className?: string;
+  showActions?: boolean;
 }
 
 export function UserCardHeader({
@@ -25,6 +26,7 @@ export function UserCardHeader({
   onMessage,
   onSchedule,
   className,
+  showActions = true,
 }: UserCardHeaderProps) {
   const { name, avatar, profession, company, isBot } = user;
   const [messageModalOpen, setMessageModalOpen] = useState(false);
@@ -48,23 +50,25 @@ export function UserCardHeader({
 
   return (
     <>
-      {/* Message Modal */}
-      <MessageModal
-        isOpen={messageModalOpen}
-        onClose={() => setMessageModalOpen(false)}
-        name={name}
-        avatar={avatar}
-        onSend={handleSendMessage}
-      />
+      {showActions && (
+        <>
+          <MessageModal
+            isOpen={messageModalOpen}
+            onClose={() => setMessageModalOpen(false)}
+            name={name}
+            avatar={avatar}
+            onSend={handleSendMessage}
+          />
 
-      {/* Schedule Modal */}
-      <ScheduleModal
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-        name={name}
-        avatar={avatar}
-        onSchedule={handleScheduleMeeting}
-      />
+          <ScheduleModal
+            isOpen={scheduleModalOpen}
+            onClose={() => setScheduleModalOpen(false)}
+            name={name}
+            avatar={avatar}
+            onSchedule={handleScheduleMeeting}
+          />
+        </>
+      )}
 
       <div
         className={cn(
@@ -104,11 +108,13 @@ export function UserCardHeader({
             </p>
           </div>
 
-          <UserCardActions
-            onOpenMessage={() => setMessageModalOpen(true)}
-            onOpenSchedule={() => setScheduleModalOpen(true)}
-            className="shrink-0"
-          />
+          {showActions && (
+            <UserCardActions
+              onOpenMessage={() => setMessageModalOpen(true)}
+              onOpenSchedule={() => setScheduleModalOpen(true)}
+              className="shrink-0"
+            />
+          )}
         </div>
       </div>
     </>

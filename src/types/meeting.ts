@@ -69,7 +69,7 @@ export const MOCK_USERS: { [key: string]: User } = {
   },
   partner: {
     id: "partner",
-    name: "John Doe",
+    name: "Jane Doe",
     avatar: null as any,
     role: "Senior Engineer",
     company: "TechCorp",
@@ -89,7 +89,7 @@ export const MOCK_USERS: { [key: string]: User } = {
 };
 
 export const MOCK_MESSAGES: Message[] = [
-  { id: "1", sender: "John Doe", message: "Hey there!", timestamp: "10:30 AM" },
+  { id: "1", sender: "Jane Doe", message: "Hey there!", timestamp: "10:30 AM" },
   {
     id: "2",
     sender: "You",

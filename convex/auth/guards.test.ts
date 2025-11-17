@@ -19,7 +19,7 @@ import {
   resetAllMocks,
   setupTestMocks,
   cleanupTestMocks,
-} from "../test/helpers";
+} from "../../test/convex/helpers";
 
 describe("Authentication Guards", () => {
   let t: ReturnType<typeof createTestEnvironment>;

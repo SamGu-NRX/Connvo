@@ -7,7 +7,7 @@
  */
 
 import { convexTest } from "convex-test";
-import schema from "../schema";
+import schema from "../../convex/schema";
 
 /**
  * Create a test environment with proper schema initialization

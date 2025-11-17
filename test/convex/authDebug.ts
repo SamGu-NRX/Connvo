@@ -1,4 +1,4 @@
-import { query } from "../_generated/server";
+import { query } from "../../convex/_generated/server";
 
 export const debugAuth = query({
   args: {},

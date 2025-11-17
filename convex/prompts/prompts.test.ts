@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { api, internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { createTestEnvironment } from "../test/helpers";
+import { createTestEnvironment } from "../../test/convex/helpers";
 
 describe("Prompts Module", () => {
   let t: ReturnType<typeof createTestEnvironment>;

@@ -11,7 +11,7 @@
 import { api } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
-import { createTestEnvironment } from "../test/helpers";
+import { createTestEnvironment } from "../../test/convex/helpers";
 
 describe("Dynamic Permission Management", () => {
   let t: ReturnType<typeof createTestEnvironment>;

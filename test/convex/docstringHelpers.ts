@@ -30,7 +30,7 @@ import {
 } from "./openapiExamples";
 import type { TestConvex } from "convex-test";
 
-type ConvexSchema = typeof import("../schema").default;
+type ConvexSchema = typeof import("../../convex/schema").default;
 type DocstringTestConvex = TestConvex<ConvexSchema>;
 
 /**

@@ -58,9 +58,9 @@ const Loader = ({
   // Color mappings
   const colorMap = {
     primary: {
-      ring: "border-blue-500",
-      pulse: "bg-blue-500",
-      text: "text-blue-500",
+      ring: "border-emerald-500",
+      pulse: "bg-emerald-500",
+      text: "text-emerald-500",
     },
     secondary: {
       ring: "border-purple-500",
@@ -85,7 +85,7 @@ const Loader = ({
   // Default spinner loader
   if (type === "default") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
         <div
           className={`relative ${selectedSize.container} flex items-center justify-center`}
         >
@@ -114,7 +114,7 @@ const Loader = ({
   // Redirect loader with progress indicator
   if (type === "redirect") {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
         <div className="relative w-64">
           {/* Progress text */}
           <div className="mb-2 text-center">
