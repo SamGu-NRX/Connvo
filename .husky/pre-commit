@@ -1,2 +1,17 @@
 pnpm exec prettier $(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g') --write --ignore-unknown
 git update-index --again
+
+# Validate docstrings in staged Convex files
+STAGED_CONVEX_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '^convex/.*\.ts$' | grep -v '\.test\.ts$' | grep -v '_generated')
+
+if [ -n "$STAGED_CONVEX_FILES" ]; then
+  echo "Validating docstrings in staged Convex files..."
+  for file in $STAGED_CONVEX_FILES; do
+    pnpm tsx scripts/validate-docstrings.ts --file="$file" || {
+      echo "❌ Docstring validation failed for $file"
+      echo "Fix docstring errors before committing. Run: pnpm tsx scripts/validate-docstrings.ts --file=$file"
+      exit 1
+    }
+  done
+  echo "✓ Docstring validation passed"
+fi

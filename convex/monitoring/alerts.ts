@@ -14,7 +14,62 @@ import { Id } from "@convex/_generated/dataModel";
 import { metadataRecordV } from "@convex/lib/validators";
 
 /**
- * Creates a system alert
+ * @summary Creates a system alert
+ * @description Creates or updates a system alert for monitoring and incident management. Alerts are deduplicated by alertId - if an alert with the same ID exists, it is updated instead of creating a duplicate. Supports severity levels (critical, error, warning, info) and categorization for routing and escalation.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "alertId": "high-transcription-latency-2024-01-01",
+ *     "severity": "warning",
+ *     "category": "transcription",
+ *     "title": "High Transcription Latency Detected",
+ *     "message": "Average transcription processing time exceeded 500ms threshold",
+ *     "metadata": {
+ *       "averageLatency": 687,
+ *       "threshold": 500,
+ *       "affectedMeetings": 12
+ *     },
+ *     "actionable": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "jh8xp9r2k5n6q7s8v9w0y1z2"
+ * }
+ * ```
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "alertId": "circuit-breaker-open-ai-service",
+ *     "severity": "critical",
+ *     "category": "system",
+ *     "title": "Circuit Breaker Open: AI Service",
+ *     "message": "AI service circuit breaker opened after 5 consecutive failures",
+ *     "metadata": {
+ *       "serviceName": "ai-service",
+ *       "failureCount": 5,
+ *       "lastError": "Connection timeout"
+ *     },
+ *     "actionable": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "km9yr0s3l6o7r8t9w0x1y2z3"
+ * }
+ * ```
  */
 export const createAlert = internalMutation({
   args: {

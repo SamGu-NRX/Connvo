@@ -1,7 +1,11 @@
 /**
  * Interests Catalog Queries
  */
-import { query, internalQuery, internalMutation } from "@convex/_generated/server";
+import {
+  query,
+  internalQuery,
+  internalMutation,
+} from "@convex/_generated/server";
 import { v } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
 
@@ -75,7 +79,48 @@ export const listCatalog = query({
 });
 
 /**
- * Gets user interests by user ID (internal use)
+ * @summary Gets user interests by user ID (internal use)
+ * @description Retrieves the full list of interests associated with a user by their user ID. This internal function joins user interest keys with the interest catalog to return complete interest details including labels, categories, and icons. Used for matching algorithms and profile enrichment.
+ *
+ * @example request
+ * ```json
+ * { "args": { "userId": "jd7xn8q9k2h5m6p3r4t7w8y9" } }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": [
+ *     {
+ *       "key": "software-engineering",
+ *       "label": "Software Engineering",
+ *       "category": "industry",
+ *       "iconName": "Code"
+ *     },
+ *     {
+ *       "key": "ai-ml",
+ *       "label": "AI / ML",
+ *       "category": "academic",
+ *       "iconName": "Brain"
+ *     },
+ *     {
+ *       "key": "startups",
+ *       "label": "Startups",
+ *       "category": "personal",
+ *       "iconName": "Rocket"
+ *     }
+ *   ]
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": []
+ * }
+ * ```
  */
 export const getUserInterests = internalQuery({
   args: { userId: v.id("users") },
@@ -116,6 +161,23 @@ export const getUserInterests = internalQuery({
   },
 });
 
+/**
+ * @summary Seeds default interest catalog
+ * @description Initializes the interest catalog with a minimal set of default interests if the catalog is empty. This is an idempotent operation that only inserts data when no interests exist. Used during system initialization or database setup.
+ *
+ * @example request
+ * ```json
+ * { "args": {} }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ */
 export const seedDefault = internalMutation({
   args: {},
   returns: v.null(),

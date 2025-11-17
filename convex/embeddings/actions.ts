@@ -33,7 +33,62 @@ import { VectorUtils } from "@convex/types/entities/embedding";
 import OpenAI from "openai";
 
 /**
- * Generate embedding for content (public)
+ * @summary Generates vector embedding for content using OpenAI
+ * @description Generates a vector embedding for the provided content using OpenAI's embedding API.
+ * The embedding is stored in the database and associated with the specified source. Supports multiple
+ * embedding models and includes error handling for API failures. Returns the embedding ID, vector data,
+ * and processing metrics.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "sourceType": "user",
+ *     "sourceId": "user_abc123",
+ *     "content": "Senior software engineer with 10 years of experience in distributed systems and cloud architecture",
+ *     "model": "text-embedding-3-small",
+ *     "metadata": {
+ *       "generatedAt": "1699564800000",
+ *       "contentLength": "95"
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "embeddingId": "embedding_xyz789",
+ *     "vector": "AAECAwQFBg==",
+ *     "dimensions": 1536,
+ *     "model": "text-embedding-3-small",
+ *     "processingTime": 342,
+ *     "success": true
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "EXTERNAL_SERVICE_ERROR",
+ *     "message": "OpenAI API key not configured",
+ *     "value": {
+ *       "embeddingId": "",
+ *       "vector": "",
+ *       "dimensions": 0,
+ *       "model": "text-embedding-3-small",
+ *       "processingTime": 12,
+ *       "success": false,
+ *       "error": "OpenAI API key not configured"
+ *     }
+ *   }
+ * }
+ * ```
  */
 export const generateEmbedding = action({
   args: EmbeddingGenerationV.request,
@@ -109,7 +164,89 @@ export const generateEmbedding = action({
 });
 
 /**
- * Generate embeddings in batch (internal)
+ * @summary Generates multiple embeddings in batch with rate limiting
+ * @description Processes multiple embedding operations (create or delete) in batches to respect OpenAI
+ * rate limits. Supports up to 10 operations per batch with 1-second delays between batches. Each operation
+ * can either create a new embedding from content or delete existing embeddings by source. Returns detailed
+ * results for each operation including success/failure status and error messages.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "batchId": "batch_20231109_001",
+ *     "operations": [
+ *       {
+ *         "type": "create",
+ *         "sourceType": "user",
+ *         "sourceId": "user_abc123",
+ *         "content": "Senior software engineer specializing in backend systems",
+ *         "metadata": { "priority": "high" }
+ *       },
+ *       {
+ *         "type": "create",
+ *         "sourceType": "meeting",
+ *         "sourceId": "meeting_xyz789",
+ *         "content": "Discussion about microservices architecture and deployment strategies",
+ *         "metadata": { "duration": "3600" }
+ *       }
+ *     ],
+ *     "model": "text-embedding-3-small"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "batchId": "batch_20231109_001",
+ *     "totalOperations": 2,
+ *     "successfulOperations": 2,
+ *     "failedOperations": 0,
+ *     "results": [
+ *       {
+ *         "sourceId": "user_abc123",
+ *         "success": true,
+ *         "embeddingId": "embedding_aaa111"
+ *       },
+ *       {
+ *         "sourceId": "meeting_xyz789",
+ *         "success": true,
+ *         "embeddingId": "embedding_bbb222"
+ *       }
+ *     ],
+ *     "processingTime": 1847
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "batchId": "batch_20231109_002",
+ *     "totalOperations": 2,
+ *     "successfulOperations": 1,
+ *     "failedOperations": 1,
+ *     "results": [
+ *       {
+ *         "sourceId": "user_abc123",
+ *         "success": true,
+ *         "embeddingId": "embedding_ccc333"
+ *       },
+ *       {
+ *         "sourceId": "user_def456",
+ *         "success": false,
+ *         "error": "Failed to generate embedding"
+ *       }
+ *     ],
+ *     "processingTime": 2134
+ *   }
+ * }
+ * ```
  */
 export const generateEmbeddingsBatch = internalAction({
   args: EmbeddingBatchV.request,
@@ -242,7 +379,48 @@ export const generateEmbeddingsBatch = internalAction({
 });
 
 /**
- * Generate embedding for user profile (internal)
+ * @summary Generates embedding for user profile data
+ * @description Creates a vector embedding from user profile information including name, experience, field,
+ * company, languages, and interests. Checks for existing embeddings unless forceRegenerate is true. Combines
+ * multiple profile fields into a single content string for embedding generation. Returns null if the embedding
+ * already exists or if there is no content to embed.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "userId": "user_abc123",
+ *     "forceRegenerate": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "embedding_xyz789"
+ * }
+ * ```
+ *
+ * @example response-cache
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "User data not found"
+ *   }
+ * }
+ * ```
  */
 export const generateUserProfileEmbedding = internalAction({
   args: {
@@ -295,7 +473,9 @@ export const generateUserProfileEmbedding = internalAction({
         contentParts.push(`Company: ${userData.profile.company}`);
       }
       if (userData.profile.languages.length > 0) {
-        contentParts.push(`Languages: ${userData.profile.languages.join(", ")}`);
+        contentParts.push(
+          `Languages: ${userData.profile.languages.join(", ")}`,
+        );
       }
     }
 
@@ -309,23 +489,67 @@ export const generateUserProfileEmbedding = internalAction({
     }
 
     // Generate embedding
-    const result = await ctx.runAction(api.embeddings.actions.generateEmbedding, {
-      sourceType: "user",
-      sourceId: args.userId,
-      content,
-      model: "text-embedding-3-small",
-      metadata: {
-        generatedAt: Date.now().toString(),
-        contentLength: content.length.toString(),
+    const result = await ctx.runAction(
+      api.embeddings.actions.generateEmbedding,
+      {
+        sourceType: "user",
+        sourceId: args.userId,
+        content,
+        model: "text-embedding-3-small",
+        metadata: {
+          generatedAt: Date.now().toString(),
+          contentLength: content.length.toString(),
+        },
       },
-    });
+    );
 
     return result.success ? result.embeddingId : null;
   },
 });
 
 /**
- * Generate embedding for meeting content (internal)
+ * @summary Generates embedding for meeting content and transcripts
+ * @description Creates a vector embedding from meeting metadata (title, description) and transcript segments.
+ * Limits transcript content to 8000 characters and retrieves up to 50 transcript segments to avoid excessive
+ * content length. Checks for existing embeddings unless forceRegenerate is true. Returns null if the embedding
+ * already exists or if there is no content to embed.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_xyz789",
+ *     "forceRegenerate": false
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": "embedding_abc456"
+ * }
+ * ```
+ *
+ * @example response-cache
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "NOT_FOUND",
+ *     "message": "Meeting not found"
+ *   }
+ * }
+ * ```
  */
 export const generateMeetingEmbedding = internalAction({
   args: {
@@ -351,9 +575,12 @@ export const generateMeetingEmbedding = internalAction({
     }
 
     // Get meeting data
-    const meeting = await ctx.runQuery(internal.meetings.queries.getMeetingById, {
-      meetingId: args.meetingId,
-    });
+    const meeting = await ctx.runQuery(
+      internal.meetings.queries.getMeetingById,
+      {
+        meetingId: args.meetingId,
+      },
+    );
 
     if (!meeting) {
       throw new ConvexError("Meeting not found");
@@ -393,24 +620,111 @@ export const generateMeetingEmbedding = internalAction({
     }
 
     // Generate embedding
-    const result = await ctx.runAction(api.embeddings.actions.generateEmbedding, {
-      sourceType: "meeting",
-      sourceId: args.meetingId,
-      content,
-      model: "text-embedding-3-small",
-      metadata: {
-        generatedAt: Date.now().toString(),
-        contentLength: content.length.toString(),
-        hasTranscript: transcripts.length > 0 ? "true" : "false",
+    const result = await ctx.runAction(
+      api.embeddings.actions.generateEmbedding,
+      {
+        sourceType: "meeting",
+        sourceId: args.meetingId,
+        content,
+        model: "text-embedding-3-small",
+        metadata: {
+          generatedAt: Date.now().toString(),
+          contentLength: content.length.toString(),
+          hasTranscript: transcripts.length > 0 ? "true" : "false",
+        },
       },
-    });
+    );
 
     return result.success ? result.embeddingId : null;
   },
 });
 
 /**
- * Perform advanced vector search with external processing (internal)
+ * @summary Performs advanced vector similarity search with filtering
+ * @description Executes vector similarity search with additional filtering and ranking capabilities.
+ * Supports filtering by model, source IDs, and creation time ranges. Calculates cosine similarity scores
+ * and applies threshold filtering. Returns up to 256 results sorted by similarity score with detailed
+ * query metadata and search performance metrics.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "vector": "AAECAwQFBg==",
+ *     "sourceTypes": ["user", "meeting"],
+ *     "limit": 10,
+ *     "threshold": 0.75,
+ *     "filters": {
+ *       "model": "text-embedding-3-small",
+ *       "createdAfter": 1699564800000
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "value": {
+ *     "results": [
+ *       {
+ *         "embedding": {
+ *           "_id": "embedding_abc123",
+ *           "_creationTime": 1699564801000,
+ *           "sourceType": "user",
+ *           "sourceId": "user_xyz789",
+ *           "model": "text-embedding-3-small",
+ *           "dimensions": 1536,
+ *           "version": "v1",
+ *           "metadata": {},
+ *           "createdAt": 1699564800000,
+ *           "vector": "AAECAwQFBg=="
+ *         },
+ *         "score": 0.92,
+ *         "sourceData": null
+ *       },
+ *       {
+ *         "embedding": {
+ *           "_id": "embedding_def456",
+ *           "_creationTime": 1699565401000,
+ *           "sourceType": "meeting",
+ *           "sourceId": "meeting_aaa111",
+ *           "model": "text-embedding-3-small",
+ *           "dimensions": 1536,
+ *           "version": "v1",
+ *           "metadata": {},
+ *           "createdAt": 1699565400000,
+ *           "vector": "AQIDBAUGBw=="
+ *         },
+ *         "score": 0.87,
+ *         "sourceData": null
+ *       }
+ *     ],
+ *     "totalCount": 2,
+ *     "searchTime": 145,
+ *     "query": {
+ *       "dimensions": 1536,
+ *       "threshold": 0.75,
+ *       "filters": {
+ *         "model": "text-embedding-3-small",
+ *         "createdAfter": 1699564800000
+ *       }
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorData": {
+ *     "code": "VECTOR_SEARCH_ERROR",
+ *     "message": "Vector search failed: Invalid vector dimensions"
+ *   }
+ * }
+ * ```
  */
 export const advancedVectorSearch = internalAction({
   args: VectorSearchV.query,
@@ -447,16 +761,25 @@ export const advancedVectorSearch = internalAction({
           }
 
           // Filter by source IDs
-          if (filters.sourceIds && !filters.sourceIds.includes(embedding.sourceId)) {
+          if (
+            filters.sourceIds &&
+            !filters.sourceIds.includes(embedding.sourceId)
+          ) {
             return false;
           }
 
           // Filter by creation time
-          if (filters.createdAfter && embedding.createdAt < filters.createdAfter) {
+          if (
+            filters.createdAfter &&
+            embedding.createdAt < filters.createdAfter
+          ) {
             return false;
           }
 
-          if (filters.createdBefore && embedding.createdAt > filters.createdBefore) {
+          if (
+            filters.createdBefore &&
+            embedding.createdAt > filters.createdBefore
+          ) {
             return false;
           }
 
@@ -465,16 +788,22 @@ export const advancedVectorSearch = internalAction({
       }
 
       // Calculate actual similarity scores using cosine similarity
-      const resultsWithScores: Array<SimilaritySearchResult & { score: number }> =
-        filteredResults.map((result) => {
-          const embeddingVector = VectorUtils.bufferToFloatArray(result.embedding.vector);
-          const similarity = VectorUtils.cosineSimilarity(queryVector, embeddingVector);
+      const resultsWithScores: Array<
+        SimilaritySearchResult & { score: number }
+      > = filteredResults.map((result) => {
+        const embeddingVector = VectorUtils.bufferToFloatArray(
+          result.embedding.vector,
+        );
+        const similarity = VectorUtils.cosineSimilarity(
+          queryVector,
+          embeddingVector,
+        );
 
-          return {
-            ...result,
-            score: similarity,
-          };
-        });
+        return {
+          ...result,
+          score: similarity,
+        };
+      });
 
       // Sort by similarity score (descending)
       resultsWithScores.sort((a, b) => b.score - a.score);

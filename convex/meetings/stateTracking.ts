@@ -18,7 +18,42 @@ import { MeetingRuntimeStateV } from "@convex/types/validators/meeting";
 import type { SpeakingStats, LullState } from "@convex/types/entities/meeting";
 
 /**
- * Updates speaking statistics for a meeting
+ * @summary Updates speaking analytics for an in-progress meeting
+ * @description Mutation that aggregates per-user speaking duration and resets lull
+ * detection timers whenever new audio activity is reported. The mutation creates
+ * the backing `meetingState` document on first invocation so subsequent calls
+ * share the same counters. Requires the caller to have access to the meeting.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "userId": "user_alice_example",
+ *     "speakingDurationMs": 3150
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-not-found
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Failed to initialize meeting state",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const updateSpeakingStats = mutation({
   args: {
@@ -132,7 +167,41 @@ export const updateLullState = internalMutation({
 });
 
 /**
- * Updates current topics being discussed
+ * @summary Tracks the active discussion topics for contextual features
+ * @description Mutation that updates the list of topics currently being discussed
+ * in a meeting. Used by prompt generation and insights pipelines to provide
+ * contextual suggestions. Validates the caller has access to the meeting and
+ * persists the new topic list on the shared `meetingState` document.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "topics": ["roadmap", "staffing", "launch-readiness"]
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-not-found
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Meeting state meeting_84c0example not found",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const updateCurrentTopics = mutation({
   args: {
@@ -219,7 +288,45 @@ export const detectLull = internalMutation({
 });
 
 /**
- * Records activity to reset lull detection
+ * @summary Records non-speaking activity and clears lull detection flags
+ * @description Mutation invoked when clients observe activity such as chat
+ * messages, screen sharing, or reactions. Resets the lull timer so prompt
+ * generation is not triggered incorrectly. Access is restricted to meeting
+ * participants, and the mutation gracefully no-ops if the meeting state has
+ * not been initialized yet.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "activityType": "reaction",
+ *     "userId": "user_bob_example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
+ *
+ * @example response-unauthorized
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Not authorized to access meeting meeting_84c0example",
+ *   "errorData": {
+ *     "code": "AUTH_FORBIDDEN"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const recordActivity = mutation({
   args: {

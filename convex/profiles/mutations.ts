@@ -13,7 +13,32 @@ import { v } from "convex/values";
 import { requireIdentity } from "@convex/auth/guards";
 
 /**
- * Update current user's profile
+ * @summary Updates the authenticated user's profile fields
+ * @description Applies partial updates to the caller's profile, creating a new
+ * profile automatically if one does not already exist. Only fields provided in
+ * the request are mutated, making the endpoint safe for granular profile edits.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "displayName": "Avery Johnson",
+ *     "bio": "Product manager focused on real-time collaboration tools.",
+ *     "languages": ["en", "es"],
+ *     "company": "Connvo Inc."
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "profile_84c0example"
+ * }
+ * ```
  */
 export const updateProfile = mutation({
   args: {
@@ -99,7 +124,39 @@ export const updateProfile = mutation({
 });
 
 /**
- * Create initial profile for new user (called during onboarding)
+ * @summary Creates or upserts the caller's profile during onboarding
+ * @description Initializes the user's profile with onboarding data, or patches
+ * an existing profile if one already exists. Ensures deterministic timestamps
+ * and defaults for optional arrays such as languages.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "displayName": "Jordan Riley",
+ *     "bio": "Engineering leader passionate about inclusive meeting rooms.",
+ *     "goals": "Connect with product-minded peers",
+ *     "languages": ["en"],
+ *     "experience": "10+ years",
+ *     "field": "Engineering",
+ *     "jobTitle": "Head of Platform",
+ *     "company": "Connvo Inc.",
+ *     "linkedinUrl": "https://www.linkedin.com/in/jordan-riley",
+ *     "age": 34,
+ *     "gender": "prefer-not-to-say"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": "profile_84c0example"
+ * }
+ * ```
  */
 export const createProfile = mutation({
   args: {

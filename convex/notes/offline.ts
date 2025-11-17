@@ -77,7 +77,63 @@ export interface SyncResult {
 }
 
 /**
- * Queues operations for offline sync
+ * @summary Queues collaborative note operations while a client is offline
+ * @description Persists validated note operations in the offline queue so they
+ * can be replayed once connectivity is restored. Groups operations under a new
+ * queue ID per sync attempt, logs the action for auditability, and ensures the
+ * caller is an authorized meeting participant.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123",
+ *     "operations": [
+ *       {
+ *         "type": "insert",
+ *         "position": 128,
+ *         "content": "\n- Draft OKR outline",
+ *         "length": 21,
+ *         "id": "op_e9c4c2f011",
+ *         "authorId": "user_alice_example",
+ *         "timestamp": 1730668805000,
+ *         "sequence": 17,
+ *         "clientId": "client_web_123",
+ *         "queuedAt": 1730668806000,
+ *         "attempts": 0,
+ *         "status": "pending"
+ *       }
+ *     ]
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "queued": 1,
+ *     "queueId": "queue_1730668806123_example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response-validation-error
+ * ```json
+ * {
+ *   "status": "error",
+ *   "errorMessage": "Invalid operation: op_invalid",
+ *   "errorData": {
+ *     "code": "VALIDATION_ERROR"
+ *   },
+ *   "value": null
+ * }
+ * ```
  */
 export const queueOfflineOperations = mutation({
   args: {
@@ -150,7 +206,61 @@ export const queueOfflineOperations = mutation({
 });
 
 /**
- * Syncs queued offline operations with conflict resolution
+ * @summary Replays queued offline operations and reconciles conflicts
+ * @description Applies queued note operations back into the authoritative
+ * meeting notes document. Operations are transformed against newer server
+ * changes, applied atomically, and the resulting version metadata is returned.
+ * Supports replay by queue ID or up to `maxOperations` per invocation.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123",
+ *     "queueId": "queue_1730668806123_example",
+ *     "maxOperations": 50
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "synced": 3,
+ *     "failed": 0,
+ *     "conflicts": 0,
+ *     "newVersion": 58,
+ *     "errors": [],
+ *     "remainingInQueue": 0
+ *   }
+ * }
+ * ```
+ *
+ * @example response-conflict
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": false,
+ *     "synced": 1,
+ *     "failed": 1,
+ *     "conflicts": 1,
+ *     "newVersion": 57,
+ *     "errors": [
+ *       "Operation op_e9c4c2f011 conflicted with newer server changes"
+ *     ],
+ *     "remainingInQueue": 2
+ *   }
+ * }
+ * ```
  */
 export const syncOfflineOperations = mutation({
   args: {
@@ -381,7 +491,39 @@ export const syncOfflineOperations = mutation({
 });
 
 /**
- * Gets offline operation queue status for a client
+ * @summary Reports the health of a client's offline note queue
+ * @description Aggregates queued operations by status (pending, syncing, synced,
+ * failed) so the client can display accurate sync progress. Also returns timing
+ * metadata to determine whether the queue is healthy, warning, or critical.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "totalQueued": 5,
+ *     "pending": 2,
+ *     "syncing": 1,
+ *     "synced": 1,
+ *     "failed": 1,
+ *     "oldestPending": 1730668806123,
+ *     "newestPending": 1730668810456,
+ *     "queueHealth": "warning"
+ *   }
+ * }
+ * ```
  */
 export const getOfflineQueueStatus = mutation({
   args: {
@@ -477,7 +619,35 @@ export const getOfflineQueueStatus = mutation({
 });
 
 /**
- * Retries failed offline operations
+ * @summary Resets failed offline operations to be replayed
+ * @description Moves failed operations back to the pending state so the client
+ * can retry them on the next sync attempt. Optionally scopes the reset to a
+ * single queue ID, updates attempt counters, and records the change in the audit
+ * log for traceability.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123",
+ *     "maxRetries": 5
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "retriedCount": 2,
+ *     "successCount": 2
+ *   }
+ * }
+ * ```
  */
 export const retryFailedOperations = mutation({
   args: {
@@ -540,7 +710,33 @@ export const retryFailedOperations = mutation({
 });
 
 /**
- * Clears synced operations from the offline queue
+ * @summary Deletes offline operations that have been successfully applied
+ * @description Removes synced operations for the specified meeting/client so the
+ * offline queue remains compact. Can target a specific queue ID or purge all
+ * synced records for a client after a successful reconciliation.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123",
+ *     "olderThanMs": 900000
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "cleared": 3
+ *   }
+ * }
+ * ```
  */
 export const clearSyncedOperations = mutation({
   args: {
@@ -581,7 +777,39 @@ export const clearSyncedOperations = mutation({
 });
 
 /**
- * Creates a checkpoint for offline operations
+ * @summary Captures a lightweight checkpoint clients can resume from
+ * @description Stores sequence/version metadata plus a deterministic hash of the
+ * note content after a successful sync. Enables clients to quickly reconcile
+ * future offline operations without replaying the entire history.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123",
+ *     "checkpointData": {
+ *       "sequence": 21,
+ *       "version": 58,
+ *       "contentHash": "hash_v58_deadbeef",
+ *       "timestamp": 1730668810456
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "checkpointId": "checkpoint_1730668810456_example",
+ *     "success": true
+ *   }
+ * }
+ * ```
  */
 export const createOfflineCheckpoint = mutation({
   args: {
@@ -623,7 +851,51 @@ export const createOfflineCheckpoint = mutation({
 });
 
 /**
- * Restores from an offline checkpoint
+ * @summary Restores metadata about the most recent offline checkpoint
+ * @description Retrieves the checkpoint that matches the provided checkpoint ID
+ * for the caller's meeting and client combination. Helps reconnecting clients
+ * resume syncing from the exact version they previously acknowledged.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example",
+ *     "clientId": "client_web_123",
+ *     "checkpointId": "checkpoint_1730668810456_example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": true,
+ *     "checkpoint": {
+ *       "sequence": 21,
+ *       "version": 58,
+ *       "contentHash": "hash_v58_deadbeef",
+ *       "timestamp": 1730668810456
+ *     }
+ *   }
+ * }
+ * ```
+ *
+ * @example response-missing
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "success": false
+ *   }
+ * }
+ * ```
  */
 export const restoreFromCheckpoint = mutation({
   args: {

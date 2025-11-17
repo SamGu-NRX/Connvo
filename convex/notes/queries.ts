@@ -12,7 +12,48 @@ import { NoteV } from "@convex/types/validators/note";
 import type { MeetingNote } from "@convex/types/entities/note";
 
 /**
- * Gets meeting notes (public, with auth)
+ * @summary Retrieves the collaborative notes document for a meeting
+ * @description Returns the latest materialized version of a meeting's notes for
+ * authenticated participants. Used by the notes UI to hydrate state after a page
+ * refresh and by insights features that require the human-authored summary.
+ * Returns null if no notes have been created yet.
+ *
+ * @example request
+ * ```json
+ * {
+ *   "args": {
+ *     "meetingId": "meeting_84c0example"
+ *   }
+ * }
+ * ```
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "_id": "meetingNote_789example",
+ *     "_creationTime": 1704063600000,
+ *     "meetingId": "meeting_84c0example",
+ *     "content": "Sprint Planning Notes\\n\\nAgenda\\n1. Prioritize backlog\\n2. Assign owners\\n\\nDecisions\\n- Ship onboarding polish in Sprint 23\\n\\nAction Items\\n- Alice: Prepare QA checklist\\n- Bob: Confirm release window",
+ *     "version": 42,
+ *     "lastRebasedAt": 1704063600000,
+ *     "updatedAt": 1704067200000
+ *   }
+ * }
+ * ```
+ *
+ * @example response-empty
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": null
+ * }
+ * ```
  */
 export const getMeetingNotes = query({
   args: {

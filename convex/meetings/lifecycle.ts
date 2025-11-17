@@ -1280,8 +1280,8 @@ export const getMeetingConnectionInfo = mutation({
  * Handles participant joining (presence update)
  *
  * @summary Updates participant presence to joined
- * @description Updates a participant's presence status to "joined" when they enter
- * the meeting. Records the join timestamp. Only available for active meetings.
+ * @description Updates a participant's presence status to "joined" when they enter the meeting. Records the join timestamp.
+ * Only available for active meetings.
  * Participants must be invited to the meeting before joining.
  *
  * @example request
@@ -1359,9 +1359,7 @@ export const joinMeeting = mutation({
  * Handles participant leaving (presence update)
  *
  * @summary Updates participant presence to left
- * @description Updates a participant's presence status to "left" when they exit
- * the meeting. Records the leave timestamp. Does not remove the participant from
- * the meeting - they can rejoin if the meeting is still active.
+ * @description Updates a participant's presence status to "left" when they exit the meeting. Records the leave timestamp. Does not remove the participant from the meeting - they can rejoin if the meeting is still active.
  *
  * @example request
  * ```json
