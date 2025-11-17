@@ -10,7 +10,7 @@
 
 import { convexTest } from "convex-test";
 import { Id } from "@convex/_generated/dataModel";
-import schema from "../schema.js";
+import schema from "../../convex/schema.js";
 import { modules as testModules } from "./setup.js";
 
 /**

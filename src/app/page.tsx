@@ -307,7 +307,7 @@ const LandingPage = () => {
 
   return (
     <div className={`min-h-screen ${theme === "dark" ? "dark" : ""}`}>
-      <div className="bg-white transition-colors duration-300 dark:bg-gray-900">
+      <div className="min-h-screen bg-white transition-colors duration-300 dark:bg-gray-900">
         {/* Modern Glass Nav */}
         <nav className="fixed top-0 z-50 w-full">
           <div className="mx-auto mt-6 w-full max-w-6xl px-6">
@@ -445,9 +445,12 @@ const LandingPage = () => {
                   </span>
                 </StartCta>
 
-                <button
-                  onClick={() => scrollToSection("how-it-works")}
+                <motion.a
+                  href="/auth/sign-in"
+                  onClick={(e) => handleTransition(e, "/auth/sign-in", router)}
                   className="group relative sm:w-auto"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <GlassCard className="px-8 py-4 transition-all duration-300 hover:bg-white/20 dark:hover:bg-white/10">
                     <span className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-200">
@@ -455,14 +458,14 @@ const LandingPage = () => {
                       <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </span>
                   </GlassCard>
-                </button>
+                </motion.a>
               </motion.div>
             </motion.div>
           </div>
         </section>
 
         {/* MacBook Scroll Component */}
-        <MacbookScroll />
+        {/* <MacbookScroll /> */}
 
         {/* Improved Stats Section */}
         <section className="bg-linear-to-b from-emerald-50 to-white py-20 dark:from-gray-800/50 dark:to-gray-900">
@@ -705,11 +708,11 @@ const LandingPage = () => {
               <div className="relative w-full overflow-hidden rounded-2xl border border-white/60 bg-white/45 px-8 py-16 backdrop-blur-3xl backdrop-saturate-[1.35] sm:px-16 lg:px-24 dark:border-white/20 dark:bg-white/10">
                 <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/60 via-white/20 to-transparent opacity-80 dark:from-white/15 dark:via-white/10" />
                 <div className="pointer-events-none absolute inset-0">
-                  <div className="absolute -top-16 left-0 h-52 w-52 -translate-x-1/3 rounded-full bg-emerald-300/40 blur-2xl dark:bg-emerald-500/20" />
-                  <div className="absolute -bottom-12 right-6 h-48 w-48 translate-x-1/4 rounded-full bg-teal-300/35 blur-2xl dark:bg-teal-500/25" />
+                  <div className="absolute -top-16 left-0 h-52 w-52 -translate-x-1/3 rounded-2xl bg-emerald-300/40 blur-2xl dark:bg-emerald-500/20" />
+                  <div className="absolute -bottom-12 right-6 h-48 w-48 translate-x-1/4 rounded-2xl bg-teal-300/35 blur-2xl dark:bg-teal-500/25" />
                 </div>
                 <div className="relative mx-auto max-w-4xl text-center">
-                  <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-sm font-medium text-emerald-700 backdrop-blur-sm dark:bg-white/15 dark:text-emerald-200">
+                  <span className="mb-6 inline-flex items-center gap-2 rounded-2xl bg-white/70 px-4 py-2 text-sm font-medium text-emerald-700 backdrop-blur-sm dark:bg-white/15 dark:text-emerald-200">
                     The next wave of intentional networking
                   </span>
                   <h2 className="mb-6 text-3xl font-semibold text-gray-900 sm:text-4xl md:text-5xl dark:text-white">
@@ -722,7 +725,7 @@ const LandingPage = () => {
                   </p>
                   <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <StartCta
-                      className="group relative overflow-hidden rounded-full px-10 py-4 text-base font-medium text-white transition-colors duration-300"
+                      className="group relative overflow-hidden rounded-2xl px-10 py-4 text-base font-medium text-white transition-colors duration-300"
                       style={{
                         background:
                           "linear-gradient(135deg, rgba(16,185,129,1) 0%, rgba(13,148,136,1) 100%)",
@@ -738,7 +741,7 @@ const LandingPage = () => {
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={(e) => handleTransition(e, "/auth/sign-in", router)}
-                      className="flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/70 px-10 py-4 text-base font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-white/90 dark:border-emerald-400/30 dark:bg-white/10 dark:text-emerald-200 dark:hover:border-emerald-300/50 dark:hover:bg-emerald-500/10"
+                      className="flex items-center gap-2 rounded-2xl border border-emerald-200/70 bg-white/70 px-10 py-4 text-base font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-white/90 dark:border-emerald-400/30 dark:bg-white/10 dark:text-emerald-200 dark:hover:border-emerald-300/50 dark:hover:bg-emerald-500/10"
                     >
                       Talk to the team
                     </motion.a>

@@ -8,7 +8,7 @@ import {
   setupTestMocks,
   cleanupTestMocks,
   resetAllMocks,
-} from "../test/helpers";
+} from "../../test/convex/helpers";
 
 describe("Onboarding Mutation", () => {
   let t: ReturnType<typeof createTestEnvironment>;
