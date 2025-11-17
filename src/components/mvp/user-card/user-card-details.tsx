@@ -26,6 +26,7 @@ interface UserCardDetailsProps {
   onSchedule: () => void;
   className?: string;
   forceOpen?: boolean;
+  showContactActions?: boolean;
 }
 
 export function UserCardDetails({
@@ -37,6 +38,7 @@ export function UserCardDetails({
   onSchedule,
   className,
   forceOpen,
+  showContactActions = true,
 }: UserCardDetailsProps) {
   const [detailsVisible, setDetailsVisible] = useState(forceOpen ?? false);
 
@@ -124,21 +126,23 @@ export function UserCardDetails({
               </div>
 
               {/* Contact buttons */}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={onMessage}
-                >
-                  <MessageCircle className="mr-1.5 h-4 w-4" />
-                  Message
-                </Button>
-                <Button size="sm" className="flex-1" onClick={onSchedule}>
-                  <Calendar className="mr-1.5 h-4 w-4" />
-                  Schedule
-                </Button>
-              </div>
+              {showContactActions && (
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={onMessage}
+                  >
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                    Message
+                  </Button>
+                  <Button size="sm" className="flex-1" onClick={onSchedule}>
+                    <Calendar className="mr-1.5 h-4 w-4" />
+                    Schedule
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

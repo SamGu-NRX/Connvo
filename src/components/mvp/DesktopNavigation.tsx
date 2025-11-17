@@ -3,133 +3,80 @@
 import React from "react";
 import { TransitionLink } from "@/utils/TransitionLink";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  BarChart2,
-  User,
-  Settings,
-  LogOut,
-  Phone,
-  MessageSquare,
-  Calendar,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/shadcn";
 import { motion } from "motion/react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTheme } from "next-themes";
 import { Button } from "../ui/button";
-
-const navItems = [
-  { name: "Home", href: "/app", icon: Home, description: "Go to home page" },
-  {
-    name: "Dashboard",
-    href: "/app/dashboard",
-    icon: BarChart2,
-    description: "View analytics dashboard",
-  },
-  {
-    name: "Profile",
-    href: "/app/profile",
-    icon: User,
-    description: "Edit your profile",
-  },
-  {
-    name: "Settings",
-    href: "/app/settings",
-    icon: Settings,
-    description: "Configure settings",
-  },
-];
+import { navSections } from "./navigation.config";
 
 export function DesktopNavigation() {
   const pathname = usePathname();
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
 
   return (
-    <nav className="bg-background/50 flex h-full flex-col backdrop-blur-xs transition-colors duration-300">
-      <div className="space-y-4 py-6">
-        <div className="space-y-1 px-3">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
+    <nav className="flex min-h-0 flex-1 flex-col py-3">
+      <div className="flex-1 space-y-3.5 overflow-y-auto">
+        {navSections.map((section) => (
+          <div key={section.title} className="space-y-2">
+            <p className="px-3 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-900/60 dark:text-emerald-100/60">
+              {section.title}
+            </p>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/app" &&
+                    pathname.startsWith(`${item.href}/`));
 
-            return (
-              <TooltipProvider key={item.name}>
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <TransitionLink
-                      href={item.href}
-                      className={cn(
-                        "group relative flex h-12 w-full items-center space-x-3 rounded-md px-3",
-                        isActive
-                          ? "text-primary font-medium"
-                          : "text-muted-foreground hover:text-primary",
-                      )}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="bubble"
-                          className="absolute top-0 left-0 h-full w-1 rounded-r-full bg-emerald-400 dark:bg-emerald-300"
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.6,
-                          }}
-                        />
-                      )}
-
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.97 }}
-                        className={cn(
-                          "flex h-9 w-9 items-center justify-center rounded-lg",
-                          isActive
-                            ? "bg-primary/10"
-                            : "bg-muted/40 group-hover:bg-primary/10",
-                        )}
-                      >
-                        <item.icon
-                          className={cn(
-                            "h-5 w-5 transition-colors duration-200",
-                          )}
-                        />
-                      </motion.div>
-
-                      <span className="text-sm font-medium">{item.name}</span>
-                    </TransitionLink>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="border-border/30 bg-background/95 border text-black backdrop-blur-xs dark:text-white"
+                return (
+                  <TransitionLink
+                    key={item.name}
+                    href={item.href}
+                    className={cn(
+                      "group relative flex h-10 items-center gap-3 overflow-hidden rounded-lg px-3 text-sm font-medium text-emerald-900/70 transition-colors duration-200 hover:text-emerald-600 dark:text-emerald-100/70 dark:hover:text-emerald-300",
+                    )}
                   >
-                    {item.description}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
-        </div>
+                    {isActive && (
+                      <motion.span
+                        layoutId="sidebar-active"
+                        className="absolute inset-0 rounded-lg bg-white/85 ring-1 ring-white/50 dark:bg-emerald-500/15 dark:ring-emerald-300/20"
+                        transition={{
+                          type: "spring",
+                          stiffness: 350,
+                          damping: 28,
+                        }}
+                      />
+                    )}
+                    <span className="relative flex h-8 w-8 items-center justify-center rounded-md border border-white/35 bg-white/70 transition-colors duration-200 dark:border-white/10 dark:bg-white/10">
+                      <item.icon
+                        className={cn(
+                          "h-4 w-4 transition-transform duration-200",
+                          isActive ? "scale-105" : "group-hover:scale-[1.05]",
+                        )}
+                      />
+                    </span>
+                    <span className="relative flex flex-col">
+                      <span className="leading-tight">{item.name}</span>
+                      <span className="text-[11px] font-normal text-emerald-900/50 transition-opacity duration-200 group-hover:opacity-100 dark:text-emerald-200/50">
+                        {item.description}
+                      </span>
+                    </span>
+                  </TransitionLink>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="mt-auto px-3 pb-5">
+
+      <div className="mt-auto px-3 pt-104">
         <Button
-          onClick={() => window.location.href = '/api/auth/signout'}
-          className="group flex w-full items-center rounded-md bg-zinc-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-red-600 dark:bg-zinc-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-red-400"
+          onClick={() => {
+            window.location.href = "/api/auth/signout";
+          }}
+          variant="ghost"
+          className="group flex w-full items-center justify-center gap-2 rounded-md border border-white/30 bg-white/65 px-3 py-2 text-sm font-semibold text-emerald-900/80 transition-colors duration-200 hover:bg-white/80 hover:text-red-500 focus-visible:ring-emerald-500/30 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100/80 dark:hover:bg-white/15 dark:hover:text-red-300"
         >
-          <LogOut
-            className="mr-3 h-5 w-5 shrink-0 text-gray-600 transition-colors duration-200 group-hover:text-red-600 dark:text-gray-200 dark:group-hover:text-red-400"
-            aria-hidden="true"
-          />
+          <LogOut className="h-4 w-4" aria-hidden="true" />
           Log out
         </Button>
       </div>

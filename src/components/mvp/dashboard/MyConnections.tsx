@@ -8,14 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Send,
-  Users,
   Phone,
   Calendar,
   ChevronLeft,
   ChevronRight,
-  MessageSquare,
   Info,
-  Menu,
 } from "lucide-react";
 import {
   Dialog,
@@ -88,16 +85,20 @@ const ProfileList: React.FC<ProfileListProps> = ({
 
   return (
     <Card
-      className={`h-[600px] overflow-hidden shadow-lg transition-all duration-300 ease-in-out ${
-        sidebarCollapsed ? "w-[80px]" : "w-[280px]"
-      }`}
+      className={`flex min-h-[360px] flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-xs transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-900 ${
+        sidebarCollapsed ? "lg:w-[96px]" : "lg:w-[300px]"
+      } w-full`}
     >
-      <div className="flex items-center justify-between border-b p-4 dark:border-zinc-800">
-        {!sidebarCollapsed && <h3 className="font-medium">Connections</h3>}
+      <div className="flex items-center justify-between border-b border-zinc-100 bg-white px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-900">
+        {!sidebarCollapsed && (
+          <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+            Connections
+          </h3>
+        )}
         <Button
           variant="ghost"
           size="sm"
-          className="ml-auto"
+          className="ml-auto text-emerald-700 hover:bg-emerald-50 hover:text-emerald-900 dark:text-emerald-100 dark:hover:bg-zinc-800"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         >
           {sidebarCollapsed ? (
@@ -108,10 +109,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
         </Button>
       </div>
 
-      <div
-        className="space-y-1 overflow-y-auto px-2 py-3"
-        style={{ maxHeight: "calc(600px - 60px)" }}
-      >
+      <div className="flex-1 space-y-1 overflow-y-auto px-2 py-3 sm:px-3">
         {sortedProfiles.map((profile) => {
           // Get avatar colors using our utility
           const avatarColors = generateAvatarColor(profile.name);
@@ -167,7 +165,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
                         <span className="text-sm font-medium">
                           {profile.name}
                         </span>
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        <span className="text-xs text-zinc-600 dark:text-zinc-300">
                           {profile.profession}
                         </span>
                       </div>
@@ -190,7 +188,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
                 <TooltipContent side="right">
                   <div>
                     <p className="font-medium">{profile.name}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-zinc-700 dark:text-zinc-200">
                       {profile.profession}
                     </p>
                   </div>
@@ -212,7 +210,7 @@ interface ChatAppProps {
   showScheduleCall: boolean;
   showUserProfile: boolean;
   unreadCounts: Record<string, number>;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  messagesContainerRef: React.RefObject<HTMLDivElement | null>;
   setActiveProfile: (profile: UserInfo) => void;
   setMessages: React.Dispatch<React.SetStateAction<Record<string, Message[]>>>;
   setNewMessage: (message: string) => void;
@@ -229,7 +227,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
   showScheduleCall,
   showUserProfile,
   unreadCounts,
-  messagesEndRef,
+  messagesContainerRef,
   setActiveProfile,
   setMessages,
   setNewMessage,
@@ -245,13 +243,13 @@ const ChatArea: React.FC<ChatAppProps> = ({
   const shouldShowGradient = !activeProfile.avatar || activeProfile.isBot;
 
   return (
-    <Card className="flex h-[600px] flex-1 flex-col overflow-hidden shadow-lg">
+    <Card className="flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
       {/* Chat Header */}
-      <div className="flex items-center justify-between border-b p-3 dark:border-zinc-800">
+      <div className="flex items-center justify-between border-b border-zinc-100 bg-white px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            className="h-10 w-10 rounded-full p-0"
+            className="h-10 w-10 rounded-full p-0 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-100 dark:hover:bg-zinc-800"
             onClick={() => setShowUserProfile(true)}
           >
             <Avatar
@@ -279,7 +277,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
                 className={`h-2 w-2 rounded-full ${getStatusColor(activeProfile.status)}`}
               />
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-zinc-800 dark:text-zinc-200">
               {activeProfile.profession} at {activeProfile.company}
             </p>
           </div>
@@ -343,7 +341,10 @@ const ChatArea: React.FC<ChatAppProps> = ({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 space-y-3 overflow-y-auto bg-zinc-50/50 p-4 dark:bg-zinc-900/50">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 space-y-3 overflow-y-auto bg-zinc-50 p-4 dark:bg-zinc-950/40"
+      >
         <AnimatePresence mode="popLayout">
           {(messages[activeProfile.id] || []).map((message, index) => {
             const isUser = message.senderId === "user";
@@ -414,7 +415,7 @@ const ChatArea: React.FC<ChatAppProps> = ({
                     {message.content}
                   </motion.div>
                   <div
-                    className={`mt-1 text-xs text-zinc-500 ${
+                    className={`mt-1 text-xs text-zinc-700 dark:text-zinc-200 ${
                       isUser ? "text-right" : "text-left"
                     }`}
                   >
@@ -425,23 +426,22 @@ const ChatArea: React.FC<ChatAppProps> = ({
             );
           })}
         </AnimatePresence>
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
-      <div className="border-t p-3 dark:border-zinc-800">
+      <div className="border-t border-zinc-100 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-2">
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            className="flex-1 rounded-full border-zinc-200 bg-zinc-100/70 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800"
+            className="flex-1 rounded-full border-zinc-200 bg-zinc-50 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-800"
             onKeyPress={(e) => e.key === "Enter" && handleSend()}
           />
           <Button
             onClick={handleSend}
             size="icon"
-            className="rounded-full bg-blue-600 hover:bg-blue-700"
+            className="rounded-full bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-400 dark:hover:bg-emerald-300"
             disabled={!newMessage.trim()}
           >
             <Send className="h-4 w-4" />
@@ -462,11 +462,20 @@ const ModernChatApp: React.FC = () => {
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll to bottom when messages change without moving the entire page
+    const container = messagesContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const shouldAnimate = container.scrollHeight > container.clientHeight;
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: shouldAnimate ? "smooth" : "auto",
+    });
   }, [messages, activeProfile.id]);
 
   useEffect(() => {
@@ -528,7 +537,7 @@ const ModernChatApp: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl gap-4 p-4">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 sm:px-0 lg:flex-row">
       {/* Collapsible Sidebar */}
       <ProfileList
         profiles={mockUsers}
@@ -548,7 +557,7 @@ const ModernChatApp: React.FC = () => {
         showScheduleCall={showScheduleCall}
         showUserProfile={showUserProfile}
         unreadCounts={unreadCounts}
-        messagesEndRef={messagesEndRef}
+        messagesContainerRef={messagesContainerRef}
         setActiveProfile={setActiveProfile}
         setMessages={setMessages}
         setNewMessage={setNewMessage}

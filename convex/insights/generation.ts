@@ -306,14 +306,14 @@ export const generateParticipantInsights = internalAction({
   ): Promise<Id<"insights"> | null> => {
     try {
       // Get transcript segments for analysis
-    const transcriptSegments: TranscriptSegment[] = await ctx.runQuery(
-      internal.transcripts.queries.getTranscriptSegmentsInternal,
+      const transcriptSegments: TranscriptSegment[] = await ctx.runQuery(
+        internal.transcripts.queries.getTranscriptSegments,
         { meetingId, limit: 100 },
       );
 
       // Get meeting notes
-    const meetingNotes: MeetingNote | null = await ctx.runQuery(
-      internal.notes.queries.getMeetingNotesInternal,
+      const meetingNotes: MeetingNote | null = await ctx.runQuery(
+        internal.notes.queries.getMeetingNotes,
         { meetingId },
       );
 
