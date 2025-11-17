@@ -229,9 +229,17 @@
   * {
     border: var(--border);
   }
+  html {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
   body {
     background-color: var(--background);
     color: var(--foreground);
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 
@@ -311,6 +319,12 @@
     border-color: var(--border);
     outline: 2px solid rgba(var(--ring), 0.5);
   }
+  html {
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -318,6 +332,9 @@
     font-weight: 300;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   h1,
@@ -329,5 +346,29 @@
     font-family: var(--font-heading), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     font-weight: 500;
     letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .border-surface {
+    border-width: 1px;
+    border-color: rgba(15, 23, 42, 0.08);
+  }
+  .dark .border-surface {
+    border-color: rgba(226, 232, 240, 0.12);
+  }
+  .border-surface-strong {
+    border-width: 1px;
+    border-color: rgba(15, 23, 42, 0.14);
+  }
+  .dark .border-surface-strong {
+    border-color: rgba(148, 163, 184, 0.22);
+  }
+  .border-surface-light {
+    border-width: 1px;
+    border-color: rgba(15, 23, 42, 0.06);
+  }
+  .dark .border-surface-light {
+    border-color: rgba(226, 232, 240, 0.08);
   }
 }

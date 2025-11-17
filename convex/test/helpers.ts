@@ -10,8 +10,8 @@
 
 import { convexTest } from "convex-test";
 import { Id } from "@convex/_generated/dataModel";
-import schema from "../schema.js";
-import { modules as testModules } from "./setup.js";
+import schema from "../../convex/schema.js";
+import { modules as testModules } from "./setup";
 
 /**
  * Creates a standardized test environment with proper module resolution
@@ -395,5 +395,5 @@ export async function waitFor(
 /**
  * Re-export mock functions for convenience
  */
-export { resetAllMocks, setupTestMocks, cleanupTestMocks } from "./mocks.js";
-export { modules as convexFunctionModules } from "./setup.js";
+export { resetAllMocks, setupTestMocks, cleanupTestMocks } from "./mocks";
+export { modules as convexFunctionModules } from "./setup";
