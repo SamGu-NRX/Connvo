@@ -405,7 +405,7 @@ pnpm validate:docs --file=$(git diff --cached --name-only | grep "convex/.*\.ts$
 4. **Run test**
 
    ```bash
-   pnpm test:run convex/test/usersExamples.test.ts
+   pnpm test:run test/convex/usersExamples.test.ts
    ```
 
 5. **Generate documentation**
@@ -421,7 +421,7 @@ pnpm validate:docs --file=$(git diff --cached --name-only | grep "convex/.*\.ts$
 
 ## Related Documentation
 
-- [Test Infrastructure](../convex/test/README.md) - Test helpers and patterns
+- [Test Infrastructure](../test/convex/README.md) - Test helpers and patterns
 - [Requirements](../.kiro/specs/convex-backend-documentation/requirements.md) - Documentation requirements
 - [Design](../.kiro/specs/convex-backend-documentation/design.md) - Documentation design
 - [Tasks](../.kiro/specs/convex-backend-documentation/tasks.md) - Implementation plan

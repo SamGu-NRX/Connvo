@@ -1,19 +1,20 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
 const handleAuth = authkitMiddleware({
-  publicRoutes: [
-    "/",
-    "/auth/:path*",
-    "/api/auth/:path*",
-    "/api/convex/:path*",
-  ],
+  middlewareAuth: {
+    enabled: true,
+    unauthenticatedPaths: [
+      "/",
+      "/auth/:path*",
+      "/api/auth/:path*",
+      "/api/convex/:path*",
+    ],
+  },
 });
 
-export default function proxy(request: NextRequest) {
-  const response = handleAuth(request);
-  return response ?? NextResponse.next();
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  return handleAuth(request, event);
 }
 
 export const config = {

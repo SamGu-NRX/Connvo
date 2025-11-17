@@ -1,6 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Clock,
@@ -16,7 +15,6 @@ import {
   Plus,
   PenLine,
   User,
-  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +30,7 @@ import { VideoArea } from "@/components/video-meeting/video-area";
 import { ChatDialog } from "@/components/video-meeting/chat-dialog";
 import { EndCallDialog } from "@/components/video-meeting/end-call-dialog";
 import UserCard from "@/components/mvp/user-card";
+import AfterCallScreen from "@/components/mvp/after-call-screen";
 import {
   MOCK_USERS,
   MOCK_SPEAKING_STATES,
@@ -41,7 +40,6 @@ import {
 import { TimeManager } from "@/components/video-meeting/time-manager";
 import { SettingsDialog } from "@/components/video-meeting/settings-dialog";
 import { ToastContainer } from "@/components/video-meeting/toast";
-import { LAST_MEETING_SUMMARY_KEY } from "@/constants/meeting";
 
 // FIGURE OUT HOW TO BUILD REAL-TIME
 
@@ -58,7 +56,7 @@ const generatePrompts = (interests1: string[], interests2: string[]) => [
 ];
 
 const MOCK_MESSAGES = [
-  { id: "1", sender: "Jane Doe", message: "Hey there!", timestamp: "10:30 AM" },
+  { id: "1", sender: "John Doe", message: "Hey there!", timestamp: "10:30 AM" },
   {
     id: "2",
     sender: "You",
@@ -67,41 +65,15 @@ const MOCK_MESSAGES = [
   },
 ];
 
-const LS_KEYS = {
-  MESSAGES: "connvo:call:messages",
-  NOTES: "connvo:call:notes",
-  MUTED: "connvo:call:muted",
-  VIDEO_OFF: "connvo:call:videoOff",
-  TIME_REMAINING: "connvo:call:timeRemaining",
-  ACTIVE_VIDEO: "connvo:call:activeVideo",
-};
-
-type MeetingSummaryPayload = {
-  meetingId: string;
-  partnerName: string;
-  queueType: "casual" | "professional";
-  durationSeconds: number;
-  participants: Array<{ name: string; role?: string }>;
-  messages: { total: number; you: number; partner: number };
-  notes: string;
-  notesLength: number;
-  endedAt: string;
-  promptsViewed: string[];
-  activePrompt: string;
-};
-
 export default function VideoMeeting() {
-  const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
-  const meetingId =
-    typeof params?.id === "string"
-      ? params.id
-      : Array.isArray(params?.id)
-        ? params.id[0]
-        : "demo-call";
-  const queueType =
-    (searchParams?.get("type") as "casual" | "professional") || "casual";
+  const LS_KEYS = {
+    MESSAGES: "connvo:call:messages",
+    NOTES: "connvo:call:notes",
+    MUTED: "connvo:call:muted",
+    VIDEO_OFF: "connvo:call:videoOff",
+    TIME_REMAINING: "connvo:call:timeRemaining",
+    ACTIVE_VIDEO: "connvo:call:activeVideo",
+  };
 
   const [timeManager] = useState(() => new TimeManager());
   const [timeRemaining, setTimeRemaining] = useState(() => {
@@ -114,10 +86,6 @@ export default function VideoMeeting() {
   });
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [showTimeLeft, setShowTimeLeft] = useState(false);
-  const prompts = useMemo(
-    () => generatePrompts(userInterests.user1, userInterests.user2),
-    [],
-  );
   const [currentPrompt, setCurrentPrompt] = useState(0);
   const [isMuted, setIsMuted] = useState(() => {
     try {
@@ -148,9 +116,6 @@ export default function VideoMeeting() {
       }
     } catch {}
   }, []);
-  const [visitedPromptIndices, setVisitedPromptIndices] = useState<number[]>(
-    [0],
-  );
   const [showTimeAddedToast, setShowTimeAddedToast] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAlmostOutOfTime, setIsAlmostOutOfTime] = useState(false);
@@ -176,7 +141,6 @@ export default function VideoMeeting() {
   const [speakingStates, setSpeakingStates] = useState(MOCK_SPEAKING_STATES);
   const [isEndCallOpen, setIsEndCallOpen] = useState(false);
   const [isCallEnded, setIsCallEnded] = useState(false);
-  const [hasRedirectedToSummary, setHasRedirectedToSummary] = useState(false);
   const [currentTimeRequest, setCurrentTimeRequest] = useState(null);
   const [isLeaveRequestPending, setIsLeaveRequestPending] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -256,6 +220,8 @@ export default function VideoMeeting() {
   );
   useEffect(() => persist(LS_KEYS.ACTIVE_VIDEO, activeVideo), [activeVideo]);
 
+  const prompts = generatePrompts(userInterests.user1, userInterests.user2);
+
   useEffect(() => {
     const timer = setInterval(() => {
       timeManager.decrementTime();
@@ -305,90 +271,12 @@ export default function VideoMeeting() {
     sendMessage(message, "You");
   };
 
-  const registerPromptVisit = useCallback((index: number) => {
-    setVisitedPromptIndices((history) =>
-      history.includes(index) ? history : [...history, index],
-    );
-  }, []);
-
-  const changePrompt = useCallback(
-    (direction: "prev" | "next") => {
-      setCurrentPrompt((prev) => {
-        const next =
-          direction === "prev"
-            ? Math.max(0, prev - 1)
-            : Math.min(prompts.length - 1, prev + 1);
-        if (next !== prev) {
-          registerPromptVisit(next);
-        }
-        return next;
-      });
-    },
-    [prompts.length, registerPromptVisit],
-  );
-
-  const meetingSummary = useMemo<MeetingSummaryPayload>(() => {
-    const youMessages = messages.filter((msg) => msg.sender === "You").length;
-    const partnerMessages = messages.length - youMessages;
-    const promptsViewed = visitedPromptIndices
-      .slice()
-      .sort((a, b) => a - b)
-      .map((index) => prompts[index])
-      .filter(Boolean);
-
-    return {
-      meetingId,
-      partnerName: MOCK_USERS.partner.name,
-      queueType,
-      durationSeconds: timeElapsed,
-      participants: [
-        { name: "You", role: MOCK_USERS.you.role },
-        { name: MOCK_USERS.partner.name, role: MOCK_USERS.partner.role },
-      ],
-      messages: {
-        total: messages.length,
-        you: youMessages,
-        partner: partnerMessages,
-      },
-      notes,
-      notesLength: notes.length,
-      endedAt: new Date().toISOString(),
-      promptsViewed,
-      activePrompt: prompts[currentPrompt],
-    };
-  }, [
-    meetingId,
-    queueType,
-    timeElapsed,
-    messages,
-    notes,
-    prompts,
-    currentPrompt,
-    visitedPromptIndices,
-  ]);
-
-  const persistSummaryAndRedirect = useCallback(() => {
-    if (hasRedirectedToSummary) return;
-    try {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(
-          LAST_MEETING_SUMMARY_KEY,
-          JSON.stringify(meetingSummary),
-        );
-      }
-    } catch (error) {
-      console.error("Failed to persist meeting summary", error);
-    }
-    setHasRedirectedToSummary(true);
-    router.replace("/app/meeting-summary");
-  }, [hasRedirectedToSummary, meetingSummary, router]);
-
   const handleEndCall = useCallback(() => {
     setIsEndCallOpen(false);
     setIsLeaveRequestPending(true);
 
     window.addToast({
-      message: "Leave request sent to Jane Doe",
+      message: "Leave request sent to John Doe",
       type: "info",
       icon: PhoneOff,
     });
@@ -398,7 +286,7 @@ export default function VideoMeeting() {
       () => {
         setIsLeaveRequestPending(false);
         window.addToast({
-          message: "Jane Doe approved your leave request",
+          message: "John Doe approved your leave request",
           type: "success",
           icon: PhoneOff,
         });
@@ -408,11 +296,10 @@ export default function VideoMeeting() {
         try {
           Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
         } catch {}
-        persistSummaryAndRedirect();
       },
       1500 + Math.floor(Math.random() * 1000),
     );
-  }, [persistSummaryAndRedirect]);
+  }, []);
 
   const handleAcceptTimeRequest = () => {
     addTime();
@@ -460,28 +347,10 @@ export default function VideoMeeting() {
     );
   }, [timeManager]);
 
-  useEffect(() => {
-    if (isCallEnded) {
-      persistSummaryAndRedirect();
-    }
-  }, [isCallEnded, persistSummaryAndRedirect]);
-
   if (isCallEnded) {
-    return (
-      <div
-        className={`flex h-full w-full flex-col items-center justify-center gap-3 ${
-          theme === "dark" ? "bg-zinc-950" : "bg-zinc-50"
-        }`}
-      >
-        <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
-        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-          Wrapping up your meeting...
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Redirecting you to the summary view
-        </p>
-      </div>
-    );
+    // This is a demo page - pass a placeholder ID
+    // In real implementation, this would come from the URL params
+    return <AfterCallScreen meetingId={"demo_meeting" as any} />;
   }
 
   return (
@@ -582,7 +451,6 @@ export default function VideoMeeting() {
                         }}
                         inMeeting={true}
                         forceVisible={true}
-                        showContactActions={false}
                       />
                     </div>
                     
@@ -600,7 +468,9 @@ export default function VideoMeeting() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => changePrompt("prev")}
+                              onClick={() =>
+                                setCurrentPrompt((prev) => Math.max(0, prev - 1))
+                              }
                               disabled={currentPrompt === 0}
                               className={`h-6 w-6 ${theme === "dark" ? "hover:bg-zinc-700" : "hover:bg-zinc-200"}`}
                             >
@@ -609,7 +479,11 @@ export default function VideoMeeting() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => changePrompt("next")}
+                              onClick={() =>
+                                setCurrentPrompt((prev) =>
+                                  Math.min(prompts.length - 1, prev + 1),
+                                )
+                              }
                               disabled={currentPrompt === prompts.length - 1}
                               className={`h-6 w-6 ${theme === "dark" ? "hover:bg-zinc-700" : "hover:bg-zinc-200"}`}
                             >
@@ -675,7 +549,7 @@ export default function VideoMeeting() {
                           placeholder="Type your notes here..."
                           className={`min-h-0 flex-1 w-full resize-none border-none bg-transparent text-sm focus:outline-none focus:ring-0 ${
                             theme === "dark"
-                              ? "text-zinc-300 placeholder:text-zinc-400"
+                              ? "text-zinc-300 placeholder:text-zinc-600"
                               : "text-zinc-700 placeholder:text-zinc-400"
                           }`}
                         />

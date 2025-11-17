@@ -7,9 +7,7 @@ import SmartConnectionEngine from "@/components/queue/SmartConnectionEngine";
 export default function SmartConnectionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawQueueType = searchParams.get("type");
-  const queueType =
-    rawQueueType === "professional" ? "professional" : "casual";
+  const queueType = searchParams.get("type") as "professional" | "casual";
   const purpose = searchParams.get("purpose");
 
   const handleLeaveQueue = () => {

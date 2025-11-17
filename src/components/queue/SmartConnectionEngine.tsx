@@ -15,6 +15,14 @@ interface SmartConnectionEngineProps {
   onDeclineMatch: (matchId: string) => void;
 }
 
+const humorousTips = [
+  "Pro tip: Wearing pants during video calls is optional, but highly recommended.",
+  "Remember, your cat walking across the keyboard is not a valid excuse for typos.",
+  "If you run out of things to say, just yell 'PLOT TWIST!' and end the call.",
+  "In case of awkward silence, discuss the socioeconomic impact of rubber ducks.",
+  "If all else fails, pretend your internet connection is breaking up. Kzzt... Can't hear... Kzzt...",
+];
+
 export default function SmartConnectionEngine({
   userId,
   queueType,
@@ -28,30 +36,16 @@ export default function SmartConnectionEngine({
   const [estimatedWaitTime, setEstimatedWaitTime] = useState<number>(60); // in seconds
   const [matchData, setMatchData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [infoMessage, setInfoMessage] = useState<string>("");
+  const [currentTip, setCurrentTip] = useState(0);
 
   useEffect(() => {
-    if (queueStatus !== "searching") {
-      return;
-    }
-
-    setInfoMessage("");
-    setEstimatedWaitTime(60);
-
-    const waitTimer = setInterval(() => {
+    // Simulating queue updates
+    const timer = setInterval(() => {
       setEstimatedWaitTime((prev) => Math.max(0, prev - 1));
     }, 1000);
 
-    const notEnoughTimer = setTimeout(() => {
-      setInfoMessage("There aren't enough people queueing right now.");
-    }, 2000);
-
-    const demoTimer = setTimeout(() => {
-      setInfoMessage("Directing you to our demo experience...");
-    }, 6000);
-
+    // Simulating a match found after 10 seconds
     const matchTimer = setTimeout(() => {
-      setInfoMessage("");
       setQueueStatus("match_found");
       setMatchData({
         id: "match123",
@@ -73,13 +67,17 @@ export default function SmartConnectionEngine({
       });
     }, 10000);
 
+    // Rotate tips every 5 seconds
+    const tipRotationTimer = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % humorousTips.length);
+    }, 5000);
+
     return () => {
-      clearInterval(waitTimer);
+      clearInterval(timer);
       clearTimeout(matchTimer);
-      clearTimeout(notEnoughTimer);
-      clearTimeout(demoTimer);
+      clearInterval(tipRotationTimer);
     };
-  }, [queueStatus]);
+  }, []);
 
   const handleAcceptMatch = () => {
     if (matchData) {
@@ -106,7 +104,7 @@ export default function SmartConnectionEngine({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-6 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <AnimatePresence mode="wait">
         {queueStatus === "searching" && (
           <motion.div
@@ -115,39 +113,34 @@ export default function SmartConnectionEngine({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="space-y-4"
+            className="text-center"
           >
             <QueueStatus
               queueType={queueType === "professional" ? "formal" : "casual"}
               estimatedWaitTime={estimatedWaitTime}
             />
-            {infoMessage && (
-              <motion.p
-                key={infoMessage}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="text-sm text-emerald-900/70 dark:text-emerald-100/70"
-              >
-                {infoMessage}
-              </motion.p>
-            )}
-            <Button
-              onClick={onLeaveQueue}
-              variant="outline"
-              className="rounded-sm border border-surface bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-900/80 transition-colors duration-200 hover:bg-emerald-50/60 dark:bg-emerald-950/40 dark:text-emerald-100/80 dark:hover:bg-emerald-900/60"
-            >
+            <Button onClick={onLeaveQueue} variant="outline" className="mt-4">
               Leave Queue
             </Button>
+            <motion.p
+              key={currentTip}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="text-muted-foreground mt-8 max-w-md text-sm"
+            >
+              {humorousTips[currentTip]}
+            </motion.p>
           </motion.div>
         )}
 
         {queueStatus === "match_found" && matchData && (
           <motion.div
             key="match_found"
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.92 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.3 }}
           >
             <MatchNotification
