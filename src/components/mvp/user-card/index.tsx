@@ -23,7 +23,6 @@ export interface UserCardProps {
   onSchedule?: () => void; // Parameterless for now
   className?: string;
   forceVisible?: boolean; // Prop to override inView animation for modals
-  showContactActions?: boolean;
 }
 
 export function UserCard({
@@ -34,7 +33,6 @@ export function UserCard({
   onSchedule = () => {},
   className,
   forceVisible = false, // Default to false
-  showContactActions = true,
 }: UserCardProps) {
   // Hooks must be called before any conditional returns
   const cardRef = useRef<HTMLDivElement>(null);
@@ -116,7 +114,6 @@ export function UserCard({
           isSpeaking={inMeeting && user.isSpeaking}
           onMessage={onMessage}
           onSchedule={onSchedule}
-          showActions={showContactActions}
         />
 
         {/* Tags */}
@@ -149,7 +146,6 @@ export function UserCard({
           inChat={inChat}
           onMessage={onMessage}
           onSchedule={onSchedule}
-          showContactActions={showContactActions}
           forceOpen={forceVisible} // Pass forceVisible to potentially keep details open in modal
         />
       </motion.div>

@@ -44,10 +44,15 @@ function useAuth() {
 
     try {
       const token = await getAccessToken();
+      console.log("[ConvexAuth] Access token fetch result", {
+        hasToken: !!token,
+        length: token?.length,
+      });
       if (!token) {
         console.warn("[ConvexAuth] WorkOS returned no access token");
         return null;
       }
+      console.log("[ConvexAuth] Returning access token to Convex client");
       return token;
     } catch (err) {
       console.error("[ConvexAuth] Failed to retrieve access token", err);
@@ -94,7 +99,6 @@ function UpsertUserOnAuth() {
   const retryCount = useRef(0);
   const maxRetries = 3;
   const currentToken = useRef<string | null>(null);
-  const hasShownConfigError = useRef(false);
 
   const ready = useMemo(() => {
     return (
@@ -113,7 +117,6 @@ function UpsertUserOnAuth() {
       currentToken.current = accessToken ?? null;
       didRun.current = false;
       retryCount.current = 0;
-      hasShownConfigError.current = false;
     }
 
     console.log('[UpsertUserOnAuth] Effect triggered:', {
@@ -129,12 +132,12 @@ function UpsertUserOnAuth() {
 
     if (!ready || didRun.current) return;
     if (!accessToken) return;
-    
+
     // Add a small delay to ensure Convex auth context is fully initialized
     const timer = setTimeout(async () => {
       if (didRun.current) return;
       didRun.current = true;
-      
+
       const displayName = [user?.firstName, user?.lastName]
         .filter(Boolean)
         .join(" ")
@@ -155,59 +158,21 @@ function UpsertUserOnAuth() {
             orgId: undefined,
             orgRole: undefined,
           });
-          console.log("[UpsertUserOnAuth] ✅ User upserted successfully");
-          hasShownConfigError.current = false; // Reset error flag on success
+          console.log("[UpsertUserOnAuth] User upserted successfully");
         } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
           console.error("[UpsertUserOnAuth] User upsert failed:", err);
-          
-          // Check if this is a Convex auth configuration error
-          const isConfigError = errorMessage.includes("Server Error") ||
-                               errorMessage.includes("WORKOS_CLIENT_ID");
-          
-          if (isConfigError && !hasShownConfigError.current) {
-            hasShownConfigError.current = true;
-            console.error(
-              "\n" +
-              "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-              "❌ CONVEX AUTHENTICATION CONFIGURATION ERROR\n" +
-              "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
-              "\n" +
-              "The Convex backend cannot validate authentication tokens.\n" +
-              "This typically means WORKOS_CLIENT_ID is not set in Convex.\n" +
-              "\n" +
-              "📖 SOLUTION: See CONVEX_DEPLOYMENT_SETUP.md for instructions\n" +
-              "\n" +
-              "Quick fix:\n" +
-              "1. Go to https://dashboard.convex.dev\n" +
-              "2. Settings → Environment Variables\n" +
-              "3. Add WORKOS_CLIENT_ID with your WorkOS client ID\n" +
-              "4. Redeploy: pnpm convex deploy --prod\n" +
-              "\n" +
-              "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            );
-            // Don't retry config errors - they need manual intervention
-            return;
-          }
-          
-          // Retry with exponential backoff for transient errors
-          if (retryCount.current < maxRetries && !isConfigError) {
+
+          // Retry with exponential backoff for auth errors
+          if (retryCount.current < maxRetries) {
             retryCount.current += 1;
             const delay = Math.pow(2, retryCount.current) * 500; // 1s, 2s, 4s
             console.log(`[UpsertUserOnAuth] Retrying user upsert in ${delay}ms (attempt ${retryCount.current}/${maxRetries})`);
-            
+
             await new Promise(resolve => setTimeout(resolve, delay));
             didRun.current = false; // Allow retry
             return attemptUpsert();
-          } else if (isConfigError) {
-            console.error(
-              "[UpsertUserOnAuth] ⚠️  Skipping retries - configuration error requires manual fix"
-            );
           } else {
-            console.error(
-              "[UpsertUserOnAuth] ❌ User upsert failed after max retries. " +
-              "User may need to refresh the page or check console for details."
-            );
+            console.error("[UpsertUserOnAuth] User upsert failed after max retries. User may need to refresh.");
           }
         }
       };

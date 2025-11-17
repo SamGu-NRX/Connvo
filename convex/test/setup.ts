@@ -19,7 +19,9 @@ const isVitestRuntime =
 // Fall back to an empty module map so convex deploy analysis doesn't choke.
 export const modules = (() => {
   try {
-    return (import.meta as ViteImportMeta).glob("../**/*.{ts,tsx,js,mjs,mts,cts,cjs,jsx}");
+    return (import.meta as ViteImportMeta).glob(
+      "../../convex/**/*.{ts,tsx,js,mjs,mts,cts,cjs,jsx}",
+    );
   } catch (error) {
     if (isVitestRuntime) {
       if ((error as Error).message?.includes("glob")) {

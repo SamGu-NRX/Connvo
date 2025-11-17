@@ -22,19 +22,13 @@ ChartJS.register(
   Legend,
 );
 
-interface DashboardMetricsProps {
-  totalConnections: number;
-}
-
-const DashboardMetrics: React.FC<DashboardMetricsProps> = ({
-  totalConnections,
-}) => {
+const DashboardMetrics: React.FC = () => {
   // Chart configurations with more minimal design
   const callData = {
     labels: ["Total Calls", "Connections", "Avg. Duration"],
     datasets: [
       {
-        data: [50, totalConnections, 20],
+        data: [50, 35, 20],
         backgroundColor: [
           "rgba(99, 102, 241, 0.8)",
           "rgba(16, 185, 129, 0.8)",
@@ -149,9 +143,7 @@ const DashboardMetrics: React.FC<DashboardMetricsProps> = ({
           <div className="text-sm text-zinc-500 dark:text-zinc-400">
             Total Connections
           </div>
-          <div className="mt-1 text-2xl font-medium text-indigo-500">
-            {totalConnections}
-          </div>
+          <div className="mt-1 text-2xl font-medium text-indigo-500">127</div>
         </motion.div>
 
         <motion.div

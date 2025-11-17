@@ -12,7 +12,7 @@ export default function QueueStatus({
   estimatedWaitTime,
 }: QueueStatusProps) {
   return (
-    <div className="space-y-2 text-center">
+    <div className="text-center">
       <motion.div
         animate={{ rotate: 360 }}
         transition={{
@@ -22,17 +22,15 @@ export default function QueueStatus({
         }}
         className="mb-4 inline-block"
       >
-        <Loader2 className="h-12 w-12 text-emerald-500 dark:text-emerald-300" />
+        <Loader2 className="text-primary h-12 w-12" />
       </motion.div>
-      <h2 className="text-2xl font-semibold text-emerald-900 dark:text-emerald-200">
-        In Queue
-      </h2>
-      <p className="text-sm text-emerald-900/70 dark:text-emerald-100/70">
+      <h2 className="mb-2 text-2xl font-bold">In Queue</h2>
+      <p className="text-muted-foreground mb-2">
         Searching for a {queueType === "formal" ? "professional" : "casual"}{" "}
         match
       </p>
-      <p className="text-xs uppercase tracking-[0.3em] text-emerald-900/50 dark:text-emerald-200/50">
-        Estimated wait: {Math.floor(estimatedWaitTime / 60)}:
+      <p className="text-sm">
+        Estimated wait time: {Math.floor(estimatedWaitTime / 60)}:
         {(estimatedWaitTime % 60).toString().padStart(2, "0")}
       </p>
     </div>

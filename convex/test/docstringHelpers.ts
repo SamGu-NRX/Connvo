@@ -21,12 +21,17 @@
  */
 
 import { expect } from "vitest";
+import type { SystemTableNames } from "convex/server";
 import { Id } from "@convex/_generated/dataModel";
+import type { TableNames } from "@convex/_generated/dataModel";
 import {
   getDocstringInfoForOperation,
   getExampleValue,
 } from "./openapiExamples";
 import type { TestConvex } from "convex-test";
+
+type ConvexSchema = typeof import("../schema").default;
+type DocstringTestConvex = TestConvex<ConvexSchema>;
 
 /**
  * Normalizes dynamic values in a response to match example placeholders
@@ -55,7 +60,7 @@ export function normalizeResponse<T extends Record<string, any>>(
     ignoreFields = [],
   } = options;
 
-  const normalized = { ...actual };
+  const normalized = { ...actual } as Record<string, any>;
 
   // Normalize ID fields
   for (const field of idFields) {
@@ -87,7 +92,7 @@ export function normalizeResponse<T extends Record<string, any>>(
     }
   }
 
-  return normalized;
+  return normalized as T;
 }
 
 /**
@@ -108,7 +113,7 @@ export function normalizeResponseArray<T extends Record<string, any>>(
  * Validates that a function's actual behavior aligns with its docstring examples
  */
 export async function validateExampleAlignment<TArgs, TResult>(
-  t: TestConvex,
+  t: DocstringTestConvex,
   moduleRelativePath: string,
   exportName: string,
   functionRef: (args: TArgs) => Promise<TResult>,
@@ -211,7 +216,7 @@ export async function validateExampleAlignment<TArgs, TResult>(
  * Validates that error examples match actual error behavior
  */
 export async function validateErrorExample<TArgs>(
-  t: TestConvex,
+  t: DocstringTestConvex,
   moduleRelativePath: string,
   exportName: string,
   functionRef: (args: TArgs) => Promise<any>,
@@ -317,7 +322,7 @@ export async function validateErrorExample<TArgs>(
 /**
  * Creates deterministic test IDs that match example placeholders
  */
-export function createDeterministicId<T extends string>(
+export function createDeterministicId<T extends TableNames | SystemTableNames>(
   table: T,
   suffix: string,
 ): Id<T> {
@@ -445,7 +450,7 @@ export function assertPaginationStructure<T>(
 /**
  * Creates a test context with common utilities
  */
-export function createTestContext(t: TestConvex) {
+export function createTestContext(t: DocstringTestConvex) {
   return {
     /**
      * Validates a query example

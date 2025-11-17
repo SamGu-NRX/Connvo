@@ -52,26 +52,17 @@ export default function MatchNotification({
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -50 }}
-      className="flex flex-col items-center gap-4 text-center"
+      className="bg-background/80 flex items-center justify-center backdrop-blur-xs"
     >
-      <h2 className="text-xl font-semibold text-emerald-900 dark:text-emerald-200">
-        Match Found!
-      </h2>
-      <UserCard user={user} showContactActions={false} />
-      <div className="flex justify-center gap-2.5">
-        <Button
-          onClick={onDecline}
-          variant="outline"
-          className="w-32 rounded-sm border border-surface bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-900/80 transition-colors duration-200 hover:bg-emerald-50/60 dark:bg-emerald-950/40 dark:text-emerald-100/80 dark:hover:bg-emerald-900/60"
-        >
-          Decline
-        </Button>
-        <Button
-          onClick={onAccept}
-          className="w-32 rounded-sm bg-emerald-500/85 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-emerald-500"
-        >
-          Accept
-        </Button>
+      <div className="bg-card w-full max-w-md rounded-lg p-6 dark:shadow-lg">
+        <h2 className="mb-4 text-center text-2xl font-bold">Match Found!</h2>
+        <UserCard user={user} />
+        <div className="mt-6 flex justify-center space-x-4">
+          <Button onClick={onDecline} variant="outline">
+            Decline
+          </Button>
+          <Button onClick={onAccept}>Accept</Button>
+        </div>
       </div>
     </motion.div>
   );
