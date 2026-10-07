@@ -376,12 +376,14 @@ const LandingPage = () => {
 
           <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-32">
             <motion.div
+              data-kgu-intro
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
               className="mx-auto max-w-6xl text-center"
             >
               <motion.div
+                data-kgu-intro
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
@@ -395,6 +397,7 @@ const LandingPage = () => {
               </motion.div>
 
               <motion.h1
+                data-kgu-intro
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
@@ -408,6 +411,7 @@ const LandingPage = () => {
               </motion.h1>
 
               <motion.p
+                data-kgu-intro
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.6 }}
