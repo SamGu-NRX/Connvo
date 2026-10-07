@@ -424,7 +424,6 @@ const LandingPage = () => {
               </motion.p>
 
               <motion.div
-                data-kgu-intro
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.6 }}
