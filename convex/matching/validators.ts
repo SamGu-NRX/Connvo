@@ -60,6 +60,8 @@ export const MATCHING_LIMITS = {
   MAX_MIN_SAMPLES: 1000,
   /** getGlobalMatchingAnalytics time-range cap, ms (366 days). */
   MAX_TIME_RANGE_MS: 366 * 24 * 60 * 60 * 1000,
+  /** Cap for recorded cycle processing time, ms (1 hour; actions time out far earlier). */
+  MAX_PROCESSING_TIME_MS: 3_600_000,
 } as const;
 
 /**
