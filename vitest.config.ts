@@ -46,7 +46,12 @@ export default defineConfig({
       {
         test: {
           name: "frontend",
-          include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
+          include: [
+            "src/**/*.test.ts",
+            "src/**/*.spec.ts",
+            "src/**/*.test.tsx",
+            "src/**/*.spec.tsx",
+          ],
           environment: "jsdom",
         },
         resolve: commonResolve,
