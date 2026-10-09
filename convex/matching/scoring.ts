@@ -387,17 +387,29 @@ async function calculateCompatibilityFeatures(
   ctx: any, // Convex action context - keeping as any for simplicity
   user1Data: UserScoringData,
   user2Data: UserScoringData,
-  user1Constraints: {
-    interests: string[];
-    roles: string[];
-    orgConstraints?: string;
-  },
-  user2Constraints: {
-    interests: string[];
-    roles: string[];
-    orgConstraints?: string;
-  },
+  user1Constraints: ScorePairConstraints,
+  user2Constraints: ScorePairConstraints,
 ): Promise<CompatibilityFeatures> {
+  // Feature math is pure. Route through the prepared (single-decode) path so
+  // the per-pair action path and the engine's batch path share exactly one
+  // implementation and cannot drift apart.
+  return calculateCompatibilityFeaturesSync(
+    prepareScoringData(user1Data),
+    prepareScoringData(user2Data),
+    user1Constraints,
+    user2Constraints,
+  );
+}
+
+function calculateCompatibilityFeaturesSync(
+  a: PreparedScoringData,
+  b: PreparedScoringData,
+  user1Constraints: ScorePairConstraints,
+  user2Constraints: ScorePairConstraints,
+): CompatibilityFeatures {
+  const user1Data = a.data;
+  const user2Data = b.data;
+
   // Interest overlap calculation
   const interestOverlap = calculateInterestOverlap(
     user1Data.interests,
@@ -443,19 +455,19 @@ async function calculateCompatibilityFeatures(
   // Timezone compatibility (simplified - would need actual timezone data)
   const timezoneCompatibility = 1.0; // Placeholder - implement with real timezone logic
 
-  // Vector similarity using centralized utilities
+  // Vector similarity using centralized utilities. Buffers are decoded once in
+  // prepareScoringData; a corrupted buffer decodes to null and is treated the
+  // same as a missing embedding (robustness: it used to throw mid-shard).
   let vectorSimilarity: number | undefined;
   if (
     user1Data.embedding &&
     user2Data.embedding &&
-    user1Data.embedding.model === user2Data.embedding.model
+    user1Data.embedding.model === user2Data.embedding.model &&
+    a.vector &&
+    b.vector
   ) {
-    // Convert ArrayBuffer to Float32Array using centralized utilities
-    const vector1 = VectorUtils.bufferToFloatArray(user1Data.embedding.vector);
-    const vector2 = VectorUtils.bufferToFloatArray(user2Data.embedding.vector);
-
     // Calculate cosine similarity using centralized utility
-    const similarity = VectorUtils.cosineSimilarity(vector1, vector2);
+    const similarity = VectorUtils.cosineSimilarity(a.vector, b.vector);
     // Convert from [-1, 1] to [0, 1] range
     vectorSimilarity = (similarity + 1) / 2;
   }
@@ -742,3 +754,79 @@ function generateScoreExplanation(
 }
 
 // Functions are available via generated internal API under internal.matching.scoring
+
+// ---------------------------------------------------------------------------
+// Prepared-pair scoring (performance seam)
+//
+// Pure, allocation-lean scoring for callers that evaluate many pairs against
+// the same users (the matching engine's shard loop decodes each user's
+// embedding once instead of once per candidate pair). The math is identical
+// to the per-pair action path above; both share
+// calculateCompatibilityFeaturesSync -> calculateWeightedScore ->
+// generateScoreExplanation. No behavior change for existing callers.
+// ---------------------------------------------------------------------------
+
+/** User scoring data with its embedding decoded exactly once. */
+export interface PreparedScoringData {
+  data: UserScoringData;
+  /**
+   * Float32 view of `data.embedding.vector`, decoded once by
+   * prepareScoringData. Null when the user has no embedding or the stored
+   * buffer is corrupted (which used to throw mid-shard; it is now treated as
+   * a missing embedding).
+   */
+  vector: Float32Array | null;
+}
+
+/** Decode a user's embedding once so it can be reused across many pair scores. */
+export function prepareScoringData(data: UserScoringData): PreparedScoringData {
+  let vector: Float32Array | null = null;
+  const buffer = data.embedding?.vector;
+  if (buffer) {
+    try {
+      vector = VectorUtils.bufferToFloatArray(buffer);
+    } catch {
+      vector = null;
+    }
+  }
+  return { data, vector };
+}
+
+/** Constraint shape accepted by the scoring helpers (mirrors constraintsV). */
+export interface ScorePairConstraints {
+  interests: string[];
+  roles: string[];
+  orgConstraints?: string;
+}
+
+/** Result of scoring one pair: overall score, per-feature breakdown, explanation. */
+export interface ScorePairResult {
+  score: number;
+  features: CompatibilityFeatures;
+  explanation: string[];
+}
+
+/**
+ * Score one pair from prepared data. Produces exactly the same result as
+ * calculateCompatibilityScoreInternal for the same inputs and weights.
+ */
+export function scorePairPrepared(
+  a: PreparedScoringData,
+  b: PreparedScoringData,
+  aConstraints: ScorePairConstraints,
+  bConstraints: ScorePairConstraints,
+  weights: CompatibilityFeatures = DEFAULT_WEIGHTS,
+): ScorePairResult {
+  const features = calculateCompatibilityFeaturesSync(
+    a,
+    b,
+    aConstraints,
+    bConstraints,
+  );
+
+  return {
+    score: calculateWeightedScore(features, weights),
+    features,
+    explanation: generateScoreExplanation(features, weights),
+  };
+}
