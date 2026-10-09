@@ -8,14 +8,15 @@
  * Compliance: steering/convex_rules.mdc - Uses new function syntax with proper validators
  */
 
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
+import type { Infer } from "convex/values";
 import {
   action,
   internalAction,
   internalQuery,
 } from "@convex/_generated/server";
 import { internal } from "@convex/_generated/api";
-import { ConvexError } from "convex/values";
+import type { Id } from "@convex/_generated/dataModel";
 
 import {
   compatibilityFeaturesV,
@@ -27,6 +28,10 @@ import type {
   UserScoringData,
 } from "@convex/types/entities/matching";
 import { VectorUtils } from "@convex/types/entities/embedding";
+import { requireIdentity } from "@convex/auth/guards";
+import { assertNumberInRange, MATCHING_LIMITS } from "@convex/matching/validators";
+import type { MatchingConstraintsInput } from "@convex/matching/validators";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Scoring weights validator (matches CompatibilityFeatures)
@@ -55,6 +60,46 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
   languageOverlap: 0.1,
   roleComplementarity: 0.05,
 };
+
+/**
+ * Weight keys in canonical order, shared by boundary validation and scoring.
+ */
+const SCORING_WEIGHT_KEYS = [
+  "interestOverlap",
+  "experienceGap",
+  "industryMatch",
+  "timezoneCompatibility",
+  "vectorSimilarity",
+  "orgConstraintMatch",
+  "languageOverlap",
+  "roleComplementarity",
+] as const satisfies readonly (keyof CompatibilityFeatures)[];
+
+/** Weights as accepted at the boundary: every key present (validator-checked). */
+type ScoringWeights = Infer<typeof scoringWeightsV>;
+
+/**
+ * Throws a VALIDATION_ERROR unless every custom weight is a finite number in
+ * [MIN_SCORE, MAX_SCORE] (NaN is rejected by the finite check as well).
+ */
+function assertValidCustomWeights(weights: ScoringWeights): void {
+  for (const key of SCORING_WEIGHT_KEYS) {
+    assertNumberInRange(key, weights[key], {
+      min: MATCHING_LIMITS.MIN_SCORE,
+      max: MATCHING_LIMITS.MAX_SCORE,
+    });
+  }
+}
+
+/** Throws a VALIDATION_ERROR when both ids refer to the same user. */
+function assertDistinctUsers(
+  user1Id: Id<"users">,
+  user2Id: Id<"users">,
+): void {
+  if (user1Id === user2Id) {
+    throw createError.validation("user2Id: must differ from user1Id");
+  }
+}
 
 /**
  * @summary Calculate compatibility score between two users
@@ -131,14 +176,16 @@ export const calculateCompatibilityScore = action({
     features: compatibilityFeaturesV,
     explanation: v.array(v.string()),
   }),
-  handler: async (
-    ctx,
-    args,
-  ): Promise<{
-    score: number;
-    features: CompatibilityFeatures;
-    explanation: string[];
-  }> => {
+  handler: async (ctx, args): Promise<ScoreCompatibilityResult> => {
+    // Authenticate before anything else: this action derives interest- and
+    // role-based data, so unauthenticated callers must not reach it.
+    await requireIdentity(ctx);
+
+    assertDistinctUsers(args.user1Id, args.user2Id);
+    if (args.customWeights !== undefined) {
+      assertValidCustomWeights(args.customWeights);
+    }
+
     // Get user profiles and data
     const [user1Data, user2Data] = await Promise.all([
       ctx.runQuery(internal.matching.scoring.getUserScoringData, {
@@ -153,27 +200,14 @@ export const calculateCompatibilityScore = action({
       throw new ConvexError("User data not found for scoring");
     }
 
-    // Calculate individual features
-    const features = await calculateCompatibilityFeatures(
-      ctx,
+    const weights = args.customWeights ?? DEFAULT_WEIGHTS;
+    return scoreCompatibility(
       user1Data,
       user2Data,
       args.user1Constraints,
       args.user2Constraints,
+      weights,
     );
-
-    // Apply weights and calculate final score
-    const weights = args.customWeights ?? DEFAULT_WEIGHTS;
-    const score = calculateWeightedScore(features, weights);
-
-    // Generate explanation
-    const explanation = generateScoreExplanation(features, weights);
-
-    return {
-      score,
-      features,
-      explanation,
-    };
   },
 });
 
@@ -238,7 +272,14 @@ export const calculateCompatibilityScoreInternal = internalAction({
     features: compatibilityFeaturesV,
     explanation: v.array(v.string()),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<ScoreCompatibilityResult> => {
+    // Internal callers (the matching engine) are trusted; internal Convex
+    // functions skip identity checks by design.
+    assertDistinctUsers(args.user1Id, args.user2Id);
+    if (args.customWeights !== undefined) {
+      assertValidCustomWeights(args.customWeights);
+    }
+
     // Get user profiles and data
     const [user1Data, user2Data] = await Promise.all([
       ctx.runQuery(internal.matching.scoring.getUserScoringData, {
@@ -253,27 +294,14 @@ export const calculateCompatibilityScoreInternal = internalAction({
       throw new ConvexError("User data not found for scoring");
     }
 
-    // Calculate individual features
-    const features = await calculateCompatibilityFeatures(
-      ctx,
+    const weights = args.customWeights ?? DEFAULT_WEIGHTS;
+    return scoreCompatibility(
       user1Data,
       user2Data,
       args.user1Constraints,
       args.user2Constraints,
+      weights,
     );
-
-    // Apply weights and calculate final score
-    const weights = args.customWeights ?? DEFAULT_WEIGHTS;
-    const score = calculateWeightedScore(features, weights);
-
-    // Generate explanation
-    const explanation = generateScoreExplanation(features, weights);
-
-    return {
-      score,
-      features,
-      explanation,
-    };
   },
 });
 
@@ -336,6 +364,9 @@ export const getUserScoringData = internalQuery({
     const profile = await ctx.db
       .query("profiles")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      // `.unique()` throws if more than one profile matches this user: the
+      // schema assumes one profile per user without enforcing it, so a
+      // duplicate fails loudly here instead of scoring arbitrary profile data.
       .unique();
 
     const userInterests = await ctx.db
@@ -381,23 +412,43 @@ export const getUserScoringData = internalQuery({
 });
 
 /**
- * Calculate all compatibility features between two users
+ * Shared pure scoring core used by both the public and internal actions.
+ * Takes already-loaded user data and returns the full result — no ctx, no I/O.
  */
-async function calculateCompatibilityFeatures(
-  ctx: any, // Convex action context - keeping as any for simplicity
+function scoreCompatibility(
   user1Data: UserScoringData,
   user2Data: UserScoringData,
-  user1Constraints: {
-    interests: string[];
-    roles: string[];
-    orgConstraints?: string;
-  },
-  user2Constraints: {
-    interests: string[];
-    roles: string[];
-    orgConstraints?: string;
-  },
-): Promise<CompatibilityFeatures> {
+  user1Constraints: MatchingConstraintsInput,
+  user2Constraints: MatchingConstraintsInput,
+  weights: CompatibilityFeatures,
+): ScoreCompatibilityResult {
+  const features = calculateCompatibilityFeatures(
+    user1Data,
+    user2Data,
+    user1Constraints,
+    user2Constraints,
+  );
+  const score = calculateWeightedScore(features, weights);
+  const explanation = generateScoreExplanation(features);
+  return { score, features, explanation };
+}
+
+interface ScoreCompatibilityResult {
+  score: number;
+  features: CompatibilityFeatures;
+  explanation: string[];
+}
+
+/**
+ * Calculate all compatibility features between two users.
+ * Pure: derives every feature from the loaded user data and constraints.
+ */
+function calculateCompatibilityFeatures(
+  user1Data: UserScoringData,
+  user2Data: UserScoringData,
+  user1Constraints: MatchingConstraintsInput,
+  user2Constraints: MatchingConstraintsInput,
+): CompatibilityFeatures {
   // Interest overlap calculation
   const interestOverlap = calculateInterestOverlap(
     user1Data.interests,
@@ -668,7 +719,12 @@ function calculateOrgConstraintMatch(
 // Vector similarity calculation is now handled by centralized VectorUtils
 
 /**
- * Calculate weighted final score
+ * Calculate weighted final score.
+ *
+ * The iteration is precisely typed: every feature except vectorSimilarity is
+ * a required number, so no runtime type checks are needed here. An absent
+ * vectorSimilarity skips both the feature and its weight, re-normalizing the
+ * score over the features actually present.
  */
 function calculateWeightedScore(
   features: CompatibilityFeatures,
@@ -677,22 +733,18 @@ function calculateWeightedScore(
   let totalScore = 0;
   let totalWeight = 0;
 
-  // Use typed iteration to avoid index signature issues
-  const featureKeys: (keyof CompatibilityFeatures)[] = [
-    "interestOverlap",
-    "experienceGap",
-    "industryMatch",
-    "timezoneCompatibility",
-    "vectorSimilarity",
-    "orgConstraintMatch",
-    "languageOverlap",
-    "roleComplementarity",
-  ];
-
-  for (const feature of featureKeys) {
-    const value = features[feature];
-    const weight = weights[feature];
-    if (typeof value === "number" && typeof weight === "number") {
+  for (const key of SCORING_WEIGHT_KEYS) {
+    if (key === "vectorSimilarity") {
+      const similarity = features.vectorSimilarity;
+      if (similarity === undefined) continue;
+      // Validated custom weights and DEFAULT_WEIGHTS always define this;
+      // 0 contributes nothing, matching the skip semantics.
+      const weight = weights.vectorSimilarity ?? 0;
+      totalScore += similarity * weight;
+      totalWeight += weight;
+    } else {
+      const value = features[key];
+      const weight = weights[key];
       totalScore += value * weight;
       totalWeight += weight;
     }
@@ -704,10 +756,7 @@ function calculateWeightedScore(
 /**
  * Generate human-readable explanation of the score
  */
-function generateScoreExplanation(
-  features: CompatibilityFeatures,
-  _weights: CompatibilityFeatures,
-): string[] {
+function generateScoreExplanation(features: CompatibilityFeatures): string[] {
   const explanations: string[] = [];
 
   if (features.interestOverlap > 0.7) {

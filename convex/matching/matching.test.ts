@@ -81,7 +81,7 @@ describe("Matching System", () => {
 
   describe("Compatibility scoring", () => {
     it("computes a positive score for overlapping interests", async () => {
-      const result = await t.action(api.matching.scoring.calculateCompatibilityScore, {
+      const result = await userA.auth.action(api.matching.scoring.calculateCompatibilityScore, {
         user1Id: userA.id,
         user2Id: userB.id,
         user1Constraints: {
