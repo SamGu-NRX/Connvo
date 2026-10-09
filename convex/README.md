@@ -28,10 +28,7 @@ convex/
 ├── embeddings/             # Vector embeddings and similarity
 ├── messaging/              # Real-time chat messages
 ├── analytics/              # Analytics and metrics
-├── lib/                    # Shared utilities
-│   ├── errors.ts           # Error handling
-│   ├── observability.ts    # Tracing and metrics
-│   └── idempotency.ts      # Idempotency helpers
+├── lib/                    # Shared backend utilities (19 modules — see lib/README.md)
 └── internal/               # Internal functions (not client-accessible)
 ```
 
