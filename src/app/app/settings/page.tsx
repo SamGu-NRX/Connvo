@@ -28,15 +28,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DEFAULT_LOCAL_SETTINGS,
+  backendToLocalSettings,
+  deriveSettingsLoading,
+  isReadyForSettingsQuery,
+  type LocalSettings,
+} from "./settings-state";
 
 export default function SettingsPage() {
   const { isAuthenticated, loading: authLoading } = useWorkOSAuth();
   const convexAuthState = useConvexAuth();
-  const readyForSettingsQuery =
-    isAuthenticated &&
-    !authLoading &&
-    convexAuthState.isAuthenticated &&
-    !convexAuthState.isLoading;
+  const readyForSettingsQuery = isReadyForSettingsQuery(
+    { isAuthenticated, loading: authLoading },
+    convexAuthState,
+  );
   const settings = (() => {
     try {
       return useQuery(
@@ -59,26 +65,14 @@ export default function SettingsPage() {
   const updateSettings = useMutation(api.settings.mutations.updateSettings);
   
   // Local state for optimistic updates
-  const [localSettings, setLocalSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    smsNotifications: false,
-    profileVisibility: true,
-    dataSharing: false,
-    activityTracking: true,
-  });
+  const [localSettings, setLocalSettings] = useState<LocalSettings>(
+    DEFAULT_LOCAL_SETTINGS,
+  );
   
   // Sync with backend when settings load
   useEffect(() => {
     if (settings) {
-      setLocalSettings({
-        emailNotifications: settings.emailNotifications,
-        pushNotifications: settings.pushNotifications,
-        smsNotifications: settings.smsNotifications,
-        profileVisibility: settings.profileVisibility,
-        dataSharing: settings.dataSharing,
-        activityTracking: settings.activityTracking,
-      });
+      setLocalSettings(backendToLocalSettings(settings));
     }
   }, [settings]);
   
@@ -100,10 +94,12 @@ export default function SettingsPage() {
     }
   };
   
-  const loading =
-    authLoading ||
-    convexAuthState.isLoading ||
-    (readyForSettingsQuery && settings === undefined);
+  const loading = deriveSettingsLoading(
+    authLoading,
+    convexAuthState.isLoading,
+    readyForSettingsQuery,
+    settings,
+  );
 
   useEffect(() => {
     console.log("[SettingsPage] Query readiness", {
