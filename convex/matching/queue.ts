@@ -20,10 +20,15 @@ import {
 import type { QueueStatus } from "@convex/types/entities/matching";
 
 /**
- * @summary Enter the matching queue with availability window and constraints
- * @description Adds the authenticated user to the matching queue with specified availability
- * window and matching constraints. Validates that the user is not already in the queue and
- * that the availability window is valid. Creates an audit log entry for queue entry.
+ * Adds the authenticated user to the matching queue
+ *
+ * Validates that the availability window starts no earlier than the current server time and
+ * that the end time is strictly after the start time, then rejects the request if the user
+ * already has a queue entry with status "waiting" (deduplication, not rate limiting — at most
+ * one waiting entry per user). Requires at least one interest and one role in the constraints.
+ * On success it inserts a `matchingQueue` document with status "waiting", writes a
+ * `queue_entered` audit log, and returns the new entry's id. Throws `ConvexError` on validation
+ * failure and an unauthorized error from `requireIdentity` when the caller has no identity.
  *
  * @example request
  * ```json
@@ -128,10 +133,14 @@ export const enterMatchingQueue = mutation({
 });
 
 /**
- * @summary Cancel user's queue entry
- * @description Cancels the authenticated user's active queue entry by updating its status
- * to 'cancelled'. Can optionally specify a queue ID, or will find the user's active entry.
- * Creates an audit log entry for the cancellation.
+ * Removes the authenticated user's queue entry from the matching queue by cancelling it
+ *
+ * With `queueId`, loads that entry and throws "Queue entry not found or access denied" unless it
+ * exists and belongs to the caller; the entry's status is not checked, so an explicit `queueId`
+ * can also cancel entries that are already matched, expired, or cancelled. Without `queueId`,
+ * it patches the caller's waiting entry (at most one exists per user) and throws "No active
+ * queue entry found" when there is none. Writes a `queue_cancelled` audit log and returns null.
+ * Requires authentication via `requireIdentity`.
  *
  * @example request
  * ```json
@@ -209,10 +218,16 @@ export const cancelQueueEntry = mutation({
 });
 
 /**
- * @summary Get current queue status for a user
- * @description Retrieves the authenticated user's current queue status including position,
- * estimated wait time, and availability window. Returns null if the user is not in the queue.
- * Calculates queue position based on users ahead with similar constraints.
+ * Gets the authenticated user's most recent queue entry with computed wait metadata
+ *
+ * Returns the caller's newest queue entry whose status is not "cancelled", or null when there is
+ * none — "matched" and "expired" entries are returned too, not just waiting ones. For waiting
+ * entries it computes `queuePosition` (1-based FIFO position: the count of waiting entries with
+ * an earlier `createdAt`, across the whole queue with no constraint filtering, plus one) and
+ * `estimatedWaitTime` (two minutes per position via `Math.max(60000, queuePosition * 120000)` —
+ * the one-minute floor is unreachable because position is always at least 1). Non-waiting
+ * entries come back without those fields, and `potentialMatches` is declared by the return
+ * validator but never computed. Requires authentication via `requireIdentity`.
  *
  * @example request
  * ```json
@@ -273,7 +288,7 @@ export const getQueueStatus = query({
     let queuePosition: number | undefined;
 
     if (queueEntry.status === "waiting") {
-      // Calculate queue position (users ahead in queue with similar constraints)
+      // FIFO position: count of ALL waiting entries created earlier (no constraint filter)
       const usersAhead = await ctx.db
         .query("matchingQueue")
         .withIndex("by_status", (q) => q.eq("status", "waiting"))
@@ -282,9 +297,9 @@ export const getQueueStatus = query({
 
       queuePosition = usersAhead.length + 1;
 
-      // Estimate wait time based on historical data (simplified)
-      // In production, this would use more sophisticated analytics
-      estimatedWaitTime = Math.max(60000, queuePosition * 120000); // 1-2 minutes per position
+      // Placeholder heuristic, not historical analytics: 2 minutes of expected wait per
+      // position. The Math.max(60000, ...) floor is unreachable because position >= 1.
+      estimatedWaitTime = Math.max(60000, queuePosition * 120000);
     }
 
     return {
@@ -296,10 +311,15 @@ export const getQueueStatus = query({
 });
 
 /**
- * @summary Get active queue entries for matching processing
- * @description Retrieves waiting queue entries that are currently available or will be available
- * within the specified time window. Used internally by the matching engine to find candidates
- * for matching. Orders entries by creation time (FIFO) and limits results.
+ * Lists waiting queue entries whose availability window overlaps the scan window
+ *
+ * Public query with no authentication or authorization check: any caller receives up to `limit`
+ * (default 100) waiting entries — user ids, constraints, and availability windows included —
+ * ordered oldest first (FIFO), where `availableFrom` is at most `timeWindow` (default 3600000
+ * ms) in the future and `availableTo` is still ahead of now. Contrary to the intent recorded
+ * here previously, nothing calls it: the matching engine reads the queue through its own
+ * internal getShardQueueEntries query, so this surface is dead code that publicly exposes queue
+ * data.
  *
  * @example request
  * ```json
@@ -383,10 +403,15 @@ export const getActiveQueueEntries = query({
 });
 
 /**
- * @summary Update queue entry status
- * @description Updates the status of a queue entry and optionally records the matched user.
- * Used internally by the matching engine to mark entries as matched, expired, or cancelled.
- * Creates an audit log entry for the status change.
+ * Updates a queue entry's status and optional match counterpart
+ *
+ * Public mutation with no authentication or authorization check: any caller can load any queue
+ * entry by id, patch its `status` with no transition validation (any state can become any
+ * state, including back to "waiting"), and overwrite `matchedWith`. It then stamps `updatedAt`,
+ * writes a `status_updated` audit log recording `oldStatus`, `newStatus`, and `matchedWith`
+ * (empty string when omitted), and returns null. Throws "Queue entry not found" when the id
+ * does not resolve. Nothing in the repository calls it — the engine patches entries in its own
+ * createMatch mutation — so it is dead public surface as well.
  *
  * @example request
  * ```json
@@ -461,10 +486,15 @@ export const updateQueueStatus = mutation({
 });
 
 /**
- * @summary Clean up expired queue entries
- * @description Finds all waiting queue entries whose availability window has passed and updates
- * their status to 'expired'. Creates audit log entries for each expired entry. Used internally
- * by the matching engine to maintain queue hygiene.
+ * Finds waiting queue entries past their availability window and marks them expired
+ *
+ * Internal mutation reserved for cron and engine callers: it collects every entry with status
+ * "waiting" whose `availableTo` is before the current time — no batch limit, so the sequential
+ * patch-plus-audit-log loop grows with the number of stale entries — patches each to "expired"
+ * with `updatedAt` set to now, writes one `queue_expired` audit log per entry, and returns
+ * `{ expiredCount }`. Invoked hourly by the runQueueMaintenance cron in
+ * convex/matching/scheduler.ts and at the start of every runMatchingCycle in
+ * convex/matching/engine.ts.
  *
  * @example request
  * ```json
