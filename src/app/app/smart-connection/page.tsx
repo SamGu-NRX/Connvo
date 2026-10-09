@@ -1,29 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SmartConnectionEngine from "@/components/queue/SmartConnectionEngine";
+import { normalizeQueueType } from "../_lib/queue-params";
 
 export default function SmartConnectionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawQueueType = searchParams.get("type");
-  const queueType =
-    rawQueueType === "professional" ? "professional" : "casual";
+  const queueType = normalizeQueueType(rawQueueType);
   const purpose = searchParams.get("purpose");
 
-  const handleLeaveQueue = () => {
+  const handleLeaveQueue = useCallback(() => {
     router.push("/app");
-  };
+  }, [router]);
 
-  const handleAcceptMatch = (matchId: string) => {
-    console.log(`Accepted match with ID: ${matchId}`);
-    router.push(`/videocall/${matchId}`);
-  };
+  const handleAcceptMatch = useCallback(
+    (matchId: string) => {
+      console.log(`Accepted match with ID: ${matchId}`);
+      router.push(`/videocall/${matchId}`);
+    },
+    [router],
+  );
 
-  const handleDeclineMatch = (matchId: string) => {
+  const handleDeclineMatch = useCallback((matchId: string) => {
     console.log(`Declined match with ID: ${matchId}`);
-  };
+  }, []);
 
   return (
     <SmartConnectionEngine
