@@ -17,7 +17,7 @@ import {
 } from "@convex/_generated/server";
 import { requireIdentity } from "@convex/auth/guards";
 import { ConvexError } from "convex/values";
-import { Id } from "@convex/_generated/dataModel";
+import { Doc, Id } from "@convex/_generated/dataModel";
 import { internal } from "@convex/_generated/api";
 import {
   MatchingAnalyticsV,
@@ -28,8 +28,27 @@ import type {
   MatchOutcome,
 } from "@convex/types/entities/matching";
 import { FEATURE_KEYS } from "@convex/matching/index";
+import { createError } from "@convex/lib/errors";
+import {
+  MATCHING_LIMITS,
+  assertIntegerInRange,
+  assertNumberInRange,
+  assertStringLength,
+  assertValidRating,
+} from "@convex/matching/validators";
 
 type FeatureKey = keyof CompatibilityFeatures;
+
+/**
+ * Row shape consumed by the weight-improvement math. `features` accepts
+ * either the raw DB map or the parsed feature record — both are only ever
+ * indexed through FEATURE_KEYS.
+ */
+interface WeightSample {
+  features: Record<string, number> | CompatibilityFeatures;
+  outcome: MatchOutcome;
+  feedback?: { rating: number; comments?: string };
+}
 
 /**
  * @summary Submit feedback for a match
@@ -89,25 +108,45 @@ export const submitMatchFeedback = mutation({
   handler: async (ctx, args): Promise<null> => {
     const { userId } = await requireIdentity(ctx);
 
-    // Validate rating if provided
+    // Boundary validation. assertValidRating rejects NaN/Infinity, which the
+    // legacy inline range check let through (both comparisons are false for
+    // NaN) and stored in the database.
+    if (args.matchId.length === 0) {
+      throw createError.validation("matchId: must be a non-empty string");
+    }
+    assertStringLength(
+      "matchId",
+      args.matchId,
+      MATCHING_LIMITS.MAX_MATCH_ID_LENGTH,
+    );
     if (args.feedback?.rating !== undefined) {
-      if (args.feedback.rating < 1 || args.feedback.rating > 5) {
-        throw new ConvexError("Rating must be between 1 and 5");
-      }
+      assertValidRating(args.feedback.rating);
+    }
+    assertStringLength(
+      "comments",
+      args.feedback?.comments,
+      MATCHING_LIMITS.MAX_COMMENTS_LENGTH,
+    );
+
+    // Update the caller's own analytics record for this match. A missing own
+    // record is a data-integrity problem (e.g. feedback for someone else's
+    // match), so it fails loudly instead of being silently ignored.
+    const ownRecords = (
+      await ctx.db
+        .query("matchingAnalytics")
+        .withIndex("by_match", (q) => q.eq("matchId", args.matchId))
+        .collect()
+    ).filter((doc) => doc.userId === userId);
+
+    if (ownRecords.length === 0) {
+      throw createError.notFound("Match analytics record", args.matchId);
     }
 
-    // Update the match outcome directly in analytics (safe fallback)
-    const analyticsForMatch = await ctx.db
-      .query("matchingAnalytics")
-      .withIndex("by_match", (q) => q.eq("matchId", args.matchId))
-      .collect();
-    for (const doc of analyticsForMatch) {
-      if (doc.userId === userId) {
-        await ctx.db.patch(doc._id, {
-          outcome: args.outcome,
-          feedback: args.feedback,
-        });
-      }
+    for (const doc of ownRecords) {
+      await ctx.db.patch(doc._id, {
+        outcome: args.outcome,
+        feedback: args.feedback,
+      });
     }
 
     return null;
@@ -199,6 +238,14 @@ export const getMatchHistory = query({
     const { userId } = await requireIdentity(ctx);
     const limit = args.limit ?? 20;
     const offset = args.offset ?? 0;
+    assertIntegerInRange("limit", limit, {
+      min: 1,
+      max: MATCHING_LIMITS.MAX_LIMIT,
+    });
+    assertIntegerInRange("offset", offset, {
+      min: 0,
+      max: MATCHING_LIMITS.MAX_LIMIT,
+    });
 
     const rows = await ctx.db
       .query("matchingAnalytics")
@@ -207,20 +254,18 @@ export const getMatchHistory = query({
       .take(limit + offset);
 
     const mapped = rows.map((doc) => {
-      const f = doc.features as Record<string, number | undefined>;
-
       const features: CompatibilityFeatures = {
-        interestOverlap: f.interestOverlap ?? 0,
-        experienceGap: f.experienceGap ?? 0,
-        industryMatch: f.industryMatch ?? 0,
-        timezoneCompatibility: f.timezoneCompatibility ?? 0,
+        interestOverlap: doc.features.interestOverlap ?? 0,
+        experienceGap: doc.features.experienceGap ?? 0,
+        industryMatch: doc.features.industryMatch ?? 0,
+        timezoneCompatibility: doc.features.timezoneCompatibility ?? 0,
         vectorSimilarity:
-          typeof f.vectorSimilarity === "number"
-            ? f.vectorSimilarity
+          typeof doc.features.vectorSimilarity === "number"
+            ? doc.features.vectorSimilarity
             : undefined,
-        orgConstraintMatch: f.orgConstraintMatch ?? 0,
-        languageOverlap: f.languageOverlap ?? 0,
-        roleComplementarity: f.roleComplementarity ?? 0,
+        orgConstraintMatch: doc.features.orgConstraintMatch ?? 0,
+        languageOverlap: doc.features.languageOverlap ?? 0,
+        roleComplementarity: doc.features.roleComplementarity ?? 0,
       };
 
       return {
@@ -347,9 +392,8 @@ export const getMatchingStats = query({
     > = {};
 
     matches.forEach((match) => {
-      const f = match.features as Record<string, number | undefined>;
       FEATURE_KEYS.forEach((feature) => {
-        const value = f[feature];
+        const value = match.features[feature];
         if (typeof value === "number") {
           if (!featureStats[feature]) {
             featureStats[feature] = { sum: 0, count: 0 };
@@ -481,7 +525,28 @@ export const getGlobalMatchingAnalytics = query({
       }),
     ),
   }),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{
+    totalMatches: number;
+    averageScore: number;
+    outcomeDistribution: {
+      accepted: number;
+      declined: number;
+      completed: number;
+    };
+    featureImportance: Array<{
+      feature: FeatureKey;
+      averageScore: number;
+      correlation: number;
+    }>;
+    matchingTrends: Array<{
+      date: string;
+      matchCount: number;
+      averageScore: number;
+    }>;
+  }> => {
     const { userId, orgRole } = await requireIdentity(ctx);
 
     // Check admin permissions
@@ -490,6 +555,10 @@ export const getGlobalMatchingAnalytics = query({
     }
 
     const timeRange = args.timeRange ?? 7 * 24 * 60 * 60 * 1000; // 7 days default
+    assertNumberInRange("timeRange", timeRange, {
+      min: 0,
+      max: MATCHING_LIMITS.MAX_TIME_RANGE_MS,
+    });
     const cutoffTime = Date.now() - timeRange;
 
     const matches = await ctx.db
@@ -501,10 +570,8 @@ export const getGlobalMatchingAnalytics = query({
     const averageScore =
       matches.length > 0
         ? matches.reduce((sum, m) => {
-            const f = m.features as Record<string, number | undefined>;
             const featureSum = FEATURE_KEYS.reduce(
-              (s, key) =>
-                s + (typeof f[key] === "number" ? (f[key] as number) : 0),
+              (s, key) => s + (m.features[key] ?? 0),
               0,
             );
             return sum + featureSum / FEATURE_KEYS.length;
@@ -524,9 +591,8 @@ export const getGlobalMatchingAnalytics = query({
     > = {};
 
     matches.forEach((match) => {
-      const f = match.features as Record<string, number | undefined>;
       FEATURE_KEYS.forEach((feature) => {
-        const val = f[feature];
+        const val = match.features[feature];
         if (typeof val === "number") {
           if (!featureStats[feature]) {
             featureStats[feature] = { scores: [], outcomes: [] };
@@ -587,13 +653,12 @@ export const getGlobalMatchingAnalytics = query({
       }
       dailyStats[date].count += 1;
 
-      const f = match.features as Partial<CompatibilityFeatures>;
       let featureSum = 0;
       let numericCount = 0;
 
       // Iterate FEATURE_KEYS so indexing is typed (FeatureKey), not a plain string
       for (const key of FEATURE_KEYS) {
-        const val = f[key];
+        const val = match.features[key];
         if (typeof val === "number" && Number.isFinite(val)) {
           featureSum += val;
           numericCount += 1;
@@ -689,7 +754,17 @@ export const optimizeMatchingWeights = action({
     improvement: number;
     sampleSize: number;
   }> => {
+    // Weight optimization re-tunes global model state, so it is admin-only.
+    const { orgRole } = await requireIdentity(ctx);
+    if (orgRole !== "admin") {
+      throw createError.forbidden("Admin access required");
+    }
+
     const minSamples = args.minSamples ?? 100;
+    assertIntegerInRange("minSamples", minSamples, {
+      min: MATCHING_LIMITS.MIN_MIN_SAMPLES,
+      max: MATCHING_LIMITS.MAX_MIN_SAMPLES,
+    });
 
     // Get recent match data with feedback
     const matches: Array<{
@@ -714,9 +789,7 @@ export const optimizeMatchingWeights = action({
 
     // Calculate correlation between each feature and successful outcomes
     featuresList.forEach((feature) => {
-      const featureValues = matches.map(
-        (m) => (m.features as any)[feature] || 0,
-      );
+      const featureValues = matches.map((m) => m.features[feature] ?? 0);
       const successValues = matches.map((m) =>
         m.outcome === "completed" ? 1 : 0,
       );
@@ -729,8 +802,7 @@ export const optimizeMatchingWeights = action({
     });
 
     // Normalize weights to sum to 1
-    Object.keys(optimizedWeights).forEach((f) => {
-      const k = f as FeatureKey;
+    FEATURE_KEYS.forEach((k) => {
       optimizedWeights[k] = (optimizedWeights[k] ?? 0) / totalWeight;
     });
 
@@ -746,13 +818,22 @@ export const optimizeMatchingWeights = action({
       roleComplementarity: 0.05,
     };
 
-    // coerce partial optimizedWeights into full record with defaults
+    // Fill the partial optimizedWeights into a full record with defaults
     const optimizedFull: CompatibilityFeatures = FEATURE_KEYS.reduce(
       (acc, key) => {
         acc[key] = optimizedWeights[key] ?? 0;
         return acc;
       },
-      {} as CompatibilityFeatures,
+      {
+        interestOverlap: 0,
+        experienceGap: 0,
+        industryMatch: 0,
+        timezoneCompatibility: 0,
+        vectorSimilarity: 0,
+        orgConstraintMatch: 0,
+        languageOverlap: 0,
+        roleComplementarity: 0,
+      },
     );
 
     const improvement = calculateWeightImprovement(
@@ -838,7 +919,21 @@ export const getMatchesForOptimization = internalQuery({
       ),
     }),
   ),
-  handler: async (ctx, args) => {
+  handler: async (
+    ctx,
+    args,
+  ): Promise<
+    Array<{
+      features: CompatibilityFeatures;
+      outcome: "completed" | "declined";
+      feedback?: { rating: number; comments?: string };
+    }>
+  > => {
+    assertIntegerInRange("minSamples", args.minSamples, {
+      min: MATCHING_LIMITS.MIN_MIN_SAMPLES,
+      max: MATCHING_LIMITS.MAX_MIN_SAMPLES,
+    });
+
     // Get recent matches with feedback
     const rows = await ctx.db
       .query("matchingAnalytics")
@@ -848,31 +943,38 @@ export const getMatchesForOptimization = internalQuery({
 
     // Map DB documents to the exact return shape the validator expects.
     return rows
-      .filter((m) => m.outcome === "completed" || m.outcome === "declined")
+      .filter(isActionableAnalyticsDoc)
       .slice(0, args.minSamples)
-      .map((m) => {
-        const f = m.features as Record<string, number | undefined>;
-        return {
-          features: {
-            interestOverlap: f.interestOverlap ?? 0,
-            experienceGap: f.experienceGap ?? 0,
-            industryMatch: f.industryMatch ?? 0,
-            timezoneCompatibility: f.timezoneCompatibility ?? 0,
-            vectorSimilarity: f.vectorSimilarity,
-            orgConstraintMatch: f.orgConstraintMatch ?? 0,
-            languageOverlap: f.languageOverlap ?? 0,
-            roleComplementarity: f.roleComplementarity ?? 0,
-          },
-          outcome: m.outcome as "completed" | "declined",
-          feedback: m.feedback,
-        };
-      });
+      .map((m) => ({
+        features: {
+          interestOverlap: m.features.interestOverlap ?? 0,
+          experienceGap: m.features.experienceGap ?? 0,
+          industryMatch: m.features.industryMatch ?? 0,
+          timezoneCompatibility: m.features.timezoneCompatibility ?? 0,
+          vectorSimilarity: m.features.vectorSimilarity,
+          orgConstraintMatch: m.features.orgConstraintMatch ?? 0,
+          languageOverlap: m.features.languageOverlap ?? 0,
+          roleComplementarity: m.features.roleComplementarity ?? 0,
+        },
+        outcome: m.outcome,
+        feedback: m.feedback,
+      }));
   },
 });
 
 /**
  * Helper functions
  */
+
+/**
+ * Narrowing predicate: an analytics doc is only usable as an optimization
+ * sample once its outcome is known to be completed or declined.
+ */
+function isActionableAnalyticsDoc(
+  doc: Doc<"matchingAnalytics">,
+): doc is Doc<"matchingAnalytics"> & { outcome: "completed" | "declined" } {
+  return doc.outcome !== "accepted";
+}
 
 function calculateCorrelation(x: number[], y: number[]): number {
   if (x.length !== y.length || x.length === 0) return 0;
@@ -892,10 +994,18 @@ function calculateCorrelation(x: number[], y: number[]): number {
   return denominator === 0 ? 0 : numerator / denominator;
 }
 
-function calculateWeightImprovement(
-  matches: any[],
-  currentWeights: any,
-  newWeights: any,
+/**
+ * Weighted accuracy delta between two weight sets, over `matches`.
+ *
+ * Only FEATURE_KEYS contribute to the weighted scores. The legacy version
+ * iterated Object.entries and multiplied by an arbitrary-string weight
+ * lookup, where unknown keys silently contributed 0 — iterating FEATURE_KEYS
+ * preserves that exactly while keeping the indexing type-safe.
+ */
+export function calculateWeightImprovement(
+  matches: ReadonlyArray<WeightSample>,
+  currentWeights: CompatibilityFeatures,
+  newWeights: CompatibilityFeatures,
 ): number {
   // Simplified improvement calculation
   // In practice, this would use more sophisticated ML evaluation metrics
@@ -904,32 +1014,21 @@ function calculateWeightImprovement(
   let newAccuracy = 0;
 
   matches.forEach((match) => {
-    const currentScore = Object.entries(match.features).reduce(
-      (sum: number, [feature, value]) => {
-        return (
-          sum +
-          (typeof value === "number" ? value : 0) *
-            (currentWeights[feature] || 0)
-        );
-      },
-      0,
-    );
-
-    const newScore = Object.entries(match.features).reduce(
-      (sum: number, [feature, value]) => {
-        return (
-          sum +
-          (typeof value === "number" ? value : 0) * (newWeights[feature] || 0)
-        );
-      },
-      0,
-    );
+    const weightedScore = (weights: CompatibilityFeatures): number =>
+      FEATURE_KEYS.reduce(
+        (sum, key) => sum + (match.features[key] ?? 0) * (weights[key] ?? 0),
+        0,
+      );
 
     const isSuccess = match.outcome === "completed";
 
     // Simple threshold-based accuracy
-    if (currentScore > 0.6 === isSuccess) currentAccuracy += 1;
-    if (newScore > 0.6 === isSuccess) newAccuracy += 1;
+    if ((weightedScore(currentWeights) > 0.6) === isSuccess) {
+      currentAccuracy += 1;
+    }
+    if ((weightedScore(newWeights) > 0.6) === isSuccess) {
+      newAccuracy += 1;
+    }
   });
 
   currentAccuracy /= matches.length;
