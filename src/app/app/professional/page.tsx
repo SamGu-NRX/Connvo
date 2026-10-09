@@ -15,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
+import {
+  buildProfessionalQueueUrl,
+  type ProfessionalConnectionType,
+} from "./queue-navigation";
 
 export default function ProfessionalConnectionPage() {
   const router = useRouter();
@@ -22,14 +26,12 @@ export default function ProfessionalConnectionPage() {
   const [purpose, setPurpose] = useState("");
   const [description, setDescription] = useState("");
 
-  const handleStartQueue = (type: string) => {
+  const handleStartQueue = (type: ProfessionalConnectionType) => {
     if (!user) {
       router.push("/auth/sign-in");
       return;
     }
-    router.push(
-      `/app/professional/${type}?purpose=${encodeURIComponent(purpose)}&description=${encodeURIComponent(description)}`,
-    );
+    router.push(buildProfessionalQueueUrl(type, purpose, description));
   };
 
   return (
@@ -75,25 +77,25 @@ export default function ProfessionalConnectionPage() {
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Button
-                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors duration-200 hover:bg-emerald-500"
+                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold tracking-[0.2em] text-white uppercase transition-colors duration-200 hover:bg-emerald-500"
                 onClick={() => handleStartQueue("b2b")}
               >
                 B2B Networking
               </Button>
               <Button
-                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors duration-200 hover:bg-emerald-500"
+                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold tracking-[0.2em] text-white uppercase transition-colors duration-200 hover:bg-emerald-500"
                 onClick={() => handleStartQueue("collaboration")}
               >
                 Find Collaborators
               </Button>
               <Button
-                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors duration-200 hover:bg-emerald-500"
+                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold tracking-[0.2em] text-white uppercase transition-colors duration-200 hover:bg-emerald-500"
                 onClick={() => handleStartQueue("mentorship")}
               >
                 Seek Mentorship
               </Button>
               <Button
-                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition-colors duration-200 hover:bg-emerald-500"
+                className="rounded-md bg-emerald-500/85 px-4 py-2.5 text-sm font-semibold tracking-[0.2em] text-white uppercase transition-colors duration-200 hover:bg-emerald-500"
                 onClick={() => handleStartQueue("investment")}
               >
                 Pitch to Investors
