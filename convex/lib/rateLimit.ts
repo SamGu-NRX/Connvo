@@ -1,8 +1,10 @@
 /**
  * Rate Limiting Utilities for Convex
  *
- * This module provides sliding window rate limiting with proper
- * cleanup and monitoring for high-frequency operations.
+ * This module provides fixed-window rate limiting backed by the `rateLimits`
+ * table, plus cleanup and monitoring helpers for high-frequency operations.
+ * Each window is a fixed bucket aligned to `windowMs` (not a true sliding
+ * window): counters reset at every window boundary.
  *
  * Requirements: 19.3
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
@@ -17,7 +19,17 @@ import { createError } from "@convex/lib/errors";
 // Note: Writes must occur in a MutationCtx. Avoid unsafe casts.
 
 /**
- * Rate limit configuration
+ * Configuration for a fixed-window rate limit checked against the
+ * `rateLimits` table.
+ *
+ * - `maxRequests`: maximum hits allowed per user/action within one window.
+ * - `windowMs`: window length in milliseconds. Windows are buckets aligned to
+ *   multiples of `windowMs` since the epoch, so counters reset at each
+ *   boundary rather than sliding.
+ * - `keyPrefix`: optional prefix stored as `${keyPrefix}_${action}`; omit it
+ *   to use `action` alone as the storage key.
+ * - `skipSuccessfulRequests` / `skipFailedRequests`: declared but never read
+ *   anywhere in this module (dead options).
  */
 export interface RateLimitConfig {
   maxRequests: number;
@@ -28,7 +40,14 @@ export interface RateLimitConfig {
 }
 
 /**
- * Rate limit result
+ * Outcome of a rate limit check.
+ *
+ * - `allowed`: whether this call is still under the configured `maxRequests`.
+ * - `remaining`: hits left in the current window (never negative).
+ * - `resetTime`: epoch ms at which the current fixed window ends and the
+ *   counter resets.
+ * - `totalHits`: count recorded for this key in the current window,
+ *   including any increment performed by the check itself.
  */
 export interface RateLimitResult {
   allowed: boolean;
@@ -38,7 +57,11 @@ export interface RateLimitResult {
 }
 
 /**
- * Default rate limit configurations for different operations
+ * Preset per-minute limits for common operations. Each preset's `keyPrefix`
+ * is joined with the caller's action string as `${keyPrefix}_${action}`.
+ * Values (maxRequests per 60000ms window): TRANSCRIPT_INGESTION 50,
+ * NOTE_OPERATIONS 100, MEETING_ACTIONS 20, API_CALLS 1000,
+ * SEARCH_QUERIES 100.
  */
 export const RateLimitConfigs = {
   TRANSCRIPT_INGESTION: {
@@ -69,11 +92,30 @@ export const RateLimitConfigs = {
 } as const;
 
 /**
- * Sliding window rate limiter implementation
+ * Fixed-window, database-backed rate limiter.
+ *
+ * All state lives in the `rateLimits` table keyed by
+ * (userId, action key, windowStartMs) through the `by_user_action_window`
+ * index, so counters are consistent for concurrent callers: every check
+ * reads and writes inside the caller's Convex transaction. Despite earlier
+ * doc wording, this is a fixed-window counter, not a sliding window: usage
+ * is measured against one bucket that resets every `windowMs`.
  */
 export class RateLimiter {
   /**
-   * Checks and updates rate limit for a given key
+   * Records one hit for the user/action pair and reports whether it is
+   * still under the configured limit.
+   *
+   * Computes the current fixed window from `Date.now()`, builds the storage
+   * key as `${config.keyPrefix}_${action}` (or plain `action` when no prefix
+   * is configured), and looks up the existing `rateLimits` row through the
+   * `by_user_action_window` index. When a row exists below `maxRequests` it
+   * patches `count`/`updatedAt`; otherwise it inserts a new row with
+   * `count: 1`. Both paths write inside the caller's mutation transaction.
+   * Returns `allowed: false` without writing once the stored count has
+   * reached `maxRequests`. Throws if more than one row matches the index
+   * (`.unique()` fails), which would signal duplicate records for a window.
+   * Logs each check to the console in non-production environments.
    */
   static async checkRateLimit(
     ctx: MutationCtx,
@@ -155,7 +197,10 @@ export class RateLimiter {
   }
 
   /**
-   * Enforces rate limit and throws error if exceeded
+   * Throws a 429 `ConvexError` (from `createError.rateLimitExceeded`, with
+   * metadata `{ action, limit }`) when the user/action window has already
+   * reached `maxRequests`; otherwise returns the result of the checked
+   * increment. A denied call performs no database write.
    */
   static async enforceRateLimit(
     ctx: MutationCtx,
@@ -173,7 +218,17 @@ export class RateLimiter {
   }
 
   /**
-   * Enforces rate limit from an Action context by calling an internal mutation.
+   * Enforces a rate limit from an `ActionCtx` (actions cannot write to the
+   * database directly) by running the `internal.system.rateLimit.enforce`
+   * internal mutation with the resolved key and config values.
+   *
+   * On success maps the mutation's `{ remaining, resetAt }` into a
+   * `RateLimitResult`, deriving `totalHits` as `config.maxRequests -
+   * remaining`. Any error thrown by the mutation — including its own
+   * "RATE_LIMIT_EXCEEDED" signal, deployment unavailability, or schema
+   * failures — is caught and rethrown as a 429 rate-limit-exceeded
+   * `ConvexError`, so callers cannot distinguish "limit exhausted" from
+   * "enforcement infrastructure failed" by the error type alone.
    */
   static async enforceFromAction(
     ctx: ActionCtx,
@@ -204,7 +259,11 @@ export class RateLimiter {
   }
 
   /**
-   * Gets current rate limit status without updating counters
+   * Reads the current window's usage for a user/action without writing, so
+   * it is safe to call from a `QueryCtx`. Uses the same fixed-window bucket
+   * math and key building as `checkRateLimit`; reports `allowed` as
+   * `currentCount < maxRequests` and `totalHits` as the stored count (0 when
+   * no record exists for this window yet).
    */
   static async getRateLimitStatus(
     ctx: QueryCtx,
@@ -238,7 +297,13 @@ export class RateLimiter {
   }
 
   /**
-   * Cleans up expired rate limit records
+   * Deletes `rateLimits` rows whose `windowStartMs` is older than
+   * `olderThanMs` (default 24 hours) and returns how many were deleted.
+   *
+   * Scans with a full-table `.filter()` because the table has no index on
+   * `windowStartMs` alone, so cost grows with total table size; run this
+   * from a scheduled internal mutation, not per-request. Requires a
+   * `MutationCtx` because it deletes rows.
    */
   static async cleanupExpiredLimits(
     ctx: MutationCtx,
@@ -261,7 +326,16 @@ export class RateLimiter {
   }
 
   /**
-   * Gets rate limit statistics for monitoring
+   * Aggregates `rateLimits` activity over the trailing `timeRangeMs`
+   * (default 1 hour): total recorded hits across all rows, number of
+   * distinct users, the top 10 actions by recorded hits, and an approximate
+   * count of rate limit hits (exhausted windows).
+   *
+   * Reads only; safe from a `QueryCtx`. The `rateLimitHits` figure is a
+   * heuristic — it counts any row whose `count` reached 50 — so it
+   * over-reports for high-limit actions (e.g. API_CALLS allows 1000) and
+   * under-reports otherwise, because `maxRequests` is not stored with the
+   * row.
    */
   static async getRateLimitStats(
     ctx: QueryCtx,
@@ -327,7 +401,22 @@ export class RateLimiter {
 }
 
 /**
- * Decorator for automatic rate limiting on mutations
+ * Legacy-style method decorator that rate limits a class method whose first
+ * argument is a Convex context.
+ *
+ * Before each call it resolves the caller: from `ctx.auth.getUserIdentity()`
+ * it prefers `identity.userId`, falling back to a `users` lookup by
+ * `workosUserId` (via the `by_workos_id` index). Enforcement is skipped,
+ * with a dev-only console warning, when there is no identity or no
+ * resolvable user id.
+ *
+ * Deliberately (but surprisingly) non-blocking: enforcement happens inside
+ * a try/catch whose handler only logs, so a rate-limit-exceeded error does
+ * not stop the wrapped method from executing. The decorator therefore
+ * increments counters and emits warnings but can never deny a request.
+ * Currently unused anywhere in the codebase; the descriptor signature
+ * requires the legacy `experimentalDecorators` mode, which `tsconfig.json`
+ * does not enable.
  */
 export function withRateLimit(config: RateLimitConfig) {
   return function <T extends any[], R>(
@@ -400,7 +489,12 @@ export function withRateLimit(config: RateLimitConfig) {
 }
 
 /**
- * Helper function to create rate limit middleware for actions
+ * Binds a config into a reusable enforce function.
+ *
+ * Returns `async (ctx, userId, action) => RateLimitResult` that delegates
+ * to `RateLimiter.enforceRateLimit` — it records a hit and throws a 429
+ * `ConvexError` once the window is exhausted. Call it at the top of a
+ * mutation body with an already-authenticated user id.
  */
 export function createRateLimitMiddleware(config: RateLimitConfig) {
   return async (ctx: MutationCtx, userId: Id<"users">, action: string) => {
@@ -409,11 +503,24 @@ export function createRateLimitMiddleware(config: RateLimitConfig) {
 }
 
 /**
- * Burst rate limiter for handling traffic spikes
+ * Read-only "burst" checker over the shared `rateLimits` table.
+ *
+ * Despite the token-bucket vocabulary, it never consumes tokens: it takes a
+ * `QueryCtx` (so no writes are possible) and only compares whatever count
+ * is already stored under the `burst_${action}` key against
+ * `config.burstSize`. Counts stay at zero unless some other component
+ * writes that key, and `bucketSize`/`refillRate` are accepted but never
+ * used.
  */
 export class BurstRateLimiter {
   /**
-   * Implements token bucket algorithm for burst handling
+   * Reports whether the stored count for `burst_${action}` is below
+   * `config.burstSize`, without modifying anything.
+   *
+   * Returns `allowed: false` only when a row already exists at or above
+   * `burstSize`; `tokensRemaining` is `burstSize - storedCount` and can
+   * overstate availability (or go negative) because nothing here
+   * decrements it.
    */
   static async checkBurstLimit(
     ctx: QueryCtx,
@@ -453,11 +560,22 @@ export class BurstRateLimiter {
 }
 
 /**
- * Distributed rate limiter for multi-instance deployments
+ * Placeholder "distributed" limiter: despite the name, it delegates to the
+ * same single-table fixed-window counter as `RateLimiter` (Convex
+ * transactions already serialize writes, so no extra coordination exists
+ * or is needed).
+ *
+ * Do not call: `checkDistributedLimit` casts an arbitrary string key to
+ * `Id<"users">`, which would violate the `rateLimits.userId` field
+ * validator (`v.id("users")`) at runtime on insert.
  */
 export class DistributedRateLimiter {
   /**
-   * Implements distributed rate limiting using database as coordination layer
+   * Unimplemented shim that forwards to `RateLimiter.checkRateLimit` with
+   * the `key` string cast to `Id<"users">` and the action hardcoded to
+   * "distributed". The cast is unsafe (any non-Id key violates the
+   * `userId` validator) and the method adds nothing over
+   * `checkRateLimit`.
    */
   static async checkDistributedLimit(
     ctx: MutationCtx,
