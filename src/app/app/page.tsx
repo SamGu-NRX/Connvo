@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Phone, Briefcase } from "lucide-react";
+import { smartConnectionUrl } from "./_lib/navigation-urls";
 
 const container = {
   hidden: { opacity: 0 },
@@ -24,13 +25,19 @@ const item = {
 export default function HomePage() {
   const router = useRouter();
   const { user } = useWorkOSAuth();
-  const handleStartQueue = (queueType: "casual" | "professional") => {
-    if (!user) {
-      router.push("/auth/sign-in");
-      return;
-    }
-    router.push(`/app/smart-connection?type=${queueType}`);
-  };
+  // Stable identity across renders so children that memoize on this
+  // handler do not re-render; behavior identical to the original inline
+  // version (same router.push targets, same signed-out redirect).
+  const handleStartQueue = useCallback(
+    (queueType: "casual" | "professional") => {
+      if (!user) {
+        router.push("/auth/sign-in");
+        return;
+      }
+      router.push(smartConnectionUrl(queueType));
+    },
+    [router, user],
+  );
 
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col overflow-hidden px-4 py-4 sm:px-5 md:px-6">
@@ -64,10 +71,10 @@ export default function HomePage() {
               variants={container}
               initial="hidden"
               animate="show"
-              className="grid h-full grid-cols-1 gap-3 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid-cols-2"
+              className="grid h-full grid-cols-1 gap-3 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:none] md:grid-cols-2 [&::-webkit-scrollbar]:hidden"
             >
               <motion.div variants={item}>
-                <div className="space-y-2.5 rounded-sm border border-surface bg-white/95 px-4 py-3 dark:bg-emerald-950/40">
+                <div className="border-surface space-y-2.5 rounded-sm border bg-white/95 px-4 py-3 dark:bg-emerald-950/40">
                   <h3 className="flex items-center text-lg font-semibold text-emerald-900 dark:text-emerald-200">
                     <Phone className="mr-3 h-5 w-5 text-emerald-500 dark:text-emerald-300" />
                     Casual
@@ -76,7 +83,7 @@ export default function HomePage() {
                     Connect with someone for a friendly, low-key conversation.
                   </p>
                   <Button
-                    className="w-full rounded-sm bg-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-emerald-600 md:w-auto"
+                    className="w-full rounded-sm bg-emerald-500 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-white uppercase transition-colors duration-200 hover:bg-emerald-600 md:w-auto"
                     onClick={() => handleStartQueue("casual")}
                   >
                     Start Casual Matching
@@ -85,7 +92,7 @@ export default function HomePage() {
               </motion.div>
 
               <motion.div variants={item}>
-                <div className="space-y-2.5 rounded-sm border border-surface bg-white/95 px-4 py-3 dark:bg-emerald-950/40">
+                <div className="border-surface space-y-2.5 rounded-sm border bg-white/95 px-4 py-3 dark:bg-emerald-950/40">
                   <h3 className="flex items-center text-lg font-semibold text-emerald-900 dark:text-emerald-200">
                     <Briefcase className="mr-3 h-5 w-5 text-sky-500 dark:text-sky-300" />
                     Professional
@@ -95,7 +102,7 @@ export default function HomePage() {
                   </p>
                   <Button
                     variant="outline"
-                    className="w-full rounded-sm border border-surface bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-900/80 transition-colors duration-200 hover:bg-emerald-50/60 dark:bg-emerald-950/50 dark:text-emerald-100/80 dark:hover:bg-emerald-900/60 md:w-auto"
+                    className="border-surface w-full rounded-sm border bg-white px-4 py-2 text-xs font-semibold tracking-[0.18em] text-emerald-900/80 uppercase transition-colors duration-200 hover:bg-emerald-50/60 md:w-auto dark:bg-emerald-950/50 dark:text-emerald-100/80 dark:hover:bg-emerald-900/60"
                     onClick={() => handleStartQueue("professional")}
                   >
                     Start Professional Matching
