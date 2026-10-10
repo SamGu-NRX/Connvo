@@ -65,10 +65,54 @@ try {
   record("help line names the refused-only mode", /refused claims only/.test(helpAfterR), { help: helpAfterR.trim() });
   await page.screenshot({ path: walkDir + "/01-refused-only.png", fullPage: true });
 
+  // j/k navigation INSIDE the refused-only filter — state.cursor indexes
+  // the visible card list. j→1, j→2, k→1 ⇒ the cursor highlight must sit
+  // on the 2nd visible card. This step fails on the old DOM-index bug,
+  // which scrolled/highlighted card #state.cursor in DOM order instead.
+  const visibleIdx = await page.evaluate(() =>
+    [...document.querySelectorAll("#groups .card")]
+      .map((c, i) => [c, i])
+      .filter(([c]) => !c.classList.contains("hidden"))
+      .map(([, i]) => i)
+  );
+  const scrollFilteredBefore = await page.evaluate(() => window.scrollY);
+  await page.keyboard.press("j");
+  await page.keyboard.press("j");
+  await page.keyboard.press("k");
+  await page.waitForTimeout(200);
+  const cursorState = await page.evaluate(() => {
+    const all = [...document.querySelectorAll("#groups .card")];
+    const marked = all.map((c, i) => [c, i]).filter(([c]) => c.classList.contains("cursor"));
+    const visible = all.filter((c) => !c.classList.contains("hidden"));
+    const markedVisible = marked.filter(([c]) => !c.classList.contains("hidden"));
+    return {
+      markedCount: marked.length,
+      markedVisibleCount: markedVisible.length,
+      markedDomIndex: marked.length === 1 ? marked[0][1] : null,
+      visibleCount: visible.length,
+      expectedDomIndex: visible[1] ? all.indexOf(visible[1]) : null,
+    };
+  });
+  const scrollFilteredAfter = await page.evaluate(() => window.scrollY);
+  record(
+    "filtered j/j/k lands cursor on 2nd VISIBLE card (not DOM index)",
+    cursorState.markedCount === 1 &&
+      cursorState.markedVisibleCount === 1 &&
+      cursorState.markedDomIndex === cursorState.expectedDomIndex &&
+      visibleIdx.length === 4 &&
+      scrollFilteredAfter !== scrollFilteredBefore,
+    { ...cursorState, visibleDomIndices: visibleIdx, scrollFilteredBefore, scrollFilteredAfter }
+  );
+  await page.screenshot({ path: walkDir + "/04-filtered-navigation.png", fullPage: false });
+
   // a → back to all
   await page.keyboard.press("a");
   const afterA = await countAll();
-  record("a restores all groups", afterA.visible === afterA.groups, afterA);
+  const cursorAfterA = await page.evaluate(() => {
+    const marked = [...document.querySelectorAll("#groups .card")].map((c, i) => [c, i]).filter(([c]) => c.classList.contains("cursor"));
+    return { markedCount: marked.length, markedDomIndex: marked.length === 1 ? marked[0][1] : null };
+  });
+  record("a restores all groups and resets cursor to first card", afterA.visible === afterA.groups && cursorAfterA.markedCount === 1 && cursorAfterA.markedDomIndex === 0, { ...afterA, cursorAfterA });
 
   // j/k navigation scrolls
   const scrollBefore = await page.evaluate(() => window.scrollY);
@@ -107,7 +151,7 @@ try {
     steps,
   };
   await writeFile(walkDir + "/walk.json", JSON.stringify(summary, null, 2) + "\n");
-  console.log(`\n${passed}/${steps.length} steps passed — walk.json + 4 screenshots written to results/walk/`);
+  console.log(`\n${passed}/${steps.length} steps passed — walk.json + 5 screenshots written to results/walk/`);
   process.exitCode = passed === steps.length ? 0 : 1;
 } finally {
   await browser.close();

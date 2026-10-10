@@ -2,15 +2,15 @@
   "url": "http://127.0.0.1:8412/recap.html",
   "browser": "chromium (playwright bundled, ms-playwright cache)",
   "viewport": "1000x800",
-  "stepsPassed": 8,
-  "stepsTotal": 8,
+  "stepsPassed": 9,
+  "stepsTotal": 9,
   "agreement": true,
   "steps": [
     {
       "name": "page loads data over http",
       "ok": true,
       "observed": {
-        "meta": "generated 2026-10-10T20:14:30.755Z · source 30d31850ec35 · fixtures a23a0568e18f"
+        "meta": "generated 2026-10-10T20:42:58.640Z · source 30d31850ec35 · fixtures a23a0568e18f"
       }
     },
     {
@@ -41,13 +41,36 @@
       }
     },
     {
-      "name": "a restores all groups",
+      "name": "filtered j/j/k lands cursor on 2nd VISIBLE card (not DOM index)",
+      "ok": true,
+      "observed": {
+        "markedCount": 1,
+        "markedVisibleCount": 1,
+        "markedDomIndex": 2,
+        "visibleCount": 4,
+        "expectedDomIndex": 2,
+        "visibleDomIndices": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "scrollFilteredBefore": 457,
+        "scrollFilteredAfter": 928
+      }
+    },
+    {
+      "name": "a restores all groups and resets cursor to first card",
       "ok": true,
       "observed": {
         "groups": 7,
         "visible": 7,
         "claims": 15,
-        "refused": 9
+        "refused": 9,
+        "cursorAfterA": {
+          "markedCount": 1,
+          "markedDomIndex": 0
+        }
       }
     },
     {

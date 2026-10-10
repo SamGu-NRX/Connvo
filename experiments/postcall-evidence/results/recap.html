@@ -63,7 +63,7 @@
       code { background: var(--badge-bg); border-radius: 6px; padding: 1px 6px; }
       .kbd-help { color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
       .hidden { display: none; }
-      [data-filter]:not(.hidden) { }
+      .card.cursor { outline: 2px solid #2563eb; outline-offset: 2px; }
     </style>
   </head>
   <body>
@@ -182,12 +182,22 @@
       }
 
       function applyFilter() {
-        const cards = document.querySelectorAll("#groups .card");
-        cards.forEach((card, i) => {
+        const cards = [...document.querySelectorAll("#groups .card")];
+        const visible = [];
+        cards.forEach((card) => {
           const show = state.filter === "all" || card.querySelector('[data-verdict="refused"]');
           card.classList.toggle("hidden", !show);
-          if (show && i === state.cursor) card.scrollIntoView({ block: "start" });
+          if (show) visible.push(card);
         });
+        // state.cursor indexes the VISIBLE card list (not DOM order), so
+        // j/k navigate consistently while a filter hides cards.
+        if (state.cursor > visible.length - 1) state.cursor = Math.max(visible.length - 1, 0);
+        cards.forEach((card) => card.classList.toggle("cursor", false));
+        if (visible.length > 0) {
+          const target = visible[state.cursor];
+          target.classList.add("cursor");
+          target.scrollIntoView({ block: "start" });
+        }
         const help = document.getElementById("filter-help");
         help.textContent =
           state.filter === "refused"
