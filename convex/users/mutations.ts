@@ -470,7 +470,7 @@ export const updateUserInterests = mutation({
 /**
  * Deactivates user account
  *
- * Marks a user account as inactive, preventing them from accessing the platform. Validates that the user exists and is not already deactivated. In a complete implementation, this would also cancel active meetings, remove from matching queues, and clean up active sessions. Requires the authenticated user to own the account or have admin privileges.
+ * Marks a user account as inactive, preventing them from accessing the platform. Validates that the user exists and is not already deactivated. In the same transaction, cancels the user's waiting matching-queue entries and future scheduled meetings, and writes an audit log entry. Active and concluded meetings are preserved as history. Requires the authenticated user to own the account or have admin privileges.
  *
  * @example request
  * ```json
@@ -545,16 +545,73 @@ export const deactivateUser = mutation({
       throw createError.validation("User is already deactivated");
     }
 
+    const now = Date.now();
+
     // Deactivate user
     await ctx.db.patch(userId, {
       isActive: false,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
 
-    // TODO: In a complete implementation, we would also:
-    // - Cancel any active meetings
-    // - Remove from matching queues
-    // - Clean up active sessions
+    // Lifecycle cleanup runs in the SAME transaction as the isActive flip, so
+    // a deactivated user can neither keep being paired nor keep future
+    // meetings, even if a concurrent matcher reads mid-transaction.
+
+    // 1. Cancel the user's waiting matching-queue entries. Rows are marked
+    //    cancelled (not deleted) to preserve history, matching the
+    //    cancelQueueEntry house pattern.
+    const waitingQueueEntries = await ctx.db
+      .query("matchingQueue")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("status"), "waiting"))
+      .collect();
+
+    for (const entry of waitingQueueEntries) {
+      await ctx.db.patch(entry._id, {
+        status: "cancelled",
+        updatedAt: now,
+      });
+    }
+
+    // 2. Cancel the user's future scheduled meetings. Only not-yet-started
+    //    ("scheduled" with no time or a future time) meetings are cancelled;
+    //    active/concluded history is preserved. No Convex-scheduled functions
+    //    exist for not-yet-started meetings (room creation, transcription, and
+    //    post-processing are scheduled at start/end time), so there are no
+    //    scheduled job handles to cancel here.
+    const scheduledMeetings = await ctx.db
+      .query("meetings")
+      .withIndex("by_organizer_and_state", (q) =>
+        q.eq("organizerId", userId).eq("state", "scheduled"),
+      )
+      .collect();
+
+    let cancelledMeetings = 0;
+    for (const meeting of scheduledMeetings) {
+      if (meeting.scheduledAt === undefined || meeting.scheduledAt > now) {
+        await ctx.db.patch(meeting._id, {
+          state: "cancelled",
+          updatedAt: now,
+        });
+        cancelledMeetings += 1;
+      }
+    }
+
+    // 3. Audit entry (same-transaction, direct-insert house pattern used by
+    //    matching/queue.ts).
+    await ctx.db.insert("auditLogs", {
+      actorUserId: userId,
+      resourceType: "user",
+      resourceId: userId,
+      action: "user_deactivated",
+      metadata: {
+        category: "auth",
+        success: true,
+        cancelledQueueEntries: waitingQueueEntries.length,
+        cancelledMeetings,
+      },
+      timestamp: now,
+    });
 
     return null;
   },

@@ -337,7 +337,7 @@ export const getShardQueueEntries = internalQuery({
     const now = Date.now();
 
     // Get all waiting entries
-    const allEntries = await ctx.db
+    const waitingEntries = await ctx.db
       .query("matchingQueue")
       .withIndex("by_status", (q) => q.eq("status", "waiting"))
       .filter((q) =>
@@ -348,8 +348,19 @@ export const getShardQueueEntries = internalQuery({
       )
       .collect();
 
+    // Defensive pairing guard: skip entries whose user has been deactivated.
+    // Deactivation cancels waiting rows in the same transaction, but if a
+    // stale waiting row somehow survives, its user must never be paired.
+    const activeEntries: typeof waitingEntries = [];
+    for (const entry of waitingEntries) {
+      const entryUser = await ctx.db.get(entry.userId);
+      if (entryUser?.isActive) {
+        activeEntries.push(entry);
+      }
+    }
+
     // Shard entries based on user ID hash
-    const shardEntries = allEntries.filter((entry) => {
+    const shardEntries = activeEntries.filter((entry) => {
       const userIdHash = hashUserId(entry.userId);
       return userIdHash % args.shardCount === args.shard;
     });
