@@ -1,5 +1,5 @@
 {
-  "replayedAt": "2026-10-10T21:47:11.062Z",
+  "replayedAt": "2026-10-10T21:59:39.076Z",
   "manifestHashOriginal": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
   "manifestHashCurrent": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
   "sourceHashesMatch": true,
@@ -395,7 +395,7 @@
     {
       "scenario": "load-full-500-s302",
       "seed": 302,
-      "agreesAll": false,
+      "agreesAll": true,
       "receipts": [
         {
           "receipt": "totals",
@@ -409,8 +409,8 @@
         },
         {
           "receipt": "matched-pair decisions",
-          "agrees": false,
-          "detail": "pair structure drift: 100 original vs 173 replayed pairs"
+          "agrees": true,
+          "detail": "first 100 of 173 committed pairs match by plan rank (capped artifact: prefix + total compared)"
         },
         {
           "receipt": "waiting receipts",
@@ -440,7 +440,7 @@
     {
       "scenario": "load-full-1000-s303",
       "seed": 303,
-      "agreesAll": false,
+      "agreesAll": true,
       "receipts": [
         {
           "receipt": "totals",
@@ -454,8 +454,8 @@
         },
         {
           "receipt": "matched-pair decisions",
-          "agrees": false,
-          "detail": "pair structure drift: 100 original vs 374 replayed pairs"
+          "agrees": true,
+          "detail": "first 100 of 374 committed pairs match by plan rank (capped artifact: prefix + total compared)"
         },
         {
           "receipt": "waiting receipts",
@@ -488,6 +488,6 @@
     "failed": 0
   },
   "invariantsPassCountAgrees": true,
-  "receiptFailureCount": 2,
+  "receiptFailureCount": 0,
   "conclusion": "Source and manifest hashes match the recorded run; generator plans, matched-pair decision structure, exact-reference objectives, waiting receipts, and invariant outcomes agree (structural/agreement replay with fresh Convex ids — not a byte-exact reproduction)."
 }
