@@ -362,7 +362,7 @@ describe("Identity binding and tenancy", () => {
         { userId: target.userId },
       );
       expect(profile).not.toBeNull();
-      expect(profile?.displayName).toBe("Target User");
+      expect(profile?.userId).toBe(target.userId);
     });
 
     it("allows a same-org caller", async () => {

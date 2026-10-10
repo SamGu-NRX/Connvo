@@ -626,21 +626,21 @@ describe("Transcript Ingestion Pipeline", () => {
       api.transcripts.ingestion.getTranscriptChunks,
       { meetingId: testMeetingId },
     );
-    expect(settled.map((c) => c.text)).toEqual(["Final one", "Final two"]);
+    expect(settled.map((c: { text: string }) => c.text)).toEqual(["Final one", "Final two"]);
 
     // Explicit request: only interims
     const interims = await authedT.query(
       api.transcripts.ingestion.getTranscriptChunks,
       { meetingId: testMeetingId, isInterim: true },
     );
-    expect(interims.map((c) => c.text)).toEqual(["Interim guess"]);
+    expect(interims.map((c: { text: string }) => c.text)).toEqual(["Interim guess"]);
 
     // Explicit request: only finals
     const finals = await authedT.query(
       api.transcripts.ingestion.getTranscriptChunks,
       { meetingId: testMeetingId, isInterim: false },
     );
-    expect(finals.map((c) => c.text)).toEqual(["Final one", "Final two"]);
+    expect(finals.map((c: { text: string }) => c.text)).toEqual(["Final one", "Final two"]);
 
     // The bucketed index path applies the same filter
     const bucketMs = Math.floor(base / 300000) * 300000;
@@ -648,12 +648,12 @@ describe("Transcript Ingestion Pipeline", () => {
       api.transcripts.ingestion.getTranscriptChunks,
       { meetingId: testMeetingId, bucketMs, isInterim: true },
     );
-    expect(viaBucket.map((c) => c.text)).toEqual(["Interim guess"]);
+    expect(viaBucket.map((c: { text: string }) => c.text)).toEqual(["Interim guess"]);
     const viaBucketSettled = await authedT.query(
       api.transcripts.ingestion.getTranscriptChunks,
       { meetingId: testMeetingId, bucketMs },
     );
-    expect(viaBucketSettled.map((c) => c.text)).toEqual([
+    expect(viaBucketSettled.map((c: { text: string }) => c.text)).toEqual([
       "Final one",
       "Final two",
     ]);

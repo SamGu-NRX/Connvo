@@ -127,10 +127,17 @@ export const getCurrentUser = query({
         return null;
       }
 
-      return await ctx.db
+      const user = await ctx.db
         .query("users")
         .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
         .unique();
+
+      // Deactivated accounts resolve to "logged out" for this client probe:
+      // the UI shows a signed-out state, and every privileged call rejects
+      // with forbidden at requireIdentity (isActive gate).
+      if (user && user.isActive === false) return null;
+
+      return user;
     } catch (error) {
       // This catches auth configuration errors (e.g., missing WORKOS_CLIENT_ID)
       // and database query errors. Return null to allow UI to show logged-out state

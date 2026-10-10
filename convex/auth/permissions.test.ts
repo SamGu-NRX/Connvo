@@ -428,7 +428,7 @@ describe("Dynamic Permission Management", () => {
       );
 
       // Check audit logs
-      const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await hostT.query(internal.audit.logging.getAuditLogs, {
         resourceType: "meetingNotes",
         resourceId: testMeetingId,
         action: "subscription_established",
@@ -458,7 +458,7 @@ describe("Dynamic Permission Management", () => {
       });
 
       // Check audit logs for revocation
-      const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await hostT.query(internal.audit.logging.getAuditLogs, {
         actorUserId: hostUserId,
         action: "participant_removed",
         limit: 10,
@@ -488,7 +488,7 @@ describe("Dynamic Permission Management", () => {
       });
 
       // Check audit logs
-      const auditLogs = (await hostT.query(api.audit.logging.getAuditLogs, {
+      const auditLogs = (await hostT.query(internal.audit.logging.getAuditLogs, {
         action: "participant_role_changed",
         limit: 10,
       })) as {

@@ -61,12 +61,13 @@ async function scheduledJobCount(
   t: TestEnv,
   nameSubstring: string,
 ): Promise<number> {
-  const jobs = await t.run(async (ctx) => {
-    return await ctx.db.query("_scheduled_functions").collect();
-  });
-  return jobs.filter((j: { name: string }) =>
-    j.name.includes(nameSubstring),
-  ).length;
+  // _scheduled_functions is a system table: absent from the schema types but
+  // queryable in the convex-test mock backend (which stores scheduled jobs
+  // there, proven by the runtime behavior this suite asserts).
+  const jobs = (await t.run(async (ctx) => {
+    return await (ctx.db as unknown as { query: (n: string) => { collect: () => Promise<Array<{ name: string }>> } }["query"])("_scheduled_functions").collect();
+  })) as Array<{ name: string }>;
+  return jobs.filter((j) => j.name.includes(nameSubstring)).length;
 }
 
 describe("Stream webhook endpoint (signature-before-effect)", () => {
