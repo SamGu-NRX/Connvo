@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "frozenAt": "2026-10-10",
+  "frozenAtBaseCommit": "d86620c27ed9710d2810acbdb4db4daebdfcd9f7",
+  "labelStatus": "PROVISIONAL — interpretive labels authored for this study, not ground truth from users or production telemetry",
+  "groups": [
+    {
+      "id": "g1-supported-commitments",
+      "purpose": "Recall control: genuine commitments the permissive baseline should capture.",
+      "meetings": [
+        {
+          "id": "m1a",
+          "segments": [
+            { "startMs": 0, "endMs": 12000, "speakers": ["Alice"], "text": "Alice: I will send the migration report to the team by Friday.", "topics": ["migration"] },
+            { "startMs": 12000, "endMs": 26000, "speakers": ["Bob"], "text": "Bob: I should finish the load test harness by Wednesday.", "topics": ["testing"] },
+            { "startMs": 26000, "endMs": 40000, "speakers": ["Alice"], "text": "Alice: The staging cluster is on version 4.2 right now.", "topics": ["infra"] }
+          ],
+          "notes": { "version": 1, "content": "Follow-ups:\n- [ ] circulate the incident timeline\n" },
+          "notesHistory": []
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [
+          { "text": "I will send the migration report to the team by Friday", "kind": "commitment", "note": "first-person commitment with owner and time" },
+          { "text": "I should finish the load test harness by Wednesday", "kind": "commitment", "note": "first-person commitment with owner and time" },
+          { "text": "circulate the incident timeline", "kind": "note-checklist", "note": "explicit unchecked checklist item in shared notes" }
+        ],
+        "unsupportedTriggers": []
+      }
+    },
+    {
+      "id": "g2-negation",
+      "purpose": "Negation control: keyword-matched sentences that negate the commitment. A quoted segment can still support the wrong conclusion.",
+      "meetings": [
+        {
+          "id": "m2a",
+          "segments": [
+            { "startMs": 0, "endMs": 14000, "speakers": ["Priya"], "text": "Priya: We will not be adding OAuth device flow this quarter after all.", "topics": ["auth"] },
+            { "startMs": 14000, "endMs": 30000, "speakers": ["Marco"], "text": "Marco: I don't think we should migrate the auth service; it can stay where it is.", "topics": ["auth"] },
+            { "startMs": 30000, "endMs": 46000, "speakers": ["Priya"], "text": "Priya: We no longer need to rotate the signing keys — the vendor confirmed the old certs are valid.", "topics": ["security"] },
+            { "startMs": 46000, "endMs": 58000, "speakers": ["Marco"], "text": "Marco: Good, that frees up the afternoon for the caching layer review.", "topics": ["infra"] }
+          ],
+          "notes": null,
+          "notesHistory": []
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [],
+        "unsupportedTriggers": [
+          { "text": "We will not be adding OAuth device flow this quarter after all", "kind": "negation", "note": "keyword 'will' matches a negated commitment" },
+          { "text": "I don't think we should migrate the auth service; it can stay where it is", "kind": "negation", "note": "keyword 'should' matches a rejected proposal" },
+          { "text": "We no longer need to rotate the signing keys — the vendor confirmed the old certs are valid", "kind": "negation", "note": "keyword 'need to' matches a withdrawn obligation" }
+        ]
+      }
+    },
+    {
+      "id": "g3-correction",
+      "purpose": "Correction control: an emitted item quoting a superseded plan supports the wrong conclusion; the current commitment in the same meeting must survive.",
+      "meetings": [
+        {
+          "id": "m3a",
+          "segments": [
+            { "startMs": 0, "endMs": 15000, "speakers": ["Dana"], "text": "Dana: Earlier we agreed we should move the launch deadline to Friday.", "topics": ["planning"] },
+            { "startMs": 15000, "endMs": 34000, "speakers": ["Sam"], "text": "Sam: Update on that: the deadline is now Monday, not Friday. We will keep Friday for the dry run instead.", "topics": ["planning"] },
+            { "startMs": 34000, "endMs": 42000, "speakers": ["Dana"], "text": "Dana: Copy. Monday it is.", "topics": ["planning"] }
+          ],
+          "notes": null,
+          "notesHistory": []
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [
+          { "text": "We will keep Friday for the dry run instead", "kind": "commitment", "note": "current commitment after correction" }
+        ],
+        "unsupportedTriggers": [
+          { "text": "Earlier we agreed we should move the launch deadline to Friday", "kind": "correction", "note": "superseded plan quoted back; the correction reverses it" }
+        ]
+      }
+    },
+    {
+      "id": "g4-hypothetical-questions",
+      "purpose": "Modal control: conditionals and open questions matched by keywords are not commitments.",
+      "meetings": [
+        {
+          "id": "m4a",
+          "segments": [
+            { "startMs": 0, "endMs": 16000, "speakers": ["Bob"], "text": "Bob: If we add sharding later we should start with the events table.", "topics": ["scaling"] },
+            { "startMs": 16000, "endMs": 30000, "speakers": ["Alice"], "text": "Alice: Should we maybe follow up with legal before the pilot?", "topics": ["compliance"] },
+            { "startMs": 30000, "endMs": 40000, "speakers": ["Bob"], "text": "Bob: The pilot starts on the 14th.", "topics": ["planning"] }
+          ],
+          "notes": null,
+          "notesHistory": []
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [],
+        "unsupportedTriggers": [
+          { "text": "If we add sharding later we should start with the events table", "kind": "hypothetical", "note": "conditional, not a commitment" },
+          { "text": "Should we maybe follow up with legal before the pilot", "kind": "question", "note": "open question, not a commitment" }
+        ]
+      }
+    },
+    {
+      "id": "g5-changed-version-stale-recap",
+      "purpose": "Changed-version control: recaps frozen against notes v1 are stale once notes move to v2; regeneration must differ and staleness must be detectable.",
+      "meetings": [
+        {
+          "id": "m5a",
+          "segments": [
+            { "startMs": 0, "endMs": 12000, "speakers": ["Alice"], "text": "Alice: The runbook moved to the on-call wiki last sprint.", "topics": ["ops"] },
+            { "startMs": 12000, "endMs": 24000, "speakers": ["Bob"], "text": "Bob: Our sprint cadence stays at two weeks for now.", "topics": ["planning"] }
+          ],
+          "notes": { "version": 2, "content": "Action items:\n- [ ] rotate the pager rotation monthly\nAction: archive the retired dashboards\n" },
+          "notesHistory": [
+            { "version": 1, "content": "Action items:\n- [ ] update the on-call runbook link\nAction: ping the vendor about the expired cert\n" }
+          ]
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [
+          { "text": "rotate the pager rotation monthly", "kind": "note-checklist", "note": "current notes v2 checklist item" },
+          { "text": "archive the retired dashboards", "kind": "note-action", "note": "current notes v2 action line" }
+        ],
+        "unsupportedTriggers": [],
+        "staleActionItems": [
+          { "text": "update the on-call runbook link", "fromNotesVersion": 1, "kind": "stale", "note": "superseded by notes v2" },
+          { "text": "ping the vendor about the expired cert", "fromNotesVersion": 1, "kind": "stale", "note": "superseded by notes v2" }
+        ]
+      }
+    },
+    {
+      "id": "g6-supported-miss",
+      "purpose": "Recall-failure control: a supported commitment with no action keyword. Also triggers the generic fallback items, which are fabricated (no source).",
+      "meetings": [
+        {
+          "id": "m6a",
+          "segments": [
+            { "startMs": 0, "endMs": 12000, "speakers": ["Alice"], "text": "Alice: Can you own the rollout comms for the beta?", "topics": ["launch"] },
+            { "startMs": 12000, "endMs": 28000, "speakers": ["Bob"], "text": "Bob: Yes, mine. I'll draft the announcement template tonight.", "topics": ["launch"] },
+            { "startMs": 28000, "endMs": 40000, "speakers": ["Alice"], "text": "Alice: Perfect. The beta waitlist hit 400 users today.", "topics": ["growth"] }
+          ],
+          "notes": null,
+          "notesHistory": []
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [
+          { "text": "I'll draft the announcement template tonight", "kind": "commitment", "note": "contracted 'I'll' escapes the keyword list entirely" }
+        ],
+        "unsupportedTriggers": []
+      }
+    },
+    {
+      "id": "g7-empty-meeting",
+      "purpose": "Refusal control: a concluded meeting with no transcript and no notes must produce no recap at all (production returns null).",
+      "meetings": [
+        {
+          "id": "m7a",
+          "segments": [],
+          "notes": null,
+          "notesHistory": []
+        }
+      ],
+      "labels": {
+        "supportedActionItems": [],
+        "unsupportedTriggers": []
+      }
+    }
+  ]
+}
