@@ -129,7 +129,10 @@ for (const r of refusals) {
   byReason[key] = (byReason[key] ?? 0) + 1;
 }
 for (const [reason, count] of Object.entries(manifest.refusals.byReason)) {
-  if (byReason[reason] !== count) fail(`refusals: ${reason} ${byReason[reason] ?? 0} != manifest ${count}`);
+  if ((byReason[reason] ?? 0) !== count) fail(`refusals: ${reason} ${byReason[reason] ?? 0} != manifest ${count}`);
+}
+if (manifest.indifference && manifest.indifference.archiveSha256Unchanged !== true) {
+  fail("indifference: manifest reports the archive changed under added unrelated meetings");
 }
 
 // 9. leaks

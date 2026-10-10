@@ -285,14 +285,12 @@ export const exportMyAccountData = queryGeneric({
       sharedMeetingRows.push(meeting);
     }
 
-    // ---- MEETING UNIVERSE SCAN (bounded, id-only read for refusals) ---------
-    const universeScan = await paginateIndex(
-      () =>
-        ctx.db.query("meetings"),
-      pageSize,
-      maxRowsPerTable,
-    );
-    const allMeetingRows = sortedById([...organized.rows, ...sharedMeetingRows, ...universeScan.rows].filter(
+    // Discovery is scoped to the caller's own meetings (owner pass above) and
+    // the meetings they hold a participants row for (shared pass): plain
+    // organizer/participation index reads each. Unrelated meetings are never
+    // queried — no full-table scan, so no existence, count, or ordinal may
+    // leak through refusals or ordinals.
+    const allMeetingRows = sortedById([...organized.rows, ...sharedMeetingRows].filter(
       (row, idx, arr) => arr.findIndex((r) => String(r._id) === String(row._id)) === idx,
     ));
     const meetingOrdinal = new Map<string, number>();
@@ -353,19 +351,10 @@ export const exportMyAccountData = queryGeneric({
       });
     }
 
-    // Meetings the caller has no participation in: refusal per meeting
-    // (existence-free labels only — no ids, titles, or metadata).
-    for (const row of allMeetingRows) {
-      const meetingId = String(row._id);
-      if (!myMeetingIds.has(meetingId)) {
-        refusals.push({
-          table: "<meeting-scoped>",
-          meeting: `meeting-${meetingOrdinal.get(meetingId)}`,
-          reason: "no_meeting_participation — assertMeetingAccess would refuse; no content exported",
-          authoritySource: AUTHORITY_SOURCES.assertMeetingAccess,
-        });
-      }
-    }
+    // Unrelated meetings (the caller holds neither an organizer nor a
+    // participants row) are not discovered at all: no refusal receipt is
+    // emitted for them, so the archive cannot reveal that such meetings exist
+    // or how many there are. Discovery silence IS the boundary here.
 
     // meetings record: owner + shared passes, minus sensitive fields.
     record("meetings", [...organized.rows, ...sharedMeetingRows], organized, "merged-index");

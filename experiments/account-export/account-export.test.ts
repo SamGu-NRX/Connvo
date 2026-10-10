@@ -172,9 +172,11 @@ describe("caller-only account export", () => {
     const archive = await runExport(t);
     const m3Id = seeded.refToId["m3"];
     expect(JSON.stringify(archive)).not.toContain(m3Id);
+    // Unrelated meetings are not discovered at all: no refusal receipt, no
+    // ordinal, nothing that reveals they exist or how many there are.
     const noPart = archive.refusals.filter((r: any) => r.reason.startsWith("no_meeting_participation"));
-    expect(noPart).toHaveLength(1);
-    expect(noPart[0].meeting).toMatch(/^meeting-\d+$/); // existence-free label
+    expect(noPart).toHaveLength(0);
+    expect(JSON.stringify(archive.refusals)).not.toContain("no_meeting_participation");
   });
 
   it("excludes the removed member's participant row entirely", async () => {
@@ -209,9 +211,63 @@ describe("caller-only account export", () => {
     const noGrant = archive.refusals.filter((r: any) => r.reason.startsWith("no_export_authority_defined"));
     expect(noGrant.map((r: any) => r.table).sort()).toEqual([...MEETING_SCOPED_NO_GRANT].sort());
     expect(archive.refusals).toHaveLength(
-      3 /* missing scope @ m2 */ + MEETING_SCOPED_NO_GRANT.length + 1 /* m3 */,
+      3 /* missing scope @ m2 */ + MEETING_SCOPED_NO_GRANT.length + 0 /* m3 is never discovered */,
     );
-    expect(archive.refusals.length).toBe(13);
+    expect(archive.refusals.length).toBe(12);
+  });
+
+  it("is indifferent to unrelated meetings: adding them leaves the archive byte-identical", async () => {
+    const a = await harness();
+    const baseline = await runExport(a.t);
+
+    const b = await harness();
+    await b.t.run(async (ctx: any) => {
+      const carolId = b.seeded.refToId["carol"];
+      const daveId = b.seeded.refToId["dave"];
+      for (let i = 0; i < 2; i++) {
+        const mid = await ctx.db.insert("meetings", {
+          organizerId: carolId,
+          title: `unrelated private meeting ${i}`,
+          description: "belongs to other users entirely",
+          scheduledAt: 1759996800000 + (i + 1) * 3_600_000,
+          duration: 1800,
+          webrtcEnabled: true,
+          streamRoomId: `stream-room-unrelated-${i}-secret`,
+          state: "concluded",
+          participantCount: 2,
+          createdAt: 1760000000000,
+          updatedAt: 1760000000000,
+        });
+        for (const [uid, role] of [[carolId, "host"], [daveId, "participant"]] as const) {
+          await ctx.db.insert("meetingParticipants", {
+            meetingId: mid,
+            userId: uid,
+            role,
+            joinedAt: 1760000000000,
+            presence: "joined",
+            createdAt: 1760000000000,
+          });
+        }
+        await ctx.db.insert("transcripts", {
+          meetingId: mid,
+          bucketMs: 0,
+          sequence: 1,
+          speakerId: "spk-carol",
+          text: `unrelated private transcript line ${i} — must never surface`,
+          confidence: 0.9,
+          startMs: 0,
+          endMs: 900,
+          wordCount: 8,
+          language: "en",
+          createdAt: 1760000000000,
+        });
+      }
+    });
+    const perturbed = await runExport(b.t);
+
+    // Same fixture clock and seeding order → identical ids; the caller's scope
+    // is unchanged, so the entire archive must be byte-identical.
+    expect(JSON.stringify(perturbed)).toBe(JSON.stringify(baseline));
   });
 
   it("bounds pagination: pageSize clamps to 100 and receipts report real pages", async () => {

@@ -13,12 +13,12 @@ fixture universe covering every boundary case, and commits the evidence.
 
 ### 1. Export is legitimate for owner + host rows; refused for everything else
 
-`permissionsForResource` grants `export` only for `transcripts` (host) and
-`meetingNotes` (host). Alice hosts m1: her export carries m1's transcript,
-note, and segment rows. She *participates* in bob's retro (m2) — those rows
-are refused with a receipt naming `permissionsForResource` and her role. She
-has no participation in m3: refused as `no_meeting_participation`, and the
-refusal carries no m3 ids — only an existence-free label (`meeting-3`).
+`permissionsForResource` grants `export` only for `transcripts` (host),
+`transcriptSegments` (host), and `meetingNotes` (host). Alice hosts m1: her
+export carries m1's transcript, note, and segment rows. She *participates* in
+bob's retro (m2) — those rows are refused with a receipt naming
+`permissionsForResource` and her role. She has no relationship with m3 — and
+m3 is never discovered at all (finding 5).
 
 ### 2. Identity gating is absolute
 
@@ -45,16 +45,29 @@ table; merged multi-scan tables (`connections`, `meetings`) carry a
 `merged-index` mode exempt from that equation because the row count is not
 proportional to scan pages.
 
-### 5. Refusals are first-class receipts, not silent gaps
+### 5. Discovery is scoped: unrelated meetings do not exist to the export
 
-Every refusal names: the table, an existence-free meeting label, the caller's
-role, a machine-parsable reason (`missing_export_permission`,
-`no_export_authority_defined`, `no_meeting_participation`), and the
-`authoritySource` that backs the decision. Nine meeting-scoped tables have no
-export authority at all in the permission matrix — each gets its own refusal
-rather than being silently skipped.
+Meeting discovery is only `by_organizer` plus the caller's own
+`meetingParticipants` rows — there is no meetings-table universe scan.
+Meetings the caller has no relationship with (m3) produce no refusal, no
+ordinal, no count. An earlier draft emitted one `no_meeting_participation`
+receipt per unrelated meeting, which leaked one bit of existence per meeting
+plus the total count; that receipt class is now zero by construction. The
+proof is differential: two extra meetings owned by other users (with private
+transcript content) are inserted after the baseline export and the re-run
+archive is byte-identical — receipted as `manifest.indifference` in `run.ts`
+and asserted in a dedicated vitest case.
 
-### 6. The archive is verifiable without trusting the exporter
+### 6. Refusals are first-class receipts, not silent gaps
+
+Every refusal names: the table, an in-scope meeting label, the caller's role,
+a machine-parsable reason (`missing_export_permission`,
+`no_export_authority_defined`), and the `authoritySource` that backs the
+decision. Nine meeting-scoped tables have no export authority at all in the
+permission matrix — each gets its own refusal scoped to the caller's in-scope
+meeting count, rather than being silently skipped.
+
+### 7. The archive is verifiable without trusting the exporter
 
 `results/export.json` carries a sha256 in `results/manifest.json`. The
 standalone `reader.mjs` — importing no Convex, no project code, no policy —
@@ -63,7 +76,7 @@ and a leak scan, then reports PASS. Re-computing counts against the manifest
 catches any drift. A deliberately tampered archive (re-attached `email`,
 deleted refs receipt) is rejected on checksum mismatch.
 
-### 7. Determinism
+### 8. Determinism
 
 With a fixture-fixed clock, two consecutive runs produce byte-identical
 archives (`exportId` embeds `requestedAt`, not wall time). Every exported
@@ -75,11 +88,12 @@ collection is ordered by `_id`; ordering is asserted in the validator.
 |---|---|
 | Fixture universe | 317 rows (11 owner / 255 shared / 51 excluded) |
 | Exported | 266 rows across 33 tables |
-| Refusals | 13 (3 missing-export, 9 no-authority, 1 no-participation) |
+| Refusals | 12 (3 missing-export, 9 no-authority; 0 existence-leak receipts) |
+| Indifference | adding 2 unrelated meetings leaves the archive byte-identical |
 | Leak scan | 33 tokens, 0 hits |
 | Determinism | byte-identical archives across runs |
 | Independent reader | PASS; tamper-detection PASS |
-| Tests | 15/15 pass |
+| Tests | 16/16 pass |
 
 ## Caveats & scope
 

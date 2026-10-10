@@ -120,7 +120,10 @@ const noExportScope = seeded.classification.filter(
 const noGrantAggregates = new Set(
   seeded.classification.filter((r) => r.class === "excluded" && r.reason.startsWith("no_export_authority_defined")).map((r) => r.table),
 ).size;
-const noParticipation = refusedMeetings.size;
+// Unrelated meetings (the caller holds no organizer or participants row) are
+// never discovered, so the export emits no receipt for them — the archive
+// cannot reveal their existence or count.
+const noParticipation = 0;
 
 const refusalSummary = {
   missing_export_permission: archive.refusals.filter((r) => r.reason.startsWith("missing_export_permission")).length,
@@ -161,6 +164,64 @@ if (refIdHits.length > 0) {
   throw new Error(`LEAK: ${refIdHits.length} excluded row ids surfaced in refs/refusals`);
 }
 
+// --- 5b. indifference proof ----------------------------------------------------
+// Two extra meetings owned by other users (carol hosts, each with private
+// transcript content) are inserted after the baseline export. If discovery is
+// scoped correctly, re-running the export produces a byte-identical archive:
+// unrelated meetings must never change the output.
+const perturbedArchive = await (t as any)
+  .withIdentity({
+    subject: caller.workosUserId,
+    email: caller.email,
+    name: caller.displayName,
+  })
+  .run(async (ctx: any) => {
+    const carolId = seeded.refToId["carol"];
+    for (let i = 0; i < 2; i++) {
+      const mid = await ctx.db.insert("meetings", {
+        organizerId: carolId,
+        title: `unrelated private meeting ${i}`,
+        description: "belongs to other users entirely",
+        scheduledAt: 1759996800000 + (i + 1) * 3_600_000,
+        duration: 1800,
+        webrtcEnabled: true,
+        streamRoomId: `stream-room-unrelated-${i}-secret`,
+        state: "concluded",
+        participantCount: 1,
+        createdAt: requestedAt,
+        updatedAt: requestedAt,
+      });
+      await ctx.db.insert("meetingParticipants", {
+        meetingId: mid,
+        userId: carolId,
+        role: "host",
+        joinedAt: requestedAt,
+        presence: "joined",
+        createdAt: requestedAt,
+      });
+      await ctx.db.insert("transcripts", {
+        meetingId: mid,
+        bucketMs: 0,
+        sequence: 1,
+        speakerId: "spk-carol",
+        text: `unrelated private transcript line ${i} — must never surface`,
+        confidence: 0.9,
+        startMs: 0,
+        endMs: 900,
+        wordCount: 8,
+        language: "en",
+        createdAt: requestedAt,
+      });
+    }
+    return exportMyAccountData._handler(ctx, { requestedAt, pageSize });
+  });
+const perturbedJson = JSON.stringify(perturbedArchive, null, 2);
+if (perturbedJson !== archiveJson) {
+  throw new Error(
+    "INDIFFERENCE CHECK FAILED: adding unrelated meetings changed the caller's archive",
+  );
+}
+
 // --- 6. write outputs -----------------------------------------------------------
 mkdirSync(dirname(outPath), { recursive: true });
 mkdirSync(dirname(manifestPath), { recursive: true });
@@ -197,6 +258,11 @@ const manifest = {
     byReason: refusalSummary,
     expectations: refusalExpectations,
     match: refusalCheck.match,
+  },
+  indifference: {
+    addedUnrelatedMeetings: 2,
+    archiveSha256Unchanged: perturbedJson === archiveJson,
+    note: "two extra meetings owned by other users were inserted after the baseline export; the re-run archive is byte-identical — unrelated meetings are never discovered, counted, or receipted",
   },
   leakScan: {
     tokenCount: tokens.length,

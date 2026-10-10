@@ -20,9 +20,10 @@ Every access decision in the study is source-indexed (see `projection.ts`
 | `permissionsForResource` | `convex/lib/permissions.ts:26` | `export` exists **only** for `meetingNotes` (host) and `transcripts` (host); participants never get it |
 | `ExportResponse` | `convex/types/api/responses.ts:244` (+ validator) | the envelope the export must satisfy |
 
-The study's core stance: **missing export authority is a refusal, never a
-guessed permission.** Refusals are recorded as receipts naming the authority
-source, with meeting labels that don't leak document ids.
+The study's core stances: **missing export authority is a refusal, never a
+guessed permission**, and **meeting discovery is scoped to caller-owned and
+participating meetings** — unrelated meetings are never scanned, counted, or
+receipted, so the archive cannot reveal their existence.
 
 ## Files
 
@@ -60,12 +61,16 @@ python3 -m http.server 8412 --directory experiments/account-export
 
 - 266 rows exported across 33 tables from a 317-row fixture universe
   (11 owner + 255 shared rows exported; 51 excluded).
-- 13 refusal receipts: 3 `missing_export_permission` (bob's retro m2), 9
+- 12 refusal receipts: 3 `missing_export_permission` (bob's retro m2), 9
   `no_export_authority_defined` (meeting-scoped tables with no export
-  authority), 1 `no_meeting_participation` (m3).
+  authority). Zero `no_meeting_participation` — unrelated meetings are never
+  discovered.
+- Indifference proof: inserting two extra meetings owned by other users
+  (with private transcripts) leaves the archive byte-identical
+  (`manifest.indifference.archiveSha256Unchanged: true`).
 - Leak scan: 33 private tokens, 0 hits in the archive.
 - Two consecutive runs produce byte-identical archives (deterministic clock).
 - Independent reader: PASS; tampered archive: rejected (checksum mismatch).
-- 15/15 tests pass.
+- 16/16 tests pass.
 
 See `REPORT.md` for findings and caveats.

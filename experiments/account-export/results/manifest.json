@@ -7,7 +7,7 @@
     "version": "account-export/projection-v1",
     "checksum": "c0ee6bf5"
   },
-  "archiveSha256": "cb10bcd1412039d3eb184c97ba9dc33d501ec5df811833c2bea497a9314c6e57",
+  "archiveSha256": "db9308fb631c82d56b25912647c3fbacc3c1cb78bed643c7ca1c33ce71eea396",
   "caller": {
     "ref": "alice",
     "email": "alice.caller@example.com",
@@ -63,18 +63,23 @@
     "total": 266
   },
   "refusals": {
-    "count": 13,
+    "count": 12,
     "byReason": {
       "missing_export_permission": 3,
       "no_export_authority_defined": 9,
-      "no_meeting_participation": 1
+      "no_meeting_participation": 0
     },
     "expectations": {
       "noExportScope": 3,
       "noGrantAggregates": 9,
-      "noParticipation": 1
+      "noParticipation": 0
     },
     "match": true
+  },
+  "indifference": {
+    "addedUnrelatedMeetings": 2,
+    "archiveSha256Unchanged": true,
+    "note": "two extra meetings owned by other users were inserted after the baseline export; the re-run archive is byte-identical — unrelated meetings are never discovered, counted, or receipted"
   },
   "leakScan": {
     "tokenCount": 33,

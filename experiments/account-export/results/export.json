@@ -4589,12 +4589,6 @@
         "meetings": 2
       },
       "table": "meetingCounters"
-    },
-    {
-      "authoritySource": "convex/auth/guards.ts:128 assertMeetingAccess — access to meeting-scoped data requires a meetingParticipants row for the caller; non-participants are refused",
-      "meeting": "meeting-3",
-      "reason": "no_meeting_participation — assertMeetingAccess would refuse; no content exported",
-      "table": "<meeting-scoped>"
     }
   ],
   "status": "completed"
