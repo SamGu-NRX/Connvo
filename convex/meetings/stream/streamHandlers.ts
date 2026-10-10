@@ -7,6 +7,8 @@
  */
 
 import { internalMutation } from "@convex/_generated/server";
+import type { MutationCtx } from "@convex/_generated/server";
+import { withIdempotency } from "@convex/lib/idempotency";
 import { internal } from "@convex/_generated/api";
 import {
   StreamApiResponseV,
@@ -41,8 +43,11 @@ export const handleCallSessionStarted = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
       }
 
       await ctx.db.patch(meeting._id, {
@@ -95,8 +100,21 @@ export const handleCallSessionEnded = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
+      }
+
+      // Idempotence beyond the event-dedupe key: a duplicate session_ended
+      // that survives key expiry (or a second end event) must not re-schedule
+      // post-processing. The concluded state is the durable transition marker.
+      if (meeting.state === "concluded") {
+        console.log(
+          `Meeting ${meeting._id} already concluded; skipping duplicate session_ended`,
+        );
+        return { success: true };
       }
 
       await ctx.db.patch(meeting._id, {
@@ -273,8 +291,11 @@ export const handleRecordingStarted = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
       }
 
       const meetingState = await ctx.db
@@ -324,8 +345,11 @@ export const handleRecordingStopped = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
       }
 
       const meetingState = await ctx.db
@@ -374,8 +398,30 @@ export const handleRecordingReady = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
+      }
+
+      const existing = await ctx.db
+        .query("meetingRecordings")
+        .withIndex("by_recording_id", (q) => q.eq("recordingId", recordingId))
+        .unique();
+
+      if (existing) {
+        // Stream redelivers recording_ready; update in place instead of
+        // inserting a duplicate recording row.
+        await ctx.db.patch(existing._id, {
+          recordingUrl,
+          status: "ready",
+          updatedAt: Date.now(),
+        });
+        console.log(
+          `Recording ${recordingId} already present for meeting ${meeting._id}; updated in place`,
+        );
+        return { success: true };
       }
 
       await ctx.db.insert("meetingRecordings", {
@@ -421,8 +467,11 @@ export const handleTranscriptionStarted = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
       }
 
       const transcriptionSession = await ctx.db
@@ -467,8 +516,11 @@ export const handleTranscriptionStopped = internalMutation({
         .unique();
 
       if (!meeting) {
-        console.warn(`No meeting found for GetStream call ${callId}`);
-        return { success: false };
+        console.warn(`No meeting found for GetStream call ${callId}; nothing to apply`);
+        // Ack the delivery: Stream maps webhook URLs per-app, so an unmapped
+        // call is expected traffic, not a transient failure. Returning failure
+        // here makes Stream retry the event forever.
+        return { success: true };
       }
 
       const transcriptionSession = await ctx.db
@@ -490,5 +542,112 @@ export const handleTranscriptionStopped = internalMutation({
       console.error("Failed to handle transcription stopped:", error);
       return { success: false };
     }
+  },
+});
+
+/**
+ * Route a verified webhook event to its handler. Unknown event types are
+ * acknowledged so Stream stops retrying them.
+ */
+async function routeWebhookEvent(
+  ctx: MutationCtx,
+  data: StreamWebhookPayload,
+): Promise<StreamSimpleSuccess> {
+  switch (data.type) {
+    case "call.session_started":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleCallSessionStarted,
+        { data },
+      );
+    case "call.session_ended":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleCallSessionEnded,
+        { data },
+      );
+    case "call.member_joined":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleMemberJoined,
+        { data },
+      );
+    case "call.member_left":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleMemberLeft,
+        { data },
+      );
+    case "call.recording_started":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleRecordingStarted,
+        { data },
+      );
+    case "call.recording_stopped":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleRecordingStopped,
+        { data },
+      );
+    case "call.recording_ready":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleRecordingReady,
+        { data },
+      );
+    case "call.transcription_started":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleTranscriptionStarted,
+        { data },
+      );
+    case "call.transcription_stopped":
+      return ctx.runMutation(
+        internal.meetings.stream.streamHandlers.handleTranscriptionStopped,
+        { data },
+      );
+    default:
+      console.log(`Unhandled GetStream webhook event: ${data.type}`);
+      return { success: true };
+  }
+}
+
+/**
+ * Single transactional entry point for webhook delivery.
+ *
+ * Dedupes retries via withIdempotency keyed on the event's identity
+ * (type + call/session/recording/user ids). The dedupe key insert and the
+ * handler run in the SAME transaction, so a redelivered event either observes
+ * the committed key and replays the stored result, or runs the handler exactly
+ * once. The httpAction cannot hold this lock itself (no ctx.db), so it
+ * delegates here.
+ */
+export const dispatchWebhook = internalMutation({
+  args: { data: StreamWebhookPayloadV },
+  returns: StreamApiResponseV.simpleSuccess,
+  handler: async (
+    ctx,
+    { data }: { data: StreamWebhookPayload },
+  ): Promise<StreamSimpleSuccess> => {
+    const key = [
+      data.type ?? "unknown",
+      data.call?.id,
+      data.call_session?.id,
+      data.call_recording?.id,
+      data.user?.id,
+    ]
+      .filter((part): part is string => part !== undefined)
+      .join(":");
+
+    const { isFirstExecution, result } = await withIdempotency(
+      ctx,
+      {
+        key,
+        scope: "stream_webhook",
+        // Stream retries deliveries for up to ~72h; keep the dedupe window
+        // beyond that so late redeliveries still hit the stored result.
+        ttlMs: 7 * 24 * 60 * 60 * 1000,
+        allowRetry: false,
+      },
+      () => routeWebhookEvent(ctx, data),
+    );
+
+    if (!isFirstExecution) {
+      console.log(`GetStream webhook ${key} replayed (already processed)`);
+    }
+    return result ?? { success: true };
   },
 });
