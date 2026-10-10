@@ -652,7 +652,9 @@
   if (!root) throw new Error("#app root element missing");
   var rootEl = root;
   var lastSave = null;
+  var pendingFocusKey = null;
   function focusKeyBeforeRender() {
+    if (pendingFocusKey) return pendingFocusKey;
     const active = document.activeElement;
     if (active instanceof HTMLElement) {
       const key = active.getAttribute("data-focus-key");
@@ -662,6 +664,7 @@
   }
   function rerender() {
     const key = focusKeyBeforeRender();
+    pendingFocusKey = null;
     renderApp(rootEl, state, actions, key, lastSave);
   }
   function saveDocument() {
@@ -685,31 +688,35 @@
     };
     rerender();
   }
+  function focusAction(key, mutate) {
+    pendingFocusKey = key;
+    mutate();
+  }
   var actions = {
-    agree: (itemId) => {
+    agree: (itemId) => focusAction(`aside-${itemId}`, () => {
       state = agreeAgendaItem(state, itemId);
       rerender();
-    },
-    setAside: (itemId) => {
+    }),
+    setAside: (itemId) => focusAction(`propose-${itemId}`, () => {
       state = setAsideAgendaItem(state, itemId);
       rerender();
-    },
-    proposeAgain: (itemId) => {
+    }),
+    proposeAgain: (itemId) => focusAction(`agree-${itemId}`, () => {
       state = proposeAgain(state, itemId);
       rerender();
-    },
-    addNote: (itemId, text, subject) => {
+    }),
+    addNote: (itemId, text, subject) => focusAction("note-text-input", () => {
       state = addNote(state, itemId, text, subject);
       rerender();
-    },
-    addQuestion: (text) => {
+    }),
+    addQuestion: (text) => focusAction("question-input", () => {
       state = recordOpenQuestion(state, text);
       rerender();
-    },
-    parkQuestion: (questionId) => {
+    }),
+    parkQuestion: (questionId) => focusAction(`park-${questionId}`, () => {
       state = parkOpenQuestion(state, questionId);
       rerender();
-    },
+    }),
     saveDocument
   };
   rerender();

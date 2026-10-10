@@ -47,8 +47,10 @@ if (!root) throw new Error("#app root element missing");
 const rootEl: HTMLDivElement = root;
 
 let lastSave: SaveSummary = null;
+let pendingFocusKey: string | null = null;
 
 function focusKeyBeforeRender(): string | null {
+  if (pendingFocusKey) return pendingFocusKey;
   const active = document.activeElement;
   if (active instanceof HTMLElement) {
     const key = active.getAttribute("data-focus-key");
@@ -59,6 +61,7 @@ function focusKeyBeforeRender(): string | null {
 
 function rerender(): void {
   const key = focusKeyBeforeRender();
+  pendingFocusKey = null;
   renderApp(rootEl, state, actions, key, lastSave);
 }
 
@@ -84,13 +87,18 @@ function saveDocument(): void {
   rerender();
 }
 
+function focusAction(key: string, mutate: () => void): void {
+  pendingFocusKey = key;
+  mutate();
+}
+
 const actions: UiActions = {
-  agree: (itemId) => { state = agreeAgendaItem(state, itemId); rerender(); },
-  setAside: (itemId) => { state = setAsideAgendaItem(state, itemId); rerender(); },
-  proposeAgain: (itemId) => { state = proposeAgain(state, itemId); rerender(); },
-  addNote: (itemId, text, subject) => { state = addNote(state, itemId, text, subject); rerender(); },
-  addQuestion: (text) => { state = recordOpenQuestion(state, text); rerender(); },
-  parkQuestion: (questionId) => { state = parkOpenQuestion(state, questionId); rerender(); },
+  agree: (itemId) => focusAction(`aside-${itemId}`, () => { state = agreeAgendaItem(state, itemId); rerender(); }),
+  setAside: (itemId) => focusAction(`propose-${itemId}`, () => { state = setAsideAgendaItem(state, itemId); rerender(); }),
+  proposeAgain: (itemId) => focusAction(`agree-${itemId}`, () => { state = proposeAgain(state, itemId); rerender(); }),
+  addNote: (itemId, text, subject) => focusAction("note-text-input", () => { state = addNote(state, itemId, text, subject); rerender(); }),
+  addQuestion: (text) => focusAction("question-input", () => { state = recordOpenQuestion(state, text); rerender(); }),
+  parkQuestion: (questionId) => focusAction(`park-${questionId}`, () => { state = parkOpenQuestion(state, questionId); rerender(); }),
   saveDocument,
 };
 

@@ -1,0 +1,44 @@
+{
+  "milestone": "3 — browser, accessibility, and offline verification of the built page",
+  "recordedAt": "2026-10-10T23:07:30Z",
+  "environment": {
+    "browser": "agent-browser driving Chrome (headless), 1440x900 and 390x844 viewports",
+    "axe": "axe-core 4.10.2 (devDependency), injected from the local server — no CDN",
+    "server": "python3 http.server on 127.0.0.1:4199 serving the tool root; page at /page/index.html"
+  },
+  "commands": [
+    {
+      "command": "npx tsc --noEmit && npm test && node build.mjs",
+      "outcome": "clean; 49/49 tests; page/app.js 24.1kb rebuilt with the focus fix"
+    },
+    {
+      "command": "axe.run(document) via injected local axe.min.js",
+      "outcome": "41 rule passes, 0 violations — run twice (pre-fix and final bundle)"
+    },
+    {
+      "command": "keyboard flow: focus agree-agenda_1, press Enter",
+      "outcome": "item flips to Agreed for discussion; focus lands on the same item's 'Set aside for now' (data-focus-key aside-agenda_1). Before the fix, focus dropped to BODY — found in this walkthrough and fixed (pendingFocusKey in src/index.ts)."
+    },
+    {
+      "command": "performance resource audit",
+      "outcome": "2 requests, both same-origin (127.0.0.1); zero external requests — the page makes no network calls"
+    },
+    {
+      "command": "animation audit",
+      "outcome": "0 elements with non-zero transition or animation durations; the stylesheet also carries an explicit prefers-reduced-motion kill-switch. Reduced-motion: satisfied by construction; no emulated-run claim made."
+    },
+    {
+      "command": "mobile viewport 390x844 render",
+      "outcome": "single-column reflow, no horizontal overflow, profile fields stack label-over-value"
+    }
+  ],
+  "evidenceFiles": [
+    "results/browser-evidence/tc-1-desktop-initial.png",
+    "results/browser-evidence/tc-2-desktop-agreed.png",
+    "results/browser-evidence/tc-3-agree-after.png",
+    "results/browser-evidence/tc-3-agree-keyboard.webm",
+    "results/browser-evidence/tc-4-mobile-initial.png"
+  ],
+  "evidenceNotes": "All captures show synthetic fixture data only (Riley Chen, Noor Haddad, Example Synthetics). The two desktop agreed-state captures are byte-identical by design: same viewport, same state, deterministic renderer. tc-3-agree-after.png shows the keyboard focus ring resting on the agreed item's 'Set aside for now' control.",
+  "environmentLimitations": "The shared browser daemon raced another workspace session twice during capture (stale service worker on port 4173; a mid-chain page switch). Both were detected by inspecting captures and re-run on a clean port; final evidence is from verified renders. prefers-reduced-motion was not emulated in this run — the claim rests on zero animated elements plus the explicit media-query kill-switch."
+}
