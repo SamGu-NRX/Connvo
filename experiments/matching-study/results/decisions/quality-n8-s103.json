@@ -1,0 +1,100 @@
+{
+  "scenario": "quality-n8-s103",
+  "seed": 103,
+  "decisionCount": 2,
+  "decisions": [
+    {
+      "user1": "10005;users",
+      "user2": "10016;users",
+      "queue1": "10047;matchingQueue",
+      "queue2": "10051;matchingQueue",
+      "score": 0.7907705558436318,
+      "shard": 1
+    },
+    {
+      "user1": "10022;users",
+      "user2": "10033;users",
+      "queue1": "10053;matchingQueue",
+      "queue2": "10057;matchingQueue",
+      "score": 0.7892049164603788,
+      "shard": 2
+    }
+  ],
+  "shardMembership": {
+    "10000;users": 2,
+    "10005;users": 1,
+    "10010;users": 1,
+    "10016;users": 1,
+    "10022;users": 2,
+    "10027;users": 3,
+    "10033;users": 2,
+    "10039;users": 0
+  },
+  "waitingRecords": [
+    {
+      "userId": "10000;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750006301000,
+      "outcome": "expired",
+      "waitMs": 6301000
+    },
+    {
+      "userId": "10005;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000900000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 5401000
+    },
+    {
+      "userId": "10010;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750001800000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    },
+    {
+      "userId": "10016;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750002700000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 3601000
+    },
+    {
+      "userId": "10022;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750003600000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 2701000
+    },
+    {
+      "userId": "10027;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750004500000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    },
+    {
+      "userId": "10033;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750005400000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 901000
+    },
+    {
+      "userId": "10039;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750006300000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    }
+  ],
+  "failures": []
+}

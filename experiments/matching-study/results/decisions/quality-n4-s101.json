@@ -1,0 +1,56 @@
+{
+  "scenario": "quality-n4-s101",
+  "seed": 101,
+  "decisionCount": 1,
+  "decisions": [
+    {
+      "user1": "10000;users",
+      "user2": "10011;users",
+      "queue1": "10024;matchingQueue",
+      "queue2": "10028;matchingQueue",
+      "score": 0.8521945609455198,
+      "shard": 2
+    }
+  ],
+  "shardMembership": {
+    "10000;users": 2,
+    "10005;users": 1,
+    "10011;users": 2,
+    "10017;users": 0
+  },
+  "waitingRecords": [
+    {
+      "userId": "10000;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750005401000,
+      "outcome": "matched",
+      "waitMs": 5401000
+    },
+    {
+      "userId": "10005;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750001800000,
+      "resolvedAt": 1750005401000,
+      "outcome": "expired",
+      "waitMs": 3601000
+    },
+    {
+      "userId": "10011;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750003600000,
+      "resolvedAt": 1750005401000,
+      "outcome": "matched",
+      "waitMs": 1801000
+    },
+    {
+      "userId": "10017;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750005400000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    }
+  ],
+  "failures": []
+}

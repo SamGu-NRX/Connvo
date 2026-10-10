@@ -1,0 +1,2467 @@
+{
+  "manifest": "manifest.json",
+  "manifestHash": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
+  "gitSha": "42a54b5c05322c3ebc0d76aba2edc5017cd27536",
+  "sourceHashes": {
+    "manifest.json": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
+    "run.ts": "6e62ab89c21dd95bfeeb4d9e2066f47ac457be92bd9a14c29e8e8a3db221a3a6",
+    "src/artifacts.ts": "91298524cfa65fd232acffbe8e9ec333e7880eddaa9170d446020acdb2c27d3c",
+    "src/baselines.ts": "43cb639fc06c7ff9a059ab85b2a75bc68c04a50175a58d77cce9d6cea69f1e17",
+    "src/clock.ts": "fe4b65925df8849559dda3918546bef2cd5febafc4143a8e6831a051c26a6133",
+    "src/exactReference.ts": "c4180eadf0e1eecd745af746a2b01d52fac837b127eae90e5a4184adeaeb7e6a",
+    "src/generator.ts": "05d81e99c31f3d939d11d89cdb53a48c02fb6667de6af06eb2195784ee9d1bf0",
+    "src/harness.ts": "741bb6c83b1677525ce7e4b202bb780260bbbc88a1ea0ed0ec2b6bd25aa64577",
+    "src/invariantScenarios.ts": "b76a5b52d8fe95f6f2ff0be824174d4a3d686ee417c727c3d6d6c41ca851ac78",
+    "src/modules.ts": "9312566f8d12779ae8f5b349bfdc32b403e348cd089fa054b344b759da3c64e4",
+    "src/replica.ts": "85e6acfa7cba5a1c1446e015b520c2f97c991fa12537cef9912dfb548bc20751",
+    "src/rng.ts": "0b9db164807fb5ea4a180c241c640a75791ed5ee683ac5cbd794c796cbd3aba8",
+    "src/runFlow.ts": "89f6ff898946701e48fe9d851cf256c829e46852ce62dbe905fb42bf76592435",
+    "src/scenarios.ts": "b66387f47f35875d0be27803b9b1805a6ca2a7fad30c058056ad29bfb4f277d1",
+    "src/scoringMatrix.ts": "5709fcdc91232408f73d271a0ccff903afd3945bea726c939f75635212bf3a2d",
+    "src/types.ts": "06676fd1205fc0ce85f504dd9eef92ab0b946f214ac8a504a79f7cf1393b949f"
+  },
+  "invariants": [
+    {
+      "name": "pair scoring exactly minScore does not match (strict >)",
+      "passed": true,
+      "detail": "score=0.44464651314632997, matches=0"
+    },
+    {
+      "name": "pair above minScore matches once threshold drops below it",
+      "passed": true,
+      "detail": "score=0.44464651314632997, matches=1"
+    },
+    {
+      "name": "compatible cross-shard pair cannot match at shardCount=4",
+      "passed": true,
+      "detail": "shards=2,0 score=0.7121175067888691 matches=0"
+    },
+    {
+      "name": "same pair can match at shardCount=1",
+      "passed": true,
+      "detail": "matches=1"
+    },
+    {
+      "name": "FIFO cap: with cap=2 and e1-e2 incompatible, zero matches (e3,e4 never scanned)",
+      "passed": true,
+      "detail": "matches=0"
+    },
+    {
+      "name": "FIFO cap widened: e3,e4 scanned and matched",
+      "passed": true,
+      "detail": "matches=1"
+    },
+    {
+      "name": "cleanup expires stale waiting entries",
+      "passed": true,
+      "detail": "expired=2"
+    },
+    {
+      "name": "expiry writes one auditLog per entry",
+      "passed": true,
+      "detail": "logs=2"
+    },
+    {
+      "name": "expired entries cannot be matched by a cycle",
+      "passed": true,
+      "detail": "matches=0"
+    },
+    {
+      "name": "DOCUMENTS MISSING GUARD: createMatch commits a pair whose availability windows already passed (finding, not a pass)",
+      "passed": true,
+      "detail": "createMatch returned true for expired windows"
+    },
+    {
+      "name": "second waiting entry per user is rejected",
+      "passed": true
+    },
+    {
+      "name": "availableFrom in the past is rejected",
+      "passed": true
+    },
+    {
+      "name": "retry cycle creates zero new matches",
+      "passed": true,
+      "detail": "matched=0"
+    },
+    {
+      "name": "no user in two simultaneous matches",
+      "passed": true
+    },
+    {
+      "name": "every matchId has exactly two analytics rows with distinct userIds",
+      "passed": true
+    },
+    {
+      "name": "derived match pairs agree with analytics matchId groups",
+      "passed": true,
+      "detail": "pairs=1 analyticsGroups=1"
+    },
+    {
+      "name": "matchedWith pointers mutual and paired",
+      "passed": true,
+      "detail": "matchedRows=2 pairs=1"
+    },
+    {
+      "name": "matches plateau: retry adds nothing",
+      "passed": true,
+      "detail": "before=1 after=1"
+    },
+    {
+      "name": "re-entry after match is allowed",
+      "passed": true
+    },
+    {
+      "name": "no user in two simultaneous matches",
+      "passed": true
+    },
+    {
+      "name": "every matchId has exactly two analytics rows with distinct userIds",
+      "passed": true
+    },
+    {
+      "name": "derived match pairs agree with analytics matchId groups",
+      "passed": true,
+      "detail": "pairs=23 analyticsGroups=23"
+    },
+    {
+      "name": "matchedWith pointers mutual and paired",
+      "passed": true,
+      "detail": "matchedRows=46 pairs=23"
+    },
+    {
+      "name": "queue matched-state agrees with matches table under concurrent cycles",
+      "passed": true,
+      "detail": "queueMatched=46 matches=23"
+    },
+    {
+      "name": "concurrent cycles: exactly two analytics rows per matchId",
+      "passed": true,
+      "detail": "bad=0"
+    },
+    {
+      "name": "entry requires at least one interest and one role",
+      "passed": true
+    }
+  ],
+  "invariantFailures": [
+    {
+      "cycle": -1,
+      "kind": "prediction-mismatch",
+      "detail": "inv-concurrent: cycles reported 0 but 23 matches committed (createMatch false returns)",
+      "nowMs": 0
+    }
+  ],
+  "notes": [
+    "concurrent cycles reported undefined and undefined matches"
+  ],
+  "scenarioResults": [
+    {
+      "scenario": "quality-n4-s101",
+      "family": "quality",
+      "seed": 101,
+      "qualitySummary": {
+        "n": 4,
+        "minScore": 0.6,
+        "shardCount": 4,
+        "engine": {
+          "cardinality": 1,
+          "totalWeight": 0.8521945609455198
+        },
+        "exact": {
+          "maxCardinality": 2,
+          "maxWeight": 1.3064001747702336,
+          "maxWeightAtMaxCardinality": 1.3064001747702336
+        },
+        "baselines": [
+          {
+            "name": "greedy-score-desc",
+            "cardinality": 1,
+            "totalWeight": 0.8521945609455198
+          },
+          {
+            "name": "greedy-fifo",
+            "cardinality": 1,
+            "totalWeight": 0.8521945609455198
+          },
+          {
+            "name": "greedy-random-0",
+            "cardinality": 2,
+            "totalWeight": 1.3064001747702336
+          },
+          {
+            "name": "greedy-random-1",
+            "cardinality": 1,
+            "totalWeight": 0.8521945609455198
+          },
+          {
+            "name": "greedy-random-2",
+            "cardinality": 1,
+            "totalWeight": 0.8521945609455198
+          },
+          {
+            "name": "greedy-random-0",
+            "cardinality": 2,
+            "totalWeight": 1.3064001747702336
+          }
+        ],
+        "gaps": {
+          "cardinalityGap": 1,
+          "weightGap": 0.4542056138247138
+        },
+        "counterexample": true,
+        "eligiblePairCount": 4,
+        "enginePairs": [
+          {
+            "i": 0,
+            "j": 2,
+            "score": 0.8521945609455198
+          }
+        ],
+        "exactMatching": [
+          {
+            "i": 0,
+            "j": 1,
+            "score": 0.6646271260615585
+          },
+          {
+            "i": 2,
+            "j": 3,
+            "score": 0.6417730487086751
+          }
+        ],
+        "scores": [
+          [
+            0,
+            0.6646271260615585,
+            0.8521945609455198,
+            0.6408195024014258
+          ],
+          [
+            0.6646271260615585,
+            0,
+            0,
+            0
+          ],
+          [
+            0.8521945609455198,
+            0,
+            0,
+            0.6417730487086751
+          ],
+          [
+            0.6408195024014258,
+            0,
+            0.6417730487086751,
+            0
+          ]
+        ],
+        "overlap": [
+          [
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            false,
+            false,
+            true
+          ],
+          [
+            true,
+            false,
+            true,
+            false
+          ]
+        ]
+      },
+      "loadSummary": {
+        "population": 4,
+        "cyclesRun": 1,
+        "matchedTotal": 2,
+        "expiredTotal": 1,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.5,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 3601000,
+            "p90": 5401000,
+            "p99": 5401000,
+            "max": 5401000,
+            "count": 3
+          }
+        },
+        "waitingOverall": {
+          "p50": 3601000,
+          "p90": 5401000,
+          "p99": 5401000,
+          "max": 5401000,
+          "count": 3
+        },
+        "wallPerCycle": {
+          "p50": 6.1227789999998095,
+          "p90": 6.1227789999998095,
+          "p99": 6.1227789999998095,
+          "max": 6.1227789999998095,
+          "count": 1
+        },
+        "scoredPairsTotal": 1,
+        "committedMatchesTotal": 1,
+        "heapDeltaBytes": null,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750005401000,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 6.1227789999998095,
+            "scoredPairs": 1
+          }
+        ]
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/quality-n4-s101.json"
+    },
+    {
+      "scenario": "quality-n6-s102",
+      "family": "quality",
+      "seed": 102,
+      "qualitySummary": {
+        "n": 6,
+        "minScore": 0.6,
+        "shardCount": 4,
+        "engine": {
+          "cardinality": 1,
+          "totalWeight": 0.7616385203754646
+        },
+        "exact": {
+          "maxCardinality": 3,
+          "maxWeight": 2.3937856143682583,
+          "maxWeightAtMaxCardinality": 2.3937856143682583
+        },
+        "baselines": [
+          {
+            "name": "greedy-score-desc",
+            "cardinality": 2,
+            "totalWeight": 1.625118833288631
+          },
+          {
+            "name": "greedy-fifo",
+            "cardinality": 2,
+            "totalWeight": 1.625118833288631
+          },
+          {
+            "name": "greedy-random-0",
+            "cardinality": 2,
+            "totalWeight": 1.625118833288631
+          },
+          {
+            "name": "greedy-random-1",
+            "cardinality": 3,
+            "totalWeight": 2.3937856143682583
+          },
+          {
+            "name": "greedy-random-2",
+            "cardinality": 3,
+            "totalWeight": 2.3937856143682583
+          },
+          {
+            "name": "greedy-random-1",
+            "cardinality": 3,
+            "totalWeight": 2.3937856143682583
+          }
+        ],
+        "gaps": {
+          "cardinalityGap": 2,
+          "weightGap": 1.6321470939927938
+        },
+        "counterexample": true,
+        "eligiblePairCount": 9,
+        "enginePairs": [
+          {
+            "i": 0,
+            "j": 4,
+            "score": 0.7616385203754646
+          }
+        ],
+        "exactMatching": [
+          {
+            "i": 0,
+            "j": 5,
+            "score": 0.8188670031950865
+          },
+          {
+            "i": 1,
+            "j": 3,
+            "score": 0.7699811218219476
+          },
+          {
+            "i": 2,
+            "j": 4,
+            "score": 0.8049374893512241
+          }
+        ],
+        "scores": [
+          [
+            0,
+            0.6070680768159427,
+            0.8551377114666835,
+            0.6254101699179831,
+            0.7616385203754646,
+            0.8188670031950865
+          ],
+          [
+            0.6070680768159427,
+            0,
+            0.43919583370432325,
+            0.7699811218219476,
+            0.5001784372047254,
+            0.7319858563962401
+          ],
+          [
+            0.8551377114666835,
+            0.43919583370432325,
+            0,
+            0.5855527856164569,
+            0.8049374893512241,
+            0.5508302080167995
+          ],
+          [
+            0.6254101699179831,
+            0.7699811218219476,
+            0.5855527856164569,
+            0,
+            0.4878719890687444,
+            0.7426841715902306
+          ],
+          [
+            0.7616385203754646,
+            0.5001784372047254,
+            0.8049374893512241,
+            0.4878719890687444,
+            0,
+            0.4476157562152737
+          ],
+          [
+            0.8188670031950865,
+            0.7319858563962401,
+            0.5508302080167995,
+            0.7426841715902306,
+            0.4476157562152737,
+            0
+          ]
+        ],
+        "overlap": [
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            false,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            false,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false
+          ]
+        ]
+      },
+      "loadSummary": {
+        "population": 6,
+        "cyclesRun": 1,
+        "matchedTotal": 2,
+        "expiredTotal": 0,
+        "stillWaitingAtEnd": 4,
+        "coverageMatchedBeforeExpiry": 0.3333333333333333,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 6001000,
+            "p90": 6001000,
+            "p99": 6001000,
+            "max": 6001000,
+            "count": 2
+          }
+        },
+        "waitingOverall": {
+          "p50": 6001000,
+          "p90": 6001000,
+          "p99": 6001000,
+          "max": 6001000,
+          "count": 2
+        },
+        "wallPerCycle": {
+          "p50": 8.48450099999991,
+          "p90": 8.48450099999991,
+          "p99": 8.48450099999991,
+          "max": 8.48450099999991,
+          "count": 1
+        },
+        "scoredPairsTotal": 2,
+        "committedMatchesTotal": 1,
+        "heapDeltaBytes": null,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750006001000,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 8.48450099999991,
+            "scoredPairs": 2
+          }
+        ]
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/quality-n6-s102.json"
+    },
+    {
+      "scenario": "quality-n8-s103",
+      "family": "quality",
+      "seed": 103,
+      "qualitySummary": {
+        "n": 8,
+        "minScore": 0.6,
+        "shardCount": 4,
+        "engine": {
+          "cardinality": 2,
+          "totalWeight": 1.5799754723040107
+        },
+        "exact": {
+          "maxCardinality": 3,
+          "maxWeight": 2.358647011322427,
+          "maxWeightAtMaxCardinality": 2.358647011322427
+        },
+        "baselines": [
+          {
+            "name": "greedy-score-desc",
+            "cardinality": 3,
+            "totalWeight": 2.3178692647102106
+          },
+          {
+            "name": "greedy-fifo",
+            "cardinality": 3,
+            "totalWeight": 2.3228958502029684
+          },
+          {
+            "name": "greedy-random-0",
+            "cardinality": 3,
+            "totalWeight": 2.3094419411031626
+          },
+          {
+            "name": "greedy-random-1",
+            "cardinality": 3,
+            "totalWeight": 2.3178692647102106
+          },
+          {
+            "name": "greedy-random-2",
+            "cardinality": 3,
+            "totalWeight": 2.3586470113224265
+          },
+          {
+            "name": "greedy-random-10",
+            "cardinality": 3,
+            "totalWeight": 2.358647011322427
+          }
+        ],
+        "gaps": {
+          "cardinalityGap": 1,
+          "weightGap": 0.7786715390184162
+        },
+        "counterexample": true,
+        "eligiblePairCount": 13,
+        "enginePairs": [
+          {
+            "i": 1,
+            "j": 3,
+            "score": 0.7907705558436318
+          },
+          {
+            "i": 4,
+            "j": 6,
+            "score": 0.7892049164603788
+          }
+        ],
+        "exactMatching": [
+          {
+            "i": 1,
+            "j": 5,
+            "score": 0.7807057016999321
+          },
+          {
+            "i": 2,
+            "j": 6,
+            "score": 0.7976322400674266
+          },
+          {
+            "i": 3,
+            "j": 7,
+            "score": 0.780309069555068
+          }
+        ],
+        "scores": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0.6460700934212573,
+            0.7907705558436318,
+            0.5581874128676716,
+            0.7807057016999321,
+            0.5629876701882645,
+            0.6962200774559905
+          ],
+          [
+            0,
+            0.6460700934212573,
+            0,
+            0.6352989908732714,
+            0.7132166271006668,
+            0.7242029190364434,
+            0.7976322400674266,
+            0.5907848491373389
+          ],
+          [
+            0,
+            0.7907705558436318,
+            0.6352989908732714,
+            0,
+            0.5870302941643941,
+            0.8240169471867934,
+            0.6102968421139718,
+            0.780309069555068
+          ],
+          [
+            0,
+            0.5581874128676716,
+            0.7132166271006668,
+            0.5870302941643941,
+            0,
+            0.5513769823811929,
+            0.7892049164603788,
+            0.49959042425688116
+          ],
+          [
+            0,
+            0.7807057016999321,
+            0.7242029190364434,
+            0.8240169471867934,
+            0.5513769823811929,
+            0,
+            0.5180242873504041,
+            0.7344930542919103
+          ],
+          [
+            0,
+            0.5629876701882645,
+            0.7976322400674266,
+            0.6102968421139718,
+            0.7892049164603788,
+            0.5180242873504041,
+            0,
+            0.5799413491920744
+          ],
+          [
+            0,
+            0.6962200774559905,
+            0.5907848491373389,
+            0.780309069555068,
+            0.49959042425688116,
+            0.7344930542919103,
+            0.5799413491920744,
+            0
+          ]
+        ],
+        "overlap": [
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false
+          ]
+        ]
+      },
+      "loadSummary": {
+        "population": 8,
+        "cyclesRun": 1,
+        "matchedTotal": 4,
+        "expiredTotal": 1,
+        "stillWaitingAtEnd": 3,
+        "coverageMatchedBeforeExpiry": 0.5,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 3601000,
+            "p90": 6301000,
+            "p99": 6301000,
+            "max": 6301000,
+            "count": 5
+          }
+        },
+        "waitingOverall": {
+          "p50": 3601000,
+          "p90": 6301000,
+          "p99": 6301000,
+          "max": 6301000,
+          "count": 5
+        },
+        "wallPerCycle": {
+          "p50": 10.080711000000065,
+          "p90": 10.080711000000065,
+          "p99": 10.080711000000065,
+          "max": 10.080711000000065,
+          "count": 1
+        },
+        "scoredPairsTotal": 3,
+        "committedMatchesTotal": 2,
+        "heapDeltaBytes": null,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750006301000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 10.080711000000065,
+            "scoredPairs": 3
+          }
+        ]
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/quality-n8-s103.json"
+    },
+    {
+      "scenario": "quality-n8-s104-shard1",
+      "family": "quality",
+      "seed": 104,
+      "qualitySummary": {
+        "n": 8,
+        "minScore": 0.6,
+        "shardCount": 1,
+        "engine": {
+          "cardinality": 4,
+          "totalWeight": 3.2373181106443596
+        },
+        "exact": {
+          "maxCardinality": 4,
+          "maxWeight": 3.2373181106443596,
+          "maxWeightAtMaxCardinality": 3.2373181106443596
+        },
+        "baselines": [
+          {
+            "name": "greedy-score-desc",
+            "cardinality": 4,
+            "totalWeight": 3.2373181106443596
+          },
+          {
+            "name": "greedy-fifo",
+            "cardinality": 4,
+            "totalWeight": 3.2373181106443596
+          },
+          {
+            "name": "greedy-random-0",
+            "cardinality": 4,
+            "totalWeight": 3.2373181106443596
+          },
+          {
+            "name": "greedy-random-1",
+            "cardinality": 4,
+            "totalWeight": 3.2373181106443596
+          },
+          {
+            "name": "greedy-random-2",
+            "cardinality": 4,
+            "totalWeight": 3.2373181106443596
+          },
+          {
+            "name": "greedy-random-0",
+            "cardinality": 4,
+            "totalWeight": 3.2373181106443596
+          }
+        ],
+        "gaps": {
+          "cardinalityGap": 0,
+          "weightGap": 0
+        },
+        "counterexample": false,
+        "eligiblePairCount": 19,
+        "enginePairs": [
+          {
+            "i": 0,
+            "j": 2,
+            "score": 0.767099062642806
+          },
+          {
+            "i": 1,
+            "j": 5,
+            "score": 0.8298331326549365
+          },
+          {
+            "i": 3,
+            "j": 7,
+            "score": 0.9005523096544295
+          },
+          {
+            "i": 4,
+            "j": 6,
+            "score": 0.7398336056921876
+          }
+        ],
+        "exactMatching": [
+          {
+            "i": 0,
+            "j": 2,
+            "score": 0.767099062642806
+          },
+          {
+            "i": 1,
+            "j": 5,
+            "score": 0.8298331326549365
+          },
+          {
+            "i": 3,
+            "j": 7,
+            "score": 0.9005523096544295
+          },
+          {
+            "i": 4,
+            "j": 6,
+            "score": 0.7398336056921876
+          }
+        ],
+        "scores": [
+          [
+            0,
+            0.7049951261093156,
+            0.767099062642806,
+            0.4917485509609484,
+            0.685484751194492,
+            0.7207041067388501,
+            0.7292500231152856,
+            0.5486191393522725
+          ],
+          [
+            0.7049951261093156,
+            0,
+            0.4491632815498695,
+            0.7768834229952184,
+            0.6588127530466671,
+            0.8298331326549365,
+            0.7083494199810129,
+            0.7498905080852558
+          ],
+          [
+            0.767099062642806,
+            0.4491632815498695,
+            0,
+            0.4118687862564534,
+            0.6338021878341366,
+            0.4360534908390874,
+            0.7390590859231834,
+            0.4877109853613444
+          ],
+          [
+            0.4917485509609484,
+            0.7768834229952184,
+            0.4118687862564534,
+            0,
+            0.5619720747071322,
+            0.6203548595203402,
+            0.704974549594901,
+            0.9005523096544295
+          ],
+          [
+            0.685484751194492,
+            0.6588127530466671,
+            0.6338021878341366,
+            0.5619720747071322,
+            0,
+            0.5003326652868656,
+            0.7398336056921876,
+            0.641880758229536
+          ],
+          [
+            0.7207041067388501,
+            0.8298331326549365,
+            0.4360534908390874,
+            0.6203548595203402,
+            0.5003326652868656,
+            0,
+            0.5501472600685842,
+            0.617672496852774
+          ],
+          [
+            0.7292500231152856,
+            0.7083494199810129,
+            0.7390590859231834,
+            0.704974549594901,
+            0.7398336056921876,
+            0.5501472600685842,
+            0,
+            0.7158682805714924
+          ],
+          [
+            0.5486191393522725,
+            0.7498905080852558,
+            0.4877109853613444,
+            0.9005523096544295,
+            0.641880758229536,
+            0.617672496852774,
+            0.7158682805714924,
+            0
+          ]
+        ],
+        "overlap": [
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false
+          ]
+        ]
+      },
+      "loadSummary": {
+        "population": 8,
+        "cyclesRun": 1,
+        "matchedTotal": 8,
+        "expiredTotal": 0,
+        "stillWaitingAtEnd": 0,
+        "coverageMatchedBeforeExpiry": 1,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 3601000,
+            "p90": 6301000,
+            "p99": 6301000,
+            "max": 6301000,
+            "count": 8
+          }
+        },
+        "waitingOverall": {
+          "p50": 3601000,
+          "p90": 6301000,
+          "p99": 6301000,
+          "max": 6301000,
+          "count": 8
+        },
+        "wallPerCycle": {
+          "p50": 48.84844000000021,
+          "p90": 48.84844000000021,
+          "p99": 48.84844000000021,
+          "max": 48.84844000000021,
+          "count": 1
+        },
+        "scoredPairsTotal": 16,
+        "committedMatchesTotal": 4,
+        "heapDeltaBytes": null,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750006301000,
+            "waitingBefore": 8,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 48.84844000000021,
+            "scoredPairs": 16
+          }
+        ]
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/quality-n8-s104-shard1.json"
+    },
+    {
+      "scenario": "load-smoke-25-s201",
+      "family": "load",
+      "seed": 201,
+      "qualitySummary": null,
+      "loadSummary": {
+        "population": 25,
+        "cyclesRun": 10,
+        "matchedTotal": 14,
+        "expiredTotal": 10,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.56,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 4033000,
+            "p90": 6913000,
+            "p99": 6913000,
+            "max": 6913000,
+            "count": 7
+          },
+          "short": {
+            "p50": 5185000,
+            "p90": 6337000,
+            "p99": 6337000,
+            "max": 6337000,
+            "count": 5
+          },
+          "daytime": {
+            "p50": 5761000,
+            "p90": 35713000,
+            "p99": 80929000,
+            "max": 80929000,
+            "count": 12
+          }
+        },
+        "waitingOverall": {
+          "p50": 4897000,
+          "p90": 29377000,
+          "p99": 80929000,
+          "max": 80929000,
+          "count": 24
+        },
+        "wallPerCycle": {
+          "p50": 8.895452000000205,
+          "p90": 45.34106500000007,
+          "p99": 45.34106500000007,
+          "max": 45.34106500000007,
+          "count": 10
+        },
+        "scoredPairsTotal": 25,
+        "committedMatchesTotal": 7,
+        "heapDeltaBytes": -583344,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750006913000,
+            "waitingBefore": 19,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 6,
+            "wallMs": 45.34106500000007,
+            "scoredPairs": 16
+          },
+          {
+            "cycle": 2,
+            "nowMs": 1750011233000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 20.322915000000194,
+            "scoredPairs": 3
+          },
+          {
+            "cycle": 3,
+            "nowMs": 1750012097000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 9.331286999999975,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 4,
+            "nowMs": 1750012127000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 10.73410899999999,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 5,
+            "nowMs": 1750012961000,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 5.712203000000045,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 6,
+            "nowMs": 1750013249000,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 5.995880999999827,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 7,
+            "nowMs": 1750034273000,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 5.933043999999882,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 8,
+            "nowMs": 1750034849000,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 8.895452000000205,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 9,
+            "nowMs": 1750041761000,
+            "waitingBefore": 2,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 3.8574800000001233,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 10,
+            "nowMs": 1750086689000,
+            "waitingBefore": 1,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 3.9650919999999132,
+            "scoredPairs": 0
+          }
+        ],
+        "wallTotalMs": 265
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/load-smoke-25-s201.json"
+    },
+    {
+      "scenario": "load-smoke-50-s202",
+      "family": "load",
+      "seed": 202,
+      "qualitySummary": null,
+      "loadSummary": {
+        "population": 50,
+        "cyclesRun": 12,
+        "matchedTotal": 44,
+        "expiredTotal": 5,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.88,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 1000,
+            "p90": 2000,
+            "p99": 2000,
+            "max": 2000,
+            "count": 21
+          },
+          "daytime": {
+            "p50": 2000,
+            "p90": 39602000,
+            "p99": 86401000,
+            "max": 86401000,
+            "count": 20
+          },
+          "short": {
+            "p50": 2000,
+            "p90": 2000,
+            "p99": 2000,
+            "max": 2000,
+            "count": 8
+          }
+        },
+        "waitingOverall": {
+          "p50": 1000,
+          "p90": 7199000,
+          "p99": 86401000,
+          "max": 86401000,
+          "count": 49
+        },
+        "wallPerCycle": {
+          "p50": 8.203614000000016,
+          "p90": 30.838060999999925,
+          "p99": 369.0805660000001,
+          "max": 369.0805660000001,
+          "count": 12
+        },
+        "scoredPairsTotal": 127,
+        "committedMatchesTotal": 22,
+        "heapDeltaBytes": 10519712,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750000002000,
+            "waitingBefore": 50,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 369.0805660000001,
+            "scoredPairs": 115
+          },
+          {
+            "cycle": 2,
+            "nowMs": 1750000003000,
+            "waitingBefore": 12,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 11.86369999999988,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 3,
+            "nowMs": 1750003603000,
+            "waitingBefore": 10,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 30.838060999999925,
+            "scoredPairs": 6
+          },
+          {
+            "cycle": 4,
+            "nowMs": 1750003633000,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 8.802752000000055,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 5,
+            "nowMs": 1750007201000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 9.205269999999928,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 6,
+            "nowMs": 1750007202000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 8.203614000000016,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 7,
+            "nowMs": 1750007203000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 8.198714999999993,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 8,
+            "nowMs": 1750028801000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 4.659449000000222,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 9,
+            "nowMs": 1750032403000,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 4.874888999999712,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 10,
+            "nowMs": 1750036002000,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 4.680801999999858,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 11,
+            "nowMs": 1750039603000,
+            "waitingBefore": 2,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 4.951297999999952,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 12,
+            "nowMs": 1750086403000,
+            "waitingBefore": 1,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 4.810746999999992,
+            "scoredPairs": 0
+          }
+        ],
+        "wallTotalMs": 756
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/load-smoke-50-s202.json"
+    },
+    {
+      "scenario": "load-smoke-100-s203",
+      "family": "load",
+      "seed": 203,
+      "qualitySummary": null,
+      "loadSummary": {
+        "population": 100,
+        "cyclesRun": 13,
+        "matchedTotal": 64,
+        "expiredTotal": 35,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.64,
+        "waitingByClass": {
+          "short": {
+            "p50": 2737000,
+            "p90": 5257000,
+            "p99": 7129000,
+            "max": 7129000,
+            "count": 15
+          },
+          "always_on": {
+            "p50": 4105000,
+            "p90": 6769000,
+            "p99": 7057000,
+            "max": 7057000,
+            "count": 42
+          },
+          "daytime": {
+            "p50": 5185000,
+            "p90": 30097000,
+            "p99": 34129000,
+            "max": 34129000,
+            "count": 42
+          }
+        },
+        "waitingOverall": {
+          "p50": 4177000,
+          "p90": 6985000,
+          "p99": 34129000,
+          "max": 34129000,
+          "count": 99
+        },
+        "wallPerCycle": {
+          "p50": 28.80228100000022,
+          "p90": 49.38171599999987,
+          "p99": 1293.4166650000002,
+          "max": 1293.4166650000002,
+          "count": 13
+        },
+        "scoredPairsTotal": 289,
+        "committedMatchesTotal": 32,
+        "heapDeltaBytes": 2396640,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750007129000,
+            "waitingBefore": 71,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 29,
+            "wallMs": 1293.4166650000002,
+            "scoredPairs": 266
+          },
+          {
+            "cycle": 2,
+            "nowMs": 1750010513000,
+            "waitingBefore": 9,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 39.72341099999994,
+            "scoredPairs": 5
+          },
+          {
+            "cycle": 3,
+            "nowMs": 1750011521000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 28.80228100000022,
+            "scoredPairs": 3
+          },
+          {
+            "cycle": 4,
+            "nowMs": 1750011809000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 49.38171599999987,
+            "scoredPairs": 3
+          },
+          {
+            "cycle": 5,
+            "nowMs": 1750011881000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 36.991471000000274,
+            "scoredPairs": 3
+          },
+          {
+            "cycle": 6,
+            "nowMs": 1750013609000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 29.25546299999951,
+            "scoredPairs": 3
+          },
+          {
+            "cycle": 7,
+            "nowMs": 1750028081000,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 28.837572000000364,
+            "scoredPairs": 3
+          },
+          {
+            "cycle": 8,
+            "nowMs": 1750032113000,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 24.784035000000586,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 9,
+            "nowMs": 1750033409000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 12.677024000000529,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 10,
+            "nowMs": 1750036505000,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 6.262249000000338,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 11,
+            "nowMs": 1750036721000,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 6.292057000000568,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 12,
+            "nowMs": 1750037081000,
+            "waitingBefore": 2,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 6.092297999999573,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 13,
+            "nowMs": 1750038809000,
+            "waitingBefore": 1,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 6.476999000000433,
+            "scoredPairs": 0
+          }
+        ],
+        "wallTotalMs": 2228
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/load-smoke-100-s203.json"
+    },
+    {
+      "scenario": "load-full-250-s301",
+      "family": "load",
+      "seed": 301,
+      "qualitySummary": null,
+      "loadSummary": {
+        "population": 250,
+        "cyclesRun": 18,
+        "matchedTotal": 172,
+        "expiredTotal": 77,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.688,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 4061800,
+            "p90": 6653800,
+            "p99": 7172200,
+            "max": 7172200,
+            "count": 97
+          },
+          "daytime": {
+            "p50": 4292200,
+            "p90": 6826600,
+            "p99": 39025000,
+            "max": 39025000,
+            "count": 99
+          },
+          "short": {
+            "p50": 3399400,
+            "p90": 6423400,
+            "p99": 7057000,
+            "max": 7057000,
+            "count": 53
+          }
+        },
+        "waitingOverall": {
+          "p50": 4033000,
+          "p90": 6653800,
+          "p99": 36346600,
+          "max": 39025000,
+          "count": 249
+        },
+        "wallPerCycle": {
+          "p50": 42.609448999999586,
+          "p90": 3488.5156730000017,
+          "p99": 7771.081565000001,
+          "max": 7771.081565000001,
+          "count": 18
+        },
+        "scoredPairsTotal": 979,
+        "committedMatchesTotal": 86,
+        "heapDeltaBytes": -7471784,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750007172200,
+            "waitingBefore": 182,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 68,
+            "wallMs": 7771.081565000001,
+            "scoredPairs": 676
+          },
+          {
+            "cycle": 2,
+            "nowMs": 1750007491400,
+            "waitingBefore": 84,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 3488.5156730000017,
+            "scoredPairs": 272
+          },
+          {
+            "cycle": 3,
+            "nowMs": 1750007549000,
+            "waitingBefore": 23,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 35.18478799999866,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 4,
+            "nowMs": 1750008096200,
+            "waitingBefore": 22,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 31.851221000000805,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 5,
+            "nowMs": 1750009879400,
+            "waitingBefore": 19,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 226.5386260000014,
+            "scoredPairs": 7
+          },
+          {
+            "cycle": 6,
+            "nowMs": 1750010282600,
+            "waitingBefore": 13,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 114.85013299999991,
+            "scoredPairs": 6
+          },
+          {
+            "cycle": 7,
+            "nowMs": 1750012730600,
+            "waitingBefore": 9,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 101.95528699999704,
+            "scoredPairs": 5
+          },
+          {
+            "cycle": 8,
+            "nowMs": 1750013652200,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 63.5390550000011,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 9,
+            "nowMs": 1750014084200,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 43.01698899999974,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 10,
+            "nowMs": 1750014114200,
+            "waitingBefore": 7,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 58.38571199999933,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 11,
+            "nowMs": 1750014228200,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 42.609448999999586,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 12,
+            "nowMs": 1750014257000,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 37.43700499999977,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 13,
+            "nowMs": 1750035857000,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 25.629509999998845,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 14,
+            "nowMs": 1750037930600,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 12.772272000001976,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 15,
+            "nowMs": 1750038679400,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 13.390422000000399,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 16,
+            "nowMs": 1750042682600,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 23.718534999999974,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 17,
+            "nowMs": 1750043028200,
+            "waitingBefore": 2,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 12.757190000000264,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 18,
+            "nowMs": 1750046052200,
+            "waitingBefore": 1,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 13.305703000001813,
+            "scoredPairs": 0
+          }
+        ],
+        "wallTotalMs": 14687
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/load-full-250-s301.json"
+    },
+    {
+      "scenario": "load-full-500-s302",
+      "family": "load",
+      "seed": 302,
+      "qualitySummary": null,
+      "loadSummary": {
+        "population": 500,
+        "cyclesRun": 19,
+        "matchedTotal": 346,
+        "expiredTotal": 153,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.692,
+        "waitingByClass": {
+          "daytime": {
+            "p50": 4781800,
+            "p90": 6644200,
+            "p99": 38290600,
+            "max": 39543400,
+            "count": 197
+          },
+          "short": {
+            "p50": 4066600,
+            "p90": 6543400,
+            "p99": 7133800,
+            "max": 7191400,
+            "count": 105
+          },
+          "always_on": {
+            "p50": 3687400,
+            "p90": 6557800,
+            "p99": 7148200,
+            "max": 7162600,
+            "count": 197
+          }
+        },
+        "waitingOverall": {
+          "p50": 4105000,
+          "p90": 6601000,
+          "p99": 7244200,
+          "max": 39543400,
+          "count": 499
+        },
+        "wallPerCycle": {
+          "p50": 57.54396299998916,
+          "p90": 16123.892165000001,
+          "p99": 16424.110151,
+          "max": 16424.110151,
+          "count": 19
+        },
+        "scoredPairsTotal": 2028,
+        "committedMatchesTotal": 173,
+        "heapDeltaBytes": 12323248,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750007205800,
+            "waitingBefore": 357,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 143,
+            "wallMs": 16123.892165000001,
+            "scoredPairs": 676
+          },
+          {
+            "cycle": 2,
+            "nowMs": 1750007359400,
+            "waitingBefore": 256,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 16424.110151,
+            "scoredPairs": 673
+          },
+          {
+            "cycle": 3,
+            "nowMs": 1750007388200,
+            "waitingBefore": 154,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 13848.915775000001,
+            "scoredPairs": 532
+          },
+          {
+            "cycle": 4,
+            "nowMs": 1750007748200,
+            "waitingBefore": 67,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 2030.3892240000132,
+            "scoredPairs": 84
+          },
+          {
+            "cycle": 5,
+            "nowMs": 1750008453800,
+            "waitingBefore": 40,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 242.73949899998843,
+            "scoredPairs": 9
+          },
+          {
+            "cycle": 6,
+            "nowMs": 1750010066600,
+            "waitingBefore": 31,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 643.7560809999995,
+            "scoredPairs": 19
+          },
+          {
+            "cycle": 7,
+            "nowMs": 1750010096600,
+            "waitingBefore": 19,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 101.87671399999817,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 8,
+            "nowMs": 1750012082600,
+            "waitingBefore": 18,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 546.6896910000069,
+            "scoredPairs": 23
+          },
+          {
+            "cycle": 9,
+            "nowMs": 1750013277800,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 72.67118000000482,
+            "scoredPairs": 2
+          },
+          {
+            "cycle": 10,
+            "nowMs": 1750013307800,
+            "waitingBefore": 6,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 51.730251999993925,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 11,
+            "nowMs": 1750013321000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 57.54396299998916,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 12,
+            "nowMs": 1750013351000,
+            "waitingBefore": 5,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 49.756497999987914,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 13,
+            "nowMs": 1750014314600,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 50.57171499999822,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 14,
+            "nowMs": 1750014372200,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 52.5355899999995,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 15,
+            "nowMs": 1750014386600,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 49.79666100000031,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 16,
+            "nowMs": 1750039586600,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 47.98156799998833,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 17,
+            "nowMs": 1750040882600,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 50.65181299998949,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 18,
+            "nowMs": 1750043172200,
+            "waitingBefore": 2,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 22.512284999989788,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 19,
+            "nowMs": 1750046714600,
+            "waitingBefore": 1,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 30.621089000007487,
+            "scoredPairs": 0
+          }
+        ],
+        "wallTotalMs": 56978
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/load-full-500-s302.json"
+    },
+    {
+      "scenario": "load-full-1000-s303",
+      "family": "load",
+      "seed": 303,
+      "qualitySummary": null,
+      "loadSummary": {
+        "population": 1000,
+        "cyclesRun": 19,
+        "matchedTotal": 748,
+        "expiredTotal": 251,
+        "stillWaitingAtEnd": 1,
+        "coverageMatchedBeforeExpiry": 0.748,
+        "waitingByClass": {
+          "always_on": {
+            "p50": 3773800,
+            "p90": 6560200,
+            "p99": 7093000,
+            "max": 7193800,
+            "count": 425
+          },
+          "daytime": {
+            "p50": 4169800,
+            "p90": 6610600,
+            "p99": 7201000,
+            "max": 32451400,
+            "count": 379
+          },
+          "short": {
+            "p50": 3824200,
+            "p90": 6113800,
+            "p99": 7129000,
+            "max": 7165000,
+            "count": 195
+          }
+        },
+        "waitingOverall": {
+          "p50": 3968200,
+          "p90": 6531400,
+          "p99": 7157800,
+          "max": 32451400,
+          "count": 999
+        },
+        "wallPerCycle": {
+          "p50": 238.31699599995045,
+          "p90": 31975.070802000002,
+          "p99": 32843.41042,
+          "max": 32843.41042,
+          "count": 19
+        },
+        "scoredPairsTotal": 4741,
+        "committedMatchesTotal": 374,
+        "heapDeltaBytes": 84646224,
+        "perCycle": [
+          {
+            "cycle": 1,
+            "nowMs": 1750007193800,
+            "waitingBefore": 758,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 242,
+            "wallMs": 30586.475928,
+            "scoredPairs": 676
+          },
+          {
+            "cycle": 2,
+            "nowMs": 1750007237000,
+            "waitingBefore": 662,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 30735.836507000015,
+            "scoredPairs": 675
+          },
+          {
+            "cycle": 3,
+            "nowMs": 1750007267000,
+            "waitingBefore": 564,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 30973.794272999978,
+            "scoredPairs": 670
+          },
+          {
+            "cycle": 4,
+            "nowMs": 1750007273000,
+            "waitingBefore": 465,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 31975.070802000002,
+            "scoredPairs": 672
+          },
+          {
+            "cycle": 5,
+            "nowMs": 1750007409800,
+            "waitingBefore": 367,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 31894.978388999996,
+            "scoredPairs": 661
+          },
+          {
+            "cycle": 6,
+            "nowMs": 1750007417000,
+            "waitingBefore": 266,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 32843.41042,
+            "scoredPairs": 645
+          },
+          {
+            "cycle": 7,
+            "nowMs": 1750007460200,
+            "waitingBefore": 165,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 25160.398199999996,
+            "scoredPairs": 540
+          },
+          {
+            "cycle": 8,
+            "nowMs": 1750007841800,
+            "waitingBefore": 72,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 3246.8486730000004,
+            "scoredPairs": 67
+          },
+          {
+            "cycle": 9,
+            "nowMs": 1750010484200,
+            "waitingBefore": 49,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 6017.337694999995,
+            "scoredPairs": 125
+          },
+          {
+            "cycle": 10,
+            "nowMs": 1750010514200,
+            "waitingBefore": 9,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 92.31492499995511,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 11,
+            "nowMs": 1750011996200,
+            "waitingBefore": 8,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 238.31699599995045,
+            "scoredPairs": 4
+          },
+          {
+            "cycle": 12,
+            "nowMs": 1750012205000,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 89.00806600000942,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 13,
+            "nowMs": 1750012406600,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 90.06193500000518,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 14,
+            "nowMs": 1750012436600,
+            "waitingBefore": 4,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 118.14375899999868,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 15,
+            "nowMs": 1750014098600,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 93.84870999999112,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 16,
+            "nowMs": 1750014149000,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 90.99520000000484,
+            "scoredPairs": 1
+          },
+          {
+            "cycle": 17,
+            "nowMs": 1750033805000,
+            "waitingBefore": 3,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 0,
+            "wallMs": 41.262012999970466,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 18,
+            "nowMs": 1750035698600,
+            "waitingBefore": 2,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 40.349005999974906,
+            "scoredPairs": 0
+          },
+          {
+            "cycle": 19,
+            "nowMs": 1750039349000,
+            "waitingBefore": 1,
+            "matchCount": 0,
+            "totalScore": 0,
+            "expiredThisCycle": 1,
+            "wallMs": 40.425061999994796,
+            "scoredPairs": 0
+          }
+        ],
+        "wallTotalMs": 490165
+      },
+      "invariantFailures": 0,
+      "decisionsFile": "experiments/matching-study/results/decisions/load-full-1000-s303.json"
+    }
+  ],
+  "counterexamples": [
+    {
+      "scenario": "quality-n4-s101",
+      "file": "experiments/matching-study/results/counterexamples/quality-n4-s101.json",
+      "gaps": {
+        "cardinalityGap": 1,
+        "weightGap": 0.4542056138247138
+      }
+    },
+    {
+      "scenario": "quality-n6-s102",
+      "file": "experiments/matching-study/results/counterexamples/quality-n6-s102.json",
+      "gaps": {
+        "cardinalityGap": 2,
+        "weightGap": 1.6321470939927938
+      }
+    },
+    {
+      "scenario": "quality-n8-s103",
+      "file": "experiments/matching-study/results/counterexamples/quality-n8-s103.json",
+      "gaps": {
+        "cardinalityGap": 1,
+        "weightGap": 0.7786715390184162
+      }
+    }
+  ],
+  "wallTotalMs": 567361
+}

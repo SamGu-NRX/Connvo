@@ -1,0 +1,112 @@
+{
+  "scenario": "quality-n4-s101",
+  "seed": 101,
+  "params": {
+    "count": 4,
+    "arrivalProfile": "staggered",
+    "availabilityMix": {
+      "always_on": 1,
+      "daytime": 0,
+      "short": 0
+    },
+    "staleFraction": 0.1,
+    "rejoinFraction": 0.1,
+    "horizonMs": 7200000,
+    "embedding": {
+      "model": "synthetic-hashed-v1",
+      "dimensions": 64
+    },
+    "cohortCount": 2
+  },
+  "engine": {
+    "cardinality": 1,
+    "totalWeight": 0.8521945609455198
+  },
+  "exact": {
+    "maxCardinality": 2,
+    "maxWeight": 1.3064001747702336,
+    "maxWeightAtMaxCardinality": 1.3064001747702336
+  },
+  "gaps": {
+    "cardinalityGap": 1,
+    "weightGap": 0.4542056138247138
+  },
+  "enginePairs": [
+    {
+      "i": 0,
+      "j": 2,
+      "score": 0.8521945609455198
+    }
+  ],
+  "exactMatching": [
+    {
+      "i": 0,
+      "j": 1,
+      "score": 0.6646271260615585
+    },
+    {
+      "i": 2,
+      "j": 3,
+      "score": 0.6417730487086751
+    }
+  ],
+  "scores": [
+    [
+      0,
+      0.6646271260615585,
+      0.8521945609455198,
+      0.6408195024014258
+    ],
+    [
+      0.6646271260615585,
+      0,
+      0,
+      0
+    ],
+    [
+      0.8521945609455198,
+      0,
+      0,
+      0.6417730487086751
+    ],
+    [
+      0.6408195024014258,
+      0,
+      0.6417730487086751,
+      0
+    ]
+  ],
+  "overlap": [
+    [
+      false,
+      true,
+      true,
+      true
+    ],
+    [
+      true,
+      false,
+      false,
+      false
+    ],
+    [
+      true,
+      false,
+      false,
+      true
+    ],
+    [
+      true,
+      false,
+      true,
+      false
+    ]
+  ],
+  "userIds": [
+    "10000;users",
+    "10005;users",
+    "10011;users",
+    "10017;users"
+  ],
+  "note": "Smallest counterexample instance: engine allocation vs exhaustive reference over the engine's own score matrix."
+}
