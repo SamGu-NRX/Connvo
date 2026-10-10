@@ -1,5 +1,5 @@
 # Matching study run
-gitSha: 61a6bde2d1d274f556328cb7c81235da8a3dfcee
+gitSha: 43d8d9882feecd4eeb1ef143d76c2e7eeb1f9dfa
 manifestHash: 94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9
 
 ## Invariants
@@ -37,13 +37,13 @@ manifestHash: 94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9
 - quality-n8-s104-shard1: engine 4 pairs / 3.237 vs exact 4 / 3.237 (gaps 0/0.000)
 
 ## Load
-- quality-n4-s101: n=4 matched=2 expired=1 cycles=1 wall p50=4.6ms p99=4.6ms
-- quality-n6-s102: n=6 matched=2 expired=0 cycles=1 wall p50=7.0ms p99=7.0ms
-- quality-n8-s103: n=8 matched=4 expired=1 cycles=1 wall p50=7.0ms p99=7.0ms
-- quality-n8-s104-shard1: n=8 matched=8 expired=0 cycles=1 wall p50=27.7ms p99=27.7ms
-- load-smoke-25-s201: n=25 matched=14 expired=10 cycles=10 wall p50=5.5ms p99=37.3ms
-- load-smoke-50-s202: n=50 matched=44 expired=5 cycles=12 wall p50=8.0ms p99=339.2ms
-- load-smoke-100-s203: n=100 matched=64 expired=35 cycles=13 wall p50=26.2ms p99=1255.2ms
-- load-full-250-s301: n=250 matched=172 expired=77 cycles=18 wall p50=37.6ms p99=7283.3ms
-- load-full-500-s302: n=500 matched=346 expired=153 cycles=19 wall p50=51.2ms p99=14861.3ms
-- load-full-1000-s303: n=1000 matched=748 expired=251 cycles=19 wall p50=238.1ms p99=31657.3ms
+- quality-n4-s101: n=4 matched=2 expired=1 cycles=1 wall p50=4.1ms p99=4.1ms
+- quality-n6-s102: n=6 matched=2 expired=0 cycles=1 wall p50=5.1ms p99=5.1ms
+- quality-n8-s103: n=8 matched=4 expired=1 cycles=1 wall p50=7.5ms p99=7.5ms
+- quality-n8-s104-shard1: n=8 matched=8 expired=0 cycles=1 wall p50=27.9ms p99=27.9ms
+- load-smoke-25-s201: n=25 matched=14 expired=10 cycles=10 wall p50=6.6ms p99=34.4ms
+- load-smoke-50-s202: n=50 matched=44 expired=5 cycles=12 wall p50=8.1ms p99=398.7ms
+- load-smoke-100-s203: n=100 matched=64 expired=35 cycles=13 wall p50=29.7ms p99=1263.1ms
+- load-full-250-s301: n=250 matched=172 expired=77 cycles=18 wall p50=36.5ms p99=7388.0ms
+- load-full-500-s302: n=500 matched=346 expired=153 cycles=19 wall p50=48.7ms p99=15220.3ms
+- load-full-1000-s303: n=1000 matched=748 expired=251 cycles=19 wall p50=351.9ms p99=35361.0ms

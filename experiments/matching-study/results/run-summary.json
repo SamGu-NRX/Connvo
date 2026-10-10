@@ -1,10 +1,10 @@
 {
   "manifest": "manifest.json",
   "manifestHash": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
-  "gitSha": "61a6bde2d1d274f556328cb7c81235da8a3dfcee",
+  "gitSha": "43d8d9882feecd4eeb1ef143d76c2e7eeb1f9dfa",
   "sourceHashes": {
     "manifest.json": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
-    "run.ts": "b61b465812ea34dae784ff4fe2e36fbbac0d1fd78de1750d0b6f584a0bd770bd",
+    "run.ts": "c50740a040f9210f18bbaabc6ed21d3fb60a26afd8673c27be623a5c04be0796",
     "src/artifacts.ts": "91298524cfa65fd232acffbe8e9ec333e7880eddaa9170d446020acdb2c27d3c",
     "src/baselines.ts": "43cb639fc06c7ff9a059ab85b2a75bc68c04a50175a58d77cce9d6cea69f1e17",
     "src/clock.ts": "fe4b65925df8849559dda3918546bef2cd5febafc4143a8e6831a051c26a6133",
@@ -300,10 +300,10 @@
           "count": 3
         },
         "wallPerCycle": {
-          "p50": 4.562456999999995,
-          "p90": 4.562456999999995,
-          "p99": 4.562456999999995,
-          "max": 4.562456999999995,
+          "p50": 4.090399000000161,
+          "p90": 4.090399000000161,
+          "p99": 4.090399000000161,
+          "max": 4.090399000000161,
           "count": 1
         },
         "scoredPairsTotal": 1,
@@ -317,7 +317,7 @@
             "totalMatches": 1,
             "averageScore": 0.8521945609455198,
             "expiredThisCycle": 1,
-            "wallMs": 4.562456999999995,
+            "wallMs": 4.090399000000161,
             "scoredPairs": 1
           }
         ]
@@ -529,10 +529,10 @@
           "count": 2
         },
         "wallPerCycle": {
-          "p50": 6.974894999999833,
-          "p90": 6.974894999999833,
-          "p99": 6.974894999999833,
-          "max": 6.974894999999833,
+          "p50": 5.0504000000000815,
+          "p90": 5.0504000000000815,
+          "p99": 5.0504000000000815,
+          "max": 5.0504000000000815,
           "count": 1
         },
         "scoredPairsTotal": 2,
@@ -546,7 +546,7 @@
             "totalMatches": 1,
             "averageScore": 0.7616385203754646,
             "expiredThisCycle": 0,
-            "wallMs": 6.974894999999833,
+            "wallMs": 5.0504000000000815,
             "scoredPairs": 2
           }
         ]
@@ -827,10 +827,10 @@
           "count": 5
         },
         "wallPerCycle": {
-          "p50": 6.997523999999885,
-          "p90": 6.997523999999885,
-          "p99": 6.997523999999885,
-          "max": 6.997523999999885,
+          "p50": 7.542869999999766,
+          "p90": 7.542869999999766,
+          "p99": 7.542869999999766,
+          "max": 7.542869999999766,
           "count": 1
         },
         "scoredPairsTotal": 3,
@@ -844,7 +844,7 @@
             "totalMatches": 2,
             "averageScore": 0.7899877361520053,
             "expiredThisCycle": 1,
-            "wallMs": 6.997523999999885,
+            "wallMs": 7.542869999999766,
             "scoredPairs": 3
           }
         ]
@@ -1140,10 +1140,10 @@
           "count": 8
         },
         "wallPerCycle": {
-          "p50": 27.69159499999978,
-          "p90": 27.69159499999978,
-          "p99": 27.69159499999978,
-          "max": 27.69159499999978,
+          "p50": 27.883960000000116,
+          "p90": 27.883960000000116,
+          "p99": 27.883960000000116,
+          "max": 27.883960000000116,
           "count": 1
         },
         "scoredPairsTotal": 16,
@@ -1157,7 +1157,7 @@
             "totalMatches": 4,
             "averageScore": 0.8093295276610899,
             "expiredThisCycle": 0,
-            "wallMs": 27.69159499999978,
+            "wallMs": 27.883960000000116,
             "scoredPairs": 16
           }
         ]
@@ -1208,15 +1208,15 @@
           "count": 24
         },
         "wallPerCycle": {
-          "p50": 5.4890800000002855,
-          "p90": 37.26789400000007,
-          "p99": 37.26789400000007,
-          "max": 37.26789400000007,
+          "p50": 6.618277000000035,
+          "p90": 34.38812999999982,
+          "p99": 34.38812999999982,
+          "max": 34.38812999999982,
           "count": 10
         },
         "scoredPairsTotal": 25,
         "committedMatchesTotal": 7,
-        "heapDeltaBytes": -5347136,
+        "heapDeltaBytes": -2746824,
         "perCycle": [
           {
             "cycle": 1,
@@ -1225,7 +1225,7 @@
             "totalMatches": 6,
             "averageScore": 0.8411493914619065,
             "expiredThisCycle": 6,
-            "wallMs": 37.26789400000007,
+            "wallMs": 34.38812999999982,
             "scoredPairs": 16
           },
           {
@@ -1235,7 +1235,7 @@
             "totalMatches": 1,
             "averageScore": 0.8677009581914108,
             "expiredThisCycle": 0,
-            "wallMs": 10.046346999999969,
+            "wallMs": 10.571580000000267,
             "scoredPairs": 3
           },
           {
@@ -1245,7 +1245,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 5.972458000000188,
+            "wallMs": 5.162244999999984,
             "scoredPairs": 1
           },
           {
@@ -1255,7 +1255,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 5.4890800000002855,
+            "wallMs": 5.642230999999811,
             "scoredPairs": 1
           },
           {
@@ -1265,7 +1265,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 5.172515000000203,
+            "wallMs": 5.794491000000107,
             "scoredPairs": 1
           },
           {
@@ -1275,7 +1275,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 5.102060000000165,
+            "wallMs": 6.618277000000035,
             "scoredPairs": 1
           },
           {
@@ -1285,7 +1285,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 5.448846000000231,
+            "wallMs": 6.828634999999849,
             "scoredPairs": 1
           },
           {
@@ -1295,7 +1295,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 5.969593999999688,
+            "wallMs": 7.080063999999766,
             "scoredPairs": 1
           },
           {
@@ -1305,7 +1305,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 3.7386160000000928,
+            "wallMs": 3.530807999999979,
             "scoredPairs": 0
           },
           {
@@ -1315,11 +1315,11 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 3.2487229999997,
+            "wallMs": 3.7721230000001924,
             "scoredPairs": 0
           }
         ],
-        "wallTotalMs": 200
+        "wallTotalMs": 196
       },
       "invariantFailures": 0,
       "decisionsFile": "experiments/matching-study/results/decisions/load-smoke-25-s201.json"
@@ -1367,15 +1367,15 @@
           "count": 49
         },
         "wallPerCycle": {
-          "p50": 7.951738000000205,
-          "p90": 26.263426999999865,
-          "p99": 339.20325300000013,
-          "max": 339.20325300000013,
+          "p50": 8.115892000000258,
+          "p90": 26.933008000000427,
+          "p99": 398.6984749999997,
+          "max": 398.6984749999997,
           "count": 12
         },
         "scoredPairsTotal": 127,
         "committedMatchesTotal": 22,
-        "heapDeltaBytes": 17370712,
+        "heapDeltaBytes": 10354760,
         "perCycle": [
           {
             "cycle": 1,
@@ -1384,7 +1384,7 @@
             "totalMatches": 19,
             "averageScore": 0.8071481025245022,
             "expiredThisCycle": 0,
-            "wallMs": 339.20325300000013,
+            "wallMs": 398.6984749999997,
             "scoredPairs": 115
           },
           {
@@ -1394,7 +1394,7 @@
             "totalMatches": 1,
             "averageScore": 0.7311220312394758,
             "expiredThisCycle": 0,
-            "wallMs": 10.713916000000154,
+            "wallMs": 11.861547999999857,
             "scoredPairs": 2
           },
           {
@@ -1404,7 +1404,7 @@
             "totalMatches": 2,
             "averageScore": 0.806608221450784,
             "expiredThisCycle": 0,
-            "wallMs": 26.263426999999865,
+            "wallMs": 26.933008000000427,
             "scoredPairs": 6
           },
           {
@@ -1414,7 +1414,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 9.082069000000047,
+            "wallMs": 8.457463000000189,
             "scoredPairs": 1
           },
           {
@@ -1424,7 +1424,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 7.653256000000056,
+            "wallMs": 8.115892000000258,
             "scoredPairs": 1
           },
           {
@@ -1434,7 +1434,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 8.03530899999987,
+            "wallMs": 7.7078819999996995,
             "scoredPairs": 1
           },
           {
@@ -1444,7 +1444,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 7.951738000000205,
+            "wallMs": 8.630881999999929,
             "scoredPairs": 1
           },
           {
@@ -1454,7 +1454,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 4.6655940000000555,
+            "wallMs": 4.695404999999937,
             "scoredPairs": 0
           },
           {
@@ -1464,7 +1464,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 6.327906999999868,
+            "wallMs": 4.148593000000346,
             "scoredPairs": 0
           },
           {
@@ -1474,7 +1474,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 4.356381000000056,
+            "wallMs": 4.98881399999982,
             "scoredPairs": 0
           },
           {
@@ -1484,7 +1484,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 4.5188640000001215,
+            "wallMs": 4.502990999999838,
             "scoredPairs": 0
           },
           {
@@ -1494,11 +1494,11 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 4.5461929999996755,
+            "wallMs": 4.450383999999758,
             "scoredPairs": 0
           }
         ],
-        "wallTotalMs": 680
+        "wallTotalMs": 748
       },
       "invariantFailures": 0,
       "decisionsFile": "experiments/matching-study/results/decisions/load-smoke-50-s202.json"
@@ -1546,15 +1546,15 @@
           "count": 99
         },
         "wallPerCycle": {
-          "p50": 26.223751999999877,
-          "p90": 45.7355950000001,
-          "p99": 1255.2031850000003,
-          "max": 1255.2031850000003,
+          "p50": 29.719270999999935,
+          "p90": 37.78709699999945,
+          "p99": 1263.142628,
+          "max": 1263.142628,
           "count": 13
         },
         "scoredPairsTotal": 289,
         "committedMatchesTotal": 32,
-        "heapDeltaBytes": 2444048,
+        "heapDeltaBytes": 2470616,
         "perCycle": [
           {
             "cycle": 1,
@@ -1563,7 +1563,7 @@
             "totalMatches": 31,
             "averageScore": 0.8132789929970814,
             "expiredThisCycle": 29,
-            "wallMs": 1255.2031850000003,
+            "wallMs": 1263.142628,
             "scoredPairs": 266
           },
           {
@@ -1573,7 +1573,7 @@
             "totalMatches": 1,
             "averageScore": 0.8983061692647588,
             "expiredThisCycle": 0,
-            "wallMs": 45.7355950000001,
+            "wallMs": 37.78709699999945,
             "scoredPairs": 5
           },
           {
@@ -1583,7 +1583,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 37.29280800000015,
+            "wallMs": 29.719270999999935,
             "scoredPairs": 3
           },
           {
@@ -1593,7 +1593,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 26.309426000000713,
+            "wallMs": 33.21733200000017,
             "scoredPairs": 3
           },
           {
@@ -1603,7 +1603,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 26.223751999999877,
+            "wallMs": 28.357544999999845,
             "scoredPairs": 3
           },
           {
@@ -1613,7 +1613,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 28.597850000000108,
+            "wallMs": 35.68119999999999,
             "scoredPairs": 3
           },
           {
@@ -1623,7 +1623,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 27.452986999999666,
+            "wallMs": 30.965733,
             "scoredPairs": 3
           },
           {
@@ -1633,7 +1633,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 22.175860999999713,
+            "wallMs": 29.886559999999918,
             "scoredPairs": 2
           },
           {
@@ -1643,7 +1643,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 12.012681999999586,
+            "wallMs": 15.553507999999965,
             "scoredPairs": 1
           },
           {
@@ -1653,7 +1653,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 5.96401699999933,
+            "wallMs": 6.879262000000381,
             "scoredPairs": 0
           },
           {
@@ -1663,7 +1663,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 6.116751999999906,
+            "wallMs": 6.634681999999884,
             "scoredPairs": 0
           },
           {
@@ -1673,7 +1673,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 5.633421999999882,
+            "wallMs": 8.524317000000337,
             "scoredPairs": 0
           },
           {
@@ -1683,11 +1683,11 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 6.84082699999999,
+            "wallMs": 12.179866000000402,
             "scoredPairs": 0
           }
         ],
-        "wallTotalMs": 2071
+        "wallTotalMs": 2150
       },
       "invariantFailures": 0,
       "decisionsFile": "experiments/matching-study/results/decisions/load-smoke-100-s203.json"
@@ -1735,15 +1735,15 @@
           "count": 249
         },
         "wallPerCycle": {
-          "p50": 37.57689499999833,
-          "p90": 3260.6569610000006,
-          "p99": 7283.267204999999,
-          "max": 7283.267204999999,
+          "p50": 36.48831499999869,
+          "p90": 3141.890095999999,
+          "p99": 7388.029703,
+          "max": 7388.029703,
           "count": 18
         },
         "scoredPairsTotal": 979,
         "committedMatchesTotal": 86,
-        "heapDeltaBytes": 1380048,
+        "heapDeltaBytes": -3585928,
         "perCycle": [
           {
             "cycle": 1,
@@ -1752,7 +1752,7 @@
             "totalMatches": 49,
             "averageScore": 0.8538499509710301,
             "expiredThisCycle": 68,
-            "wallMs": 7283.267204999999,
+            "wallMs": 7388.029703,
             "scoredPairs": 676
           },
           {
@@ -1762,7 +1762,7 @@
             "totalMatches": 30,
             "averageScore": 0.838868648926153,
             "expiredThisCycle": 0,
-            "wallMs": 3260.6569610000006,
+            "wallMs": 3141.890095999999,
             "scoredPairs": 272
           },
           {
@@ -1772,7 +1772,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 28.242231999996875,
+            "wallMs": 24.384049000000232,
             "scoredPairs": 1
           },
           {
@@ -1782,7 +1782,7 @@
             "totalMatches": 1,
             "averageScore": 0.6236027688124838,
             "expiredThisCycle": 1,
-            "wallMs": 25.91675700000269,
+            "wallMs": 25.354671000000963,
             "scoredPairs": 1
           },
           {
@@ -1792,7 +1792,7 @@
             "totalMatches": 3,
             "averageScore": 0.7670382304660116,
             "expiredThisCycle": 1,
-            "wallMs": 120.9372349999976,
+            "wallMs": 118.68098500000269,
             "scoredPairs": 7
           },
           {
@@ -1802,7 +1802,7 @@
             "totalMatches": 2,
             "averageScore": 0.8464495315462314,
             "expiredThisCycle": 0,
-            "wallMs": 88.50109299999895,
+            "wallMs": 84.56357800000114,
             "scoredPairs": 6
           },
           {
@@ -1812,7 +1812,7 @@
             "totalMatches": 1,
             "averageScore": 0.7459077227795197,
             "expiredThisCycle": 0,
-            "wallMs": 74.78050499999881,
+            "wallMs": 72.76576199999909,
             "scoredPairs": 5
           },
           {
@@ -1822,7 +1822,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 36.9182550000005,
+            "wallMs": 36.48831499999869,
             "scoredPairs": 2
           },
           {
@@ -1832,7 +1832,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 38.34708899999896,
+            "wallMs": 38.46712899999693,
             "scoredPairs": 2
           },
           {
@@ -1842,7 +1842,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 39.206615999999485,
+            "wallMs": 37.53315400000065,
             "scoredPairs": 2
           },
           {
@@ -1852,7 +1852,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 37.57689499999833,
+            "wallMs": 37.33678499999951,
             "scoredPairs": 2
           },
           {
@@ -1862,7 +1862,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 37.59505700000227,
+            "wallMs": 36.430184000000736,
             "scoredPairs": 2
           },
           {
@@ -1872,7 +1872,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 25.40586500000063,
+            "wallMs": 24.74578499999916,
             "scoredPairs": 1
           },
           {
@@ -1882,7 +1882,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 13.55689600000187,
+            "wallMs": 12.058125999999902,
             "scoredPairs": 0
           },
           {
@@ -1892,7 +1892,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 12.9637189999994,
+            "wallMs": 11.490778999999748,
             "scoredPairs": 0
           },
           {
@@ -1902,7 +1902,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 13.72896799999944,
+            "wallMs": 12.450367000001279,
             "scoredPairs": 0
           },
           {
@@ -1912,7 +1912,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 12.99539200000072,
+            "wallMs": 12.683643000000302,
             "scoredPairs": 0
           },
           {
@@ -1922,11 +1922,11 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 12.580462000001717,
+            "wallMs": 12.133208000002924,
             "scoredPairs": 0
           }
         ],
-        "wallTotalMs": 13336
+        "wallTotalMs": 13295
       },
       "invariantFailures": 0,
       "decisionsFile": "experiments/matching-study/results/decisions/load-full-250-s301.json"
@@ -1974,15 +1974,15 @@
           "count": 499
         },
         "wallPerCycle": {
-          "p50": 51.165294000005815,
-          "p90": 13989.847960000003,
-          "p99": 14861.288656999997,
-          "max": 14861.288656999997,
+          "p50": 48.66040300000168,
+          "p90": 15179.313812,
+          "p99": 15220.291465999999,
+          "max": 15220.291465999999,
           "count": 19
         },
         "scoredPairsTotal": 2028,
         "committedMatchesTotal": 173,
-        "heapDeltaBytes": -4214232,
+        "heapDeltaBytes": 3697672,
         "perCycle": [
           {
             "cycle": 1,
@@ -1991,7 +1991,7 @@
             "totalMatches": 50,
             "averageScore": 0.8535557657680194,
             "expiredThisCycle": 143,
-            "wallMs": 13989.847960000003,
+            "wallMs": 15220.291465999999,
             "scoredPairs": 676
           },
           {
@@ -2001,7 +2001,7 @@
             "totalMatches": 51,
             "averageScore": 0.82207510415761,
             "expiredThisCycle": 1,
-            "wallMs": 14861.288656999997,
+            "wallMs": 15179.313812,
             "scoredPairs": 673
           },
           {
@@ -2011,7 +2011,7 @@
             "totalMatches": 43,
             "averageScore": 0.8473906459360081,
             "expiredThisCycle": 0,
-            "wallMs": 12059.587319000006,
+            "wallMs": 12512.653368,
             "scoredPairs": 532
           },
           {
@@ -2021,7 +2021,7 @@
             "totalMatches": 13,
             "averageScore": 0.8390457658064274,
             "expiredThisCycle": 1,
-            "wallMs": 1895.1542960000006,
+            "wallMs": 1986.0592340000003,
             "scoredPairs": 84
           },
           {
@@ -2031,7 +2031,7 @@
             "totalMatches": 4,
             "averageScore": 0.7331372998648913,
             "expiredThisCycle": 1,
-            "wallMs": 235.3453459999946,
+            "wallMs": 236.85120700001426,
             "scoredPairs": 9
           },
           {
@@ -2041,7 +2041,7 @@
             "totalMatches": 6,
             "averageScore": 0.7747259869002842,
             "expiredThisCycle": 1,
-            "wallMs": 541.004660999999,
+            "wallMs": 511.55076199999894,
             "scoredPairs": 19
           },
           {
@@ -2051,7 +2051,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 75.30833200000052,
+            "wallMs": 71.60994999999821,
             "scoredPairs": 2
           },
           {
@@ -2061,7 +2061,7 @@
             "totalMatches": 6,
             "averageScore": 0.7720404105312793,
             "expiredThisCycle": 1,
-            "wallMs": 528.9265520000044,
+            "wallMs": 555.3177989999967,
             "scoredPairs": 23
           },
           {
@@ -2071,7 +2071,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 71.65314500000386,
+            "wallMs": 71.64640599999984,
             "scoredPairs": 2
           },
           {
@@ -2081,7 +2081,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 50.0214549999946,
+            "wallMs": 47.33511300000828,
             "scoredPairs": 1
           },
           {
@@ -2091,7 +2091,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 45.6105940000125,
+            "wallMs": 46.197145999991335,
             "scoredPairs": 1
           },
           {
@@ -2101,7 +2101,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 44.19077099999413,
+            "wallMs": 47.02388000000792,
             "scoredPairs": 1
           },
           {
@@ -2111,7 +2111,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 45.04622499999823,
+            "wallMs": 48.66040300000168,
             "scoredPairs": 1
           },
           {
@@ -2121,7 +2121,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 45.362086000008276,
+            "wallMs": 47.68454899999779,
             "scoredPairs": 1
           },
           {
@@ -2131,7 +2131,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 46.70040000000154,
+            "wallMs": 46.40229699999327,
             "scoredPairs": 1
           },
           {
@@ -2141,7 +2141,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 45.510167000000365,
+            "wallMs": 46.95310200001404,
             "scoredPairs": 1
           },
           {
@@ -2151,7 +2151,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 51.165294000005815,
+            "wallMs": 46.13976599999296,
             "scoredPairs": 1
           },
           {
@@ -2161,7 +2161,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 20.40950900000462,
+            "wallMs": 29.32477999999537,
             "scoredPairs": 0
           },
           {
@@ -2171,11 +2171,11 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 20.04688100000203,
+            "wallMs": 22.551288000002387,
             "scoredPairs": 0
           }
         ],
-        "wallTotalMs": 50555
+        "wallTotalMs": 52785
       },
       "invariantFailures": 0,
       "decisionsFile": "experiments/matching-study/results/decisions/load-full-500-s302.json"
@@ -2223,15 +2223,15 @@
           "count": 999
         },
         "wallPerCycle": {
-          "p50": 238.0616700000246,
-          "p90": 30922.45708999998,
-          "p99": 31657.254210999992,
-          "max": 31657.254210999992,
+          "p50": 351.91793599998346,
+          "p90": 32256.127046999987,
+          "p99": 35360.988250000024,
+          "max": 35360.988250000024,
           "count": 19
         },
         "scoredPairsTotal": 4741,
         "committedMatchesTotal": 374,
-        "heapDeltaBytes": 17065160,
+        "heapDeltaBytes": 49337944,
         "perCycle": [
           {
             "cycle": 1,
@@ -2240,7 +2240,7 @@
             "totalMatches": 48,
             "averageScore": 0.8500340344482558,
             "expiredThisCycle": 242,
-            "wallMs": 29191.48528899999,
+            "wallMs": 30227.432383000007,
             "scoredPairs": 676
           },
           {
@@ -2250,7 +2250,7 @@
             "totalMatches": 49,
             "averageScore": 0.8422321311057138,
             "expiredThisCycle": 0,
-            "wallMs": 29428.55126600001,
+            "wallMs": 31161.049184999996,
             "scoredPairs": 675
           },
           {
@@ -2260,7 +2260,7 @@
             "totalMatches": 49,
             "averageScore": 0.8529204968161486,
             "expiredThisCycle": 0,
-            "wallMs": 30360.805024,
+            "wallMs": 31605.454686000012,
             "scoredPairs": 670
           },
           {
@@ -2270,7 +2270,7 @@
             "totalMatches": 49,
             "averageScore": 0.857958963796251,
             "expiredThisCycle": 1,
-            "wallMs": 30532.79582900001,
+            "wallMs": 31818.916743999987,
             "scoredPairs": 672
           },
           {
@@ -2280,7 +2280,7 @@
             "totalMatches": 50,
             "averageScore": 0.8374288235407629,
             "expiredThisCycle": 0,
-            "wallMs": 31657.254210999992,
+            "wallMs": 32256.127046999987,
             "scoredPairs": 661
           },
           {
@@ -2290,7 +2290,7 @@
             "totalMatches": 50,
             "averageScore": 0.8372092857320936,
             "expiredThisCycle": 1,
-            "wallMs": 30922.45708999998,
+            "wallMs": 35360.988250000024,
             "scoredPairs": 645
           },
           {
@@ -2300,7 +2300,7 @@
             "totalMatches": 46,
             "averageScore": 0.8452114295289491,
             "expiredThisCycle": 1,
-            "wallMs": 25472.874099000008,
+            "wallMs": 26204.407654999988,
             "scoredPairs": 540
           },
           {
@@ -2310,7 +2310,7 @@
             "totalMatches": 11,
             "averageScore": 0.8174678014087949,
             "expiredThisCycle": 1,
-            "wallMs": 3422.394067999965,
+            "wallMs": 3323.3916560000507,
             "scoredPairs": 67
           },
           {
@@ -2320,7 +2320,7 @@
             "totalMatches": 20,
             "averageScore": 0.8071567804224863,
             "expiredThisCycle": 1,
-            "wallMs": 6219.214538,
+            "wallMs": 6959.957208000007,
             "scoredPairs": 125
           },
           {
@@ -2330,7 +2330,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 96.83246399997734,
+            "wallMs": 112.85258399997838,
             "scoredPairs": 1
           },
           {
@@ -2340,7 +2340,7 @@
             "totalMatches": 2,
             "averageScore": 0.7143303091425772,
             "expiredThisCycle": 1,
-            "wallMs": 238.0616700000246,
+            "wallMs": 351.91793599998346,
             "scoredPairs": 4
           },
           {
@@ -2350,7 +2350,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 90.87053300003754,
+            "wallMs": 96.78126800002065,
             "scoredPairs": 1
           },
           {
@@ -2360,7 +2360,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 90.85816000000341,
+            "wallMs": 94.39947000000393,
             "scoredPairs": 1
           },
           {
@@ -2370,7 +2370,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 91.34090299997479,
+            "wallMs": 97.72087299998384,
             "scoredPairs": 1
           },
           {
@@ -2380,7 +2380,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 92.53059400001075,
+            "wallMs": 104.72680200001923,
             "scoredPairs": 1
           },
           {
@@ -2390,7 +2390,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 92.42568200000096,
+            "wallMs": 97.83660899999086,
             "scoredPairs": 1
           },
           {
@@ -2400,7 +2400,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 0,
-            "wallMs": 44.55091099999845,
+            "wallMs": 43.40693800000008,
             "scoredPairs": 0
           },
           {
@@ -2410,7 +2410,7 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 45.81653800001368,
+            "wallMs": 42.363088999991305,
             "scoredPairs": 0
           },
           {
@@ -2420,11 +2420,11 @@
             "totalMatches": 0,
             "averageScore": 0,
             "expiredThisCycle": 1,
-            "wallMs": 44.443209999997634,
+            "wallMs": 44.00071200000821,
             "scoredPairs": 0
           }
         ],
-        "wallTotalMs": 235337
+        "wallTotalMs": 247745
       },
       "invariantFailures": 0,
       "decisionsFile": "experiments/matching-study/results/decisions/load-full-1000-s303.json"
@@ -2456,5 +2456,5 @@
       }
     }
   ],
-  "wallTotalMs": 304061
+  "wallTotalMs": 318917
 }
