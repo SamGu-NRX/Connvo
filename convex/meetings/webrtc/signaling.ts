@@ -33,6 +33,11 @@ import type {
   ICEData,
 } from "@convex/types/entities/webrtc";
 
+/** Per-source read bound before the merged result is capped for the client. */
+const SIGNAL_SOURCE_BATCH = 200;
+/** Hard cap on signals returned per call. */
+const SIGNAL_HARD_CAP = 50;
+
 /**
  * Creates a WebRTC session for a meeting
  */
@@ -185,27 +190,83 @@ export const getPendingSignals = query({
     // Verify user is a participant
     const participant = await assertMeetingAccess(ctx, meetingId);
 
-    let baseQuery = ctx.db
-      .query("webrtcSignals")
-      .withIndex("by_meeting_target_and_processed", (q) =>
-        q
-          .eq("meetingId", meetingId)
-          .eq("toUserId", participant.userId)
-          .eq("processed", false),
-      );
+    // Direct signals addressed to the caller. With a session filter, read
+    // from the session-scoped composite index so the batch only contains
+    // that session's signals — an older take-then-filter over the meeting
+    // level index could skip a session's signals entirely when unrelated
+    // signals filled the batch.
+    const directSignals: WebRTCSignal[] = sessionId
+      ? await ctx.db
+          .query("webrtcSignals")
+          .withIndex("by_meeting_session_target_and_processed", (q) =>
+            q
+              .eq("meetingId", meetingId)
+              .eq("sessionId", sessionId)
+              .eq("toUserId", participant.userId)
+              .eq("processed", false),
+          )
+          .take(SIGNAL_SOURCE_BATCH)
+      : await ctx.db
+          .query("webrtcSignals")
+          .withIndex("by_meeting_target_and_processed", (q) =>
+            q
+              .eq("meetingId", meetingId)
+              .eq("toUserId", participant.userId)
+              .eq("processed", false),
+          )
+          .take(SIGNAL_SOURCE_BATCH);
 
-    // Apply optional filters in-memory to avoid additional indexes explosion
-    let signals: WebRTCSignal[] = await baseQuery.order("asc").take(200);
-    if (sessionId) {
-      signals = signals.filter((s) => s.sessionId === sessionId);
+    // Broadcast signals (no toUserId) are excluded from the ranges above
+    // by the toUserId equality; fetch them on the same indexes with an
+    // undefined equality so every participant receives them.
+    const broadcastSignals: WebRTCSignal[] = sessionId
+      ? await ctx.db
+          .query("webrtcSignals")
+          .withIndex("by_meeting_session_target_and_processed", (q) =>
+            q
+              .eq("meetingId", meetingId)
+              .eq("sessionId", sessionId)
+              .eq("toUserId", undefined)
+              .eq("processed", false),
+          )
+          .take(SIGNAL_SOURCE_BATCH)
+      : await ctx.db
+          .query("webrtcSignals")
+          .withIndex("by_meeting_target_and_processed", (q) =>
+            q
+              .eq("meetingId", meetingId)
+              .eq("toUserId", undefined)
+              .eq("processed", false),
+          )
+          .take(SIGNAL_SOURCE_BATCH);
+
+    // A broadcast the caller already acked is delivered-for-caller only —
+    // the ack must not hide it from other participants.
+    const ackedBroadcast = new Set<WebRTCSignal["_id"]>();
+    for (const signal of broadcastSignals) {
+      const ack = await ctx.db
+        .query("webrtcSignalAcks")
+        .withIndex("by_signal_and_user", (q) =>
+          q.eq("signalId", signal._id).eq("userId", participant.userId),
+        )
+        .unique();
+      if (ack) {
+        ackedBroadcast.add(signal._id);
+      }
     }
 
-    if (lastSignalId) {
-      signals = signals.filter((s) => s._id > lastSignalId);
-    }
-    signals = signals.slice(0, 50); // hard cap to prevent overwhelming clients
+    // Merge both sources into a single _id-ordered stream so the client
+    // cursor (lastSignalId) paginates deterministically over the merged
+    // result instead of comparing opaque ids across mixed index orders.
+    const deliverable = [
+      ...directSignals,
+      ...broadcastSignals.filter((s) => !ackedBroadcast.has(s._id)),
+    ]
+      .sort((a, b) => (a._id < b._id ? -1 : a._id > b._id ? 1 : 0))
+      .filter((s) => !lastSignalId || s._id > lastSignalId)
+      .slice(0, SIGNAL_HARD_CAP); // hard cap to prevent overwhelming clients
 
-    return signals.map((signal) => ({
+    return deliverable.map((signal) => ({
       _id: signal._id,
       sessionId: signal.sessionId,
       fromUserId: signal.fromUserId,
@@ -217,7 +278,13 @@ export const getPendingSignals = query({
 });
 
 /**
- * Marks WebRTC signals as processed
+ * Marks WebRTC signals as processed.
+ *
+ * Ownership rules:
+ *  - a direct signal is ackable only by its recipient (toUserId);
+ *  - a broadcast signal is ackable by any participant of its meeting, via a
+ *    per-caller ack row so the broadcast survives for everyone else;
+ *  - anything else is rejected instead of silently ignored.
  */
 export const markSignalsProcessed = mutation({
   args: {
@@ -229,11 +296,46 @@ export const markSignalsProcessed = mutation({
 
     for (const signalId of signalIds) {
       const signal: WebRTCSignal | null = await ctx.db.get(signalId);
-      if (signal && signal.toUserId === identity.userId) {
+      if (!signal) {
+        throw createError.notFound("WebRTC signal", signalId);
+      }
+
+      if (signal.toUserId === identity.userId) {
+        // Direct signal addressed to the caller.
         await ctx.db.patch(signalId, {
           processed: true,
         });
+        continue;
       }
+
+      if (signal.toUserId === undefined) {
+        // Broadcast: every meeting participant may ack, but the ack is
+        // recorded per caller — flipping `processed` would delete the
+        // broadcast for all other participants.
+        await assertMeetingAccess(ctx, signal.meetingId);
+
+        const existingAck = await ctx.db
+          .query("webrtcSignalAcks")
+          .withIndex("by_signal_and_user", (q) =>
+            q.eq("signalId", signalId).eq("userId", identity.userId),
+          )
+          .unique();
+        if (!existingAck) {
+          await ctx.db.insert("webrtcSignalAcks", {
+            meetingId: signal.meetingId,
+            signalId,
+            userId: identity.userId,
+            ackedAt: Date.now(),
+          });
+        }
+        continue;
+      }
+
+      // Addressed to a different user: not the caller's signal to ack.
+      throw createError.forbidden(
+        "Cannot acknowledge a signal addressed to another user",
+        { signalId },
+      );
     }
 
     return null;
@@ -443,6 +545,28 @@ export const cleanupOldWebRTCData = internalMutation({
       .collect();
 
     for (const signal of oldSignals) {
+      await ctx.db.delete(signal._id);
+    }
+
+    // Broadcast signals (no toUserId) are never flipped to processed=true —
+    // they are acked per-caller in webrtcSignalAcks — so they would
+    // accumulate forever under the processed-only sweep above. Age them
+    // out by timestamp together with their per-caller ack rows.
+    const oldUnprocessedSignals: WebRTCSignal[] = await ctx.db
+      .query("webrtcSignals")
+      .withIndex("by_timestamp", (q) => q.lt("timestamp", cutoff))
+      .collect();
+    const oldBroadcastSignals = oldUnprocessedSignals.filter(
+      (s) => s.toUserId === undefined,
+    );
+    for (const signal of oldBroadcastSignals) {
+      const acks = await ctx.db
+        .query("webrtcSignalAcks")
+        .withIndex("by_signal_and_user", (q) => q.eq("signalId", signal._id))
+        .collect();
+      for (const ack of acks) {
+        await ctx.db.delete(ack._id);
+      }
       await ctx.db.delete(signal._id);
     }
 
