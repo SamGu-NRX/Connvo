@@ -8,7 +8,11 @@
 import type { Id } from "@convex/_generated/dataModel";
 import { api, internal } from "@convex/_generated/api";
 import { planPopulation, DEFAULT_PARAMS } from "./generator.js";
-import type { PlannedEntry, PopulationParams, SyntheticIdentity } from "./types.js";
+import type {
+  PlannedEntry,
+  PopulationParams,
+  SyntheticIdentity,
+} from "./types.js";
 import type { RuntimeFactory, RuntimeHandle } from "./runFlow.js";
 import { collectMatrix, runCycles, BASE_CLOCK } from "./runFlow.js";
 import { shardOf } from "./replica.js";
@@ -51,12 +55,20 @@ async function setup(
 ): Promise<{ handle: RuntimeHandle; plan: ReturnType<typeof planPopulation> }> {
   const { materializePopulation } = await import("./harness.js");
   const handle = await factory.create(BASE_CLOCK);
-  const plan = planPopulation(scenario, seed, alwaysOnParams(count), BASE_CLOCK);
+  const plan = planPopulation(
+    scenario,
+    seed,
+    alwaysOnParams(count),
+    BASE_CLOCK,
+  );
   await materializePopulation(handle.runtime, plan, { queue: true });
   return { handle, plan };
 }
 
-function noteShards(plan: ReturnType<typeof planPopulation>, shardCount: number): number[] {
+function noteShards(
+  plan: ReturnType<typeof planPopulation>,
+  shardCount: number,
+): number[] {
   return plan.entries.map((e) => shardOf(String(e.userId), shardCount));
 }
 
@@ -64,7 +76,9 @@ function noteShards(plan: ReturnType<typeof planPopulation>, shardCount: number)
 // 1. minScore boundary: exactly minScore does not match; a hair below the
 //    threshold (i.e. score above minScore) does.
 // ---------------------------------------------------------------------------
-export async function scenarioMinScoreBoundary(factory: RuntimeFactory): Promise<InvariantOutcome[]> {
+export async function scenarioMinScoreBoundary(
+  factory: RuntimeFactory,
+): Promise<InvariantOutcome[]> {
   const out: InvariantOutcome[] = [];
   const { handle } = await setup(factory, "inv-minscore", 4101, 2);
   const { env, defaults } = handle.runtime;
@@ -73,7 +87,13 @@ export async function scenarioMinScoreBoundary(factory: RuntimeFactory): Promise
   // The strict-boundary probe works for ANY finite positive pair score; it
   // does not require the pair to clear the default 0.6 threshold.
   if (!Number.isFinite(score) || score <= 0) {
-    out.push(checkInvariants("minScore precondition: pair has a finite positive score", false, `score=${score}`));
+    out.push(
+      checkInvariants(
+        "minScore precondition: pair has a finite positive score",
+        false,
+        `score=${score}`,
+      ),
+    );
   } else {
     // minScore set EXACTLY to the measured score: strict > means no match.
     // shardCount=1 isolates threshold semantics from shard membership.
@@ -87,7 +107,10 @@ export async function scenarioMinScoreBoundary(factory: RuntimeFactory): Promise
       ),
     );
     // minScore a hair BELOW the pair score: now it matches.
-    await runEngineCycle(env, defaults, 2, { minScore: score - 1e-9, shardCount: 1 });
+    await runEngineCycle(env, defaults, 2, {
+      minScore: score - 1e-9,
+      shardCount: 1,
+    });
     const matchesAfter = await matchedPairs(env);
     out.push(
       checkInvariants(
@@ -105,12 +128,19 @@ export async function scenarioMinScoreBoundary(factory: RuntimeFactory): Promise
 // 2. Shard rule: a compatible cross-shard pair cannot match at shardCount=4
 //    but the same population can at shardCount=1.
 // ---------------------------------------------------------------------------
-export async function scenarioShardRule(factory: RuntimeFactory): Promise<InvariantOutcome[]> {
+export async function scenarioShardRule(
+  factory: RuntimeFactory,
+): Promise<InvariantOutcome[]> {
   const out: InvariantOutcome[] = [];
   const { materializePopulation } = await import("./harness.js");
   for (let seed = 4200; seed < 4220; seed++) {
     const handle = await factory.create(BASE_CLOCK);
-    const probe = planPopulation("inv-shard-probe", seed, alwaysOnParams(2), BASE_CLOCK);
+    const probe = planPopulation(
+      "inv-shard-probe",
+      seed,
+      alwaysOnParams(2),
+      BASE_CLOCK,
+    );
     await materializePopulation(handle.runtime, probe, { queue: true });
     const shards = noteShards(probe, 4);
     if (shards[0] === shards[1]) {
@@ -136,17 +166,34 @@ export async function scenarioShardRule(factory: RuntimeFactory): Promise<Invari
 
     // Same plan, shardCount=1: the pair shares one shard -> can match.
     const handle2 = await factory.create(BASE_CLOCK);
-    const plan2 = planPopulation("inv-shard-probe", seed, alwaysOnParams(2), BASE_CLOCK);
+    const plan2 = planPopulation(
+      "inv-shard-probe",
+      seed,
+      alwaysOnParams(2),
+      BASE_CLOCK,
+    );
     await materializePopulation(handle2.runtime, plan2, { queue: true });
-    await runEngineCycle(handle2.runtime.env, handle2.runtime.defaults, 1, { shardCount: 1 });
+    await runEngineCycle(handle2.runtime.env, handle2.runtime.defaults, 1, {
+      shardCount: 1,
+    });
     const matchesAt1 = await matchedPairs(handle2.runtime.env);
     out.push(
-      checkInvariants("same pair can match at shardCount=1", matchesAt1.length === 1, `matches=${matchesAt1.length}`),
+      checkInvariants(
+        "same pair can match at shardCount=1",
+        matchesAt1.length === 1,
+        `matches=${matchesAt1.length}`,
+      ),
     );
     await handle2.dispose();
     return out;
   }
-  out.push(checkInvariants("shard-rule scenario found a cross-shard pair", false, "no seed produced a cross-shard pair"));
+  out.push(
+    checkInvariants(
+      "shard-rule scenario found a cross-shard pair",
+      false,
+      "no seed produced a cross-shard pair",
+    ),
+  );
   return out;
 }
 
@@ -178,7 +225,12 @@ export function handcraftedEntry(
     availableTo: base + 3600000,
     constraints: { interests: interests.slice(0, 2), roles },
     interests,
-    profile: { displayName: `FIFO User ${index}`, experience: exp, field, languages: ["English"] },
+    profile: {
+      displayName: `FIFO User ${index}`,
+      experience: exp,
+      field,
+      languages: ["English"],
+    },
     orgId: "org-synthetic",
     embedding: [],
     availabilityClass: "always_on",
@@ -186,22 +238,38 @@ export function handcraftedEntry(
   };
 }
 
-export async function scenarioFifoCap(factory: RuntimeFactory): Promise<InvariantOutcome[]> {
+export async function scenarioFifoCap(
+  factory: RuntimeFactory,
+): Promise<InvariantOutcome[]> {
   const out: InvariantOutcome[] = [];
   // e1,e2: same role, disjoint interests, different fields -> low score.
   // e3,e4: shared interests, complementary roles -> high score.
   const users = [
     handcraftedEntry(0, ["alpha", "beta"], ["mentor"], "finance", "senior"),
     handcraftedEntry(1, ["gamma", "delta"], ["mentor"], "design", "senior"),
-    handcraftedEntry(2, ["epsilon", "zeta"], ["mentor"], "technology", "senior"),
-    handcraftedEntry(3, ["epsilon", "zeta"], ["mentee"], "technology", "junior"),
+    handcraftedEntry(
+      2,
+      ["epsilon", "zeta"],
+      ["mentor"],
+      "technology",
+      "senior",
+    ),
+    handcraftedEntry(
+      3,
+      ["epsilon", "zeta"],
+      ["mentee"],
+      "technology",
+      "junior",
+    ),
   ];
 
   const build = async (): Promise<RuntimeHandle> => {
     const { createUser } = await import("./harness.js");
     const handle = await factory.create(BASE_CLOCK);
     for (const e of users) {
-      handle.runtime.clock.advance(e.enqueueAt + 1000 - handle.runtime.clock.now());
+      handle.runtime.clock.advance(
+        e.enqueueAt + 1000 - handle.runtime.clock.now(),
+      );
       await createUser(handle.runtime, e);
       const authed = handle.runtime.env.withIdentity(e.identity);
       await authed.mutation(api.matching.queue.enterMatchingQueue, {
@@ -235,7 +303,11 @@ export async function scenarioFifoCap(factory: RuntimeFactory): Promise<Invarian
     await runEngineCycle(env, defaults, 1, { maxMatches: 2, shardCount: 1 });
     const matches = await matchedPairs(env);
     out.push(
-      checkInvariants("FIFO cap widened: e3,e4 scanned and matched", matches.length === 1, `matches=${matches.length}`),
+      checkInvariants(
+        "FIFO cap widened: e3,e4 scanned and matched",
+        matches.length === 1,
+        `matches=${matches.length}`,
+      ),
     );
     await handle.dispose();
   }
@@ -246,7 +318,9 @@ export async function scenarioFifoCap(factory: RuntimeFactory): Promise<Invarian
 // 4. Expiry: cleanup expires stale entries (one audit each); cycles cannot
 //    match them; createMatch itself does NOT revalidate windows (finding).
 // ---------------------------------------------------------------------------
-export async function scenarioExpiryAndCommitWindow(factory: RuntimeFactory): Promise<InvariantOutcome[]> {
+export async function scenarioExpiryAndCommitWindow(
+  factory: RuntimeFactory,
+): Promise<InvariantOutcome[]> {
   const out: InvariantOutcome[] = [];
   const { handle } = await setup(factory, "inv-expiry", 4301, 2);
   const { env, clock, defaults } = handle.runtime;
@@ -260,14 +334,30 @@ export async function scenarioExpiryAndCommitWindow(factory: RuntimeFactory): Pr
   });
 
   const expired = await runCleanupOnly(env);
-  out.push(checkInvariants("cleanup expires stale waiting entries", expired === 2, `expired=${expired}`));
+  out.push(
+    checkInvariants(
+      "cleanup expires stale waiting entries",
+      expired === 2,
+      `expired=${expired}`,
+    ),
+  );
   const logs = await auditLogs(env);
   const expiryLogs = logs.filter((l) => l.action === "queue_expired");
-  out.push(checkInvariants("expiry writes one auditLog per entry", expiryLogs.length === 2, `logs=${expiryLogs.length}`));
+  out.push(
+    checkInvariants(
+      "expiry writes one auditLog per entry",
+      expiryLogs.length === 2,
+      `logs=${expiryLogs.length}`,
+    ),
+  );
 
   const cycleResult = await runEngineCycle(env, defaults, 1);
   out.push(
-    checkInvariants("expired entries cannot be matched by a cycle", cycleResult.matchCount === 0, `matches=${cycleResult.matchCount}`),
+    checkInvariants(
+      "expired entries cannot be matched by a cycle",
+      cycleResult.totalMatches === 0,
+      `matches=${cycleResult.totalMatches}`,
+    ),
   );
 
   // Commit-boundary probe: restore waiting status with expired windows and
@@ -280,7 +370,9 @@ export async function scenarioExpiryAndCommitWindow(factory: RuntimeFactory): Pr
     }
   });
   const rowsAfterRestore = await queueRows(env);
-  const userById = new Map(rowsAfterRestore.map((r) => [String(r._id), String(r.userId)]));
+  const userById = new Map(
+    rowsAfterRestore.map((r) => [String(r._id), String(r.userId)]),
+  );
   const features = {
     interestOverlap: 1,
     experienceGap: 1,
@@ -319,7 +411,9 @@ export async function scenarioExpiryAndCommitWindow(factory: RuntimeFactory): Pr
 // ---------------------------------------------------------------------------
 // 5. Queue rules + retry consistency.
 // ---------------------------------------------------------------------------
-export async function scenarioQueueRulesAndRetries(factory: RuntimeFactory): Promise<InvariantOutcome[]> {
+export async function scenarioQueueRulesAndRetries(
+  factory: RuntimeFactory,
+): Promise<InvariantOutcome[]> {
   const out: InvariantOutcome[] = [];
   const { handle, plan } = await setup(factory, "inv-rules", 4401, 6);
   const { env, clock, defaults } = handle.runtime;
@@ -335,7 +429,12 @@ export async function scenarioQueueRulesAndRetries(factory: RuntimeFactory): Pro
   } catch {
     duplicateRejected = true;
   }
-  out.push(checkInvariants("second waiting entry per user is rejected", duplicateRejected));
+  out.push(
+    checkInvariants(
+      "second waiting entry per user is rejected",
+      duplicateRejected,
+    ),
+  );
 
   let pastWindowRejected = false;
   try {
@@ -347,12 +446,23 @@ export async function scenarioQueueRulesAndRetries(factory: RuntimeFactory): Pro
   } catch {
     pastWindowRejected = true;
   }
-  out.push(checkInvariants("availableFrom in the past is rejected", pastWindowRejected));
+  out.push(
+    checkInvariants(
+      "availableFrom in the past is rejected",
+      pastWindowRejected,
+    ),
+  );
 
   await runCycles(handle, { maxCycles: 12 });
   const matchesBefore = (await matchedPairs(env)).length;
   const retry = await runEngineCycle(env, defaults, 99);
-  out.push(checkInvariants("retry cycle creates zero new matches", retry.matchCount === 0, `matched=${retry.matchCount}`));
+  out.push(
+    checkInvariants(
+      "retry cycle creates zero new matches",
+      retry.totalMatches === 0,
+      `matched=${retry.totalMatches}`,
+    ),
+  );
 
   const matches = await pairsWithMatchIds(env, await matchedPairs(env));
   const analytics = await analyticsRows(env);
@@ -368,7 +478,11 @@ export async function scenarioQueueRulesAndRetries(factory: RuntimeFactory): Pro
   );
 
   const matchedUser = plan.entries.find((e) =>
-    matches.some((m) => String(m.userAId) === String(e.userId) || String(m.userBId) === String(e.userId)),
+    matches.some(
+      (m) =>
+        String(m.userAId) === String(e.userId) ||
+        String(m.userBId) === String(e.userId),
+    ),
   );
   if (matchedUser) {
     const a2 = env.withIdentity(matchedUser.identity);
@@ -392,19 +506,31 @@ export async function scenarioQueueRulesAndRetries(factory: RuntimeFactory): Pro
 // 6. Concurrency: two simultaneous cycles; no double booking; race counts
 //    recorded (not asserted).
 // ---------------------------------------------------------------------------
-export async function scenarioConcurrentCycles(factory: RuntimeFactory): Promise<InvariantSuiteOutput> {
+export async function scenarioConcurrentCycles(
+  factory: RuntimeFactory,
+): Promise<InvariantSuiteOutput> {
   const outcomes: InvariantOutcome[] = [];
   const failures: Array<{ scenario: string; detail: string }> = [];
   const notes: string[] = [];
   const { handle } = await setup(factory, "inv-concurrent", 4501, 50);
   const { env, defaults } = handle.runtime;
 
-  const args = { minScore: defaults.minScore, maxMatches: defaults.maxMatches, shardCount: defaults.shardCount };
+  const args = {
+    minScore: defaults.minScore,
+    maxMatches: defaults.maxMatches,
+    shardCount: defaults.shardCount,
+  };
+  // runMatchingCycle returns { processedShards, totalMatches, averageScore,
+  // processingTimeMs }; summing totalMatches across concurrent cycles must
+  // equal the committed pair count (processMatchingShard increments only on
+  // successful createMatch, so bounced attempts report nothing).
   const [r1, r2] = (await Promise.all([
     env.action(api.matching.engine.runMatchingCycle, args),
     env.action(api.matching.engine.runMatchingCycle, args),
-  ])) as unknown as Array<{ matchCount: number; totalScore: number }>;
-  notes.push(`concurrent cycles reported ${r1?.matchCount} and ${r2?.matchCount} matches`);
+  ])) as unknown as Array<{ totalMatches?: number; averageScore?: number }>;
+  notes.push(
+    `concurrent cycles reported ${r1?.totalMatches} and ${r2?.totalMatches} committed matches`,
+  );
 
   const matches = await pairsWithMatchIds(env, await matchedPairs(env));
   const analytics = await analyticsRows(env);
@@ -419,7 +545,8 @@ export async function scenarioConcurrentCycles(factory: RuntimeFactory): Promise
   }
   const queueMatched = rows.filter((r) => r.status === "matched");
   const consistent =
-    queueMatched.every((r) => matchedUsers.has(String(r.userId))) && queueMatched.length === 2 * matches.length;
+    queueMatched.every((r) => matchedUsers.has(String(r.userId))) &&
+    queueMatched.length === 2 * matches.length;
   outcomes.push(
     checkInvariants(
       "queue matched-state agrees with matches table under concurrent cycles",
@@ -433,11 +560,21 @@ export async function scenarioConcurrentCycles(factory: RuntimeFactory): Promise
     badRows.set(key, (badRows.get(key) ?? 0) + 1);
   }
   const bad = [...badRows.values()].filter((c) => c !== 2).length;
-  outcomes.push(checkInvariants("concurrent cycles: exactly two analytics rows per matchId", bad === 0, `bad=${bad}`));
-  if (r1 && r2 && r1.matchCount + r2.matchCount !== matches.length) {
+  outcomes.push(
+    checkInvariants(
+      "concurrent cycles: exactly two analytics rows per matchId",
+      bad === 0,
+      `bad=${bad}`,
+    ),
+  );
+  if (
+    r1 &&
+    r2 &&
+    (r1.totalMatches ?? 0) + (r2.totalMatches ?? 0) !== matches.length
+  ) {
     failures.push({
       scenario: "inv-concurrent",
-      detail: `cycles reported ${(r1.matchCount ?? 0) + (r2.matchCount ?? 0)} but ${matches.length} matches committed (createMatch false returns)`,
+      detail: `cycles' reported totalMatches (${(r1.totalMatches ?? 0) + (r2.totalMatches ?? 0)}) disagree with committed matches (${matches.length})`,
     });
   }
   await handle.dispose();
@@ -447,7 +584,9 @@ export async function scenarioConcurrentCycles(factory: RuntimeFactory): Promise
 // ---------------------------------------------------------------------------
 // 7. Entry validation: at least one interest and one role required.
 // ---------------------------------------------------------------------------
-export async function scenarioEntryValidation(factory: RuntimeFactory): Promise<InvariantOutcome[]> {
+export async function scenarioEntryValidation(
+  factory: RuntimeFactory,
+): Promise<InvariantOutcome[]> {
   const out: InvariantOutcome[] = [];
   const { createUser } = await import("./harness.js");
   const handle = await factory.create(BASE_CLOCK);
@@ -475,13 +614,20 @@ export async function scenarioEntryValidation(factory: RuntimeFactory): Promise<
   } catch {
     rejected = true;
   }
-  out.push(checkInvariants("entry requires at least one interest and one role", rejected));
+  out.push(
+    checkInvariants(
+      "entry requires at least one interest and one role",
+      rejected,
+    ),
+  );
   await handle.dispose();
   return out;
 }
 
 /** Runs the whole invariant suite against a factory. */
-export async function runInvariantSuite(factory: RuntimeFactory): Promise<InvariantSuiteOutput> {
+export async function runInvariantSuite(
+  factory: RuntimeFactory,
+): Promise<InvariantSuiteOutput> {
   const outcomes: InvariantOutcome[] = [];
   const failures: Array<{ scenario: string; detail: string }> = [];
   const notes: string[] = [];

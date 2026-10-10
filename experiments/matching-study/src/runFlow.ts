@@ -19,7 +19,11 @@ import { predictCycle, shardOf } from "./replica.js";
 import { buildMatrices, compareWithExact } from "./scoringMatrix.js";
 import type { MatrixBundle } from "./scoringMatrix.js";
 import { exactReference } from "./exactReference.js";
-import { greedyByScoreDesc, greedyFifo, greedyRandomOrder } from "./baselines.js";
+import {
+  greedyByScoreDesc,
+  greedyFifo,
+  greedyRandomOrder,
+} from "./baselines.js";
 import {
   queueRows,
   matchedPairs,
@@ -69,7 +73,11 @@ export interface QualityRecord {
   minScore: number;
   shardCount: number;
   engine: { cardinality: number; totalWeight: number };
-  exact: { maxCardinality: number; maxWeight: number; maxWeightAtMaxCardinality: number };
+  exact: {
+    maxCardinality: number;
+    maxWeight: number;
+    maxWeightAtMaxCardinality: number;
+  };
   baselines: Array<{ name: string; cardinality: number; totalWeight: number }>;
   gaps: { cardinalityGap: number; weightGap: number };
   counterexample: boolean;
@@ -87,9 +95,24 @@ export interface LoadRecord {
   expiredTotal: number;
   stillWaitingAtEnd: number;
   coverageMatchedBeforeExpiry: number;
-  waitingByClass: Record<string, { p50: number; p90: number; p99: number; max: number; count: number }>;
-  waitingOverall: { p50: number; p90: number; p99: number; max: number; count: number };
-  wallPerCycle: { p50: number; p90: number; p99: number; max: number; count: number };
+  waitingByClass: Record<
+    string,
+    { p50: number; p90: number; p99: number; max: number; count: number }
+  >;
+  waitingOverall: {
+    p50: number;
+    p90: number;
+    p99: number;
+    max: number;
+    count: number;
+  };
+  wallPerCycle: {
+    p50: number;
+    p90: number;
+    p99: number;
+    max: number;
+    count: number;
+  };
   scoredPairsTotal: number;
   committedMatchesTotal: number;
   heapDeltaBytes: number | null;
@@ -97,8 +120,8 @@ export interface LoadRecord {
     cycle: number;
     nowMs: number;
     waitingBefore: number;
-    matchCount: number;
-    totalScore: number;
+    totalMatches: number;
+    averageScore: number;
     expiredThisCycle: number;
     wallMs: number;
     scoredPairs: number;
@@ -123,16 +146,17 @@ export interface ScenarioResult {
 
 export const BASE_CLOCK = 1750000000000; // fixed logical epoch for all runs
 
-function replicaFromQueue(rows: QueueRow[], statusFilter: (r: QueueRow) => boolean): ReplicaEntry[] {
-  return rows
-    .filter(statusFilter)
-    .map((r) => ({
-      queueId: String(r._id),
-      userId: String(r.userId),
-      availableFrom: r.availableFrom,
-      availableTo: r.availableTo,
-      createdAt: r.createdAt,
-    }));
+function replicaFromQueue(
+  rows: QueueRow[],
+  statusFilter: (r: QueueRow) => boolean,
+): ReplicaEntry[] {
+  return rows.filter(statusFilter).map((r) => ({
+    queueId: String(r._id),
+    userId: String(r.userId),
+    availableFrom: r.availableFrom,
+    availableTo: r.availableTo,
+    createdAt: r.createdAt,
+  }));
 }
 
 /** Collects the engine's own score matrix + overlap over the current waiting set. */
@@ -154,12 +178,15 @@ export async function collectMatrix(
       const c1 = constraintsByUser.get(entry1.userId);
       const c2 = constraintsByUser.get(entry2.userId);
       if (!c1 || !c2) continue;
-      const r = (await env.action(internal.matching.scoring.calculateCompatibilityScoreInternal, {
-        user1Id: entry1.userId as unknown as Id<"users">,
-        user2Id: entry2.userId as unknown as Id<"users">,
-        user1Constraints: c1,
-        user2Constraints: c2,
-      })) as unknown as { score: number };
+      const r = (await env.action(
+        internal.matching.scoring.calculateCompatibilityScoreInternal,
+        {
+          user1Id: entry1.userId as unknown as Id<"users">,
+          user2Id: entry2.userId as unknown as Id<"users">,
+          user1Constraints: c1,
+          user2Constraints: c2,
+        },
+      )) as unknown as { score: number };
       bundle.scores[i][j] = bundle.scores[j][i] = r?.score ?? 0;
     }
   }
@@ -175,7 +202,11 @@ export async function runCycles(
   handle: RuntimeHandle,
   opts: {
     maxCycles: number;
-    overrides?: Partial<{ minScore: number; maxMatches: number; shardCount: number }>;
+    overrides?: Partial<{
+      minScore: number;
+      maxMatches: number;
+      shardCount: number;
+    }>;
     maxTicks?: number;
     tickMs?: number;
   },
@@ -202,20 +233,31 @@ export async function runCycles(
     // Advance to the next interesting event (window opening or expiry).
     const now = clock.now();
     const eventTimes = waiting
-      .flatMap((r) => [r.availableTo, ...(r.availableFrom > now ? [r.availableFrom] : [])])
+      .flatMap((r) => [
+        r.availableTo,
+        ...(r.availableFrom > now ? [r.availableFrom] : []),
+      ])
       .filter((t) => t > now)
       .sort((a, b) => a - b);
     const nextEvent = eventTimes[0];
-    if (nextEvent !== undefined && nextEvent > now) clock.advance(nextEvent - now);
+    if (nextEvent !== undefined && nextEvent > now)
+      clock.advance(nextEvent - now);
 
     const expiredThisCycle = await runCleanupOnly(env);
-    const waitingBefore = (await queueRows(env)).filter((r) => r.status === "waiting").length;
-    const pairsBefore = new Set((await matchedPairs(env)).map((p) => pairKey(p.userAId, p.userBId)));
+    const waitingBefore = (await queueRows(env)).filter(
+      (r) => r.status === "waiting",
+    ).length;
+    const pairsBefore = new Set(
+      (await matchedPairs(env)).map((p) => pairKey(p.userAId, p.userBId)),
+    );
 
     // Structure-only replica: scan-set sizes and scored-pair counts (no score
     // matrix at load scale, so pair CHOICES are not predicted here).
     const preRows = await queueRows(env);
-    const waitingReplica = replicaFromQueue(preRows, (r) => r.status === "waiting");
+    const waitingReplica = replicaFromQueue(
+      preRows,
+      (r) => r.status === "waiting",
+    );
     const prediction = predictCycle(
       waitingReplica,
       {
@@ -227,14 +269,23 @@ export async function runCycles(
       () => 1,
     );
 
-    const timing = await runEngineCycle(env, defaults, cycle, opts.overrides ?? {});
+    const timing = await runEngineCycle(
+      env,
+      defaults,
+      cycle,
+      opts.overrides ?? {},
+    );
     walls.push(timing.wallMs);
     scoredPairsTotal += prediction.scoredPairs;
 
     const postRows = await queueRows(env);
     const pairsAfter = await pairsWithMatchIds(env, await matchedPairs(env));
-    const newPairs = pairsAfter.filter((p) => !pairsBefore.has(pairKey(p.userAId, p.userBId)));
-    const queueIdByUser = new Map(postRows.map((r) => [String(r.userId), String(r._id)]));
+    const newPairs = pairsAfter.filter(
+      (p) => !pairsBefore.has(pairKey(p.userAId, p.userBId)),
+    );
+    const queueIdByUser = new Map(
+      postRows.map((r) => [String(r.userId), String(r._id)]),
+    );
     for (const p of newPairs) {
       decisions.push({
         user1: String(p.userAId),
@@ -250,8 +301,8 @@ export async function runCycles(
       cycle,
       nowMs: clock.now(),
       waitingBefore,
-      matchCount: timing.matchCount,
-      totalScore: timing.totalScore,
+      totalMatches: timing.totalMatches,
+      averageScore: timing.averageScore,
       expiredThisCycle,
       wallMs: timing.wallMs,
       scoredPairs: prediction.scoredPairs,
@@ -287,15 +338,22 @@ export function buildLoadRecord(
     byClass[w.availabilityClass] = byClass[w.availabilityClass] ?? [];
     byClass[w.availabilityClass].push(w.waitMs);
   }
-  const matchedTotal = waitingRecords.filter((w) => w.outcome === "matched").length;
-  const expiredTotal = waitingRecords.filter((w) => w.outcome === "expired").length;
+  const matchedTotal = waitingRecords.filter(
+    (w) => w.outcome === "matched",
+  ).length;
+  const expiredTotal = waitingRecords.filter(
+    (w) => w.outcome === "expired",
+  ).length;
   return {
     population: params.count,
     cyclesRun: cycleOut.perCycle.length,
     matchedTotal,
     expiredTotal,
-    stillWaitingAtEnd: waitingRecords.filter((w) => w.outcome === "still-waiting").length,
-    coverageMatchedBeforeExpiry: params.count > 0 ? matchedTotal / params.count : 0,
+    stillWaitingAtEnd: waitingRecords.filter(
+      (w) => w.outcome === "still-waiting",
+    ).length,
+    coverageMatchedBeforeExpiry:
+      params.count > 0 ? matchedTotal / params.count : 0,
     waitingByClass: Object.fromEntries(
       Object.entries(byClass).map(([k, v]) => [k, percentileSummaryOf(v)]),
     ),
@@ -328,26 +386,49 @@ export function compareQuality(
   seed: number,
 ): QualityRecord {
   const overlapFn = (i: number, j: number) => bundle.overlap[i][j];
-  const scoreFnSync = (i: number, j: number) => bundle.scores[Math.min(i, j)][Math.max(i, j)];
+  const scoreFnSync = (i: number, j: number) =>
+    bundle.scores[Math.min(i, j)][Math.max(i, j)];
   const exact = exactReference(n, bundle.scores, overlapFn, minScore);
   const engine = enginePairsFromMatches(bundle, pairs);
   const baselineDesc = greedyByScoreDesc(n, overlapFn, scoreFnSync, minScore);
   const baselineFifo = greedyFifo(n, overlapFn, scoreFnSync, minScore);
-  const baselineRandom = greedyRandomOrder(n, overlapFn, scoreFnSync, minScore, seed);
-  const gaps = compareWithExact(engine.pairs, exact, bundle.overlap, bundle.scores, minScore);
+  const baselineRandom = greedyRandomOrder(
+    n,
+    overlapFn,
+    scoreFnSync,
+    minScore,
+    seed,
+  );
+  const gaps = compareWithExact(
+    engine.pairs,
+    exact,
+    bundle.overlap,
+    bundle.scores,
+    minScore,
+  );
   return {
     n,
     minScore,
     shardCount,
-    engine: { cardinality: engine.cardinality, totalWeight: engine.totalWeight },
+    engine: {
+      cardinality: engine.cardinality,
+      totalWeight: engine.totalWeight,
+    },
     exact: {
       maxCardinality: exact.maxCardinality,
       maxWeight: exact.maxWeight,
       maxWeightAtMaxCardinality: exact.maxWeightAtMaxCardinality,
     },
-    baselines: [baselineDesc, baselineFifo, ...baselineRandom.runs.slice(0, 3), baselineRandom.best].map(
-      (b) => ({ name: b.name, cardinality: b.cardinality, totalWeight: b.totalWeight }),
-    ),
+    baselines: [
+      baselineDesc,
+      baselineFifo,
+      ...baselineRandom.runs.slice(0, 3),
+      baselineRandom.best,
+    ].map((b) => ({
+      name: b.name,
+      cardinality: b.cardinality,
+      totalWeight: b.totalWeight,
+    })),
     gaps: { cardinalityGap: gaps.cardinalityGap, weightGap: gaps.weightGap },
     counterexample: gaps.cardinalityGap > 0 || gaps.weightGap > 1e-9,
     eligiblePairCount: exact.eligiblePairs.length,
@@ -364,26 +445,37 @@ export async function executeScenario(
   factory: RuntimeFactory,
   overrides: Partial<PopulationParams> = {},
 ): Promise<ScenarioResult> {
-  const params: PopulationParams = { ...DEFAULT_PARAMS, ...spec.params, ...overrides };
+  const params: PopulationParams = {
+    ...DEFAULT_PARAMS,
+    ...spec.params,
+    ...overrides,
+  };
   const handle = await factory.create(BASE_CLOCK);
   const { runtime } = handle;
   const plan = planPopulation(spec.name, spec.seed, params, BASE_CLOCK);
 
-  const mat = await materializePopulation(runtime, plan, { queue: !spec.noQueue });
+  const mat = await materializePopulation(runtime, plan, {
+    queue: !spec.noQueue,
+  });
   const invariants: InvariantOutcome[] = [];
   const failures: FailureTrace[] = [];
   const maxCycles = spec.maxCycles ?? 40;
 
   // Quality scenarios: cache the matrix over the full waiting set BEFORE any
   // cycle runs (manifest pins availabilityMix to always-on for these).
-  const bundle = spec.quality ? await collectMatrix(runtime.env, runtime.defaults.minScore) : null;
+  const bundle = spec.quality
+    ? await collectMatrix(runtime.env, runtime.defaults.minScore)
+    : null;
 
   const cycleOut = await runCycles(handle, {
     maxCycles,
     overrides: spec.engineOverrides,
   });
 
-  const pairs = await pairsWithMatchIds(runtime.env, await matchedPairs(runtime.env));
+  const pairs = await pairsWithMatchIds(
+    runtime.env,
+    await matchedPairs(runtime.env),
+  );
   const analytics = await analyticsRows(runtime.env);
   invariants.push(...assertGlobalInvariants(pairs, analytics));
   const finalRows = await queueRows(runtime.env);
@@ -402,7 +494,9 @@ export async function executeScenario(
             ? "cancelled"
             : "still-waiting";
     const resolvedAt =
-      outcome === "matched" || outcome === "expired" ? ((r as unknown as { updatedAt?: number }).updatedAt ?? null) : null;
+      outcome === "matched" || outcome === "expired"
+        ? ((r as unknown as { updatedAt?: number }).updatedAt ?? null)
+        : null;
     return {
       userId: String(r.userId),
       availabilityClass: planned?.availabilityClass ?? "unknown",
@@ -435,7 +529,9 @@ export async function executeScenario(
       spec.seed,
     );
     // Fill decision scores from the pre-cycle engine matrix.
-    const idx = new Map(bundle.entries.map((e, i) => [String(e.userId), i] as const));
+    const idx = new Map(
+      bundle.entries.map((e, i) => [String(e.userId), i] as const),
+    );
     for (const d of cycleOut.decisions) {
       const i = idx.get(d.user1);
       const j = idx.get(d.user2);

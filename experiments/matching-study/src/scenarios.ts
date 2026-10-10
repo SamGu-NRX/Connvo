@@ -34,7 +34,11 @@ export interface QueueRow {
   status: string;
   availableFrom: number;
   availableTo: number;
-  constraints: { interests: string[]; roles: string[]; orgConstraints?: string };
+  constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  };
   createdAt: number;
   updatedAt?: number;
   matchedWith?: Id<"users"> | null;
@@ -47,7 +51,10 @@ export interface MatchPair {
   matchId: string | null;
 }
 
-export function pairKey(userA: string | Id<"users">, userB: string | Id<"users">): string {
+export function pairKey(
+  userA: string | Id<"users">,
+  userB: string | Id<"users">,
+): string {
   return [String(userA), String(userB)].sort().join("|");
 }
 
@@ -61,7 +68,9 @@ export async function queueRows(env: StudyEnv): Promise<QueueRow[]> {
 /** Derives committed matches from matched queue rows (mutual pointers). */
 export async function matchedPairs(env: StudyEnv): Promise<MatchPair[]> {
   const rows = await queueRows(env);
-  const byUser = new Map<string, QueueRow>(rows.map((r) => [String(r.userId), r]));
+  const byUser = new Map<string, QueueRow>(
+    rows.map((r) => [String(r.userId), r]),
+  );
   const seen = new Set<string>();
   const pairs: MatchPair[] = [];
   for (const r of rows) {
@@ -86,7 +95,10 @@ export async function pairsWithMatchIds(
   for (const row of analytics) {
     const uid = String(row.userId);
     const mid = row.matchId === undefined ? null : String(row.matchId);
-    byUser.set(uid, [...(byUser.get(uid) ?? []), ...(mid === null ? [] : [mid])]);
+    byUser.set(uid, [
+      ...(byUser.get(uid) ?? []),
+      ...(mid === null ? [] : [mid]),
+    ]);
   }
   return pairs.map((p) => {
     const a = byUser.get(String(p.userAId)) ?? [];
@@ -96,14 +108,18 @@ export async function pairsWithMatchIds(
   });
 }
 
-export async function analyticsRows(env: StudyEnv): Promise<Array<Record<string, unknown>>> {
+export async function analyticsRows(
+  env: StudyEnv,
+): Promise<Array<Record<string, unknown>>> {
   return env.run(async (ctx) => {
     const rows = await ctx.db.query("matchingAnalytics").collect();
     return rows as unknown as Array<Record<string, unknown>>;
   });
 }
 
-export async function auditLogs(env: StudyEnv): Promise<Array<Record<string, unknown>>> {
+export async function auditLogs(
+  env: StudyEnv,
+): Promise<Array<Record<string, unknown>>> {
   return env.run(async (ctx) => {
     const rows = await ctx.db.query("auditLogs").collect();
     return rows as unknown as Array<Record<string, unknown>>;
@@ -117,8 +133,10 @@ export async function auditLogs(env: StudyEnv): Promise<Array<Record<string, unk
 export interface CycleTiming {
   cycle: number;
   shardCount: number;
-  matchCount: number;
-  totalScore: number;
+  /** Engine-reported committed matches (pairs) for this cycle. */
+  totalMatches: number;
+  /** Engine-reported mean score across committed matches. */
+  averageScore: number;
   wallMs: number;
 }
 
@@ -127,19 +145,26 @@ export async function runEngineCycle(
   env: StudyEnv,
   defaults: { minScore: number; maxMatches: number; shardCount: number },
   cycle: number,
-  overrides: Partial<{ minScore: number; maxMatches: number; shardCount: number }> = {},
+  overrides: Partial<{
+    minScore: number;
+    maxMatches: number;
+    shardCount: number;
+  }> = {},
 ): Promise<CycleTiming> {
   const started = performance.now();
+  // runMatchingCycle (public action) returns { processedShards, totalMatches,
+  // averageScore, processingTimeMs } — the { matchCount, totalScore } shape
+  // belongs to the internal processMatchingShard action, not this one.
   const result = (await env.action(api.matching.engine.runMatchingCycle, {
     minScore: overrides.minScore ?? defaults.minScore,
     maxMatches: overrides.maxMatches ?? defaults.maxMatches,
     shardCount: overrides.shardCount ?? defaults.shardCount,
-  })) as unknown as { matchCount: number; totalScore: number };
+  })) as unknown as { totalMatches?: number; averageScore?: number };
   return {
     cycle,
     shardCount: overrides.shardCount ?? defaults.shardCount,
-    matchCount: result?.matchCount ?? 0,
-    totalScore: result?.totalScore ?? 0,
+    totalMatches: result?.totalMatches ?? 0,
+    averageScore: result?.averageScore ?? 0,
     wallMs: performance.now() - started,
   };
 }
@@ -163,7 +188,11 @@ export interface InvariantOutcome {
   detail?: string;
 }
 
-export function checkInvariants(name: string, passed: boolean, detail?: string): InvariantOutcome {
+export function checkInvariants(
+  name: string,
+  passed: boolean,
+  detail?: string,
+): InvariantOutcome {
   return { name, passed, detail };
 }
 
@@ -213,11 +242,14 @@ export function assertGlobalInvariants(
   const analyticsPairKeys = new Set(
     [...usersPerMatch.keys()].map((mid) => {
       const users = [...(usersPerMatch.get(mid) ?? [])];
-      return users.length === 2 ? pairKey(users[0], users[1]) : `malformed:${mid}`;
+      return users.length === 2
+        ? pairKey(users[0], users[1])
+        : `malformed:${mid}`;
     }),
   );
   const sameSet =
-    pairKeys.size === analyticsPairKeys.size && [...pairKeys].every((k) => analyticsPairKeys.has(k));
+    pairKeys.size === analyticsPairKeys.size &&
+    [...pairKeys].every((k) => analyticsPairKeys.has(k));
   out.push(
     checkInvariants(
       "derived match pairs agree with analytics matchId groups",
@@ -229,13 +261,22 @@ export function assertGlobalInvariants(
 }
 
 /** matchedWith mutuality on queue rows. */
-export function assertPointerMutuality(rows: QueueRow[], pairs: MatchPair[]): InvariantOutcome[] {
+export function assertPointerMutuality(
+  rows: QueueRow[],
+  pairs: MatchPair[],
+): InvariantOutcome[] {
   const byUser = new Map<string, QueueRow>();
   for (const row of rows) byUser.set(String(row.userId), row);
-  const matchedRows = rows.filter((r) => r.status === "matched" && r.matchedWith);
+  const matchedRows = rows.filter(
+    (r) => r.status === "matched" && r.matchedWith,
+  );
   const mutual = matchedRows.every((r) => {
     const partner = byUser.get(String(r.matchedWith));
-    return !!partner && String(partner.matchedWith) === String(r.userId) && partner.status === "matched";
+    return (
+      !!partner &&
+      String(partner.matchedWith) === String(r.userId) &&
+      partner.status === "matched"
+    );
   });
   return [
     checkInvariants(
