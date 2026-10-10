@@ -1,0 +1,138 @@
+{
+  "steps": [
+    {
+      "step": "joined",
+      "state": {
+        "conn": "status: online",
+        "inflight": "unacked/queued mutations: 0",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: false",
+        "saved": "saved (query cache): hello @v3",
+        "serverTruth": "server truth: hello @v3",
+        "duplicates": "duplicate acceptances: 0",
+        "meetingState": "server meeting state: scheduled",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "offline-edit-queued",
+      "state": {
+        "conn": "status: offline",
+        "inflight": "unacked/queued mutations: 1",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: true",
+        "saved": "saved (query cache): hello @v3",
+        "serverTruth": "server truth: hello @v3",
+        "duplicates": "duplicate acceptances: 0",
+        "meetingState": "server meeting state: scheduled",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "restored-replayed-once",
+      "state": {
+        "conn": "status: online",
+        "inflight": "unacked/queued mutations: 0",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: false",
+        "saved": "saved (query cache): hello world @v4",
+        "serverTruth": "server truth: hello world @v4",
+        "duplicates": "duplicate acceptances: 0",
+        "meetingState": "server meeting state: scheduled",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "ack-lost-syncing-stuck",
+      "state": {
+        "conn": "status: offline",
+        "inflight": "unacked/queued mutations: 1",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: true",
+        "saved": "saved (query cache): hello world @v4",
+        "serverTruth": "server truth: hello world! @v5",
+        "duplicates": "duplicate acceptances: 0",
+        "meetingState": "server meeting state: scheduled",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "restored-duplicate-applied",
+      "state": {
+        "conn": "status: online",
+        "inflight": "unacked/queued mutations: 0",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: false",
+        "saved": "saved (query cache): hello world!! @v6",
+        "serverTruth": "server truth: hello world!! @v6",
+        "duplicates": "duplicate acceptances: 1",
+        "meetingState": "server meeting state: scheduled",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "meeting-started",
+      "state": {
+        "conn": "status: online",
+        "inflight": "unacked/queued mutations: 0",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: false",
+        "saved": "saved (query cache): hello world!! @v6",
+        "serverTruth": "server truth: hello world!! @v6",
+        "duplicates": "duplicate acceptances: 1",
+        "meetingState": "server meeting state: active",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "end-queued-offline",
+      "state": {
+        "conn": "status: offline",
+        "inflight": "unacked/queued mutations: 1",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: false",
+        "saved": "saved (query cache): hello world!! @v6",
+        "serverTruth": "server truth: hello world!! @v6",
+        "duplicates": "duplicate acceptances: 1",
+        "meetingState": "server meeting state: active",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: true",
+        "error": "error: null"
+      }
+    },
+    {
+      "step": "end-replayed-once",
+      "state": {
+        "conn": "status: online",
+        "inflight": "unacked/queued mutations: 0",
+        "isLoading": "isLoading: false",
+        "isSyncing": "isSyncing: false",
+        "saved": "saved (query cache): hello world!! @v6",
+        "serverTruth": "server truth: hello world!! @v6",
+        "duplicates": "duplicate acceptances: 1",
+        "meetingState": "server meeting state: concluded",
+        "isStarting": "isStarting: false",
+        "isEnding": "isEnding: false",
+        "error": "error: null"
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "summary": {
+    "requestLoss": "queued op replayed exactly once; saved state converged on restore",
+    "ackLoss": "server truth advanced while isSyncing stayed true; restore re-sent and duplicated the acceptance",
+    "lifecycleEndLoss": "end queued offline then replayed exactly once on restore"
+  }
+}

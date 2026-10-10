@@ -1,0 +1,12 @@
+{
+  "scenario": "lifecycle/end-request-lost+navigation",
+  "sources": [
+    "src/hooks/useMeetingLifecycle.ts"
+  ],
+  "counts": {
+    "ops": 1,
+    "lostOps": 1,
+    "duplicatedOps": 0,
+    "finalServerState": "active"
+  }
+}

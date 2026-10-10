@@ -1,0 +1,216 @@
+{
+  "study": "reconnect",
+  "question": "What happens to unsent, unacknowledged, and re-sent note operations and meeting lifecycle mutations across connection cuts in the real hooks?",
+  "vitest": {
+    "config": "experiments/reconnect/vitest.config.ts",
+    "suites": 2,
+    "scenarios": 14,
+    "status": "passed"
+  },
+  "scenarios": [
+    {
+      "id": "notes/control",
+      "world": "online end to end",
+      "expectation": "baseline: one edit, one acceptance, no duplicates, no divergence",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "lostOps": 0,
+        "duplicatedOps": 0,
+        "falselySavedTicks": 0
+      }
+    },
+    {
+      "id": "notes/join-offline",
+      "world": "cold join with the connection cut before the first query",
+      "expectation": "isLoading unresolved and content empty until restore",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "joinedWhileOffline": true,
+        "isLoadingStuckTicks": 1,
+        "recoveredOnReconnect": true
+      }
+    },
+    {
+      "id": "notes/edit-ack-lost",
+      "world": "server accepted the op; its ack was lost; connection restored",
+      "expectation": "at-least-once re-send DUPLICATES the op on the server and in the reconciled UI",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "duplicatedOps": 1,
+        "serverContent": "hello world world",
+        "uiContentAfterRestore": "hello world world"
+      }
+    },
+    {
+      "id": "notes/edit-request-lost",
+      "world": "op queued while offline; connection restored before any server contact",
+      "expectation": "optimistic (consumer) state diverges from saved state while queued; replays exactly once",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "lostOps": 0,
+        "duplicatedOps": 0,
+        "divergedTicks": 1
+      }
+    },
+    {
+      "id": "notes/edit-removed",
+      "world": "participant removed server-side while the consumer is offline",
+      "expectation": "op rejected; consumer keeps the optimistic text with no saved/unsaved signal",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "lostOps": 1,
+        "duplicatedOps": 0,
+        "falselySavedTicks": 1
+      }
+    },
+    {
+      "id": "notes/no-ack-control",
+      "world": "two worlds differing ONLY in server acceptance, compared on the hook's visible state",
+      "expectation": "the hook's visible state is byte-for-byte identical in both worlds",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "ambiguousTicks": 1,
+        "worlds": {
+          "serverAccepted": {
+            "content": "hello",
+            "version": 3,
+            "isSyncing": false,
+            "isLoading": false,
+            "consumerLocalContent": "hello world"
+          },
+          "serverMissed": {
+            "content": "hello",
+            "version": 3,
+            "isSyncing": false,
+            "isLoading": false,
+            "consumerLocalContent": "hello world"
+          }
+        }
+      }
+    },
+    {
+      "id": "notes/repeated-reconnect",
+      "world": "four consecutive cut/restore cycles, one edit per cycle",
+      "expectation": "duplicates accumulate: every edit is applied twice on the server",
+      "sources": [
+        "src/hooks/useCollaborativeNotes.ts"
+      ],
+      "counts": {
+        "cycles": 4,
+        "ops": 4,
+        "duplicatedOps": 4,
+        "finalServerContent": "hello!!!!!!!!"
+      }
+    },
+    {
+      "id": "lifecycle/control",
+      "world": "online end to end",
+      "expectation": "baseline: start and end each accepted exactly once",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "startAcceptances": 1,
+        "endAcceptances": 1,
+        "duplicatedOps": 0,
+        "finalState": "concluded"
+      }
+    },
+    {
+      "id": "lifecycle/start-ack-lost",
+      "world": "server started the meeting; ack lost; connection restored",
+      "expectation": "isStarting stays true until the late path; re-send duplicates the start acceptance",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "duplicatedOps": 1,
+        "startAcceptances": 2,
+        "finalState": "active"
+      }
+    },
+    {
+      "id": "lifecycle/start-request-lost",
+      "world": "start queued while offline, then navigation away",
+      "expectation": "meeting never starts; the UI believed it did",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "lostOps": 1,
+        "duplicatedOps": 0,
+        "finalServerState": "scheduled"
+      }
+    },
+    {
+      "id": "lifecycle/end-request-lost",
+      "world": "end queued while offline, then navigation away",
+      "expectation": "meeting stays active while the user believed it ended; post-call processing never triggered",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "lostOps": 1,
+        "duplicatedOps": 0,
+        "finalServerState": "active"
+      }
+    },
+    {
+      "id": "lifecycle/end-ack-lost",
+      "world": "server ended the meeting; ack lost; connection restored",
+      "expectation": "re-send duplicates the end acceptance",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "ops": 1,
+        "duplicatedOps": 1,
+        "endAcceptances": 2
+      }
+    },
+    {
+      "id": "lifecycle/prompts-action-offline",
+      "world": "prompt-generation action fires while the connection is down",
+      "expectation": "action is not replayed; failure is swallowed (console.warn only, error state null)",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "actionReplayed": false,
+        "errorSurfaced": false,
+        "warnCalls": 1
+      }
+    },
+    {
+      "id": "lifecycle/connection-info-render-setstate",
+      "world": "getConnectionInfo called during render with a changing meetingId",
+      "expectation": "render-phase state update loop, capped by React",
+      "sources": [
+        "src/hooks/useMeetingLifecycle.ts"
+      ],
+      "counts": {
+        "renderLoopCapped": true,
+        "antiPattern": "setCurrentMeetingId called inside getConnectionInfo during render"
+      }
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "scenario": "notes/edit-request-lost",
+  "sources": [
+    "src/hooks/useCollaborativeNotes.ts"
+  ],
+  "counts": {
+    "ops": 1,
+    "lostOps": 0,
+    "duplicatedOps": 0,
+    "divergedTicks": 1
+  },
+  "trace": [
+    {
+      "step": "edit-queued-offline",
+      "ui": {
+        "content": "hello",
+        "version": 3,
+        "isSyncing": true,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "server": {
+        "content": "hello",
+        "version": 3
+      },
+      "acceptedNoteOps": 0
+    },
+    {
+      "step": "restored+acked",
+      "ui": {
+        "content": "hello world",
+        "version": 4,
+        "isSyncing": false,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "server": {
+        "content": "hello world",
+        "version": 4
+      },
+      "acceptedNoteOps": 1
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "scenario": "notes/no-ack-control",
+  "sources": [
+    "src/hooks/useCollaborativeNotes.ts"
+  ],
+  "counts": {
+    "ambiguousTicks": 1,
+    "worlds": {
+      "serverAccepted": {
+        "content": "hello",
+        "version": 3,
+        "isSyncing": false,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "serverMissed": {
+        "content": "hello",
+        "version": 3,
+        "isSyncing": false,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      }
+    }
+  }
+}

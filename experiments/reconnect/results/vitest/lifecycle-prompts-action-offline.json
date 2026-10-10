@@ -1,0 +1,11 @@
+{
+  "scenario": "lifecycle/prompts-action-offline",
+  "sources": [
+    "src/hooks/useMeetingLifecycle.ts"
+  ],
+  "counts": {
+    "actionReplayed": false,
+    "errorSurfaced": false,
+    "warnCalls": 1
+  }
+}

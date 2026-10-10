@@ -1,0 +1,62 @@
+{
+  "comparedRuns": "/home/user/work/Connvo/experiments/reconnect/results/counts.prev.json",
+  "allScenariosAgree": true,
+  "perScenario": [
+    {
+      "id": "notes/control",
+      "agrees": true
+    },
+    {
+      "id": "notes/join-offline",
+      "agrees": true
+    },
+    {
+      "id": "notes/edit-ack-lost",
+      "agrees": true
+    },
+    {
+      "id": "notes/edit-request-lost",
+      "agrees": true
+    },
+    {
+      "id": "notes/edit-removed",
+      "agrees": true
+    },
+    {
+      "id": "notes/no-ack-control",
+      "agrees": true
+    },
+    {
+      "id": "notes/repeated-reconnect",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/control",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/start-ack-lost",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/start-request-lost",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/end-request-lost",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/end-ack-lost",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/prompts-action-offline",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/connection-info-render-setstate",
+      "agrees": true
+    }
+  ]
+}

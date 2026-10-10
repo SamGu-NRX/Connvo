@@ -1,0 +1,98 @@
+{
+  "study": "reconnect",
+  "question": "What happens to unsent, unacknowledged, and re-sent note operations and meeting lifecycle mutations across connection cuts in the real hooks?",
+  "subject": {
+    "hooks": [
+      "src/hooks/useCollaborativeNotes.ts",
+      "src/hooks/useMeetingLifecycle.ts"
+    ],
+    "replaced": ["convex/react (fake client with the same React binding surface)"],
+    "unmodified": ["src/hooks/*", "convex/*"]
+  },
+  "suites": [
+    {
+      "id": "notes/control",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "online end to end",
+      "expectation": "baseline: one edit, one acceptance, no duplicates, no divergence"
+    },
+    {
+      "id": "notes/join-offline",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "cold join with the connection cut before the first query",
+      "expectation": "isLoading unresolved and content empty until restore"
+    },
+    {
+      "id": "notes/edit-ack-lost",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "server accepted the op; its ack was lost; connection restored",
+      "expectation": "at-least-once re-send DUPLICATES the op on the server and in the reconciled UI"
+    },
+    {
+      "id": "notes/edit-request-lost",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "op queued while offline; connection restored before any server contact",
+      "expectation": "optimistic (consumer) state diverges from saved state while queued; replays exactly once"
+    },
+    {
+      "id": "notes/edit-removed",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "participant removed server-side while the consumer is offline",
+      "expectation": "op rejected; consumer keeps the optimistic text with no saved/unsaved signal"
+    },
+    {
+      "id": "notes/no-ack-control",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "two worlds differing ONLY in server acceptance, compared on the hook's visible state",
+      "expectation": "the hook's visible state is byte-for-byte identical in both worlds"
+    },
+    {
+      "id": "notes/repeated-reconnect",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "four consecutive cut/restore cycles, one edit per cycle",
+      "expectation": "duplicates accumulate: every edit is applied twice on the server"
+    },
+    {
+      "id": "lifecycle/control",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "online end to end",
+      "expectation": "baseline: start and end each accepted exactly once"
+    },
+    {
+      "id": "lifecycle/start-ack-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "server started the meeting; ack lost; connection restored",
+      "expectation": "isStarting stays true until the late path; re-send duplicates the start acceptance"
+    },
+    {
+      "id": "lifecycle/start-request-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "start queued while offline, then navigation away",
+      "expectation": "meeting never starts; the UI believed it did"
+    },
+    {
+      "id": "lifecycle/end-request-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "end queued while offline, then navigation away",
+      "expectation": "meeting stays active while the user believed it ended; post-call processing never triggered"
+    },
+    {
+      "id": "lifecycle/end-ack-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "server ended the meeting; ack lost; connection restored",
+      "expectation": "re-send duplicates the end acceptance"
+    },
+    {
+      "id": "lifecycle/prompts-action-offline",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "prompt-generation action fires while the connection is down",
+      "expectation": "action is not replayed; failure is swallowed (console.warn only, error state null)"
+    },
+    {
+      "id": "lifecycle/connection-info-render-setstate",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "getConnectionInfo called during render with a changing meetingId",
+      "expectation": "render-phase state update loop, capped by React"
+    }
+  ]
+}
