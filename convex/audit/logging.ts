@@ -7,7 +7,7 @@
  * Compliance: steering/convex_rules.mdc - Uses proper Convex patterns
  */
 
-import { internalMutation, query } from "@convex/_generated/server";
+import { internalMutation, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { metadataRecordV } from "@convex/lib/validators";
 
@@ -103,9 +103,12 @@ export const createAuditLog = internalMutation({
 });
 
 /**
- * Public query to list audit logs by resource
+ * Lists audit logs by resource
+ *
+ * Internal-only: audit trails contain sensitive actor/resource metadata and
+ * must not be client-callable without explicit authorization tooling.
  */
-export const getAuditLogs = query({
+export const getAuditLogs = internalQuery({
   args: {
     resourceType: v.optional(v.string()),
     resourceId: v.optional(v.string()),
@@ -153,5 +156,37 @@ export const getAuditLogs = query({
 
     const rows = await q.order("desc").take(limit);
     return { logs: rows };
+  },
+});
+
+/**
+ * Deletes audit logs older than the retention cutoff
+ *
+ * Internal cleanup for the audit-trail retention policy. Default retention is
+ * 90 days (matching the transcript cleanup convention); pass `olderThanMs` to
+ * override. Uses the by_timestamp index and re-invocation is safe: the
+ * registered cron drains remaining rows on subsequent runs. Deliberately does
+ * not write its own audit entry — log deletion must not generate new logs.
+ */
+export const cleanupOldAuditLogs = internalMutation({
+  args: {
+    olderThanMs: v.optional(v.number()),
+  },
+  returns: v.object({
+    deleted: v.number(),
+  }),
+  handler: async (ctx, { olderThanMs = 90 * 24 * 60 * 60 * 1000 }) => {
+    const cutoff = Date.now() - olderThanMs;
+
+    const oldLogs = await ctx.db
+      .query("auditLogs")
+      .withIndex("by_timestamp", (q) => q.lt("timestamp", cutoff))
+      .collect();
+
+    for (const log of oldLogs) {
+      await ctx.db.delete(log._id);
+    }
+
+    return { deleted: oldLogs.length };
   },
 });

@@ -152,8 +152,6 @@ function UpsertUserOnAuth() {
             workosUserId: String(user?.id),
             email: String(user?.email ?? ""),
             displayName: displayName || undefined,
-            orgId: undefined,
-            orgRole: undefined,
           });
           console.log("[UpsertUserOnAuth] ✅ User upserted successfully");
           hasShownConfigError.current = false; // Reset error flag on success

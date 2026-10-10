@@ -62,6 +62,7 @@ export async function requireIdentity(
     displayName?: string | undefined;
     orgId?: string;
     orgRole?: string;
+    isActive?: boolean | undefined;
   } | null = null;
   const hasDb = (ctx as any).db && typeof (ctx as any).db.query === "function";
   if (hasDb) {
@@ -91,6 +92,13 @@ export async function requireIdentity(
     throw createError.unauthorized(
       "User not provisioned. Please complete sign-in and try again.",
     );
+  }
+
+  // Deactivated accounts never resolve to an identity, even with a valid JWT:
+  // sessions must stay bound to active users. (Bootstrap above only applies
+  // when NO user doc exists.)
+  if (userDoc.isActive === false) {
+    throw createError.forbidden("Account deactivated");
   }
 
   const email = identity.email ?? userDoc.email ?? null;

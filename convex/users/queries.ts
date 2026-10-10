@@ -40,52 +40,12 @@ export const getUserByIdInternal = internalQuery({
 });
 
 /**
- * Gets user by ID
+ * Gets user by ID (internal use)
  *
- * Returns the full user document for the supplied `userId`. This wrapper exists for non-sensitive tooling and tests; clients should prefer `getCurrentUser` or scoped profile queries when they need authorization filtering.
- *
- * @example request
- * ```json
- * {
- *   "args": {
- *     "userId": "user_9f3c2ab457"
- *   }
- * }
- * ```
- * @example response
- * ```json
- * {
- *   "status": "success",
- *   "errorMessage": "",
- *   "errorData": {},
- *   "value": {
- *     "_id": "user_9f3c2ab457",
- *     "_creationTime": 1716403200000,
- *     "workosUserId": "org_user_123",
- *     "email": "member@example.com",
- *     "displayName": "Member Example",
- *     "orgId": "org_abc123",
- *     "orgRole": "member",
- *     "isActive": true,
- *     "onboardingComplete": true,
- *     "onboardingStartedAt": 1716406800000,
- *     "onboardingCompletedAt": 1716489600000,
- *     "createdAt": 1716403200000,
- *     "updatedAt": 1716489600000
- *   }
- * }
- * ```
- * @example response-not-found
- * ```json
- * {
- *   "status": "success",
- *   "errorMessage": "",
- *   "errorData": {},
- *   "value": null
- * }
- * ```
+ * Internal-only: returns the full user document (including WorkOS id and org
+ * fields) without any authorization scoping, so it must not be client-callable.
  */
-export const getUserById = query({
+export const getUserById = internalQuery({
   args: { userId: v.id("users") },
   returns: v.union(UserV.full, v.null()),
   handler: async (ctx, { userId }): Promise<User | null> => {

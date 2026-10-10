@@ -11,7 +11,6 @@
 import { v, ConvexError } from "convex/values";
 import type { Infer } from "convex/values";
 import {
-  action,
   internalAction,
   internalMutation,
   internalQuery,
@@ -51,7 +50,9 @@ import type { CompatibilityFeatures } from "@convex/types/entities/matching";
  * }
  * ```
  */
-export const runMatchingCycle = action({
+// Internal-only: the matching cycle reads and writes the whole queue across
+// shards and must never be invoked directly by clients.
+export const runMatchingCycle = internalAction({
   args: {
     shardCount: v.optional(v.number()),
     minScore: v.optional(v.number()),
@@ -500,8 +501,15 @@ export const createMatch = internalMutation({
 
       return true;
     } catch (error) {
-      // Handle race conditions gracefully
-      console.error("Failed to create match:", error);
+      // Only an optimistic-concurrency race (a concurrent writer beating us
+      // between the availability re-check and these writes) is benign here.
+      // Anything else is a real failure and must surface, not be reported as
+      // a harmless lost race.
+      const message = error instanceof Error ? error.message : String(error);
+      if (!/concurrent modification/i.test(message)) {
+        throw error;
+      }
+      console.error("Failed to create match (concurrent modification):", error);
       return false;
     }
   },

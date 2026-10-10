@@ -12,7 +12,7 @@ import { v } from "convex/values";
 import {
   mutation,
   query,
-  action,
+  internalAction,
   internalQuery,
 } from "@convex/_generated/server";
 import { requireIdentity } from "@convex/auth/guards";
@@ -672,7 +672,9 @@ export const getGlobalMatchingAnalytics = query({
  * }
  * ```
  */
-export const optimizeMatchingWeights = action({
+// Internal-only: weight optimization is an expensive analytics job over all
+// match feedback and must never be invoked directly by clients.
+export const optimizeMatchingWeights = internalAction({
   args: {
     minSamples: v.optional(v.number()),
   },
