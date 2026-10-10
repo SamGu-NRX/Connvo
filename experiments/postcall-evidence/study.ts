@@ -407,15 +407,15 @@ export async function executeStudy(
     totals.itemsUnsupported += group.metrics.unsupported;
     totals.missedSupported += group.metrics.missedSupported.length;
     for (const [kind, n] of Object.entries(group.metrics.unsupportedByKind)) {
-      bumpCounter(totals.unsupportedByKind, kind);
-      totals.unsupportedByKind[kind] = n;
+      totals.unsupportedByKind[kind] = (totals.unsupportedByKind[kind] ?? 0) + n;
     }
     for (const meeting of group.meetings) {
       totals.emittedRaw += meeting.metrics.emittedRaw;
       totals.conservativeKept += meeting.metrics.kept;
       totals.conservativeRefused += meeting.metrics.refused;
       for (const [reason, n] of Object.entries(meeting.metrics.refusalReasons)) {
-        totals.conservativeRefusalReasons[reason] = n;
+        totals.conservativeRefusalReasons[reason] =
+          (totals.conservativeRefusalReasons[reason] ?? 0) + n;
       }
     }
   }

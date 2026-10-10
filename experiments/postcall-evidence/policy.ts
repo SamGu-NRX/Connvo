@@ -188,7 +188,8 @@ export function detectEvidence(sentence: string): {
 /**
  * Decide whether a permissive emission survives conservative refusal.
  * Order matters: fabricated sources are refused first, then sentence-level
- * evidence problems at the resolved position.
+ * evidence problems at the resolved position. Detectors run on the
+ * normalized quote so speaker prefixes ("Bob: ...") cannot hide evidence.
  */
 export function conservativeVerdict(
   emitted: string,
@@ -197,7 +198,7 @@ export function conservativeVerdict(
   if (position.sourceKind === "fabricated") {
     return { verdict: "refused", reason: "no-source" };
   }
-  const evidence = detectEvidence(position.quote);
+  const evidence = detectEvidence(normalizeText(position.quote));
   if (evidence.negation) return { verdict: "refused", reason: "negation" };
   if (evidence.stalePlan) return { verdict: "refused", reason: "stale-plan" };
   if (evidence.question) return { verdict: "refused", reason: "question" };

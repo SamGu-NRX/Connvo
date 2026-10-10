@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "replayedAt": "2026-10-10T20:14:31.678Z",
+  "committedCanonical": "4f226705e93685ab90e8c94753cc8c94b06da6922d57951ec5aa192062e54e8e",
+  "recomputedCanonical": "4f226705e93685ab90e8c94753cc8c94b06da6922d57951ec5aa192062e54e8e",
+  "sourceAgreement": true,
+  "fixturesAgreement": true,
+  "manifestAgreement": true,
+  "countsAgreement": true,
+  "claimsAgreement": true,
+  "agreement": true,
+  "modelArm": "NOT RUN - no model parser exists in Connvo; offline study"
+}
