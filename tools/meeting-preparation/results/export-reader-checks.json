@@ -1,0 +1,22 @@
+{
+  "generatedBy": "tools/meeting-preparation tests/export-reader.test.ts",
+  "roundtripScenarios": 4,
+  "roundtripsPassed": 4,
+  "invalidInputCases": 18,
+  "invalidInputsRejected": 18,
+  "readerErrorCodesObserved": [
+    "bad-agenda",
+    "bad-disclaimer",
+    "bad-kind",
+    "bad-meeting",
+    "bad-notes",
+    "bad-open-questions",
+    "bad-participants",
+    "bad-version",
+    "forbidden-key",
+    "not-json",
+    "unknown-key"
+  ],
+  "noPrivateFieldChecks": 16,
+  "privateFieldLeaks": 0
+}
