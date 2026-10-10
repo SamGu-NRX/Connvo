@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Match Explanations — Traceability Snapshot</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { margin: 0 auto; max-width: 40rem; padding: 1rem 1.25rem 3rem; line-height: 1.5; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 2rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th, td { border: 1px solid color-mix(in srgb, currentColor 25%, transparent); padding: 0.35rem 0.5rem; text-align: left; }
+  summary { cursor: pointer; padding: 0.4rem 0; }
+  summary strong { font-family: ui-monospace, monospace; font-size: 0.95rem; }
+  .badge { display: inline-block; border: 1px solid currentColor; border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.8rem; }
+  .met { color: #1a7f37; } .failed { color: #c0392b; }
+  :focus-visible { outline: 3px solid #4c9aff; outline-offset: 2px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 1rem; top: 1rem; background: canvas; padding: 0.5rem; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to results</a>
+<header>
+  <h1>Match Explanations — Traceability Snapshot</h1>
+  <p>Read-only snapshot of experiment results. No data can be changed here.</p>
+</header>
+<main id="main">
+  <h2>Per-pair traceability</h2>
+  
+      <details class="pair" id="mentee-x-mentor">
+        <summary>
+          <strong>mentee-x-mentor</strong>
+          — traceable share 0.667 (4/6)
+        </summary>
+        <table>
+          <caption>Sentence-level classification for mentee-x-mentor</caption>
+          <thead>
+            <tr><th scope="col">Sentence</th><th scope="col">Class</th><th scope="col">Feature</th><th scope="col">Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Strong interest alignment</td><td>supported_contribution</td><td>interestOverlap</td><td>0.7666666666666666</td></tr>
+<tr><td>Ideal experience gap for mentorship</td><td>supported_contribution</td><td>experienceGap</td><td>1</td></tr>
+<tr><td>Complementary professional roles</td><td>supported_contribution</td><td>roleComplementarity</td><td>1</td></tr>
+<tr><td>You are in the same organization as this match.</td><td>eligibility_rule</td><td>—</td><td>—</td></tr>
+<tr><td>You're in compatible time zones.</td><td>untraceable_assertion</td><td>—</td><td>—</td></tr>
+<tr><td>You will definitely hit it off.</td><td>untraceable_assertion</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details class="pair" id="mentor-x-peer">
+        <summary>
+          <strong>mentor-x-peer</strong>
+          — traceable share 0.333 (2/6)
+        </summary>
+        <table>
+          <caption>Sentence-level classification for mentor-x-peer</caption>
+          <thead>
+            <tr><th scope="col">Sentence</th><th scope="col">Class</th><th scope="col">Feature</th><th scope="col">Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Strong interest alignment</td><td>false_reason</td><td>interestOverlap</td><td>0</td></tr>
+<tr><td>Ideal experience gap for mentorship</td><td>supported_contribution</td><td>experienceGap</td><td>1</td></tr>
+<tr><td>High semantic profile similarity</td><td>supported_contribution</td><td>vectorSimilarity</td><td>0.9949747468305832</td></tr>
+<tr><td>Strong language compatibility</td><td>false_reason</td><td>languageOverlap</td><td>0.5</td></tr>
+<tr><td>You are in the same industry.</td><td>untraceable_assertion</td><td>—</td><td>—</td></tr>
+<tr><td>We had limited profile data for this match.</td><td>false_reason</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details class="pair" id="mentee-x-design">
+        <summary>
+          <strong>mentee-x-design</strong>
+          — traceable share 0.333 (1/3)
+        </summary>
+        <table>
+          <caption>Sentence-level classification for mentee-x-design</caption>
+          <thead>
+            <tr><th scope="col">Sentence</th><th scope="col">Class</th><th scope="col">Feature</th><th scope="col">Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Strong interest alignment</td><td>false_reason</td><td>interestOverlap</td><td>0.35</td></tr>
+<tr><td>Similar experience levels</td><td>false_reason</td><td>experienceGap</td><td>0.6</td></tr>
+<tr><td>Basic compatibility based on available data</td><td>fallback_sentinel</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <details class="pair" id="mentee-x-sparse">
+        <summary>
+          <strong>mentee-x-sparse</strong>
+          — traceable share 0.25 (1/4)
+        </summary>
+        <table>
+          <caption>Sentence-level classification for mentee-x-sparse</caption>
+          <thead>
+            <tr><th scope="col">Sentence</th><th scope="col">Class</th><th scope="col">Feature</th><th scope="col">Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Some profile information was missing, so we compared basic compatibility.</td><td>untraceable_assertion</td><td>—</td><td>—</td></tr>
+<tr><td>Complementary professional roles</td><td>false_reason</td><td>roleComplementarity</td><td>0</td></tr>
+<tr><td>Basic compatibility based on available data</td><td>fallback_sentinel</td><td>—</td><td>—</td></tr>
+<tr><td>You're in compatible time zones.</td><td>untraceable_assertion</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </details>
+  <h2>Counterfactual mutations</h2>
+  <p>All 4 single-input mutations met expectations:
+    <span class="badge met">PASS</span></p>
+  <h2>Composite scores</h2>
+  <ul>
+    <li><code>mentee-x-mentor</code>: 0.865</li>
+<li><code>mentor-x-peer</code>: 0.629</li>
+<li><code>mentee-x-design</code>: 0.491</li>
+<li><code>mentee-x-sparse</code>: 0.344</li>
+  </ul>
+</main>
+<footer>
+  <p>Generated by experiments/match-explanations/run.ts — synthetic data only.</p>
+</footer>
+</body>
+</html>

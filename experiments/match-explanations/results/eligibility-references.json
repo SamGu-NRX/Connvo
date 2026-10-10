@@ -1,0 +1,186 @@
+{
+  "rules": [
+    {
+      "id": "ROLE_COMPLEMENTARY_PAIRS",
+      "source": "convex/matching/scoring.ts calculateRoleComplementarity",
+      "semantics": "Known complementary role pairs (mentor/mentee, founder/investor-advisor, technical/business-engineering) contribute 1.0.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-mentor",
+          "feature": "roleComplementarity",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentor-x-peer",
+          "feature": "roleComplementarity",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "id": "ROLE_SAME_ROLE",
+      "source": "convex/matching/scoring.ts calculateRoleComplementarity",
+      "semantics": "Identical roles on both sides contribute 0.7.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-design",
+          "feature": "roleComplementarity",
+          "computedValue": 0.7
+        }
+      ]
+    },
+    {
+      "id": "ROLE_UNRELATED",
+      "source": "convex/matching/scoring.ts calculateRoleComplementarity",
+      "semantics": "Roles with no known relation contribute 0.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "roleComplementarity",
+          "computedValue": 0
+        }
+      ]
+    },
+    {
+      "id": "EXPERIENCE_LEVEL_GAP",
+      "source": "convex/matching/scoring.ts calculateExperienceGap",
+      "semantics": "Experience levels map entry..executive to 1..6; gap 1-2 contributes 1.0, gap 3 contributes 0.6, larger gaps contribute 0.3, gap 0 contributes 0.7.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-mentor",
+          "feature": "experienceGap",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentor-x-peer",
+          "feature": "experienceGap",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentee-x-design",
+          "feature": "experienceGap",
+          "computedValue": 0.6
+        },
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "experienceGap",
+          "computedValue": 0.5
+        }
+      ]
+    },
+    {
+      "id": "PROFILE_MISSING_NEUTRAL",
+      "source": "convex/matching/scoring.ts calculateExperienceGap / calculateIndustryMatch / calculateLanguageOverlap",
+      "semantics": "A null profile document (or missing fields) yields the 0.5 neutral for experience, industry, and language features.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "experienceGap",
+          "computedValue": 0.5
+        },
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "industryMatch",
+          "computedValue": 0.5
+        },
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "languageOverlap",
+          "computedValue": 0.5
+        }
+      ]
+    },
+    {
+      "id": "INDUSTRY_RELATED_FIELDS",
+      "source": "convex/matching/scoring.ts calculateIndustryMatch",
+      "semantics": "Fields whose names contain tokens from a related-field group (technology/business/design) contribute 0.8.",
+      "witnesses": [
+        {
+          "pairId": "mentor-x-peer",
+          "feature": "industryMatch",
+          "computedValue": 0.3
+        }
+      ]
+    },
+    {
+      "id": "ORG_SAME_ORG_MISMATCH",
+      "source": "convex/matching/scoring.ts calculateOrgConstraintMatch",
+      "semantics": "When both sides declare constraints and either says same_org, the outcome resolves by org equality: differing orgIds contribute 0.0. (Note: identical constraint strings on both sides short-circuit before this comparison — see ORG_IDENTICAL_CONSTRAINT_SHORT_CIRCUIT.)",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-design",
+          "feature": "orgConstraintMatch",
+          "computedValue": 0
+        }
+      ]
+    },
+    {
+      "id": "ORG_IDENTICAL_CONSTRAINT_SHORT_CIRCUIT",
+      "source": "convex/matching/scoring.ts calculateOrgConstraintMatch",
+      "semantics": "Identical constraint strings short-circuit to 1.0 even when the underlying orgIds differ (as-implemented behavior; recorded, not endorsed).",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-mentor",
+          "feature": "orgConstraintMatch",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentor-x-peer",
+          "feature": "orgConstraintMatch",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "id": "ORG_ONE_SIDED_SAME_ORG_DIFFERENT_ORGS",
+      "source": "convex/matching/scoring.ts calculateOrgConstraintMatch",
+      "semantics": "A one-sided same_org constraint against a differing org contributes 0.0.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "orgConstraintMatch",
+          "computedValue": 0
+        }
+      ]
+    },
+    {
+      "id": "TIMEZONE_PLACEHOLDER",
+      "source": "convex/matching/scoring.ts calculateCompatibilityFeatures",
+      "semantics": "timezoneCompatibility is hardcoded to 1.0: it derives from no user-controlled data, so no explanation sentence can truthfully cite it.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-mentor",
+          "feature": "timezoneCompatibility",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentor-x-peer",
+          "feature": "timezoneCompatibility",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentee-x-design",
+          "feature": "timezoneCompatibility",
+          "computedValue": 1
+        },
+        {
+          "pairId": "mentee-x-sparse",
+          "feature": "timezoneCompatibility",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "id": "VECTOR_MISSING_UNDEFINED",
+      "source": "convex/matching/scoring.ts calculateCompatibilityFeatures",
+      "semantics": "When either profile lacks an embedding (or the models differ), vectorSimilarity is undefined and is excluded from the weighted score.",
+      "witnesses": [
+        {
+          "pairId": "mentee-x-mentor",
+          "feature": "vectorSimilarity",
+          "computedValue": null
+        }
+      ]
+    }
+  ]
+}

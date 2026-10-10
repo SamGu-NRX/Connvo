@@ -1,0 +1,111 @@
+{
+  "exactCounts": {
+    "profiles": 5,
+    "scoredPairs": 4,
+    "missingUserCases": 1
+  },
+  "profiles": [
+    {
+      "id": "mentee-junior-technology",
+      "description": "Junior technologist seeking a mentor: overlapping interests with the senior technologist, ideal 2-level experience gap, complementary roles, no profile embedding (missing-data path), same_org constraint.",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": true,
+        "languages": true,
+        "embedding": false,
+        "orgConstraints": true
+      },
+      "privateSentinelCount": 4
+    },
+    {
+      "id": "mentor-senior-technology",
+      "description": "Senior technologist offering mentorship: near-identical embedding to the peer fixture, complementary with both mentee fixtures, same_org constraint (short-circuit branch against differing orgs).",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": false,
+        "languages": true,
+        "embedding": true,
+        "orgConstraints": true
+      },
+      "privateSentinelCount": 3
+    },
+    {
+      "id": "peer-mid-software",
+      "description": "Mid-level software peer: shares the mentor's embedding model and a near-collinear vector (cosine ~0.99), related-field industry match, complementary mentee role, same_org constraint with a different org.",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": false,
+        "languages": true,
+        "embedding": true,
+        "orgConstraints": true
+      },
+      "privateSentinelCount": 3
+    },
+    {
+      "id": "lead-design-cross-org",
+      "description": "Design lead in a different organization: 3-level experience gap, same-role (not complementary) mentee role, a conflicting org constraint (same_org vs different_org) resolved by org equality to orgConstraintMatch 0.0, no embedding.",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": false,
+        "languages": true,
+        "embedding": false,
+        "orgConstraints": true
+      },
+      "privateSentinelCount": 3
+    },
+    {
+      "id": "executive-sparse-no-profile",
+      "description": "Executive with no profile document at all (profile: null): forces the missing-data neutral branches (experience 0.5, industry 0.5, language 0.5) and a one-sided same_org constraint against a differing org.",
+      "fieldPresence": {
+        "profile": false,
+        "experience": false,
+        "field": false,
+        "company": false,
+        "languages": false,
+        "embedding": false,
+        "orgConstraints": false
+      },
+      "privateSentinelCount": 3
+    }
+  ],
+  "pairs": [
+    {
+      "pairId": "mentee-x-mentor",
+      "leftId": "mentee-junior-technology",
+      "rightId": "mentor-senior-technology",
+      "purpose": "Strong interest alignment, ideal experience gap, complementary roles; no embeddings so vectorSimilarity stays undefined (missing data)."
+    },
+    {
+      "pairId": "mentor-x-peer",
+      "leftId": "mentor-senior-technology",
+      "rightId": "peer-mid-software",
+      "purpose": "High semantic similarity (near-collinear vectors), ideal experience gap, complementary roles, related-field industry match, zero interest overlap."
+    },
+    {
+      "pairId": "mentee-x-design",
+      "leftId": "mentee-junior-technology",
+      "rightId": "lead-design-cross-org",
+      "purpose": "Low interest overlap, 3-level gap, same-role only, same_org constraint falsified by differing orgs: exercises the explanation fallback."
+    },
+    {
+      "pairId": "mentee-x-sparse",
+      "leftId": "mentee-junior-technology",
+      "rightId": "executive-sparse-no-profile",
+      "purpose": "Missing profile data (neutral 0.5 branches) plus a one-sided same_org constraint against a differing org; exercises the explanation fallback."
+    }
+  ],
+  "missingUserCase": {
+    "userId": "u_canary_missing",
+    "observed": {
+      "errorMessage": "User data not found for scoring"
+    }
+  }
+}

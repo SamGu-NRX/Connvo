@@ -1,0 +1,80 @@
+{
+  "note": "Counterfactuals vary ONE user-controlled input at a time, re-score through the REAL handler, and re-classify the affected sentence. CF_ORG is expected NOT to flip and records the short-circuit's insensitivity to org identity.",
+  "allExpectationsMet": true,
+  "cases": [
+    {
+      "id": "CF_INTERESTS",
+      "variedInput": "scoringData.interests",
+      "note": "User-controlled interests removed; the interest sentence must lose its feature support.",
+      "sentence": "Strong interest alignment",
+      "before": {
+        "classification": "supported_contribution",
+        "computedValue": 0.7666666666666666
+      },
+      "after": {
+        "classification": "false_reason",
+        "computedValue": 0.3
+      },
+      "expectation": {
+        "before": "supported_contribution",
+        "after": "false_reason"
+      },
+      "expectationMet": true
+    },
+    {
+      "id": "CF_EXPERIENCE",
+      "variedInput": "scoringData.profile.experience",
+      "note": "Experience moved to the mentor's own level (gap 0 -> 0.7); the ideal-gap sentence must lose support.",
+      "sentence": "Ideal experience gap for mentorship",
+      "before": {
+        "classification": "supported_contribution",
+        "computedValue": 1
+      },
+      "after": {
+        "classification": "false_reason",
+        "computedValue": 0.7
+      },
+      "expectation": {
+        "before": "supported_contribution",
+        "after": "false_reason"
+      },
+      "expectationMet": true
+    },
+    {
+      "id": "CF_EMBEDDING",
+      "variedInput": "scoringData.embedding.vector",
+      "note": "Peer embedding rotated to a different direction (cosine ~0.6 -> similarity ~0.8, no longer > 0.8); the semantic-similarity sentence must lose support. Embeddings derive from user-controlled profile content.",
+      "sentence": "High semantic profile similarity",
+      "before": {
+        "classification": "supported_contribution",
+        "computedValue": 0.9949747468305832
+      },
+      "after": {
+        "classification": "false_reason",
+        "computedValue": 0.7999999999999999
+      },
+      "expectation": {
+        "before": "supported_contribution",
+        "after": "false_reason"
+      },
+      "expectationMet": true
+    },
+    {
+      "id": "CF_ORG",
+      "variedInput": "scoringData.user.orgId",
+      "note": "orgId changed; the same-organization sentence is expected to REMAIN eligibility-backed, recording that the identical-constraint short-circuit ignores org identity. No counterfactual promises a match.",
+      "sentence": "You are in the same organization as this match.",
+      "before": {
+        "classification": "eligibility_rule"
+      },
+      "after": {
+        "classification": "eligibility_rule"
+      },
+      "expectation": {
+        "before": "eligibility_rule",
+        "after": "unchanged"
+      },
+      "expectationMet": true
+    }
+  ]
+}

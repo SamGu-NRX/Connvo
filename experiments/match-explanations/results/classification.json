@@ -1,0 +1,182 @@
+{
+  "manifest": "manifest.json",
+  "note": "Classification of proposed public explanation sentences against computed features (from results/contribution-references.json) and recorded eligibility rules. Traceable share counts supported contributions, eligibility-backed sentences, corroborated missing-data statements, and the production fallback sentinel.",
+  "computedButUnsurfaced": [
+    {
+      "feature": "industryMatch",
+      "note": "industryMatch is computed (exact match 1.0, related fields 0.8, same company 0.9, different 0.3) but no explanation sentence references it."
+    },
+    {
+      "feature": "timezoneCompatibility",
+      "note": "timezoneCompatibility is a hardcoded 1.0 placeholder and no sentence references it."
+    },
+    {
+      "feature": "orgConstraintMatch",
+      "note": "orgConstraintMatch is computed (including the 0.0 falsified-same_org case) but no explanation sentence references it."
+    }
+  ],
+  "pairs": [
+    {
+      "pairId": "mentee-x-mentor",
+      "sentences": [
+        {
+          "sentence": "Strong interest alignment",
+          "classification": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 0.7666666666666666
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "classification": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "classification": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "You are in the same organization as this match.",
+          "classification": "eligibility_rule",
+          "ruleId": "ORG_IDENTICAL_CONSTRAINT_SHORT_CIRCUIT",
+          "caveat": "Backed by identical constraint strings, NOT by org equality: the witness pair's orgIds differ. See the as-implemented semantics in results/eligibility-references.json."
+        },
+        {
+          "sentence": "You're in compatible time zones.",
+          "classification": "untraceable_assertion",
+          "reason": "timezoneCompatibility is a hardcoded 1.0 placeholder (TIMEZONE_PLACEHOLDER): it derives from no user-controlled data, so no sentence can truthfully cite it."
+        },
+        {
+          "sentence": "You will definitely hit it off.",
+          "classification": "untraceable_assertion",
+          "reason": "Promise language: explanations must not promise a match.",
+          "flag": "promise_language"
+        }
+      ],
+      "counts": {
+        "total": 6,
+        "traceable": 4,
+        "traceableShare": 0.667
+      }
+    },
+    {
+      "pairId": "mentor-x-peer",
+      "sentences": [
+        {
+          "sentence": "Strong interest alignment",
+          "classification": "false_reason",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 0,
+          "reason": "Known template contradicted by the computed feature value."
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "classification": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "High semantic profile similarity",
+          "classification": "supported_contribution",
+          "feature": "vectorSimilarity",
+          "condition": "vectorSimilarity != null && vectorSimilarity > 0.8",
+          "computedValue": 0.9949747468305832
+        },
+        {
+          "sentence": "Strong language compatibility",
+          "classification": "false_reason",
+          "feature": "languageOverlap",
+          "condition": "languageOverlap > 0.8",
+          "computedValue": 0.5,
+          "reason": "Known template contradicted by the computed feature value."
+        },
+        {
+          "sentence": "You are in the same industry.",
+          "classification": "untraceable_assertion",
+          "reason": "industryMatch is computed but never cited by any explanation sentence (the COMPUTED_BUT_UNSURFACED finding)."
+        },
+        {
+          "sentence": "We had limited profile data for this match.",
+          "classification": "false_reason",
+          "reason": "Missing-data claim contradicted: the neutral-branch signature is incomplete."
+        }
+      ],
+      "counts": {
+        "total": 6,
+        "traceable": 2,
+        "traceableShare": 0.333
+      }
+    },
+    {
+      "pairId": "mentee-x-design",
+      "sentences": [
+        {
+          "sentence": "Strong interest alignment",
+          "classification": "false_reason",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 0.35,
+          "reason": "Known template contradicted by the computed feature value."
+        },
+        {
+          "sentence": "Similar experience levels",
+          "classification": "false_reason",
+          "feature": "experienceGap",
+          "condition": "experienceGap > 0.7 && experienceGap !== 1.0",
+          "computedValue": 0.6,
+          "reason": "Known template contradicted by the computed feature value."
+        },
+        {
+          "sentence": "Basic compatibility based on available data",
+          "classification": "fallback_sentinel",
+          "reason": "Production fallback; emitted when no contribution condition fired."
+        }
+      ],
+      "counts": {
+        "total": 3,
+        "traceable": 1,
+        "traceableShare": 0.333
+      }
+    },
+    {
+      "pairId": "mentee-x-sparse",
+      "sentences": [
+        {
+          "sentence": "Some profile information was missing, so we compared basic compatibility.",
+          "classification": "untraceable_assertion",
+          "reason": "No contribution template, eligibility rule, or feature witness."
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "classification": "false_reason",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 0,
+          "reason": "Known template contradicted by the computed feature value."
+        },
+        {
+          "sentence": "Basic compatibility based on available data",
+          "classification": "fallback_sentinel",
+          "reason": "Production fallback; emitted when no contribution condition fired."
+        },
+        {
+          "sentence": "You're in compatible time zones.",
+          "classification": "untraceable_assertion",
+          "reason": "timezoneCompatibility is a hardcoded 1.0 placeholder (TIMEZONE_PLACEHOLDER): it derives from no user-controlled data, so no sentence can truthfully cite it."
+        }
+      ],
+      "counts": {
+        "total": 4,
+        "traceable": 1,
+        "traceableShare": 0.25
+      }
+    }
+  ]
+}

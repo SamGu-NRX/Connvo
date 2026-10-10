@@ -1,0 +1,37 @@
+{
+  "replayMatches": [
+    {
+      "file": "source-hashes.json",
+      "matches": true
+    },
+    {
+      "file": "fixture-inventory.json",
+      "matches": true
+    },
+    {
+      "file": "contribution-references.json",
+      "matches": true
+    },
+    {
+      "file": "eligibility-references.json",
+      "matches": true
+    }
+  ],
+  "classificationReplayMatches": true,
+  "counterfactualReplayMatches": true,
+  "scoringDeterministic": true,
+  "scoreTies": [],
+  "tieExplanationsStable": true,
+  "canaryLeaks": [],
+  "falseReasonMutations": {
+    "total": 4,
+    "met": 4
+  },
+  "pageKeyboardStructure": {
+    "focusableElements": 5,
+    "positiveTabindex": 0,
+    "detailsWithoutSummary": 0,
+    "passed": true
+  },
+  "allPassed": true
+}
