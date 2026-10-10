@@ -106,4 +106,6 @@ corepack pnpm exec tsx experiments/matching-study/run.ts --replay experiments/ma
 
 The runner regenerates every population from frozen seeds, re-executes the invariant suite, and diffs per-scenario outcomes against `run-summary.json`, writing `replay-agreement.json`. Raw per-cycle decisions: `decisions/`; failure traces: `run-summary.json.invariantFailures`; smallest counterexamples: `counterexamples/`.
 
+**Replay result (committed: `replay-agreement.json`)** — source hashes and manifest hash match the recorded run (`sourceHashesMatch: true`); the invariant suite reproduced 26/26; all 10 scenarios agreed on matched, expired, and cycle counts (e.g. `load-full-1000-s303`: 748/251/19 in both runs). As documented above, shard membership itself can shift with freshly assigned ids; in these runs the id allocation and therefore every recorded metric reproduced exactly.
+
 *(Numbers in §2-3 are from the committed `run-summary.json`; the run that produced them binds to the commit recorded in its `gitSha` and `sourceHashes`.)*

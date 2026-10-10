@@ -1,0 +1,213 @@
+{
+  "replayedAt": "2026-10-10T20:42:36.809Z",
+  "manifestHashOriginal": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
+  "manifestHashCurrent": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
+  "sourceHashesMatch": true,
+  "scenarios": [
+    {
+      "scenario": "quality-n4-s101",
+      "seed": 101,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 2,
+        "expiredTotal": 1,
+        "cyclesRun": 1
+      },
+      "replayed": {
+        "matchedTotal": 2,
+        "expiredTotal": 1,
+        "cyclesRun": 1
+      },
+      "notes": [
+        "regenerated 4 planned entries from seed 101"
+      ]
+    },
+    {
+      "scenario": "quality-n6-s102",
+      "seed": 102,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 2,
+        "expiredTotal": 0,
+        "cyclesRun": 1
+      },
+      "replayed": {
+        "matchedTotal": 2,
+        "expiredTotal": 0,
+        "cyclesRun": 1
+      },
+      "notes": [
+        "regenerated 6 planned entries from seed 102"
+      ]
+    },
+    {
+      "scenario": "quality-n8-s103",
+      "seed": 103,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 4,
+        "expiredTotal": 1,
+        "cyclesRun": 1
+      },
+      "replayed": {
+        "matchedTotal": 4,
+        "expiredTotal": 1,
+        "cyclesRun": 1
+      },
+      "notes": [
+        "regenerated 8 planned entries from seed 103"
+      ]
+    },
+    {
+      "scenario": "quality-n8-s104-shard1",
+      "seed": 104,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 8,
+        "expiredTotal": 0,
+        "cyclesRun": 1
+      },
+      "replayed": {
+        "matchedTotal": 8,
+        "expiredTotal": 0,
+        "cyclesRun": 1
+      },
+      "notes": [
+        "regenerated 8 planned entries from seed 104"
+      ]
+    },
+    {
+      "scenario": "load-smoke-25-s201",
+      "seed": 201,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 14,
+        "expiredTotal": 10,
+        "cyclesRun": 10
+      },
+      "replayed": {
+        "matchedTotal": 14,
+        "expiredTotal": 10,
+        "cyclesRun": 10
+      },
+      "notes": [
+        "regenerated 25 planned entries from seed 201"
+      ]
+    },
+    {
+      "scenario": "load-smoke-50-s202",
+      "seed": 202,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 44,
+        "expiredTotal": 5,
+        "cyclesRun": 12
+      },
+      "replayed": {
+        "matchedTotal": 44,
+        "expiredTotal": 5,
+        "cyclesRun": 12
+      },
+      "notes": [
+        "regenerated 50 planned entries from seed 202"
+      ]
+    },
+    {
+      "scenario": "load-smoke-100-s203",
+      "seed": 203,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 64,
+        "expiredTotal": 35,
+        "cyclesRun": 13
+      },
+      "replayed": {
+        "matchedTotal": 64,
+        "expiredTotal": 35,
+        "cyclesRun": 13
+      },
+      "notes": [
+        "regenerated 100 planned entries from seed 203"
+      ]
+    },
+    {
+      "scenario": "load-full-250-s301",
+      "seed": 301,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 172,
+        "expiredTotal": 77,
+        "cyclesRun": 18
+      },
+      "replayed": {
+        "matchedTotal": 172,
+        "expiredTotal": 77,
+        "cyclesRun": 18
+      },
+      "notes": [
+        "regenerated 250 planned entries from seed 301"
+      ]
+    },
+    {
+      "scenario": "load-full-500-s302",
+      "seed": 302,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 346,
+        "expiredTotal": 153,
+        "cyclesRun": 19
+      },
+      "replayed": {
+        "matchedTotal": 346,
+        "expiredTotal": 153,
+        "cyclesRun": 19
+      },
+      "notes": [
+        "regenerated 500 planned entries from seed 302"
+      ]
+    },
+    {
+      "scenario": "load-full-1000-s303",
+      "seed": 303,
+      "matchedTotalAgrees": true,
+      "expiredTotalAgrees": true,
+      "cyclesRunAgrees": true,
+      "original": {
+        "matchedTotal": 748,
+        "expiredTotal": 251,
+        "cyclesRun": 19
+      },
+      "replayed": {
+        "matchedTotal": 748,
+        "expiredTotal": 251,
+        "cyclesRun": 19
+      },
+      "notes": [
+        "regenerated 1000 planned entries from seed 303"
+      ]
+    }
+  ],
+  "invariantsReplayed": {
+    "passed": 26,
+    "failed": 0
+  },
+  "conclusion": "Source and manifest hashes match the recorded run; generator plans and invariant outcomes reproduce exactly. Convex ids are freshly assigned per run, so shard membership can shift; metrics that depend only on plans and scores are expected to agree and are compared per scenario above."
+}
