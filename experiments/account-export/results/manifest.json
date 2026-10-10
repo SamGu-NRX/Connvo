@@ -1,0 +1,285 @@
+{
+  "manifestVersion": "account-export/manifest-v1",
+  "fixtureId": "connvo-account-export-fixture-v1",
+  "fixtureSha256": "6b543f80ac9d2fd98ec6536c4e198ee354c2aa494fe44689e6646e29db7d3b1c",
+  "repoSha": null,
+  "policy": {
+    "version": "account-export/projection-v1",
+    "checksum": "c0ee6bf5"
+  },
+  "archiveSha256": "cb10bcd1412039d3eb184c97ba9dc33d501ec5df811833c2bea497a9314c6e57",
+  "caller": {
+    "ref": "alice",
+    "email": "alice.caller@example.com",
+    "orgRole": "member",
+    "identity": "workosUserId — requireIdentity resolves via users.by_workos_id"
+  },
+  "clock": {
+    "requestedAt": 1760000000000,
+    "note": "deterministic clock from the fixture; exportId embeds it, not wall time"
+  },
+  "classification": {
+    "owner": 11,
+    "shared": 255,
+    "excluded": 51,
+    "total": 317
+  },
+  "exportedRows": {
+    "perTable": {
+      "users": 1,
+      "profiles": 1,
+      "userSettings": 0,
+      "userInterests": 2,
+      "interests": 0,
+      "connections": 1,
+      "meetings": 2,
+      "meetingParticipants": 2,
+      "meetingState": 0,
+      "meetingNotes": 1,
+      "noteOps": 0,
+      "meetingCounters": 0,
+      "meetingEvents": 0,
+      "meetingRecordings": 0,
+      "videoRoomConfigs": 0,
+      "transcripts": 250,
+      "transcriptionSessions": 0,
+      "transcriptSegments": 2,
+      "messages": 0,
+      "prompts": 0,
+      "insights": 2,
+      "embeddings": 0,
+      "vectorIndexMeta": 0,
+      "matchingQueue": 1,
+      "matchingAnalytics": 1,
+      "offlineOperationQueue": 0,
+      "offlineCheckpoints": 0,
+      "idempotencyKeys": 0,
+      "alerts": 0,
+      "performanceMetrics": 0,
+      "rateLimits": 0,
+      "auditLogs": 0,
+      "featureFlags": 0
+    },
+    "total": 266
+  },
+  "refusals": {
+    "count": 13,
+    "byReason": {
+      "missing_export_permission": 3,
+      "no_export_authority_defined": 9,
+      "no_meeting_participation": 1
+    },
+    "expectations": {
+      "noExportScope": 3,
+      "noGrantAggregates": 9,
+      "noParticipation": 1
+    },
+    "match": true
+  },
+  "leakScan": {
+    "tokenCount": 33,
+    "tokenHits": 0,
+    "excludedRowIdCount": 51,
+    "excludedRowIdHits": 0,
+    "note": "excluded row ids may appear as foreign keys inside owner rows (documented exception); they are checked against refs receipts and refusal entries only"
+  },
+  "leakTokens": [
+    {
+      "token": "workos-alice",
+      "origin": "users.alice.workosUserId"
+    },
+    {
+      "token": "workos-bob-private",
+      "origin": "users.bob.workosUserId"
+    },
+    {
+      "token": "bob.example@example.com",
+      "origin": "users.bob.email"
+    },
+    {
+      "token": "Bob Participant",
+      "origin": "users.bob.displayName"
+    },
+    {
+      "token": "bob private profile bio",
+      "origin": "users.bob.profile.bio"
+    },
+    {
+      "token": "bob private insight about his own retro",
+      "origin": "insights.ins-bob-m2.summary"
+    },
+    {
+      "token": "workos-carol-private",
+      "origin": "users.carol.workosUserId"
+    },
+    {
+      "token": "carol.private@example.com",
+      "origin": "users.carol.email"
+    },
+    {
+      "token": "Carol Quiet",
+      "origin": "users.carol.displayName"
+    },
+    {
+      "token": "carol private bio",
+      "origin": "users.carol.profile.bio"
+    },
+    {
+      "token": "workos-dave-removed",
+      "origin": "users.dave.workosUserId"
+    },
+    {
+      "token": "dave.gone@example.com",
+      "origin": "users.dave.email"
+    },
+    {
+      "token": "Dave Removed",
+      "origin": "users.dave.displayName"
+    },
+    {
+      "token": "dave removed-member bio",
+      "origin": "users.dave.profile.bio"
+    },
+    {
+      "token": "workos-erin-inactive",
+      "origin": "users.erin.workosUserId"
+    },
+    {
+      "token": "erin.inactive@example.com",
+      "origin": "users.erin.email"
+    },
+    {
+      "token": "Erin Inactive",
+      "origin": "users.erin.displayName"
+    },
+    {
+      "token": "erin deactivated bio",
+      "origin": "users.erin.profile.bio"
+    },
+    {
+      "token": "stream-room-m1-secret",
+      "origin": "meetings.m1.streamRoomId"
+    },
+    {
+      "token": "https://provider.example/rec-m1-secret-url",
+      "origin": "meetingRecordings.rec-m1.recordingUrl"
+    },
+    {
+      "token": "room-m1-secret",
+      "origin": "videoRoomConfigs.vrc-m1.roomId"
+    },
+    {
+      "token": "bob private chat message one",
+      "origin": "messages.msg-m1-1.content"
+    },
+    {
+      "token": "bob private chat message two",
+      "origin": "messages.msg-m1-2.content"
+    },
+    {
+      "token": "carol private chat message",
+      "origin": "messages.msg-m1-3.content"
+    },
+    {
+      "token": "stream-room-m2-secret",
+      "origin": "meetings.m2.streamRoomId"
+    },
+    {
+      "token": "room-m2-secret",
+      "origin": "videoRoomConfigs.vrc-m2.roomId"
+    },
+    {
+      "token": "bob retro private message",
+      "origin": "messages.msg-m2-1.content"
+    },
+    {
+      "token": "bob retro private message two",
+      "origin": "messages.msg-m2-2.content"
+    },
+    {
+      "token": "stream-room-m3-secret",
+      "origin": "meetings.m3.streamRoomId"
+    },
+    {
+      "token": "Carol private 1:1",
+      "origin": "meetings.m3.title"
+    },
+    {
+      "token": "m3 carol private description",
+      "origin": "meetings.m3.description"
+    },
+    {
+      "token": "m3 carol private 1:1 transcript line",
+      "origin": "transcripts.tr-m3-1.text"
+    },
+    {
+      "token": "m3 carol private 1:1 transcript line two",
+      "origin": "transcripts.tr-m3-2.text"
+    }
+  ],
+  "excludedRowIds": [
+    "10006;users",
+    "10007;profiles",
+    "10008;userSettings",
+    "10009;matchingQueue",
+    "10010;users",
+    "10011;profiles",
+    "10012;users",
+    "10013;profiles",
+    "10014;users",
+    "10015;profiles",
+    "10016;interests",
+    "10017;interests",
+    "10018;interests",
+    "10020;connections",
+    "10023;meetingParticipants",
+    "10024;meetingParticipants",
+    "10026;meetingParticipants",
+    "10027;meetingState",
+    "10281;noteOps",
+    "10282;noteOps",
+    "10283;noteOps",
+    "10284;meetingCounters",
+    "10285;meetingEvents",
+    "10286;meetingEvents",
+    "10287;meetingEvents",
+    "10288;meetingRecordings",
+    "10289;videoRoomConfigs",
+    "10290;transcriptionSessions",
+    "10291;messages",
+    "10292;messages",
+    "10293;messages",
+    "10294;prompts",
+    "10295;prompts",
+    "10297;meetingParticipants",
+    "10299;meetingState",
+    "10300;transcripts",
+    "10301;transcripts",
+    "10302;meetingNotes",
+    "10303;noteOps",
+    "10304;meetingCounters",
+    "10305;meetingEvents",
+    "10306;videoRoomConfigs",
+    "10307;messages",
+    "10308;messages",
+    "10309;meetings",
+    "10310;meetingParticipants",
+    "10311;meetingState",
+    "10312;transcripts",
+    "10313;transcripts",
+    "10314;meetingCounters",
+    "10317;insights"
+  ],
+  "ordering": {
+    "by": [
+      "table",
+      "_id"
+    ],
+    "stableAcrossRuns": true,
+    "note": "two runs against the same fixture produce byte-identical archives"
+  },
+  "reader": {
+    "command": "node experiments/account-export/reader.mjs experiments/account-export/results/export.json",
+    "note": "independent reader: imports no Convex, no project code, no projection policy"
+  }
+}

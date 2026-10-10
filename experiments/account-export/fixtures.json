@@ -1,0 +1,327 @@
+{
+  "fixtureId": "connvo-account-export-fixture-v1",
+  "description": "Deterministic fixture universe for the caller-only account export study. Caller is 'alice'. Meetings m1 (caller hosts), m2 (caller participates, bob hosts), m3 (caller has no participation). Dave is a REMOVED member of m1 (participant row seeded then deleted). Erin is INACTIVE. Bulk transcripts exercise bounded pagination.",
+  "callerRef": "alice",
+  "clock": 1760000000000,
+  "users": [
+    {
+      "ref": "alice",
+      "workosUserId": "workos-alice",
+      "email": "alice.caller@example.com",
+      "displayName": "Alice Caller",
+      "orgId": "org-1",
+      "orgRole": "member",
+      "isActive": true,
+      "profile": {
+        "bio": "alice own bio for the export study",
+        "goals": "get my data portably",
+        "languages": ["en"],
+        "experience": "some",
+        "age": 31,
+        "gender": "prefer-not-to-say",
+        "field": "Technology",
+        "jobTitle": "Researcher",
+        "company": "Example Corp",
+        "linkedinUrl": "https://www.linkedin.com/in/alice-caller"
+      },
+      "settings": null,
+      "interests": ["nodejs", "privacy"],
+      "insights": [
+        {
+          "ref": "ins-alice-m1",
+          "meetingRef": "m1",
+          "summary": "alice insight on the weekly sync: three actions agreed",
+          "actionItems": ["send notes", "book follow-up", "share transcript"],
+          "recommendations": [{ "type": "scheduling", "content": "shorter sync", "confidence": 0.7 }],
+          "links": []
+        },
+        {
+          "ref": "ins-alice-m2",
+          "meetingRef": "m2",
+          "summary": "alice insight on the retro: keep the retrospective format",
+          "actionItems": ["try async retro"],
+          "recommendations": [],
+          "links": []
+        }
+      ],
+      "matchingQueue": {
+        "availableFrom": 1760004000000,
+        "availableTo": 1760014000000,
+        "constraints": { "interests": ["privacy"], "roles": ["Researcher"], "orgConstraints": null },
+        "status": "waiting",
+        "matchedWith": null
+      },
+      "matchingAnalytics": [
+        {
+          "ref": "ma-alice-1",
+          "matchId": "match-alice-abc",
+          "outcome": "completed",
+          "feedback": { "rating": 4, "comments": "useful" },
+          "features": { "overlap": 0.6 },
+          "weights": { "overlap": 1.0 }
+        }
+      ]
+    },
+    {
+      "ref": "bob",
+      "workosUserId": "workos-bob-private",
+      "email": "bob.example@example.com",
+      "displayName": "Bob Participant",
+      "orgId": "org-1",
+      "orgRole": "member",
+      "isActive": true,
+      "profile": {
+        "bio": "bob private profile bio",
+        "goals": null,
+        "languages": ["en"],
+        "experience": null,
+        "age": null,
+        "gender": "prefer-not-to-say",
+        "field": null,
+        "jobTitle": "Engineer",
+        "company": "Example Corp",
+        "linkedinUrl": "https://www.linkedin.com/in/bob-private"
+      },
+      "settings": {
+        "emailNotifications": true,
+        "pushNotifications": false,
+        "smsNotifications": false,
+        "profileVisibility": false,
+        "dataSharing": false,
+        "activityTracking": true
+      },
+      "interests": [],
+      "insights": [
+        {
+          "ref": "ins-bob-m2",
+          "meetingRef": "m2",
+          "summary": "bob private insight about his own retro",
+          "actionItems": ["bob private action"],
+          "recommendations": [],
+          "links": []
+        }
+      ],
+      "matchingQueue": {
+        "availableFrom": 1760004000000,
+        "availableTo": 1760014000000,
+        "constraints": { "interests": ["nodejs"], "roles": ["Engineer"], "orgConstraints": null },
+        "status": "matched",
+        "matchedWith": "alice"
+      },
+      "matchingAnalytics": []
+    },
+    {
+      "ref": "carol",
+      "workosUserId": "workos-carol-private",
+      "email": "carol.private@example.com",
+      "displayName": "Carol Quiet",
+      "orgId": "org-1",
+      "orgRole": "member",
+      "isActive": true,
+      "profile": {
+        "bio": "carol private bio",
+        "goals": null,
+        "languages": ["en"],
+        "experience": null,
+        "age": null,
+        "gender": "female",
+        "field": null,
+        "jobTitle": null,
+        "company": null,
+        "linkedinUrl": null
+      },
+      "settings": null,
+      "interests": [],
+      "insights": [],
+      "matchingQueue": null,
+      "matchingAnalytics": []
+    },
+    {
+      "ref": "dave",
+      "workosUserId": "workos-dave-removed",
+      "email": "dave.gone@example.com",
+      "displayName": "Dave Removed",
+      "orgId": "org-1",
+      "orgRole": "member",
+      "isActive": true,
+      "profile": {
+        "bio": "dave removed-member bio",
+        "goals": null,
+        "languages": ["en"],
+        "experience": null,
+        "age": null,
+        "gender": "prefer-not-to-say",
+        "field": null,
+        "jobTitle": null,
+        "company": null,
+        "linkedinUrl": null
+      },
+      "settings": null,
+      "interests": [],
+      "insights": [],
+      "matchingQueue": null,
+      "matchingAnalytics": []
+    },
+    {
+      "ref": "erin",
+      "workosUserId": "workos-erin-inactive",
+      "email": "erin.inactive@example.com",
+      "displayName": "Erin Inactive",
+      "orgId": "org-1",
+      "orgRole": "member",
+      "isActive": false,
+      "profile": {
+        "bio": "erin deactivated bio",
+        "goals": null,
+        "languages": ["en"],
+        "experience": null,
+        "age": null,
+        "gender": "prefer-not-to-say",
+        "field": null,
+        "jobTitle": null,
+        "company": null,
+        "linkedinUrl": null
+      },
+      "settings": null,
+      "interests": [],
+      "insights": [],
+      "matchingQueue": null,
+      "matchingAnalytics": []
+    }
+  ],
+  "interests": [
+    { "ref": "int-nodejs", "key": "nodejs", "label": "Node.js", "category": "skill", "usageCount": 12 },
+    { "ref": "int-privacy", "key": "privacy", "label": "Privacy", "category": "personal", "usageCount": 7 },
+    { "ref": "int-ml", "key": "ml", "label": "Machine Learning", "category": "skill", "usageCount": 20 }
+  ],
+  "connections": [
+    { "requesterRef": "alice", "addresseeRef": "bob", "status": "accepted" },
+    { "requesterRef": "carol", "addresseeRef": "dave", "status": "pending" }
+  ],
+  "meetings": [
+    {
+      "ref": "m1",
+      "title": "Weekly sync",
+      "description": "m1 weekly sync description",
+      "scheduledAt": 1759996800000,
+      "duration": 1800,
+      "state": "concluded",
+      "organizerRef": "alice",
+      "streamRoomId": "stream-room-m1-secret",
+      "participants": [
+        { "userRef": "alice", "role": "host", "presence": "joined" },
+        { "userRef": "bob", "role": "participant", "presence": "joined" },
+        { "userRef": "carol", "role": "participant", "presence": "joined" },
+        { "userRef": "dave", "role": "participant", "presence": "joined", "removed": true },
+        { "userRef": "erin", "role": "participant", "presence": "left" }
+      ],
+      "transcripts": {
+        "explicit": [
+          { "ref": "tr-m1-1", "speakerRef": "alice", "text": "m1 transcript: welcome to the weekly sync", "sequence": 1 },
+          { "ref": "tr-m1-2", "speakerRef": "bob", "text": "m1 transcript: bob shares the status update", "sequence": 2 },
+          { "ref": "tr-m1-large", "speakerRef": "carol", "text": null, "large": true, "sequence": 3 }
+        ],
+        "bulk": { "count": 247, "speakers": ["alice", "bob", "carol"] }
+      },
+      "transcriptSegments": [
+        { "ref": "seg-m1-1", "speakers": ["alice", "bob"], "text": "m1 segment: agenda covered", "topics": ["agenda"], "sentiment": 0.2 },
+        { "ref": "seg-m1-2", "speakers": ["bob"], "text": "m1 segment: status update delivered", "topics": ["status"], "sentiment": null }
+      ],
+      "notes": { "ref": "notes-m1", "content": "m1 shared sync notes content v3 (host-exportable meeting content)", "version": 3 },
+      "noteOps": [
+        { "ref": "nop-m1-1", "authorRef": "alice", "sequence": 1, "op": { "type": "insert", "position": 0, "content": "m1" } },
+        { "ref": "nop-m1-2", "authorRef": "alice", "sequence": 2, "op": { "type": "retain", "position": 2 } },
+        { "ref": "nop-m1-3", "authorRef": "bob", "sequence": 3, "op": { "type": "insert", "position": 2, "content": "bob op" } }
+      ],
+      "messages": [
+        { "ref": "msg-m1-1", "userRef": "bob", "content": "bob private chat message one" },
+        { "ref": "msg-m1-2", "userRef": "bob", "content": "bob private chat message two" },
+        { "ref": "msg-m1-3", "userRef": "carol", "content": "carol private chat message" }
+      ],
+      "events": [
+        { "ref": "evt-m1-1", "event": "meeting.started", "userRef": "alice", "success": true },
+        { "ref": "evt-m1-2", "event": "transcript.chunk", "userRef": null, "success": true },
+        { "ref": "evt-m1-3", "event": "meeting.ended", "userRef": "alice", "success": true }
+      ],
+      "recording": { "ref": "rec-m1", "recordingId": "rec-m1-provider-id", "recordingUrl": "https://provider.example/rec-m1-secret-url", "provider": "webrtc", "status": "ready" },
+      "videoRoomConfig": { "ref": "vrc-m1", "roomId": "room-m1-secret", "provider": "webrtc" },
+      "meetingState": { "ref": "st-m1", "active": false, "topics": ["status", "planning"], "recordingEnabled": true },
+      "prompts": [
+        { "ref": "pr-m1-1", "type": "precall", "content": "m1 precall prompt content", "tags": ["precall"], "relevance": 0.8 },
+        { "ref": "pr-m1-2", "type": "incall", "content": "m1 incall prompt content", "tags": ["incall"], "relevance": 0.6 }
+      ],
+      "transcriptionSession": { "ref": "ts-m1", "provider": "whisper", "status": "completed" },
+      "counter": { "lastSequence": 250 }
+    },
+    {
+      "ref": "m2",
+      "title": "Bob retro",
+      "description": "m2 bob retro description",
+      "scheduledAt": 1759998600000,
+      "duration": 3600,
+      "state": "concluded",
+      "organizerRef": "bob",
+      "streamRoomId": "stream-room-m2-secret",
+      "participants": [
+        { "userRef": "bob", "role": "host", "presence": "joined" },
+        { "userRef": "alice", "role": "participant", "presence": "joined" }
+      ],
+      "transcripts": {
+        "explicit": [
+          { "ref": "tr-m2-1", "speakerRef": "bob", "text": "m2 private retro transcript line one", "sequence": 1 },
+          { "ref": "tr-m2-2", "speakerRef": "bob", "text": "m2 private retro transcript line two", "sequence": 2 }
+        ],
+        "bulk": { "count": 0, "speakers": [] }
+      },
+      "transcriptSegments": [],
+      "notes": { "ref": "notes-m2", "content": "m2 bob private retro note content", "version": 1 },
+      "noteOps": [
+        { "ref": "nop-m2-1", "authorRef": "bob", "sequence": 1, "op": { "type": "insert", "position": 0, "content": "m2" } }
+      ],
+      "messages": [
+        { "ref": "msg-m2-1", "userRef": "bob", "content": "bob retro private message" },
+        { "ref": "msg-m2-2", "userRef": "bob", "content": "bob retro private message two" }
+      ],
+      "events": [
+        { "ref": "evt-m2-1", "event": "meeting.ended", "userRef": "bob", "success": true }
+      ],
+      "recording": null,
+      "videoRoomConfig": { "ref": "vrc-m2", "roomId": "room-m2-secret", "provider": "webrtc" },
+      "meetingState": { "ref": "st-m2", "active": false, "topics": ["retro"], "recordingEnabled": false },
+      "prompts": [],
+      "transcriptionSession": null,
+      "counter": { "lastSequence": 2 }
+    },
+    {
+      "ref": "m3",
+      "title": "Carol private 1:1",
+      "description": "m3 carol private description",
+      "scheduledAt": 1760000400000,
+      "duration": 900,
+      "state": "active",
+      "organizerRef": "carol",
+      "streamRoomId": "stream-room-m3-secret",
+      "participants": [
+        { "userRef": "carol", "role": "host", "presence": "joined" }
+      ],
+      "transcripts": {
+        "explicit": [
+          { "ref": "tr-m3-1", "speakerRef": "carol", "text": "m3 carol private 1:1 transcript line", "sequence": 1 },
+          { "ref": "tr-m3-2", "speakerRef": "carol", "text": "m3 carol private 1:1 transcript line two", "sequence": 2 }
+        ],
+        "bulk": { "count": 0, "speakers": [] }
+      },
+      "transcriptSegments": [],
+      "notes": null,
+      "noteOps": [],
+      "messages": [],
+      "events": [],
+      "recording": null,
+      "videoRoomConfig": null,
+      "meetingState": { "ref": "st-m3", "active": true, "topics": ["private"], "recordingEnabled": false },
+      "prompts": [],
+      "transcriptionSession": null,
+      "counter": { "lastSequence": 2 }
+    }
+  ]
+}

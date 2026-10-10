@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Caller-only account export — study results</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --border: #2a2f3a; --text: #e6e9ef;
+    --muted: #9aa3b2; --ok: #4ade80; --warn: #fbbf24; --accent: #7aa2f7;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 2.5rem 1.5rem; }
+  main { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
+  .sub { color: var(--muted); margin: 0 0 1.75rem; font-size: .9rem; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin-bottom: 1.75rem; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; }
+  .card .v { font-size: 1.5rem; font-weight: 650; }
+  .card .k { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; margin-top: .2rem; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); }
+  h2 { font-size: .95rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 1.75rem 0 .6rem; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: .85rem; }
+  th, td { text-align: left; padding: .45rem .8rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .zero td { color: var(--muted); }
+  a.button { display: inline-block; background: var(--accent); color: #0b0d12; font-weight: 600; padding: .55rem 1rem; border-radius: 8px; text-decoration: none; font-size: .9rem; }
+  pre { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; overflow-x: auto; font-size: .8rem; }
+  .hint { color: var(--muted); font-size: .82rem; margin-top: .6rem; }
+  code { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: .1rem .35rem; font-size: .82rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Caller-only account export — study results</h1>
+  <p class="sub">Fixture-universe export under the production permission contract. Read-only view; nothing here calls the backend.</p>
+
+  <p><a class="button" href="export.json" download="account-export-archive.json">Download archive (export.json)</a></p>
+  <p class="hint">This page reads <code>export.json</code> and <code>manifest.json</code> from its own directory. If you opened it via <code>file://</code>, serve the folder first: <code>python3 -m http.server 8412 --directory experiments/account-export</code>.</p>
+
+  <div class="cards" id="cards"></div>
+  <div id="status"></div>
+
+  <h2>Rows per table</h2>
+  <table id="tables"><thead><tr><th>Table</th><th class="num">Exported rows</th><th class="num">Refusal?</th></tr></thead><tbody id="tbody"></tbody></table>
+
+  <h2>Refusal receipts</h2>
+  <div id="refusals"><p class="hint">Loading…</p></div>
+
+  <h2>Manifest summary</h2>
+  <pre id="manifest"></pre>
+</main>
+
+<script type="module">
+  const el = (id) => document.getElementById(id);
+  let archive, manifest;
+  try {
+    [archive, manifest] = await Promise.all([
+      fetch("export.json").then((r) => r.json()),
+      fetch("manifest.json").then((r) => r.json()),
+    ]);
+  } catch {
+    el("status").innerHTML = '<p class="warn">Could not load export.json / manifest.json — serve this directory over HTTP (command above) and reload.</p>';
+    throw new Error("results not loadable over file://");
+  }
+
+  const tables = Object.entries(archive.records).filter(([, rows]) => rows.length > 0)
+    .sort((a, b) => b[1].length - a[1].length);
+  const zeroTables = Object.keys(archive.records).filter((t) => archive.records[t].length === 0);
+  const refusalTables = new Set(archive.refusals.map((r) => r.table));
+  const pag = archive.receipts.pagination;
+
+  el("cards").innerHTML = [
+    [archive.metadata.recordCount, "rows exported"],
+    [archive.refusals.length, "refusal receipts"],
+    [`${manifest.leakScan.tokenHits}/${manifest.leakScan.tokenCount}`, "leak-token hits"],
+    [archive.receipts.policy.checksum, "policy checksum"],
+  ].map(([v, k]) => `<div class="card"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
+
+  el("tbody").innerHTML = tables
+    .map(([t, rows]) => `<tr><td>${t}</td><td class="num">${rows.length}</td><td class="num">—</td></tr>`)
+    .join("")
+    + zeroTables.map((t) => `<tr class="zero"><td>${t}</td><td class="num">0</td><td class="num">${refusalTables.has(t) ? "refused" : "—"}</td></tr>`).join("");
+
+  el("refusals").innerHTML = archive.refusals
+    .map((r) => `<tr><td>${r.table}</td><td>${r.meeting ?? r.scope?.meetings ?? ""}</td><td>${r.reason}</td></tr>`)
+    .join("") || '<p class="hint">none</p>';
+
+  el("manifest").textContent = JSON.stringify(
+    { fixtureId: manifest.fixtureId, archiveSha256: manifest.archiveSha256, classification: manifest.classification, leakScan: { tokenCount: manifest.leakScan.tokenCount, tokenHits: manifest.leakScan.tokenHits } },
+    null, 2,
+  );
+
+  // keep transcripts pagination visible for the largest table
+  const tr = pag.transcripts;
+  el("status").innerHTML = `<p class="hint">Largest table: transcripts — ${tr.rows} rows over ${tr.pages} pages (pageSize ${tr.pageSize}, truncated: ${tr.truncated}).</p>`;
+</script>
+</body>
+</html>
