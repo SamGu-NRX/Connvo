@@ -1,0 +1,73 @@
+{
+  "recordedAt": "2026-10-10",
+  "branch": "obv/products-matching-study-20261009-r1",
+  "gitSha": "8d73d9bbaf93e49c48127954432d1e84991506a6",
+  "purpose": "Pre-study baseline of the existing check suite, recorded before any study code was added. Later runs must match or improve these counts; any regression is attributed to study code.",
+  "environment": {
+    "node": "v20.20.2",
+    "pnpm": "12.11.2 (via corepack; no packageManager field in package.json)",
+    "install": "corepack pnpm install --frozen-lockfile",
+    "convex": "1.28.0",
+    "convex-test": "0.0.38",
+    "vitest": "4.0.4",
+    "typescript": "5.9.3"
+  },
+  "vitestConvexProject": {
+    "command": "corepack pnpm exec vitest run --project convex",
+    "exitCode": 0,
+    "testFilesPassed": 17,
+    "testsPassed": 240,
+    "testsFailed": 0,
+    "notes": "Includes convex/matching/matching.test.ts (4 tests: enter/cancel queue, positive score, single-cycle match, feedback rating bounds). A pre-existing ENOENT warning for .kiro/type-system-reports.json appears in convex/types/__tests__/monitoringTools.test.ts output but the file passes."
+  },
+  "typeCheck": {
+    "command": "corepack pnpm type-check (tsc --noEmit)",
+    "exitCode": 2,
+    "errorCount": 29,
+    "verdict": "FAILING ON MAIN BEFORE ANY STUDY CODE - pre-existing condition",
+    "errorsByFile": {
+      "src/components/ui/chart.tsx": 8,
+      "src/hooks/useTranscription.ts": 5,
+      "src/hooks/useMeetingLifecycle.ts": 4,
+      "src/hooks/usePostCallInsights.ts": 3,
+      "src/hooks/useCollaborativeNotes.ts": 3,
+      "test/convex/openapiExamples.test.ts": 2,
+      "src/hooks/useInCallPrompts.ts": 1,
+      "src/hooks/usePreCallPrompts.ts": 1,
+      "src/components/mvp/one-on-one-meeting.tsx": 1,
+      "src/app/videocall/[id]/page.tsx": 1
+    },
+    "allErrors": [
+      "src/app/videocall/[id]/page.tsx(331,42): error TS7006",
+      "src/components/mvp/one-on-one-meeting.tsx(90,13): error TS2741",
+      "src/components/ui/chart.tsx(119,7): error TS2339",
+      "src/components/ui/chart.tsx(124,7): error TS2339",
+      "src/components/ui/chart.tsx(188,25): error TS7006",
+      "src/components/ui/chart.tsx(188,31): error TS7006",
+      "src/components/ui/chart.tsx(264,41): error TS2344",
+      "src/components/ui/chart.tsx(275,19): error TS2339",
+      "src/components/ui/chart.tsx(288,18): error TS2339",
+      "src/components/ui/chart.tsx(288,23): error TS7006",
+      "src/hooks/useCollaborativeNotes.ts(112,11): error TS2322",
+      "src/hooks/useCollaborativeNotes.ts(133,9): error TS2322",
+      "src/hooks/useCollaborativeNotes.ts(150,5): error TS2322",
+      "src/hooks/useInCallPrompts.ts(139,9): error TS2353",
+      "src/hooks/useMeetingLifecycle.ts(146,9): error TS2561",
+      "src/hooks/useMeetingLifecycle.ts(149,27): error TS2345",
+      "src/hooks/useMeetingLifecycle.ts(155,13): error TS2322",
+      "src/hooks/useMeetingLifecycle.ts(164,7): error TS2322",
+      "src/hooks/usePostCallInsights.ts(169,30): error TS2339",
+      "src/hooks/usePostCallInsights.ts(205,5): error TS2322",
+      "src/hooks/usePostCallInsights.ts(206,5): error TS2322",
+      "src/hooks/usePreCallPrompts.ts(131,9): error TS2353",
+      "src/hooks/useTranscription.ts(106,37): error TS2322",
+      "src/hooks/useTranscription.ts(109,5): error TS2322",
+      "src/hooks/useTranscription.ts(119,5): error TS2322",
+      "src/hooks/useTranscription.ts(128,5): error TS2322",
+      "src/hooks/useTranscription.ts(134,5): error TS2322",
+      "test/convex/openapiExamples.test.ts(177,9): error TS2353",
+      "test/convex/openapiExamples.test.ts(192,9): error TS2353"
+    ]
+  },
+  "studyGate": "Study adds: zero new vitest failures (240 tests must still pass plus new study scenario tests), zero new type-check errors (error list must remain a superset-free extension: no NEW file:code entries)."
+}
