@@ -1,0 +1,20 @@
+{
+  "name": "@connvo/tools-meeting-preparation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline pre-call preparation workspace: synthetic meeting fixture, permitted profile projections, agenda agreement, open questions, and a validated local preparation document.",
+  "scripts": {
+    "test": "vitest run",
+    "build": "node build.mjs",
+    "test:browser": "npm run --silent build && node tests/browser/walk.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@types/node": "^20.14.0",
+    "esbuild": "^0.25.0",
+    "playwright": "^1.50.0",
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0"
+  }
+}

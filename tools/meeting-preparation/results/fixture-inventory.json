@@ -1,0 +1,55 @@
+{
+  "generatedBy": "tools/meeting-preparation tests/fixtures.test.ts",
+  "counts": {
+    "meetings": 1,
+    "meetingParticipants": 2,
+    "internalProfiles": 2,
+    "visibilityGrants": 3,
+    "agendaItems": 3,
+    "sourceNotes": 6,
+    "sourceNotesPrivate": 3,
+    "sourceNotesShareable": 3
+  },
+  "sourceTypes": [
+    "self-profile",
+    "peer-public-profile",
+    "shared-meeting-context",
+    "participant-note"
+  ],
+  "permittedProfileFields": [
+    "displayName",
+    "bio",
+    "goals",
+    "languages",
+    "experience",
+    "field",
+    "jobTitle",
+    "company"
+  ],
+  "excludedProfileFields": [
+    "age",
+    "gender",
+    "linkedinUrl"
+  ],
+  "agendaStatuses": [
+    "proposed",
+    "agreed",
+    "set-aside"
+  ],
+  "shareabilityLevels": [
+    "private",
+    "shared"
+  ],
+  "visibilityBases": [
+    "self",
+    "same-org",
+    "shared-meeting",
+    "none"
+  ],
+  "sourceTypeUsage": {
+    "self-profile": 2,
+    "peer-public-profile": 1,
+    "shared-meeting-context": 1,
+    "participant-note": 2
+  }
+}
