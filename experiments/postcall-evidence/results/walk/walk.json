@@ -1,0 +1,79 @@
+{
+  "url": "http://127.0.0.1:8412/recap.html",
+  "browser": "chromium (playwright bundled, ms-playwright cache)",
+  "viewport": "1000x800",
+  "stepsPassed": 8,
+  "stepsTotal": 8,
+  "agreement": true,
+  "steps": [
+    {
+      "name": "page loads data over http",
+      "ok": true,
+      "observed": {
+        "meta": "generated 2026-10-10T20:14:30.755Z · source 30d31850ec35 · fixtures a23a0568e18f"
+      }
+    },
+    {
+      "name": "all 7 groups render with 15 claims, 9 refused",
+      "ok": true,
+      "observed": {
+        "groups": 7,
+        "visible": 7,
+        "claims": 15,
+        "refused": 9
+      }
+    },
+    {
+      "name": "r shows only groups containing refused claims",
+      "ok": true,
+      "observed": {
+        "groups": 7,
+        "visible": 4,
+        "claims": 15,
+        "refused": 9
+      }
+    },
+    {
+      "name": "help line names the refused-only mode",
+      "ok": true,
+      "observed": {
+        "help": "Showing groups containing refused claims only — press a to show all."
+      }
+    },
+    {
+      "name": "a restores all groups",
+      "ok": true,
+      "observed": {
+        "groups": 7,
+        "visible": 7,
+        "claims": 15,
+        "refused": 9
+      }
+    },
+    {
+      "name": "j scrolls forward, k back",
+      "ok": true,
+      "observed": {
+        "scrollBefore": 457,
+        "scrollJ1": 837,
+        "scrollJ2": 1308,
+        "scrollK": 837
+      }
+    },
+    {
+      "name": "? toggles the help line",
+      "ok": true,
+      "observed": {
+        "helpHidden": 1,
+        "helpBack": 0
+      }
+    },
+    {
+      "name": "every rendered claim cites a provenance quote",
+      "ok": true,
+      "observed": {
+        "quoteless": 0
+      }
+    }
+  ]
+}

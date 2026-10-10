@@ -101,9 +101,9 @@
       "use strict";
       const state = { data: null, filter: "all", cursor: 0 };
 
-      function el(tag, attrs = {}, ...children) {
+      function el(tag, attrs, ...children) {
         const node = document.createElement(tag);
-        for (const [k, v] of Object.entries(attrs)) {
+        for (const [k, v] of Object.entries(attrs ?? {})) {
           if (k === "class") node.className = v;
           else node.setAttribute(k, v);
         }
