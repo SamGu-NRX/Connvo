@@ -10,7 +10,7 @@
 
 "use node";
 
-import { action, internalAction } from "@convex/_generated/server";
+import { internalAction } from "@convex/_generated/server";
 import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
 import { createError } from "@convex/lib/errors";
@@ -121,7 +121,9 @@ type InsightResult = {
  * }
  * ```
  */
-export const generateInsights = action({
+// Internal-only: insight generation consumes transcripts and notes for any
+// meeting id and must never be invoked directly by clients.
+export const generateInsights = internalAction({
   args: {
     meetingId: v.id("meetings"),
     forceRegenerate: v.optional(v.boolean()),

@@ -9,7 +9,7 @@
  */
 
 import { internalAction, internalQuery } from "@convex/_generated/server";
-import { api, internal } from "@convex/_generated/api";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
 import { Meeting } from "@convex/types";
@@ -42,7 +42,7 @@ export const processCompletedMeetings = internalAction({
       for (const meeting of recentlyCompletedMeetings) {
         try {
           const result = await ctx.runAction(
-            api.insights.generation.generateInsights,
+            internal.insights.generation.generateInsights,
             {
               meetingId: meeting._id,
             },

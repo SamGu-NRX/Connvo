@@ -7,7 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { api, internal } from "@convex/_generated/api";
+import { internal } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { createTestEnvironment } from "../../test/convex/helpers";
 

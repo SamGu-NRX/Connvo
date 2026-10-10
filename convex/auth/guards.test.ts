@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Follows Convex testing patterns
  */
 
-import { api } from "@convex/_generated/api";
+import { api, internal } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach, afterEach } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
 import {
@@ -233,7 +233,7 @@ describe("Authentication Guards", () => {
 
       // Test accessing own profile
       const profile = await authenticatedT.query(
-        api.users.queries.getUserById,
+        internal.users.queries.getUserById,
         {
           userId: testUserId,
         },
@@ -376,7 +376,7 @@ describe("Authentication Guards", () => {
 
       // Check audit logs
       const auditPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -407,7 +407,7 @@ describe("Authentication Guards", () => {
 
       // Test audit log queries for different resource types
       const userAuditPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -416,7 +416,7 @@ describe("Authentication Guards", () => {
       );
 
       const meetingAuditPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "meeting",
           resourceId: testMeetingId,
@@ -443,7 +443,7 @@ describe("Authentication Guards", () => {
 
       // Test pagination
       const firstPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -458,7 +458,7 @@ describe("Authentication Guards", () => {
 
       // Querying again should still return results without cursor support
       const secondPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,

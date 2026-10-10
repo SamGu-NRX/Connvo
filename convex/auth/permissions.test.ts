@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Follows Convex testing patterns
  */
 
-import { api } from "@convex/_generated/api";
+import { api, internal } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
 import { createTestEnvironment } from "../../test/convex/helpers";

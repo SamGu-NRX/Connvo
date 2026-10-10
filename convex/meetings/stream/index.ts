@@ -362,6 +362,25 @@ export const generateParticipantTokenPublic = action({
     }
     const userId = user._id;
 
+    // Require meeting membership before minting any token, mirroring the
+    // checks in meetings/webrtc/rooms.ts: the caller must have a
+    // meetingParticipants row and the meeting must not be terminal.
+    await ctx.runQuery(internal.meetings.webrtc.index.getParticipantForAccess, {
+      meetingId,
+    });
+    const meeting = await ctx.runQuery(
+      internal.meetings.webrtc.index.getMeetingDoc,
+      { meetingId },
+    );
+    if (!meeting) {
+      throw createError.notFound("Meeting", meetingId);
+    }
+    if (meeting.state === "concluded" || meeting.state === "cancelled") {
+      throw createError.validation(
+        "Cannot generate a token for a concluded or cancelled meeting",
+      );
+    }
+
     const result: StreamParticipantTokenInternal = await ctx.runAction(
       internal.meetings.stream.index.generateParticipantToken,
       {
@@ -1057,4 +1076,4 @@ export const deleteStreamRoom = internalAction({
  * Internal mutations for webhook event handling
  */
 
-// (webhook handler mutations moved to convex/meetings/streamHandlers.ts)
+// (webhook handler mutations moved to convex/meetings/stream/streamHandlers.ts)
