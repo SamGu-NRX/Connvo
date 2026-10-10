@@ -1,0 +1,49 @@
+{
+  "name": "postcall-evidence",
+  "createdAt": "2026-10-10",
+  "branch": "obv/products-l2-postcall-evidence-20261010",
+  "baseBranch": "obv/products-connvo-hardening-20261009-r1",
+  "question": "Does each post-call recap claim rest on evidence that supports the conclusion drawn from it? A quoted segment can still support the wrong conclusion.",
+  "productionSource": {
+    "module": "convex/insights/generation.ts",
+    "sha256": "30d31850ec3595ad659a665cd7af64152e7c30c565d03f73e0b51593be18ac12",
+    "pinnedAtBaseCommit": "d86620c27ed9710d2810acbdb4db4daebdfcd9f7",
+    "extractionMarker": "async function analyzeContentForInsights",
+    "note": "The heuristic generator functions are module-private and the module imports Convex runtime internals; the adapter slices the pure-heuristic region (marker to EOF) from the pinned source and evaluates it. The production file is read, never written."
+  },
+  "arms": {
+    "permissive": {
+      "kind": "production-heuristic",
+      "description": "Actual current generator output, unmodified. This is the permissive baseline."
+    },
+    "conservative": {
+      "kind": "study-side-refusal-policy",
+      "description": "Refuses permissive emissions without a resolvable, non-negated, non-hypothetical, current source. Provisional interpretive instrument, not a production proposal."
+    },
+    "model": {
+      "kind": "llm-recap-parser",
+      "status": "not-run",
+      "reason": "No model parser exists in Connvo: post-call insight generation is entirely heuristic (convex/insights/generation.ts), and the only model usage in the Convex backend is OpenAI embeddings (convex/embeddings/actions.ts), which does not parse recaps. The study invents no parser and invokes no live endpoint; this arm is recorded so a future parser can slot in behind the same fixtures and labels."
+    }
+  },
+  "fixtures": {
+    "file": "experiments/postcall-evidence/fixtures/meetings.json",
+    "labelStatus": "PROVISIONAL - interpretive labels authored for this study"
+  },
+  "declaredCounts": {
+    "groups": 7,
+    "meetings": 7,
+    "cases": 13,
+    "casesSupported": 7,
+    "casesUnsupported": 6
+  },
+  "scope": {
+    "confinedTo": "experiments/postcall-evidence/",
+    "untouched": [
+      "convex/insights/generation.ts (read-only, hash-pinned)",
+      "production auth",
+      "production meeting files"
+    ],
+    "externalEffects": "strict fakes only; no network, no database, no live or proxied model"
+  }
+}

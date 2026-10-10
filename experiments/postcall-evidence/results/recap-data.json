@@ -1,0 +1,519 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-10T21:33:16.878Z",
+  "sourceSha256": "30d31850ec3595ad659a665cd7af64152e7c30c565d03f73e0b51593be18ac12",
+  "fixturesSha256": "a23a0568e18f5e0d807b5b2d4e8d101a053d48f258ca66d606af12dbe2e0b5a1",
+  "canonical": "4f226705e93685ab90e8c94753cc8c94b06da6922d57951ec5aa192062e54e8e",
+  "totals": {
+    "groups": 7,
+    "meetings": 7,
+    "cases": 13,
+    "casesSupported": 7,
+    "casesUnsupported": 6,
+    "emittedRaw": 17,
+    "emittedUnique": 15,
+    "itemsSupported": 6,
+    "itemsUnsupported": 9,
+    "unsupportedByKind": {
+      "negation": 3,
+      "correction": 1,
+      "unlabeled-emission": 3,
+      "hypothetical": 1,
+      "question": 1
+    },
+    "missedSupported": 1,
+    "conservativeKept": 6,
+    "conservativeRefused": 9,
+    "conservativeRefusalReasons": {
+      "negation": 4,
+      "stale-plan": 1,
+      "hypothetical": 1,
+      "question": 1,
+      "no-source": 2
+    }
+  },
+  "modelArm": "not-run: no model parser exists in Connvo; offline study",
+  "groups": [
+    {
+      "groupId": "g1-supported-commitments",
+      "metrics": {
+        "emittedUnique": 3,
+        "supported": 3,
+        "unsupported": 0,
+        "unsupportedByKind": {},
+        "missedSupported": []
+      },
+      "meetings": [
+        {
+          "meetingId": "m1a",
+          "notesVersion": 1,
+          "produced": true,
+          "summary": "This 1-minute meeting involved 2 participants and covered topics including migration, testing, infra. Key points were documented in the shared notes.",
+          "claims": [
+            {
+              "text": "Alice: I will send the migration report to the team by Friday",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 0,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 62,
+                "startMs": 0,
+                "endMs": 12000,
+                "quote": "Alice: I will send the migration report to the team by Friday."
+              },
+              "label": "supported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "kept"
+              }
+            },
+            {
+              "text": "Bob: I should finish the load test harness by Wednesday",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 1,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 56,
+                "startMs": 12000,
+                "endMs": 26000,
+                "quote": "Bob: I should finish the load test harness by Wednesday."
+              },
+              "label": "supported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "kept"
+              }
+            },
+            {
+              "text": "circulate the incident timeline",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "notes",
+                "segmentIndex": 1,
+                "quote": "- [ ] circulate the incident timeline"
+              },
+              "label": "supported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "kept"
+              }
+            }
+          ],
+          "metrics": {
+            "emittedRaw": 3,
+            "emittedUnique": 3,
+            "kept": 3,
+            "refused": 0,
+            "refusalReasons": {}
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "g2-negation",
+      "metrics": {
+        "emittedUnique": 3,
+        "supported": 0,
+        "unsupported": 3,
+        "unsupportedByKind": {
+          "negation": 3
+        },
+        "missedSupported": []
+      },
+      "meetings": [
+        {
+          "meetingId": "m2a",
+          "notesVersion": null,
+          "produced": true,
+          "summary": "This 1-minute meeting involved 2 participants and covered topics including auth, security, infra.",
+          "claims": [
+            {
+              "text": "Priya: We will not be adding OAuth device flow this quarter after all",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 0,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 70,
+                "startMs": 0,
+                "endMs": 14000,
+                "quote": "Priya: We will not be adding OAuth device flow this quarter after all."
+              },
+              "label": "unsupported",
+              "unsupportedKind": "negation",
+              "conservative": {
+                "verdict": "refused",
+                "reason": "negation"
+              }
+            },
+            {
+              "text": "Marco: I don't think we should migrate the auth service; it can stay where it is",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 1,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 81,
+                "startMs": 14000,
+                "endMs": 30000,
+                "quote": "Marco: I don't think we should migrate the auth service; it can stay where it is."
+              },
+              "label": "unsupported",
+              "unsupportedKind": "negation",
+              "conservative": {
+                "verdict": "refused",
+                "reason": "negation"
+              }
+            },
+            {
+              "text": "Priya: We no longer need to rotate the signing keys — the vendor confirmed the old certs are valid",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 2,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 99,
+                "startMs": 30000,
+                "endMs": 46000,
+                "quote": "Priya: We no longer need to rotate the signing keys — the vendor confirmed the old certs are valid."
+              },
+              "label": "unsupported",
+              "unsupportedKind": "negation",
+              "conservative": {
+                "verdict": "refused",
+                "reason": "negation"
+              }
+            }
+          ],
+          "metrics": {
+            "emittedRaw": 3,
+            "emittedUnique": 3,
+            "kept": 0,
+            "refused": 3,
+            "refusalReasons": {
+              "negation": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "g3-correction",
+      "metrics": {
+        "emittedUnique": 3,
+        "supported": 1,
+        "unsupported": 2,
+        "unsupportedByKind": {
+          "correction": 1,
+          "unlabeled-emission": 1
+        },
+        "missedSupported": []
+      },
+      "meetings": [
+        {
+          "meetingId": "m3a",
+          "notesVersion": null,
+          "produced": true,
+          "summary": "This 1-minute meeting involved 2 participants and covered topics including planning.",
+          "claims": [
+            {
+              "text": "Dana: Earlier we agreed we should move the launch deadline to Friday",
+              "rawEmissions": 2,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 0,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 69,
+                "startMs": 0,
+                "endMs": 15000,
+                "quote": "Dana: Earlier we agreed we should move the launch deadline to Friday."
+              },
+              "label": "unsupported",
+              "unsupportedKind": "correction",
+              "conservative": {
+                "verdict": "refused",
+                "reason": "stale-plan"
+              }
+            },
+            {
+              "text": "We will keep Friday for the dry run instead",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 1,
+                "sentenceIndex": 1,
+                "charStart": 61,
+                "charEnd": 105,
+                "startMs": 15000,
+                "endMs": 34000,
+                "quote": "We will keep Friday for the dry run instead."
+              },
+              "label": "supported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "kept"
+              }
+            },
+            {
+              "text": "Sam: Update on that: the deadline is now Monday, not Friday",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 1,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 60,
+                "startMs": 15000,
+                "endMs": 34000,
+                "quote": "Sam: Update on that: the deadline is now Monday, not Friday."
+              },
+              "label": "unsupported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "refused",
+                "reason": "negation"
+              }
+            }
+          ],
+          "metrics": {
+            "emittedRaw": 4,
+            "emittedUnique": 3,
+            "kept": 1,
+            "refused": 2,
+            "refusalReasons": {
+              "stale-plan": 1,
+              "negation": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "g4-hypothetical-questions",
+      "metrics": {
+        "emittedUnique": 2,
+        "supported": 0,
+        "unsupported": 2,
+        "unsupportedByKind": {
+          "hypothetical": 1,
+          "question": 1
+        },
+        "missedSupported": []
+      },
+      "meetings": [
+        {
+          "meetingId": "m4a",
+          "notesVersion": null,
+          "produced": true,
+          "summary": "This 1-minute meeting involved 2 participants and covered topics including scaling, compliance, planning.",
+          "claims": [
+            {
+              "text": "Bob: If we add sharding later we should start with the events table",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 0,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 68,
+                "startMs": 0,
+                "endMs": 16000,
+                "quote": "Bob: If we add sharding later we should start with the events table."
+              },
+              "label": "unsupported",
+              "unsupportedKind": "hypothetical",
+              "conservative": {
+                "verdict": "refused",
+                "reason": "hypothetical"
+              }
+            },
+            {
+              "text": "Alice: Should we maybe follow up with legal before the pilot",
+              "rawEmissions": 2,
+              "source": {
+                "kind": "transcript",
+                "segmentIndex": 1,
+                "sentenceIndex": 0,
+                "charStart": 0,
+                "charEnd": 61,
+                "startMs": 16000,
+                "endMs": 30000,
+                "quote": "Alice: Should we maybe follow up with legal before the pilot?"
+              },
+              "label": "unsupported",
+              "unsupportedKind": "question",
+              "conservative": {
+                "verdict": "refused",
+                "reason": "question"
+              }
+            }
+          ],
+          "metrics": {
+            "emittedRaw": 3,
+            "emittedUnique": 2,
+            "kept": 0,
+            "refused": 2,
+            "refusalReasons": {
+              "hypothetical": 1,
+              "question": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "g5-changed-version-stale-recap",
+      "metrics": {
+        "emittedUnique": 2,
+        "supported": 2,
+        "unsupported": 0,
+        "unsupportedByKind": {},
+        "missedSupported": []
+      },
+      "meetings": [
+        {
+          "meetingId": "m5a",
+          "notesVersion": 2,
+          "produced": true,
+          "summary": "This 0-minute meeting involved 2 participants and covered topics including ops, planning. Key points were documented in the shared notes.",
+          "claims": [
+            {
+              "text": "rotate the pager rotation monthly",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "notes",
+                "segmentIndex": 1,
+                "quote": "- [ ] rotate the pager rotation monthly"
+              },
+              "label": "supported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "kept"
+              }
+            },
+            {
+              "text": "archive the retired dashboards",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "notes",
+                "segmentIndex": 2,
+                "quote": "Action: archive the retired dashboards"
+              },
+              "label": "supported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "kept"
+              }
+            }
+          ],
+          "metrics": {
+            "emittedRaw": 2,
+            "emittedUnique": 2,
+            "kept": 2,
+            "refused": 0,
+            "refusalReasons": {}
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "g6-supported-miss",
+      "metrics": {
+        "emittedUnique": 2,
+        "supported": 0,
+        "unsupported": 2,
+        "unsupportedByKind": {
+          "unlabeled-emission": 2
+        },
+        "missedSupported": [
+          {
+            "text": "I'll draft the announcement template tonight",
+            "kind": "commitment",
+            "note": "contracted 'I'll' escapes the keyword list entirely"
+          }
+        ]
+      },
+      "meetings": [
+        {
+          "meetingId": "m6a",
+          "notesVersion": null,
+          "produced": true,
+          "summary": "This 1-minute meeting involved 2 participants and covered topics including launch, growth.",
+          "claims": [
+            {
+              "text": "Follow up on key discussion points from this meeting",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "fabricated",
+                "quote": "Follow up on key discussion points from this meeting"
+              },
+              "label": "unsupported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "refused",
+                "reason": "no-source"
+              }
+            },
+            {
+              "text": "Share relevant resources mentioned during the conversation",
+              "rawEmissions": 1,
+              "source": {
+                "kind": "fabricated",
+                "quote": "Share relevant resources mentioned during the conversation"
+              },
+              "label": "unsupported",
+              "unsupportedKind": null,
+              "conservative": {
+                "verdict": "refused",
+                "reason": "no-source"
+              }
+            }
+          ],
+          "metrics": {
+            "emittedRaw": 2,
+            "emittedUnique": 2,
+            "kept": 0,
+            "refused": 2,
+            "refusalReasons": {
+              "no-source": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "groupId": "g7-empty-meeting",
+      "metrics": {
+        "emittedUnique": 0,
+        "supported": 0,
+        "unsupported": 0,
+        "unsupportedByKind": {},
+        "missedSupported": []
+      },
+      "meetings": [
+        {
+          "meetingId": "m7a",
+          "notesVersion": null,
+          "produced": false,
+          "summary": null,
+          "claims": [],
+          "metrics": {
+            "emittedRaw": 0,
+            "emittedUnique": 0,
+            "kept": 0,
+            "refused": 0,
+            "refusalReasons": {}
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Post-call evidence study — recap</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f7f9; --card: #ffffff; --ink: #1c2430; --muted: #5b6675;
+        --line: #dfe4ea; --kept: #0f7b3f; --refused: #b3261e;
+        --badge-bg: #eef1f5;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14181d; --card: #1d232a; --ink: #e8ecf1; --muted: #9aa7b5;
+          --line: #2c343d; --kept: #4ade80; --refused: #f87171;
+          --badge-bg: #262e37;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--ink);
+        font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      main { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+      h1 { font-size: 1.35rem; margin: 0 0 4px; }
+      h2 { font-size: 1.05rem; margin: 28px 0 8px; }
+      .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+      .totals {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px; margin: 16px 0;
+      }
+      .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+      .stat b { display: block; font-size: 1.3rem; }
+      .stat span { color: var(--muted); font-size: 0.78rem; }
+      .card {
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: 12px; padding: 14px 16px; margin: 10px 0;
+      }
+      .card h3 { margin: 0 0 4px; font-size: 0.95rem; }
+      .claim { border-top: 1px dashed var(--line); padding: 10px 0 2px; margin-top: 10px; }
+      .claim:first-of-type { border-top: none; }
+      .verdict { font-weight: 600; }
+      .verdict.kept { color: var(--kept); }
+      .verdict.refused { color: var(--refused); }
+      .badge {
+        display: inline-block; background: var(--badge-bg); border-radius: 999px;
+        padding: 1px 9px; font-size: 0.75rem; color: var(--muted); margin-left: 6px;
+      }
+      .quote {
+        margin: 6px 0 0; padding: 6px 10px; border-left: 3px solid var(--line);
+        color: var(--muted); font-size: 0.85rem; white-space: pre-wrap;
+      }
+      .arms {
+        background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+        padding: 12px 16px; margin: 16px 0; font-size: 0.85rem; color: var(--muted);
+      }
+      .warn {
+        background: var(--card); border: 1px solid var(--refused); border-radius: 12px;
+        padding: 12px 16px; margin: 16px 0;
+      }
+      code { background: var(--badge-bg); border-radius: 6px; padding: 1px 6px; }
+      .kbd-help { color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
+      .hidden { display: none; }
+      .card.cursor { outline: 2px solid #2563eb; outline-offset: 2px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Post-call evidence study — recap</h1>
+      <p class="meta" id="meta">loading…</p>
+
+      <div class="warn hidden" id="load-error">
+        <p><b>Could not load <code>recap-data.json</code>.</b></p>
+        <p>If you opened this file directly (<code>file://</code>), browsers block
+        the fetch. Serve the folder instead:</p>
+        <p><code>python3 -m http.server -d experiments/postcall-evidence/results 8412</code><br />
+        then open <code>http://localhost:8412/recap.html</code>.</p>
+      </div>
+
+      <div class="arms" id="arms"></div>
+
+      <section>
+        <h2>Totals</h2>
+        <div class="totals" id="totals"></div>
+      </section>
+
+      <section>
+        <h2>Groups</h2>
+        <p class="kbd-help" id="filter-help">
+          Keyboard: <code>j</code>/<code>k</code> next/previous group ·
+          <code>r</code> show groups with refused claims only ·
+          <code>a</code> show all · <code>?</code> toggles this help.
+        </p>
+        <div id="groups"></div>
+      </section>
+    </main>
+
+    <script>
+      "use strict";
+      const state = { data: null, filter: "all", cursor: 0 };
+
+      function el(tag, attrs, ...children) {
+        const node = document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs ?? {})) {
+          if (k === "class") node.className = v;
+          else node.setAttribute(k, v);
+        }
+        for (const child of children) {
+          node.append(child);
+        }
+        return node;
+      }
+
+      function stat(value, label) {
+        const b = el("b"); b.textContent = String(value);
+        const s = el("span"); s.textContent = label;
+        const d = el("div", { class: "stat" }); d.append(b, s);
+        return d;
+      }
+
+      function renderTotals(t) {
+        const box = document.getElementById("totals");
+        box.replaceChildren(
+          stat(`${t.cases} (${t.casesSupported}/${t.casesUnsupported})`, "labeled cases (S/U)"),
+          stat(`${t.emittedRaw} → ${t.emittedUnique}`, "emissions raw → unique"),
+          stat(t.itemsSupported, "supported items"),
+          stat(t.itemsUnsupported, "unsupported items"),
+          stat(t.missedSupported, "missed supported"),
+          stat(`${t.conservativeKept} / ${t.conservativeRefused}`, "conservative kept / refused"),
+        );
+      }
+
+      function claimNode(claim) {
+        const verdict = claim.conservative.verdict;
+        const bits = [
+          el("span", { class: `verdict ${verdict}` }, verdict),
+          el("span", { class: "badge" }, claim.label),
+        ];
+        if (claim.unsupportedKind) {
+          bits.push(el("span", { class: "badge" }, claim.unsupportedKind));
+        }
+        if (claim.conservative.reason) {
+          bits.push(el("span", { class: "badge" }, `reason: ${claim.conservative.reason}`));
+        }
+        bits.push(el("span", { class: "badge" }, `source: ${claim.source.kind}`));
+        const head = el("div", null, ...bits);
+        head.insertBefore(document.createTextNode(claim.text + " "), head.firstChild);
+
+        const pos = claim.source;
+        const where =
+          pos.kind === "transcript"
+            ? `segment ${pos.segmentIndex}` +
+              (pos.startMs !== undefined ? ` @ ${Math.round(pos.startMs / 1000)}s` : "")
+            : pos.kind === "notes"
+              ? `notes line ${pos.segmentIndex}`
+              : "no source (fabricated by generator fallback)";
+        const quote = el("p", { class: "quote" }, `${where}: “${pos.quote}”`);
+
+        const card = el("div", { class: "claim", "data-verdict": verdict });
+        card.append(head, quote);
+        return card;
+      }
+
+      function groupNode(group) {
+        const card = el("div", { class: "card", "data-group": group.groupId });
+        const m = group.meetings[0];
+        const title = el("h3", null, group.groupId);
+        const sub = el("p", { class: "meta" },
+          `unique ${group.metrics.emittedUnique} · supported ${group.metrics.supported}` +
+          ` · unsupported ${group.metrics.unsupported}` +
+          ` · missed ${group.metrics.missedSupported.length}` +
+          (m && m.summary ? ` — “${m.summary}”` : ""));
+        card.append(title, sub);
+        for (const meeting of group.meetings) {
+          for (const claim of meeting.claims) {
+            card.append(claimNode(claim));
+          }
+        }
+        return card;
+      }
+
+      function applyFilter() {
+        const cards = [...document.querySelectorAll("#groups .card")];
+        const visible = [];
+        cards.forEach((card) => {
+          const show = state.filter === "all" || card.querySelector('[data-verdict="refused"]');
+          card.classList.toggle("hidden", !show);
+          if (show) visible.push(card);
+        });
+        // state.cursor indexes the VISIBLE card list (not DOM order), so
+        // j/k navigate consistently while a filter hides cards.
+        if (state.cursor > visible.length - 1) state.cursor = Math.max(visible.length - 1, 0);
+        cards.forEach((card) => card.classList.toggle("cursor", false));
+        if (visible.length > 0) {
+          const target = visible[state.cursor];
+          target.classList.add("cursor");
+          target.scrollIntoView({ block: "start" });
+        }
+        const help = document.getElementById("filter-help");
+        help.textContent =
+          state.filter === "refused"
+            ? "Showing groups containing refused claims only — press a to show all."
+            : "Keyboard: j/k next/previous group · r refused-only · a all · ? this help.";
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+        const n = document.querySelectorAll('#groups .card:not(.hidden)').length;
+        if (e.key === "j") { state.cursor = Math.min(state.cursor + 1, n - 1); applyFilter(); }
+        else if (e.key === "k") { state.cursor = Math.max(state.cursor - 1, 0); applyFilter(); }
+        else if (e.key === "r") { state.filter = "refused"; state.cursor = 0; applyFilter(); }
+        else if (e.key === "a") { state.filter = "all"; state.cursor = 0; applyFilter(); }
+        else if (e.key === "?") {
+          const help = document.getElementById("filter-help");
+          help.classList.toggle("hidden");
+        }
+      });
+
+      function render(data) {
+        state.data = data;
+        document.getElementById("meta").textContent =
+          `generated ${data.generatedAt} · source ${data.sourceSha256.slice(0, 12)} · ` +
+          `fixtures ${data.fixturesSha256.slice(0, 12)} · canonical ${data.canonical.slice(0, 12)}`;
+        const arms = document.getElementById("arms");
+        arms.textContent = "Arms — permissive: production heuristic (actual output). " +
+          "conservative: study-side refusal policy (provisional). " +
+          `model: ${data.modelArm}.`;
+        renderTotals(data.totals);
+        const groups = document.getElementById("groups");
+        groups.replaceChildren(...data.groups.map(groupNode));
+        applyFilter();
+      }
+
+      fetch("recap-data.json")
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then(render)
+        .catch(() => {
+          document.getElementById("load-error").classList.remove("hidden");
+          document.getElementById("meta").textContent = "failed to load data";
+        });
+    </script>
+  </body>
+</html>
