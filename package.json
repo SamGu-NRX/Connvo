@@ -16,6 +16,8 @@
     "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
     "test": "vitest",
     "test:run": "vitest run",
+    "study:run": "tsx experiments/matching-study/run.ts --manifest experiments/matching-study/manifest.json",
+    "study:replay": "tsx experiments/matching-study/run.ts --replay experiments/matching-study/results",
     "test:watch": "vitest",
     "test:types": "vitest run convex/types/__tests__/",
     "test:ci": "tsx convex/types/__tests__/ci-validation.ts",
