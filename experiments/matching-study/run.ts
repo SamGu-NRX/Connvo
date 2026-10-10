@@ -623,20 +623,34 @@ async function replay(previousOutDir: string): Promise<ReplayComparison> {
       const origDecisions = JSON.parse(
         nodeFs.readFileSync(origDecisionsPath, "utf8"),
       ) as {
+        decisionCount?: number;
         decisions: Array<{ user1: string; user2: string }>;
       };
-      const sigA = decisionPairSignature(origDecisions.decisions);
-      const sigB = decisionPairSignature(
-        result.decisions.map((d) => ({ user1: d.user1, user2: d.user2 })),
-      );
+      const committed = origDecisions.decisions;
+      const totalOriginal = origDecisions.decisionCount ?? committed.length;
+      // Big pools store only the first-100 committed-order prefix (the
+      // keepFull cap in the manifest writer); compare the same-length prefix
+      // of the fresh side plus the total count so the cap cannot fake drift.
+      const capped = totalOriginal > committed.length;
+      const freshAll = result.decisions.map((d) => ({
+        user1: d.user1,
+        user2: d.user2,
+      }));
+      const freshCmp = capped ? freshAll.slice(0, committed.length) : freshAll;
+      const sigA = decisionPairSignature(committed);
+      const sigB = decisionPairSignature(freshCmp);
       const same =
-        sigA.length === sigB.length && sigA.every((v, i) => v === sigB[i]);
+        totalOriginal === freshAll.length &&
+        sigA.length === sigB.length &&
+        sigA.every((v, i) => v === sigB[i]);
       receipts.push({
         receipt: "matched-pair decisions",
         agrees: same,
         detail: same
-          ? `${sigA.length} committed pairs match by plan rank`
-          : `pair structure drift: ${sigA.length} original vs ${sigB.length} replayed pairs`,
+          ? capped
+            ? `first ${committed.length} of ${totalOriginal} committed pairs match by plan rank (capped artifact: prefix + total compared)`
+            : `${sigA.length} committed pairs match by plan rank`
+          : `pair structure drift: original ${committed.length}${capped ? ` of ${totalOriginal}` : ""} vs replayed ${freshAll.length} pairs`,
       });
     } else {
       receipts.push({
