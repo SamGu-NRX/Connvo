@@ -9,6 +9,7 @@
  */
 
 import { v } from "convex/values";
+import { internal } from "@convex/_generated/api";
 import {
   mutation,
   action,
@@ -18,13 +19,6 @@ import {
 import { Id } from "@convex/_generated/dataModel";
 import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
-import {
-  BatchProcessor,
-  CoalescingBatchProcessor,
-  BATCH_CONFIGS,
-  transcriptCoalescing,
-  presenceCoalescing,
-} from "@convex/lib/batching";
 import { withTrace } from "@convex/lib/performance";
 import { metadataRecordV } from "@convex/lib/validators";
 import {
@@ -38,120 +32,6 @@ import {
 } from "@convex/types/validators/realTime";
 import { NoteV } from "@convex/types/validators/note";
 import { TranscriptV } from "@convex/types/validators/transcript";
-
-/**
- * Global batch processors for different operation types
- */
-class BatchProcessorManager {
-  private static transcriptProcessor: CoalescingBatchProcessor<any> | null =
-    null;
-  // Note operations do NOT go through an in-memory processor: the old stub
-  // flusher never persisted anything, so batchApplyNoteOperation was acking
-  // ops it never wrote (ack-without-persist). It now persists inline.
-  private static presenceProcessor: CoalescingBatchProcessor<any> | null = null;
-
-  static getTranscriptProcessor(): CoalescingBatchProcessor<any> {
-    if (!this.transcriptProcessor) {
-      this.transcriptProcessor = new CoalescingBatchProcessor(
-        BATCH_CONFIGS.transcripts.maxBatchSize,
-        BATCH_CONFIGS.transcripts.maxWaitMs,
-        async (items) => {
-          // Process batch of transcript chunks
-          await this.processBatchedTranscripts(items);
-        },
-        transcriptCoalescing,
-        (error, items) => {
-          console.error("Transcript batch processing failed:", error);
-          // Implement retry logic or dead letter queue
-        },
-      );
-    }
-    return this.transcriptProcessor;
-  }
-
-  static getPresenceProcessor(): CoalescingBatchProcessor<any> {
-    if (!this.presenceProcessor) {
-      this.presenceProcessor = new CoalescingBatchProcessor(
-        BATCH_CONFIGS.presenceUpdates.maxBatchSize,
-        BATCH_CONFIGS.presenceUpdates.maxWaitMs,
-        async (items) => {
-          await this.processBatchedPresenceUpdates(items);
-        },
-        presenceCoalescing,
-        (error, items) => {
-          console.error("Presence batch processing failed:", error);
-        },
-      );
-    }
-    return this.presenceProcessor;
-  }
-
-  private static async processBatchedTranscripts(items: any[]): Promise<void> {
-    // Group by meeting for efficient processing
-    const byMeeting = new Map<string, any[]>();
-
-    for (const item of items) {
-      const meetingId = item.meetingId;
-      if (!byMeeting.has(meetingId)) {
-        byMeeting.set(meetingId, []);
-      }
-      byMeeting.get(meetingId)!.push(item);
-    }
-
-    // Process each meeting's transcripts in parallel
-    const promises = Array.from(byMeeting.entries()).map(
-      ([meetingId, transcripts]) =>
-        this.processTranscriptsForMeeting(meetingId, transcripts),
-    );
-
-    await Promise.all(promises);
-  }
-
-  private static async processBatchedPresenceUpdates(
-    items: any[],
-  ): Promise<void> {
-    // Group by meeting for efficient processing
-    const byMeeting = new Map<string, any[]>();
-
-    for (const item of items) {
-      const meetingId = item.meetingId;
-      if (!byMeeting.has(meetingId)) {
-        byMeeting.set(meetingId, []);
-      }
-      byMeeting.get(meetingId)!.push(item);
-    }
-
-    // Process each meeting's presence updates
-    const promises = Array.from(byMeeting.entries()).map(
-      ([meetingId, updates]) =>
-        this.processPresenceForMeeting(meetingId, updates),
-    );
-
-    await Promise.all(promises);
-  }
-
-  private static async processTranscriptsForMeeting(
-    meetingId: string,
-    transcripts: any[],
-  ): Promise<void> {
-    // This would call the internal mutation to batch insert transcripts
-    console.log(
-      `Processing ${transcripts.length} transcript chunks for meeting ${meetingId}`,
-    );
-    // Implementation would call internal mutation
-  }
-
-  private static async processPresenceForMeeting(
-    meetingId: string,
-    updates: any[],
-  ): Promise<void> {
-    // This would call the internal mutation to batch update presence
-    console.log(
-      `Processing ${updates.length} presence updates for meeting ${meetingId}`,
-    );
-    // Implementation would call internal mutation
-  }
-}
 
 /**
  * Batched transcript ingestion with coalescing
@@ -182,26 +62,44 @@ export const batchIngestTranscriptChunk = mutation({
       throw new Error("Meeting is not active");
     }
 
-    // Add to batch processor with coalescing
-    const processor = BatchProcessorManager.getTranscriptProcessor();
+    // Ack-without-persist repair: the old path enqueued into an in-memory
+    // processor whose flusher only logged, so every acked chunk was lost.
+    // Persist the chunk durably in this transaction instead. Interim chunks
+    // are transient (superseded by the final transcript) and are acked as
+    // coalesced without a durable write.
+    if (!args.interim) {
+      const result = await ctx.runMutation(
+        internal.realtime.batchedOperations.processBatchedTranscriptChunks,
+        {
+          meetingId: args.meetingId,
+          chunks: [
+            {
+              speakerId: args.speakerId,
+              text: args.text,
+              confidence: args.confidence,
+              startMs: args.startMs,
+              endMs: args.endMs,
+              userId: identity.userId,
+              timestamp: Date.now(),
+            },
+          ],
+        },
+      );
+      if (result.inserted !== 1) {
+        throw createError.validation(
+          `Transcript chunk was not persisted: ${
+            result.errors?.[0] ?? "unknown ingestion failure"
+          }`,
+        );
+      }
+    }
 
-    const transcriptItem = {
-      meetingId: args.meetingId,
-      speakerId: args.speakerId,
-      text: args.text,
-      confidence: args.confidence,
-      startMs: args.startMs,
-      endMs: args.endMs,
-      interim: args.interim || false,
-      userId: identity.userId,
-      timestamp: Date.now(),
-    };
-
-    await processor.add(transcriptItem);
-
+    // Kept for response-shape compatibility: the chunk is now durable (or an
+    // interim ack), not merely queued. batchSize 1 = the single persisted
+    // chunk.
     return {
       queued: true,
-      batchSize: processor.getQueueSize(),
+      batchSize: 1,
     };
   }),
 });
@@ -307,22 +205,36 @@ export const batchUpdatePresence = mutation({
     await assertMeetingAccess(ctx, args.meetingId, "participant");
     const identity = await requireIdentity(ctx);
 
-    // Add to batch processor with coalescing (latest state wins)
-    const processor = BatchProcessorManager.getPresenceProcessor();
+    // Ack-without-persist repair: persist the presence change durably in
+    // this transaction (latest-state-wins coalescing is per-user within the
+    // batch, and this batch has one update). metadata has no durable column
+    // on meetingParticipants; it is accepted for API compatibility and
+    // intentionally not persisted.
+    const result = await ctx.runMutation(
+      internal.realtime.batchedOperations.processBatchedPresenceUpdates,
+      {
+        meetingId: args.meetingId,
+        updates: [
+          {
+            userId: identity.userId as Id<"users">,
+            presence: args.presence,
+            metadata: args.metadata,
+            timestamp: Date.now(),
+          },
+        ],
+      },
+    );
+    if (result.updated !== 1) {
+      throw createError.validation(
+        "Presence update was not persisted: no meeting participant row",
+      );
+    }
 
-    const presenceItem = {
-      userId: identity.userId as Id<"users">,
-      meetingId: args.meetingId,
-      presence: args.presence,
-      metadata: args.metadata,
-      timestamp: Date.now(),
-    };
-
-    await processor.add(presenceItem);
-
+    // Kept for response-shape compatibility: the update is now durable, not
+    // merely queued. batchSize 1 = the single persisted update.
     return {
       queued: true,
-      batchSize: processor.getQueueSize(),
+      batchSize: 1,
     };
   }),
 });
@@ -347,8 +259,9 @@ export const processBatchedTranscriptChunks = internalMutation({
     const lastTranscript = await ctx.db
       .query("transcripts")
       .withIndex("by_meeting_bucket_seq", (q: any) =>
-        q.eq("meetingId", meetingId).order("desc"),
+        q.eq("meetingId", meetingId),
       )
+      .order("desc")
       .first();
 
     let currentSequence = lastTranscript?.sequence || 0;
@@ -514,8 +427,9 @@ export const flushAllBatches = action({
   args: {},
   returns: v.null(),
   handler: async (ctx, {}) => {
-    await BatchProcessorManager.getTranscriptProcessor().shutdown();
-    await BatchProcessorManager.getPresenceProcessor().shutdown();
+    // Nothing to flush: every batched write is persisted inline in its own
+    // mutation transaction (the old in-memory queues are gone).
+    return null;
   },
 });
 
@@ -528,8 +442,8 @@ export const getBatchStats = action({
   handler: async (ctx, {}) => {
     return {
       transcripts: {
-        queueSize:
-          BatchProcessorManager.getTranscriptProcessor().getQueueSize(),
+        // No queue: writes are persisted inline per mutation.
+        queueSize: 0,
       },
       noteOps: {
         // Note ops are persisted inline per mutation (no queue), so the
@@ -537,7 +451,8 @@ export const getBatchStats = action({
         queueSize: 0,
       },
       presence: {
-        queueSize: BatchProcessorManager.getPresenceProcessor().getQueueSize(),
+        // No queue: writes are persisted inline per mutation.
+        queueSize: 0,
       },
     };
   },
