@@ -1,0 +1,25 @@
+{
+  "milestone": "2 — offline workspace, export, reader, UI, local build",
+  "recordedAt": "2026-10-10T23:02:30Z",
+  "commands": [
+    { "command": "npx tsc --noEmit", "outcome": "clean, exit 0" },
+    { "command": "npm test", "outcome": "4 test files, 49 tests, all passing (vitest run)" },
+    { "command": "node build.mjs", "outcome": "bundled page/app.js (23.7kb, esbuild iife, es2022, no external origins)" }
+  ],
+  "testFiles": {
+    "tests/projection.test.ts": 8,
+    "tests/fixtures.test.ts": 13,
+    "tests/workspace.test.ts": 10,
+    "tests/export-reader.test.ts": 18
+  },
+  "guaranteesUnderTest": [
+    "profile projection copies only permitted fields and fails closed on strangers and sensitive fields",
+    "agenda agreement, set-aside, and re-proposal are explicit state transitions, never inferred",
+    "workspace-created notes are always private with sourceType participant-note",
+    "exported preparation documents carry the canonical disclaimer and count excluded private notes",
+    "independent reader rejects unknown keys, forbidden profile fields, and malformed structures with typed error codes",
+    "18-case invalid-input corpus covers every reader error code",
+    "16 intended private-field checks confirm sensitive fields never reach projected profiles or documents"
+  ],
+  "notes": "UI bundles to a single local page (page/index.html + page/app.js); the page references only local files. Saving writes a browser-download JSON file; nothing uploads."
+}

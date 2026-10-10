@@ -126,6 +126,14 @@ export const PROPOSAL_LABEL = "Proposal — suggestion only, not yet agreed";
 export const AGREED_LABEL = "Agreed for discussion";
 export const SET_ASIDE_LABEL = "Set aside — not proposed right now";
 
+/** Human-readable labels for each source type, used in the UI. */
+export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
+  "self-profile": "Your profile",
+  "peer-public-profile": "Other participant's public profile",
+  "shared-meeting-context": "Shared meeting context",
+  "participant-note": "Private participant note",
+};
+
 /** Canonical disclaimer carried by every exported preparation document. */
 export const DISCLAIMER_TEXT =
   "Agenda topics marked as proposals are suggestions only. " +

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Offline meeting-preparation workspace: agree an agenda, record open questions, save a local preparation document. Synthetic fixtures; no network." />
+  <title>Meeting preparation — offline workspace</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --ink-soft: #46566b;
+      --paper: #f7f6f2;
+      --card: #ffffff;
+      --line: #d8d5cb;
+      --accent: #23507e;
+      --accent-ink: #ffffff;
+      --agree: #1e6b3a;
+      --aside: #7a5a17;
+      --private: #8a2f3c;
+      --shared: #2b5f8a;
+      --focus: #b3541e;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+    .container { max-width: 56rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    h1 { font-size: 1.45rem; line-height: 1.25; margin: 0 0 0.25rem; }
+    h2 { font-size: 1.15rem; margin: 0 0 0.75rem; }
+    h3 { font-size: 1rem; margin: 0; }
+    .muted { color: var(--ink-soft); font-size: 0.92rem; margin: 0.4rem 0; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      margin: 1rem 0;
+    }
+    .participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.85rem 0.95rem;
+      margin: 0.5rem 0;
+    }
+    .participant { margin: 0; }
+    .basis-note { color: var(--ink-soft); font-size: 0.85rem; margin: 0.3rem 0 0.6rem; }
+    .profile-fields { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.9rem; margin: 0; }
+    .profile-fields dt { color: var(--ink-soft); font-weight: 600; }
+    .profile-fields dd { margin: 0; overflow-wrap: anywhere; }
+    .agenda-list, .note-list, .question-list { list-style: none; margin: 0; padding: 0; }
+    .agenda-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; justify-content: space-between; }
+    .status { font-size: 0.82rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 999px; border: 1px solid currentColor; }
+    .status-proposed { color: var(--accent); }
+    .status-agreed { color: var(--agree); }
+    .status-aside { color: var(--aside); }
+    .agenda-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.55rem 0; }
+    .note { padding: 0.45rem 0; border-top: 1px dashed var(--line); }
+    .note:first-child { border-top: 0; }
+    .note p { margin: 0.25rem 0 0; overflow-wrap: anywhere; }
+    .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding: 0.08rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      color: var(--ink-soft);
+    }
+    .tag-private { color: var(--private); }
+    .tag-shared { color: var(--shared); }
+    button, input[type="text"], select {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.45rem 0.9rem;
+      cursor: pointer;
+    }
+    button.secondary { background: transparent; color: var(--accent); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type="text"], select {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.45rem 0.6rem;
+      background: #fff;
+      width: 100%;
+    }
+    fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.8rem; margin: 0; }
+    fieldset label, .field-row label { margin-right: 0.4rem; }
+    .field-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.6rem 0; }
+    .field-row input[type="text"], .field-row select { flex: 1 1 14rem; width: auto; }
+    .note-form input[type="text"], .note-form select { min-width: 12rem; }
+    .question-form { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .question-form input[type="text"] { flex: 1 1 16rem; }
+    .question { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.45rem 0; border-top: 1px dashed var(--line); }
+    .question:first-child { border-top: 0; }
+    .question-text { flex: 1 1 12rem; }
+    .question-text.parked { color: var(--ink-soft); text-decoration: line-through; }
+    .disclaimer { font-size: 0.92rem; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.8rem; }
+    .save-confirmation { margin: 0.6rem 0; font-weight: 600; }
+    .preview summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+    .doc-preview {
+      background: #14181f;
+      color: #e7ecf3;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      max-height: 24rem;
+      overflow-y: auto;
+    }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .app-footer { border-top: 1px solid var(--line); margin-top: 1.5rem; padding-top: 0.75rem; }
+    @media (max-width: 40rem) {
+      .container { padding: 1rem 0.75rem 2.5rem; }
+      .panel { padding: 0.85rem 0.8rem; }
+      .profile-fields { grid-template-columns: 1fr; }
+      .profile-fields dt { margin-top: 0.35rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <noscript><p>This offline workspace needs JavaScript to run locally in your browser.</p></noscript>
+  </div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
