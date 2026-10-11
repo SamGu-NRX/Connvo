@@ -10,7 +10,15 @@
  * frame counter from wall-clock time, so no browser is involved.
  */
 import { describe, expect, it } from "vitest";
-import { measureFps } from "./page-helpers.mjs";
+import { measureFps, toneMatches, toneIsSilent } from "./page-helpers.mjs";
+import { decodeToneHz } from "../lib/decoders.mjs";
+
+/** 0.5 s of a pure tone at 48 kHz (decodeToneHz caps its window at 12000 samples). */
+function toneBuffer(hz, sampleRate = 48000, seconds = 0.5, amp = 0.6) {
+  const out = new Float32Array(Math.floor(sampleRate * seconds));
+  for (let i = 0; i < out.length; i++) out[i] = amp * Math.sin((2 * Math.PI * hz * i) / sampleRate);
+  return out;
+}
 
 /** Fake peer whose remote tile decodes to a synthetic stream at `fps`. */
 function fakePeerAt(fps) {
@@ -53,5 +61,33 @@ describe("measureFps default sampling", () => {
     const peer = fakePeerAt(0); // counter never advances
     const result = await measureFps(peer, "B", 1500);
     expect(result.fps).toBe(0);
+  });
+});
+
+describe("tone predicates over real decoders", () => {
+  it("matches the sender's tone peak from the decoded object", () => {
+    // Known inputs: decodeToneHz on a 440 Hz sine. The reviewed H-02 bug did
+    // Math.abs(decode - expected) on the OBJECT — NaN arithmetic — so a
+    // healthy tone never matched.
+    const decoded = decodeToneHz(toneBuffer(440), 48000);
+    expect(decoded.peakHz).toBeGreaterThan(439.5);
+    expect(decoded.peakHz).toBeLessThan(440.5);
+    expect(decoded.rms).toBeGreaterThan(0.3);
+    expect(toneMatches(decoded, 440)).toBe(true);
+    expect(toneMatches(decoded, 660)).toBe(false);
+    expect(toneMatches(decoded, 660, 5)).toBe(false);
+  });
+
+  it("counts digital silence and nothing-heard as muted", () => {
+    // Known inputs: an all-zero buffer decodes to { peakHz: 0, rms: 0 }.
+    const silence = decodeToneHz(new Float32Array(24000), 48000);
+    expect(silence.peakHz).toBe(0);
+    expect(toneIsSilent(silence)).toBe(true);
+    // The reviewed H-03 bug compared the decode OBJECT to 0 — always truthy —
+    // and threw "muted remote still produced a peak" on every healthy call.
+    expect(toneMatches(silence, 440)).toBe(false);
+    expect(toneIsSilent(null)).toBe(true); // no stream/track: sampleRemoteTone returns null
+    expect(toneIsSilent({ peakHz: 87, rms: 0.0005 })).toBe(true); // sub-floor noise bin
+    expect(toneIsSilent({ peakHz: 660, rms: 0.4 })).toBe(false); // an actual tone is NOT silent
   });
 });

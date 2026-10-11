@@ -24,6 +24,8 @@ import {
   collectRtpStatsWindow,
   probeState,
   decoderBundle,
+  toneMatches,
+  toneIsSilent,
 } from "./page-helpers.mjs";
 
 const H = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -103,9 +105,12 @@ export async function scenario_H_02(ctx) {
     let last = null;
     for (;;) {
       last = await sampleRemoteTone(peer, from, 400); // jitter-buffer settle: stale pre-join samples read as silence
-      if (last != null && Math.abs(last - expected) <= 10) return last;
+      // decodeToneHz returns { peakHz, rms } — the reviewed bug did
+      // arithmetic on the object (NaN), so no healthy call ever matched.
+      if (toneMatches(last, expected)) return last.peakHz;
       if (Date.now() > deadline) {
-        throw new ScenarioError(`H-02: ${peer.peerId} heard ${last ?? "silence"}, expected ${expected}±10 Hz from ${from}`);
+        const heard = last ? `${last.peakHz} Hz (rms ${last.rms})` : "silence";
+        throw new ScenarioError(`H-02: ${peer.peerId} heard ${heard}, expected ${expected}±10 Hz from ${from}`);
       }
       await H(200);
     }
@@ -125,10 +130,16 @@ export async function scenario_H_03(ctx) {
   await waitAttr(peerB, "A", "data-audio-muted", "true", 1000);
   const muteFlipMs = Date.now() - t0;
 
-  // No tone energy while muted (samples are ~zero, no dominant peak).
+  // No tone energy while muted. decodeToneHz returns { peakHz, rms }: the
+  // reviewed bug compared the object to 0, which threw on every healthy
+  // muted call. Digital silence decodes to peakHz 0 (rms < 1e-6) and counts
+  // as muted; sub-floor noise energy counts as muted too.
   const mutedTone = await sampleRemoteTone(peerB, "A", 700);
-  if (mutedTone != null && mutedTone !== 0) {
-    throw new ScenarioError(`H-03: muted remote still produced a ${mutedTone} Hz peak`, { mutedTone });
+  if (!toneIsSilent(mutedTone)) {
+    throw new ScenarioError(
+      `H-03: muted remote still produced energy (peak ${mutedTone.peakHz} Hz, rms ${mutedTone.rms})`,
+      { mutedTone },
+    );
   }
 
   const t1 = Date.now();
@@ -140,13 +151,14 @@ export async function scenario_H_03(ctx) {
   let restored = null;
   for (;;) {
     restored = await sampleRemoteTone(peerB, "A", 500);
-    if (restored != null && Math.abs(restored - 440) <= 10) break;
+    if (toneMatches(restored, 440)) break; // reads restored.peakHz (the reviewed NaN bug compared the object)
     if (Date.now() > deadline) {
-      throw new ScenarioError(`H-03: unmute did not restore the 440 Hz tone (last ${restored})`);
+      const heard = restored ? `${restored.peakHz} Hz (rms ${restored.rms})` : "silence";
+      throw new ScenarioError(`H-03: unmute did not restore the 440 Hz tone (last ${heard})`);
     }
     await H(200);
   }
-  return { muteFlipMs, unmuteFlipMs, restoredToneHz: restored };
+  return { muteFlipMs, unmuteFlipMs, restoredToneHz: restored.peakHz };
 }
 
 /** H-04 — remote data-video-off flips within 1 s; the sender's capture track is ended (camera released); on resumes frames */
@@ -339,8 +351,11 @@ export async function scenario_H_11(ctx) {
   await click(peerA, "leave-call");
   await waitFor(peerA, phaseIs("left"), { timeoutMs: 5000, describe: "A's phase left" });
 
-  const trackStates = await peerA.page.evaluate(`(() => [...(document.querySelector('[data-testid="local-video"]').srcObject?.getTracks() ?? [])].map(t => t.readyState))()`,
-  );
+  // Read the PRE-CAPTURED track objects (window.__h11tracks, captured above):
+  // the bench page unmounts the local-video element on leave, so a DOM read
+  // would throw; the captured MediaStreamTrack objects still report their
+  // post-leave readyState.
+  const trackStates = await peerA.page.evaluate(`(() => (window.__h11tracks ?? []).map(t => t.readyState))()`);
   if (trackStates.length === 0 || !trackStates.every((s) => s === "ended")) {
     throw new ScenarioError(`H-11: local tracks not ended (${JSON.stringify(trackStates)})`);
   }

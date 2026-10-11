@@ -37,18 +37,49 @@ function initDecodersInNode(bundleSrc) {
 /** Node-side tolerant color classification (y4m round-trip shifts ~±13/ch). */
 export function matchPeerColor(rgb) {
   const { PEER_COLORS, SECOND_CAMERA_COLOR, COLOR_TOLERANCE } = loadContracts();
-  const candidates = [
-    ["A", PEER_COLORS.A],
-    ["B", PEER_COLORS.B],
-    ["C", PEER_COLORS.C],
-    ["second-camera", SECOND_CAMERA_COLOR],
-  ];
+  return classifyRemoteColor(rgb, [PEER_COLORS.A, PEER_COLORS.B, PEER_COLORS.C, SECOND_CAMERA_COLOR], COLOR_TOLERANCE);
+}
+
+/**
+ * Tolerant palette classification, pure so the page-side color hook can
+ * embed it verbatim (colorHookExpression stringifies it): nearest palette
+ * entry by max per-channel distance; ok only within tolerance.
+ * @param {{ r: number, g: number, b: number }} rgb
+ * @param {Array<[string, [number, number, number]]>} palette label -> rgb triple
+ * @param {number} tolerance
+ */
+export function classifyRemoteColor(rgb, palette, tolerance) {
   let best = null;
-  for (const [label, ref] of candidates) {
+  for (const [label, ref] of palette) {
     const d = Math.max(Math.abs(rgb.r - ref[0]), Math.abs(rgb.g - ref[1]), Math.abs(rgb.b - ref[2]));
     if (!best || d < best.distance) best = { label, distance: d };
   }
-  return { ...best, ok: best.distance <= COLOR_TOLERANCE };
+  return { ...best, ok: best.distance <= tolerance };
+}
+
+/**
+ * True when a sampleRemoteTone result carries the expected tone: decodeToneHz
+ * returns { peakHz, rms } — the reviewed H-02/H-03 bug did arithmetic on the
+ * OBJECT (NaN peak), so the predicate reads peakHz explicitly.
+ * @returns {boolean}
+ */
+export function toneMatches(decoded, expectedHz, tolerance = 10) {
+  if (!decoded || typeof decoded !== "object" || !Number.isFinite(decoded.peakHz)) return false;
+  return Math.abs(decoded.peakHz - expectedHz) <= tolerance;
+}
+
+/**
+ * True when nothing audible was received: no sample at all (null — no track
+ * or no stream), digital silence (decodeToneHz yields peakHz 0 at rms < 1e-6),
+ * or sub-floor energy. The floor counts near-silent noise as muted: the
+ * reviewed H-03 bug compared the decode OBJECT to 0 and threw on every
+ * healthy muted call. Pure digital silence must always count as muted.
+ * @returns {boolean}
+ */
+export function toneIsSilent(decoded, { rmsFloor = 0.01 } = {}) {
+  if (!decoded || typeof decoded !== "object") return true;
+  if (decoded.peakHz === 0) return true;
+  return Number(decoded.rms) < rmsFloor;
 }
 
 /** Sample the pinned counter band; classification stays Node-side. */
