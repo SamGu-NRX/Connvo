@@ -311,14 +311,20 @@ describe("buildCalendarExport", () => {
 
       const ics = buildCalendarExport(input);
       expect(ics, `${label}: expected a document for a scheduled meeting`).toBeTruthy();
+      // The generator always provides a time; narrow explicitly so the
+      // instants below type-check as numbers.
+      if (ics === null || input.scheduledAt === null) {
+        throw new Error(`${label}: generator produced a case without a scheduled time`);
+      }
+      const scheduledAtMs: number = input.scheduledAt;
 
-      const physicalLines = ics!.split("\r\n");
+      const physicalLines = ics.split("\r\n");
       for (const line of physicalLines) {
         expect(octets(line), `${label}: line over 75 octets`).toBeLessThanOrEqual(75);
       }
-      expect(ics!.replace(/\r\n/g, ""), `${label}: bare LF/CR present`).not.toMatch(/[\r\n]/);
+      expect(ics.replace(/\r\n/g, ""), `${label}: bare LF/CR present`).not.toMatch(/[\r\n]/);
 
-      const parsed = parseIcs(ics!);
+      const parsed = parseIcs(ics);
       expect(parsed.count("SUMMARY"), `${label}: SUMMARY property count`).toBe(1);
       expect(parsed.count("VEVENT"), `${label}: VEVENT property count`).toBe(0);
 
@@ -328,7 +334,7 @@ describe("buildCalendarExport", () => {
       }
       expect(parsed.uid, `${label}: stable UID`).toBe(`${input.meetingId}@connvo-history`);
       expect(parseIcsUtc(parsed.dtstart), `${label}: DTSTART instant`).toBe(
-        Math.floor(input.scheduledAt / 1000) * 1000,
+        Math.floor(scheduledAtMs / 1000) * 1000,
       );
       expect(parseIcsUtc(parsed.dtstamp), `${label}: DTSTAMP from updatedAt`).toBe(
         Math.floor(input.updatedAt / 1000) * 1000,
@@ -336,7 +342,7 @@ describe("buildCalendarExport", () => {
 
       if (input.durationMs != null) {
         expect(parseIcsUtc(parsed.dtend), `${label}: DTEND instant`).toBe(
-          Math.floor((input.scheduledAt + input.durationMs) / 1000) * 1000,
+          Math.floor((scheduledAtMs + input.durationMs) / 1000) * 1000,
         );
       } else {
         expect(parsed.dtend, `${label}: DTEND must be absent without duration`).toBeNull();
