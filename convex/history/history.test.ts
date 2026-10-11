@@ -511,7 +511,7 @@ describe("After-call history data layer", () => {
           _id: "p2",
           content: "Unused prompt",
           type: "incall",
-          usedAt: null,
+          usedAt: undefined,
           createdAt: 2,
         },
       ],
