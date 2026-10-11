@@ -149,6 +149,12 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify({ ok: true, variant, port: server.address().port }));
 });
 
+// A bind/port failure must exit with the pinned JSON error shape instead of
+// an unhandled exception, so the runner's spawn can parse the failure.
+server.on("error", (err) => {
+  fail(`signaling server failed to start: ${err.message}`);
+});
+
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (socket) => {
@@ -156,6 +162,17 @@ wss.on("connection", (socket) => {
   let self = null;
   /** The meetingId this socket joined; null until hello. */
   let joinedMeeting = null;
+
+  // A socket-level error (protocol violation, oversized frame, aborted
+  // connection) must not crash the eval server; closing the socket lets the
+  // close handler run the room cleanup and broadcast peer-left.
+  socket.on("error", () => {
+    try {
+      socket.close();
+    } catch {
+      /* already dead */
+    }
+  });
 
   socket.on("message", (raw) => {
     let msg;
