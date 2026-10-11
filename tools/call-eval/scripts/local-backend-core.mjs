@@ -28,6 +28,7 @@ export const HARNESS_INCLUDE_DIRS = [
   "auth", "users", "meetings", "participants", "messaging", "realtime",
   "transcripts", "matching", "interests", "settings", "system",
   "schema", "lib", "types", "environments", "_generated",
+  "notes", // notes ledger modules the call/meeting closure imports
   "devEval", // eval seed mutation (devEval/seed) invoked in step 4/6
 ];
 
@@ -51,15 +52,35 @@ export function isHarnessModulePath(modulePath) {
  * runtime pinned to 18 with the heavy packages externalized (resolved from
  * node_modules instead of bundled into the push).
  * @param {Record<string, any>} parsed convex.json contents
- * @param {string[]} [externalDependencies]
+ * @param {string[]} [externalPackages]
  * @returns {Record<string, any>}
  */
-export function convexJsonOverrideObject(parsed, externalDependencies = HARNESS_EXTERNAL) {
+export function convexJsonOverrideObject(parsed, externalPackages = HARNESS_EXTERNAL) {
   return {
     ...parsed,
     functions: "convex-harness",
-    node: { ...(parsed.node ?? {}), "18": true, externalDependencies },
+    // The 1.28.0 CLI reads node.externalPackages — the old key
+    // (node.externalDependencies) is ignored, so the SDKs stayed bundled.
+    node: { ...(parsed.node ?? {}), "18": true, externalPackages },
   };
+}
+
+/**
+ * The deployment URL the convex CLI writes to .env.local. Convex 1.28.x
+ * detects a Next.js tree and writes NEXT_PUBLIC_CONVEX_URL; a bare
+ * CONVEX_URL is the legacy fallback. Returns null when neither is set.
+ * @param {unknown} text .env.local contents (null/undefined when the file is absent)
+ * @returns {{ source: string, value: string } | null}
+ */
+export function pickConvexUrlFromEnvText(text) {
+  if (typeof text !== "string") return null;
+  /** @param {string} s */
+  const unquote = (s) => s.trim().replace(/^["']|["']$/g, "");
+  const next = text.match(/^NEXT_PUBLIC_CONVEX_URL=(.+)$/m);
+  if (next) return { source: "NEXT_PUBLIC_CONVEX_URL", value: unquote(next[1]) };
+  const legacy = text.match(/^CONVEX_URL=(.+)$/m);
+  if (legacy) return { source: "CONVEX_URL", value: unquote(legacy[1]) };
+  return null;
 }
 
 /**
@@ -67,14 +88,14 @@ export function convexJsonOverrideObject(parsed, externalDependencies = HARNESS_
  * backup written BEFORE the repo file is touched (guard ii). Creates outDir
  * first, so a failed backup can never leave a modified convex.json without a
  * restorable original.
- * @param {{ convexJsonPath: string, outDir: string, externalDependencies?: string[] }} opts
+ * @param {{ convexJsonPath: string, outDir: string, externalPackages?: string[] }} opts
  * @returns {{ changed: boolean, original: string | null }}
  */
-export function applyConvexJsonOverride({ convexJsonPath, outDir, externalDependencies = HARNESS_EXTERNAL }) {
+export function applyConvexJsonOverride({ convexJsonPath, outDir, externalPackages = HARNESS_EXTERNAL }) {
   const original = readFileSync(convexJsonPath, "utf8");
   const j = JSON.parse(original);
   if (j.functions === "convex-harness") return { changed: false, original: null }; // already overridden by a prior run
-  const overridden = convexJsonOverrideObject(j, externalDependencies);
+  const overridden = convexJsonOverrideObject(j, externalPackages);
   // Back up BEFORE touching the repo file, and create out/ first (it is
   // otherwise only created at the end of the run) so a failed backup can
   // never leave a modified convex.json without a restorable original.

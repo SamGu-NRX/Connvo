@@ -24,6 +24,7 @@ import {
   deploymentPortFromUrl,
   deploymentRefusalMessage,
   isHarnessModulePath,
+  pickConvexUrlFromEnvText,
   resolveSelectedDeployment,
 } from "./local-backend-core.mjs";
 
@@ -59,14 +60,49 @@ describe("guard (i): harness allowlist accepts the devEval seed module", () => {
 
   it("keeps excluding modules outside the harness closure", () => {
     expect(isHarnessModulePath("embeddings/actions")).toBe(false);
-    expect(isHarnessModulePath("notes/foo")).toBe(false);
     expect(isHarnessModulePath("prompts/foo")).toBe(false);
     expect(isHarnessModulePath("insights/foo")).toBe(false);
+  });
+
+  it("accepts the notes directory (the call/meeting closure imports it)", () => {
+    expect(isHarnessModulePath("notes/foo")).toBe(true);
+    expect(isHarnessModulePath("notes/bar")).toBe(true);
   });
 
   it("includes root-level function files (copied unconditionally by the tree builder)", () => {
     expect(isHarnessModulePath("schema")).toBe(true);
     expect(isHarnessModulePath("")).toBe(false);
+  });
+});
+
+describe("operator fix 1: the deployment URL is read from what the CLI writes", () => {
+  it("prefers NEXT_PUBLIC_CONVEX_URL when both spellings are present", () => {
+    const text = "CONVEX_URL=http://127.0.0.1:1111\nNEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210\n";
+    expect(pickConvexUrlFromEnvText(text)).toEqual({
+      source: "NEXT_PUBLIC_CONVEX_URL",
+      value: "http://127.0.0.1:3210",
+    });
+  });
+
+  it("falls back to legacy CONVEX_URL", () => {
+    expect(pickConvexUrlFromEnvText("CONVEX_URL=http://127.0.0.1:3210\n")).toEqual({
+      source: "CONVEX_URL",
+      value: "http://127.0.0.1:3210",
+    });
+  });
+
+  it("strips surrounding quotes and whitespace", () => {
+    expect(pickConvexUrlFromEnvText(`NEXT_PUBLIC_CONVEX_URL='http://127.0.0.1:3210'\r\n`)).toEqual({
+      source: "NEXT_PUBLIC_CONVEX_URL",
+      value: "http://127.0.0.1:3210",
+    });
+  });
+
+  it("returns null when neither variable is set and for non-string input", () => {
+    expect(pickConvexUrlFromEnvText("OTHER=http://x\n")).toBe(null);
+    expect(pickConvexUrlFromEnvText("# CONVEX_URL=commented-out\n")).toBe(null);
+    expect(pickConvexUrlFromEnvText(null)).toBe(null);
+    expect(pickConvexUrlFromEnvText(undefined)).toBe(null);
   });
 });
 
@@ -85,7 +121,9 @@ describe("guard (ii): convex.json backup exists with the first modification", ()
     const modified = JSON.parse(readFileSync(t.convexJsonPath, "utf8"));
     expect(modified.functions).toBe("convex-harness");
     expect(modified.node["18"]).toBe(true);
-    expect(modified.node.externalDependencies).toEqual(HARNESS_EXTERNAL);
+    expect(modified.node.externalPackages).toEqual(HARNESS_EXTERNAL);
+    // The 1.28.0 CLI reads externalPackages; the legacy key must stay unset.
+    expect(modified.node.externalDependencies).toBeUndefined();
     // ...and the backup of the original exists, byte-identical.
     expect(existsSync(path.join(t.outDir, "convex.json.orig"))).toBe(true);
     expect(readFileSync(path.join(t.outDir, "convex.json.orig"), "utf8")).toBe(original);

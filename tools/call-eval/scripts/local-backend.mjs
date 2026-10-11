@@ -35,6 +35,7 @@ import {
   applyDeploymentEnv,
   deploymentPortFromUrl,
   deploymentRefusalMessage,
+  pickConvexUrlFromEnvText,
   resolveSelectedDeployment,
 } from "./local-backend-core.mjs";
 
@@ -91,23 +92,6 @@ function restoreConvexJson() {
     console.log("[backend] convex.json restored to the repo version");
   }
   rmSync(HARNESS_DIR, { recursive: true, force: true });
-}
-
-// Wait for a quiet CPU window before the first push: co-tenant test suites on
-// this shared 2-core box (Playwright fleets, tsc runs) starve the backend's
-// hardcoded 2 s module-load budget.
-async function waitForQuiet(maxMs = 40 * 60_000) {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    const load = parseInt(readFileSync("/proc/loadavg", "utf8").split(" ")[0], 10);
-    const chromes = sh("pgrep -f chrome-headless | wc -l", { capture: true, allowFail: true }).stdout.trim();
-    const tsc = sh("pgrep -f 'tsc --noEmit' | wc -l", { capture: true, allowFail: true }).stdout.trim();
-    if (load < 2 && Number(chromes) < 3 && Number(tsc) === 0) return true;
-    if (Date.now() % 60_000 < 3_000) console.log(`[backend] waiting for a quiet CPU window (load ${load}, ${chromes} browsers)…`);
-    await new Promise((r) => setTimeout(r, 5_000));
-  }
-  console.log("[backend] no quiet window arrived; pushing anyway");
-  return false;
 }
 
 const nextPort = Number((args.find((a) => a.startsWith("--port=")) ?? "--port=3000").split("=")[1]) || 3000;
@@ -206,7 +190,6 @@ const authKeyB64 = Buffer.from(JSON.stringify(priv)).toString("base64");
 console.log("[backend] 2/6 convex local deployment (anonymous, no account)");
 buildHarnessTree();
 applyConvexJsonOverride();
-await waitForQuiet();
 if (!tmuxRunning(CONV_TMUX)) {
   mkdirSync(LOCAL_DIR, { recursive: true });
   sh(`tmux new-session -d -s ${CONV_TMUX} "bash -c 'cd ${REPO} && npx convex dev --typecheck=disable 2>&1 | tee ${LOCAL_DIR}/convex-dev.log'"`);
@@ -221,8 +204,11 @@ console.log("[backend] waiting for convex dev (first run downloads the local bac
 while (Date.now() < deadline) {
   const envLocal = path.join(REPO, ".env.local");
   if (existsSync(envLocal)) {
-    const m = readFileSync(envLocal, "utf8").match(/^CONVEX_URL=(.+)$/m);
-    if (m) convexUrl = m[1].trim();
+    // Convex 1.28.x writes NEXT_PUBLIC_CONVEX_URL on a Next.js tree (legacy
+    // CONVEX_URL tolerated) — reading only CONVEX_URL timed out a fresh
+    // checkout even with the backend up.
+    const picked = pickConvexUrlFromEnvText(readFileSync(envLocal, "utf8"));
+    if (picked) convexUrl = picked.value;
   }
   const logPath = path.join(LOCAL_DIR, "convex-dev.log");
   const log = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
@@ -290,8 +276,10 @@ console.log("[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test J
 assertLocalDeployment();
 
 // Re-push so the backend re-evaluates auth.config with the new env, then seed.
+// --typecheck=disable: same as the first push — the default typechecking
+// would re-run tsc on this shared box mid-run.
 console.log("[backend] 4/6 re-push + seed");
-sh("npx convex dev --once", { capture: true });
+sh("npx convex dev --once --typecheck=disable", { capture: true });
 const seedOut = sh("npx convex run devEval/seed", { capture: true }).stdout;
 let seedJson = null;
 try {
