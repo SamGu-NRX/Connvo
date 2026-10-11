@@ -1,0 +1,2515 @@
+{
+  "label": "after",
+  "recordedAt": "2026-10-11T22:28:53.647Z",
+  "node": "v20.20.2",
+  "cpus": 2,
+  "platform": "linux x64",
+  "loadavgStart": [
+    2.94,
+    10.03,
+    17.23
+  ],
+  "loadavgEnd": [
+    2.94,
+    10.03,
+    17.23
+  ],
+  "runsPerModule": 3,
+  "esbuild": "0.25.4",
+  "moduleCount": 143,
+  "results": [
+    {
+      "module": "analytics/meetings.ts",
+      "label": "after",
+      "runs": [
+        2.742074,
+        2.778831,
+        3.024785
+      ],
+      "error": null,
+      "bytes": 46684,
+      "closureBytes": 46684,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "audit/logging.ts",
+      "label": "after",
+      "runs": [
+        5.461269,
+        3.745506,
+        3.88803
+      ],
+      "error": null,
+      "bytes": 68138,
+      "closureBytes": 68138,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "auth.config.ts",
+      "label": "after",
+      "runs": [],
+      "error": "ERROR: Command failed: /usr/bin/node /home/user/work/connvo-lazy/tools/call-eval/out/module-loads-after/timed-import.mjs /home/user/work/connvo-lazy/tools/call-eval/out/module-loads-after/bundles/auth.config.ts/auth.config.mjs | ❌ WORKOS_CLIENT_ID environment variable is required but not set. |  | 🔧 TO FIX THIS ERROR: | 1. Go to https://dashboard.convex.dev | 2. Select your project and deployment",
+      "bytes": 2101,
+      "closureBytes": 2101,
+      "contributors": []
+    },
+    {
+      "module": "auth/guards.ts",
+      "label": "after",
+      "runs": [
+        2.989003,
+        3.239679,
+        2.844787
+      ],
+      "error": null,
+      "bytes": 7975,
+      "closureBytes": 39124,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "auth/permissions.ts",
+      "label": "after",
+      "runs": [
+        6.78906,
+        7.219086,
+        7.474703
+      ],
+      "error": null,
+      "bytes": 11519,
+      "closureBytes": 77231,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "convex.config.ts",
+      "label": "after",
+      "runs": [],
+      "error": "ERROR: Command failed: /usr/bin/node /home/user/work/connvo-lazy/tools/call-eval/out/module-loads-after/timed-import.mjs /home/user/work/connvo-lazy/tools/call-eval/out/module-loads-after/bundles/convex.config.ts/convex.config.mjs | IMPORT_ERROR: Component definition does not have the required componentDefinitionPath property. This code only works in Convex runtime. | ",
+      "bytes": 34379,
+      "closureBytes": 34379,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        },
+        {
+          "pkg": "@convex-dev/rate-limiter",
+          "bytes": 137
+        }
+      ]
+    },
+    {
+      "module": "crons.ts",
+      "label": "after",
+      "runs": [
+        3.269932,
+        3.502726,
+        3.157624
+      ],
+      "error": null,
+      "bytes": 41696,
+      "closureBytes": 41696,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "devEval/seed.ts",
+      "label": "after",
+      "runs": [
+        4.22018,
+        3.552406,
+        3.461121
+      ],
+      "error": null,
+      "bytes": 65922,
+      "closureBytes": 65922,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "embeddings/actions.ts",
+      "label": "after",
+      "runs": [
+        6.847528,
+        8.343191,
+        6.510205
+      ],
+      "error": null,
+      "bytes": 77153,
+      "closureBytes": 332927,
+      "contributors": [
+        {
+          "pkg": "openai",
+          "bytes": 333446
+        },
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "embeddings/index.ts",
+      "label": "after",
+      "runs": [
+        10.698565,
+        8.145395,
+        13.283977
+      ],
+      "error": null,
+      "bytes": 110931,
+      "closureBytes": 366705,
+      "contributors": [
+        {
+          "pkg": "openai",
+          "bytes": 333446
+        },
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "embeddings/mutations.ts",
+      "label": "after",
+      "runs": [
+        4.705088,
+        4.160415,
+        3.954925
+      ],
+      "error": null,
+      "bytes": 72671,
+      "closureBytes": 72671,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "embeddings/queries.ts",
+      "label": "after",
+      "runs": [
+        7.087224,
+        10.051876,
+        9.499329
+      ],
+      "error": null,
+      "bytes": 87993,
+      "closureBytes": 87993,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "environments/local.ts",
+      "label": "after",
+      "runs": [
+        0.761741,
+        0.934411,
+        0.877106
+      ],
+      "error": null,
+      "bytes": 985,
+      "closureBytes": 985,
+      "contributors": []
+    },
+    {
+      "module": "environments/production.ts",
+      "label": "after",
+      "runs": [
+        0.845923,
+        0.863999,
+        1.013979
+      ],
+      "error": null,
+      "bytes": 994,
+      "closureBytes": 994,
+      "contributors": []
+    },
+    {
+      "module": "environments/staging.ts",
+      "label": "after",
+      "runs": [
+        0.931925,
+        0.874421,
+        1.00596
+      ],
+      "error": null,
+      "bytes": 958,
+      "closureBytes": 958,
+      "contributors": []
+    },
+    {
+      "module": "http.ts",
+      "label": "after",
+      "runs": [
+        3.455405,
+        3.130631,
+        3.025462
+      ],
+      "error": null,
+      "bytes": 55626,
+      "closureBytes": 55626,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "insights/generation.ts",
+      "label": "after",
+      "runs": [
+        3.428265,
+        3.123815,
+        3.144304
+      ],
+      "error": null,
+      "bytes": 59125,
+      "closureBytes": 59125,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "insights/index.ts",
+      "label": "after",
+      "runs": [
+        6.032231,
+        6.974745,
+        6.631928
+      ],
+      "error": null,
+      "bytes": 31289,
+      "closureBytes": 105696,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "insights/mutations.ts",
+      "label": "after",
+      "runs": [
+        5.28257,
+        5.180104,
+        5.292566
+      ],
+      "error": null,
+      "bytes": 17817,
+      "closureBytes": 82942,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "insights/queries.ts",
+      "label": "after",
+      "runs": [
+        5.209093,
+        5.337483,
+        5.085236
+      ],
+      "error": null,
+      "bytes": 18824,
+      "closureBytes": 79017,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "insights/scheduler.ts",
+      "label": "after",
+      "runs": [
+        4.298574,
+        3.436856,
+        3.441923
+      ],
+      "error": null,
+      "bytes": 72114,
+      "closureBytes": 72114,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "interests/queries.ts",
+      "label": "after",
+      "runs": [
+        3.526439,
+        3.40265,
+        4.103864
+      ],
+      "error": null,
+      "bytes": 67742,
+      "closureBytes": 67742,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "lib/alerting.ts",
+      "label": "after",
+      "runs": [
+        0.93171,
+        0.933948,
+        0.940914
+      ],
+      "error": null,
+      "bytes": 9785,
+      "closureBytes": 9785,
+      "contributors": []
+    },
+    {
+      "module": "lib/audit.ts",
+      "label": "after",
+      "runs": [
+        2.596315,
+        2.617006,
+        2.541427
+      ],
+      "error": null,
+      "bytes": 31059,
+      "closureBytes": 31059,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "lib/batching.ts",
+      "label": "after",
+      "runs": [
+        1.82858,
+        1.769387,
+        1.724961
+      ],
+      "error": null,
+      "bytes": 7256,
+      "closureBytes": 7256,
+      "contributors": []
+    },
+    {
+      "module": "lib/clientOptimizations.ts",
+      "label": "after",
+      "runs": [
+        6.633886,
+        1.012334,
+        1.098513
+      ],
+      "error": null,
+      "bytes": 10399,
+      "closureBytes": 10399,
+      "contributors": []
+    },
+    {
+      "module": "lib/config.ts",
+      "label": "after",
+      "runs": [
+        0.897281,
+        0.945866,
+        0.942737
+      ],
+      "error": null,
+      "bytes": 3793,
+      "closureBytes": 3793,
+      "contributors": []
+    },
+    {
+      "module": "lib/errors.ts",
+      "label": "after",
+      "runs": [
+        1.251217,
+        1.103257,
+        1.176861
+      ],
+      "error": null,
+      "bytes": 9914,
+      "closureBytes": 9914,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "lib/getstreamServer.ts",
+      "label": "after",
+      "runs": [
+        2.172834,
+        1.956675,
+        2.84245
+      ],
+      "error": null,
+      "bytes": 1738,
+      "closureBytes": 2902126,
+      "contributors": [
+        {
+          "pkg": "@stream-io/video-client",
+          "bytes": 620463
+        },
+        {
+          "pkg": "chart.js",
+          "bytes": 515261
+        },
+        {
+          "pkg": "rxjs",
+          "bytes": 321926
+        },
+        {
+          "pkg": "@floating-ui/react",
+          "bytes": 186899
+        },
+        {
+          "pkg": "mime-db",
+          "bytes": 186071
+        }
+      ]
+    },
+    {
+      "module": "lib/idempotency.ts",
+      "label": "after",
+      "runs": [
+        2.399876,
+        2.504079,
+        2.772578
+      ],
+      "error": null,
+      "bytes": 37629,
+      "closureBytes": 37629,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "lib/monitoring.ts",
+      "label": "after",
+      "runs": [
+        1.043073,
+        0.834826,
+        1.068435
+      ],
+      "error": null,
+      "bytes": 6493,
+      "closureBytes": 37552,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "lib/observability.ts",
+      "label": "after",
+      "runs": [
+        1.06247,
+        1.703742,
+        1.658833
+      ],
+      "error": null,
+      "bytes": 350,
+      "closureBytes": 350,
+      "contributors": []
+    },
+    {
+      "module": "lib/performance.ts",
+      "label": "after",
+      "runs": [
+        2.331066,
+        1.986886,
+        1.783527
+      ],
+      "error": null,
+      "bytes": 8192,
+      "closureBytes": 8192,
+      "contributors": []
+    },
+    {
+      "module": "lib/permissions.ts",
+      "label": "after",
+      "runs": [
+        0.987698,
+        0.737411,
+        0.830739
+      ],
+      "error": null,
+      "bytes": 778,
+      "closureBytes": 778,
+      "contributors": []
+    },
+    {
+      "module": "lib/queryOptimization.ts",
+      "label": "after",
+      "runs": [
+        1.029393,
+        1.129465,
+        1.022975
+      ],
+      "error": null,
+      "bytes": 7741,
+      "closureBytes": 7741,
+      "contributors": []
+    },
+    {
+      "module": "lib/rateLimit.ts",
+      "label": "after",
+      "runs": [
+        3.422703,
+        2.593524,
+        2.594274
+      ],
+      "error": null,
+      "bytes": 43086,
+      "closureBytes": 43086,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "lib/rateLimiter.ts",
+      "label": "after",
+      "runs": [
+        1.348235,
+        1.415723,
+        1.389511
+      ],
+      "error": null,
+      "bytes": 16091,
+      "closureBytes": 16091,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "lib/resilience.ts",
+      "label": "after",
+      "runs": [
+        1.665343,
+        1.381328,
+        1.456595
+      ],
+      "error": null,
+      "bytes": 17519,
+      "closureBytes": 17519,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "lib/utils.ts",
+      "label": "after",
+      "runs": [
+        0.973635,
+        1.238515,
+        1.128446
+      ],
+      "error": null,
+      "bytes": 3635,
+      "closureBytes": 3635,
+      "contributors": []
+    },
+    {
+      "module": "lib/validators.ts",
+      "label": "after",
+      "runs": [
+        1.869579,
+        2.406468,
+        1.950818
+      ],
+      "error": null,
+      "bytes": 22936,
+      "closureBytes": 22936,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "lib/videoProviders.ts",
+      "label": "after",
+      "runs": [
+        1.597854,
+        1.744916,
+        1.53333
+      ],
+      "error": null,
+      "bytes": 7814,
+      "closureBytes": 2908202,
+      "contributors": [
+        {
+          "pkg": "@stream-io/video-client",
+          "bytes": 620463
+        },
+        {
+          "pkg": "chart.js",
+          "bytes": 515261
+        },
+        {
+          "pkg": "rxjs",
+          "bytes": 321926
+        },
+        {
+          "pkg": "@floating-ui/react",
+          "bytes": 186899
+        },
+        {
+          "pkg": "mime-db",
+          "bytes": 186071
+        }
+      ]
+    },
+    {
+      "module": "matching/analytics.ts",
+      "label": "after",
+      "runs": [
+        9.345048,
+        13.571747,
+        9.285861
+      ],
+      "error": null,
+      "bytes": 67715,
+      "closureBytes": 142122,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "matching/engine.ts",
+      "label": "after",
+      "runs": [
+        9.557828,
+        7.629884,
+        7.277464
+      ],
+      "error": null,
+      "bytes": 101627,
+      "closureBytes": 101627,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "matching/index.ts",
+      "label": "after",
+      "runs": [
+        9.282107,
+        9.474223,
+        9.295728
+      ],
+      "error": null,
+      "bytes": 67813,
+      "closureBytes": 142220,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "matching/queue.ts",
+      "label": "after",
+      "runs": [
+        8.197705,
+        7.742214,
+        30.886552
+      ],
+      "error": null,
+      "bytes": 29305,
+      "closureBytes": 95422,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "matching/scheduler.ts",
+      "label": "after",
+      "runs": [
+        4.421613,
+        4.263395,
+        4.359717
+      ],
+      "error": null,
+      "bytes": 82995,
+      "closureBytes": 82995,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "matching/scoring.ts",
+      "label": "after",
+      "runs": [
+        7.114334,
+        7.166803,
+        7.054897
+      ],
+      "error": null,
+      "bytes": 98873,
+      "closureBytes": 98873,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/lifecycle.ts",
+      "label": "after",
+      "runs": [
+        5.320519,
+        5.351448,
+        5.207884
+      ],
+      "error": null,
+      "bytes": 35188,
+      "closureBytes": 100313,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/postProcessing.ts",
+      "label": "after",
+      "runs": [
+        3.054868,
+        2.80713,
+        2.838004
+      ],
+      "error": null,
+      "bytes": 49035,
+      "closureBytes": 49035,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/queries.ts",
+      "label": "after",
+      "runs": [
+        8.361517,
+        9.48723,
+        8.006965
+      ],
+      "error": null,
+      "bytes": 36381,
+      "closureBytes": 96574,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/stateTracking.ts",
+      "label": "after",
+      "runs": [
+        4.634321,
+        4.476134,
+        4.359977
+      ],
+      "error": null,
+      "bytes": 12045,
+      "closureBytes": 77170,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/stream/cleanup.ts",
+      "label": "after",
+      "runs": [
+        3.22732,
+        4.360908,
+        3.305649
+      ],
+      "error": null,
+      "bytes": 50240,
+      "closureBytes": 50240,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/stream/index.ts",
+      "label": "after",
+      "runs": [
+        5.084388,
+        5.051091,
+        5.580785
+      ],
+      "error": null,
+      "bytes": 38513,
+      "closureBytes": 2987200,
+      "contributors": [
+        {
+          "pkg": "@stream-io/video-client",
+          "bytes": 620463
+        },
+        {
+          "pkg": "chart.js",
+          "bytes": 515261
+        },
+        {
+          "pkg": "rxjs",
+          "bytes": 321926
+        },
+        {
+          "pkg": "@floating-ui/react",
+          "bytes": 186899
+        },
+        {
+          "pkg": "mime-db",
+          "bytes": 186071
+        }
+      ]
+    },
+    {
+      "module": "meetings/stream/streamHandlers.ts",
+      "label": "after",
+      "runs": [
+        4.322767,
+        3.944791,
+        4.077041
+      ],
+      "error": null,
+      "bytes": 78203,
+      "closureBytes": 78203,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/stream/streamHelpers.ts",
+      "label": "after",
+      "runs": [
+        3.803353,
+        3.73928,
+        5.331783
+      ],
+      "error": null,
+      "bytes": 66563,
+      "closureBytes": 66563,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/stream/webhooks.ts",
+      "label": "after",
+      "runs": [
+        3.539094,
+        3.589033,
+        3.588287
+      ],
+      "error": null,
+      "bytes": 70109,
+      "closureBytes": 70109,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "meetings/webrtc/index.ts",
+      "label": "after",
+      "runs": [
+        9.407125,
+        9.456975,
+        11.242334
+      ],
+      "error": null,
+      "bytes": 54717,
+      "closureBytes": 3028978,
+      "contributors": [
+        {
+          "pkg": "@stream-io/video-client",
+          "bytes": 620463
+        },
+        {
+          "pkg": "chart.js",
+          "bytes": 515261
+        },
+        {
+          "pkg": "rxjs",
+          "bytes": 321926
+        },
+        {
+          "pkg": "@floating-ui/react",
+          "bytes": 186899
+        },
+        {
+          "pkg": "mime-db",
+          "bytes": 186071
+        }
+      ]
+    },
+    {
+      "module": "meetings/webrtc/rooms.ts",
+      "label": "after",
+      "runs": [
+        13.849042,
+        8.747249,
+        8.704991
+      ],
+      "error": null,
+      "bytes": 44174,
+      "closureBytes": 3017395,
+      "contributors": [
+        {
+          "pkg": "@stream-io/video-client",
+          "bytes": 620463
+        },
+        {
+          "pkg": "chart.js",
+          "bytes": 515261
+        },
+        {
+          "pkg": "rxjs",
+          "bytes": 321926
+        },
+        {
+          "pkg": "@floating-ui/react",
+          "bytes": 186899
+        },
+        {
+          "pkg": "mime-db",
+          "bytes": 186071
+        }
+      ]
+    },
+    {
+      "module": "meetings/webrtc/signaling.ts",
+      "label": "after",
+      "runs": [
+        9.831981,
+        8.145457,
+        8.00483
+      ],
+      "error": null,
+      "bytes": 37522,
+      "closureBytes": 103639,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "migrations/createMissingProfiles.ts",
+      "label": "after",
+      "runs": [
+        3.491339,
+        3.264685,
+        4.77504
+      ],
+      "error": null,
+      "bytes": 64821,
+      "closureBytes": 64821,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "monitoring/alerts.ts",
+      "label": "after",
+      "runs": [
+        3.875587,
+        5.311357,
+        3.711492
+      ],
+      "error": null,
+      "bytes": 65397,
+      "closureBytes": 65397,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "monitoring/bandwidthManager.ts",
+      "label": "after",
+      "runs": [
+        6.456505,
+        5.555735,
+        5.633639
+      ],
+      "error": null,
+      "bytes": 25663,
+      "closureBytes": 98401,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "monitoring/performanceQueries.ts",
+      "label": "after",
+      "runs": [
+        6.23851,
+        6.031461,
+        9.710618
+      ],
+      "error": null,
+      "bytes": 30415,
+      "closureBytes": 96532,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "notes/index.ts",
+      "label": "after",
+      "runs": [
+        6.799425,
+        6.73912,
+        7.044051
+      ],
+      "error": null,
+      "bytes": 58820,
+      "closureBytes": 125499,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "notes/mutations.ts",
+      "label": "after",
+      "runs": [
+        6.387067,
+        5.719671,
+        5.790867
+      ],
+      "error": null,
+      "bytes": 34904,
+      "closureBytes": 100029,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "notes/offline.ts",
+      "label": "after",
+      "runs": [
+        7.753613,
+        5.770244,
+        6.2543
+      ],
+      "error": null,
+      "bytes": 33751,
+      "closureBytes": 98901,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "notes/operations.ts",
+      "label": "after",
+      "runs": [
+        6.506491,
+        4.104854,
+        3.638778
+      ],
+      "error": null,
+      "bytes": 42287,
+      "closureBytes": 42287,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "notes/queries.ts",
+      "label": "after",
+      "runs": [
+        5.090853,
+        6.595977,
+        5.59429
+      ],
+      "error": null,
+      "bytes": 13009,
+      "closureBytes": 73202,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "profiles/mutations.ts",
+      "label": "after",
+      "runs": [
+        4.278407,
+        4.161978,
+        4.252138
+      ],
+      "error": null,
+      "bytes": 9371,
+      "closureBytes": 73929,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "profiles/queries.ts",
+      "label": "after",
+      "runs": [
+        4.386028,
+        5.971406,
+        8.763303
+      ],
+      "error": null,
+      "bytes": 8777,
+      "closureBytes": 68970,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "prompts/actions.ts",
+      "label": "after",
+      "runs": [
+        4.150687,
+        3.832711,
+        3.843424
+      ],
+      "error": null,
+      "bytes": 68708,
+      "closureBytes": 68708,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "prompts/index.ts",
+      "label": "after",
+      "runs": [
+        7.028672,
+        6.796328,
+        6.898239
+      ],
+      "error": null,
+      "bytes": 38020,
+      "closureBytes": 112427,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "prompts/mutations.ts",
+      "label": "after",
+      "runs": [
+        4.533298,
+        4.958313,
+        5.938573
+      ],
+      "error": null,
+      "bytes": 9175,
+      "closureBytes": 74300,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "prompts/queries.ts",
+      "label": "after",
+      "runs": [
+        5.501424,
+        5.272649,
+        5.480205
+      ],
+      "error": null,
+      "bytes": 17762,
+      "closureBytes": 77955,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "prompts/scheduler.ts",
+      "label": "after",
+      "runs": [
+        3.859898,
+        3.997445,
+        3.890082
+      ],
+      "error": null,
+      "bytes": 75939,
+      "closureBytes": 75939,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "realtime/batchedOperations.ts",
+      "label": "after",
+      "runs": [
+        8.983817,
+        9.979317,
+        9.594088
+      ],
+      "error": null,
+      "bytes": 49102,
+      "closureBytes": 121415,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "realtime/subscriptionActions.ts",
+      "label": "after",
+      "runs": [
+        7.240736,
+        4.903334,
+        6.040739
+      ],
+      "error": null,
+      "bytes": 12225,
+      "closureBytes": 59953,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "realtime/subscriptionManager.ts",
+      "label": "after",
+      "runs": [
+        6.289532,
+        6.402475,
+        6.306179
+      ],
+      "error": null,
+      "bytes": 36243,
+      "closureBytes": 102484,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "realtime/subscriptions.ts",
+      "label": "after",
+      "runs": [
+        6.448353,
+        6.243511,
+        5.954883
+      ],
+      "error": null,
+      "bytes": 34035,
+      "closureBytes": 99747,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema.ts",
+      "label": "after",
+      "runs": [
+        6.365095,
+        8.568868,
+        9.464635
+      ],
+      "error": null,
+      "bytes": 52561,
+      "closureBytes": 52561,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/ai.ts",
+      "label": "after",
+      "runs": [
+        2.833101,
+        3.151955,
+        3.673957
+      ],
+      "error": null,
+      "bytes": 32383,
+      "closureBytes": 32383,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/interests.ts",
+      "label": "after",
+      "runs": [
+        5.385297,
+        5.108508,
+        2.692624
+      ],
+      "error": null,
+      "bytes": 30332,
+      "closureBytes": 30332,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/legacy.ts",
+      "label": "after",
+      "runs": [
+        2.586663,
+        2.320947,
+        2.333329
+      ],
+      "error": null,
+      "bytes": 30141,
+      "closureBytes": 30141,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/matching.ts",
+      "label": "after",
+      "runs": [
+        2.909681,
+        2.850225,
+        2.950607
+      ],
+      "error": null,
+      "bytes": 31534,
+      "closureBytes": 31534,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/meetings.ts",
+      "label": "after",
+      "runs": [
+        3.812785,
+        3.775332,
+        3.660045
+      ],
+      "error": null,
+      "bytes": 35673,
+      "closureBytes": 35673,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/messaging.ts",
+      "label": "after",
+      "runs": [
+        2.671325,
+        2.813668,
+        3.322295
+      ],
+      "error": null,
+      "bytes": 30690,
+      "closureBytes": 30690,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/offline.ts",
+      "label": "after",
+      "runs": [
+        2.624096,
+        2.577452,
+        2.718719
+      ],
+      "error": null,
+      "bytes": 31360,
+      "closureBytes": 31360,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/system.ts",
+      "label": "after",
+      "runs": [
+        3.37932,
+        3.008973,
+        2.925056
+      ],
+      "error": null,
+      "bytes": 33389,
+      "closureBytes": 33389,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/transcripts.ts",
+      "label": "after",
+      "runs": [
+        2.955907,
+        3.168121,
+        2.993263
+      ],
+      "error": null,
+      "bytes": 32671,
+      "closureBytes": 32671,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/userSettings.ts",
+      "label": "after",
+      "runs": [
+        3.61994,
+        3.339683,
+        2.79766
+      ],
+      "error": null,
+      "bytes": 30155,
+      "closureBytes": 30155,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/users.ts",
+      "label": "after",
+      "runs": [
+        2.727535,
+        2.710327,
+        2.478489
+      ],
+      "error": null,
+      "bytes": 31323,
+      "closureBytes": 31323,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "schema/webrtc.ts",
+      "label": "after",
+      "runs": [
+        2.931466,
+        14.793097,
+        2.790692
+      ],
+      "error": null,
+      "bytes": 32890,
+      "closureBytes": 32890,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "settings/mutations.ts",
+      "label": "after",
+      "runs": [
+        3.927766,
+        3.851617,
+        3.85089
+      ],
+      "error": null,
+      "bytes": 7212,
+      "closureBytes": 71770,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "settings/queries.ts",
+      "label": "after",
+      "runs": [
+        3.973327,
+        3.868244,
+        3.892602
+      ],
+      "error": null,
+      "bytes": 6702,
+      "closureBytes": 66358,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "system/idempotency.ts",
+      "label": "after",
+      "runs": [
+        3.97995,
+        4.282607,
+        4.097287
+      ],
+      "error": null,
+      "bytes": 77601,
+      "closureBytes": 77601,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "system/maintenance.ts",
+      "label": "after",
+      "runs": [
+        2.928711,
+        2.844315,
+        4.699765
+      ],
+      "error": null,
+      "bytes": 52080,
+      "closureBytes": 52080,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "system/rateLimit.ts",
+      "label": "after",
+      "runs": [
+        3.486973,
+        3.451084,
+        3.874841
+      ],
+      "error": null,
+      "bytes": 64551,
+      "closureBytes": 64551,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "transcripts/aggregation.ts",
+      "label": "after",
+      "runs": [
+        5.339091,
+        4.420817,
+        7.531139
+      ],
+      "error": null,
+      "bytes": 76953,
+      "closureBytes": 76953,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "transcripts/ingestion.ts",
+      "label": "after",
+      "runs": [
+        8.451289,
+        7.961931,
+        12.300509
+      ],
+      "error": null,
+      "bytes": 39943,
+      "closureBytes": 106086,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "transcripts/initialization.ts",
+      "label": "after",
+      "runs": [
+        6.128143,
+        16.714041,
+        4.218756
+      ],
+      "error": null,
+      "bytes": 76789,
+      "closureBytes": 76789,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "transcripts/queries.ts",
+      "label": "after",
+      "runs": [
+        4.818656,
+        4.995743,
+        4.830827
+      ],
+      "error": null,
+      "bytes": 14612,
+      "closureBytes": 74805,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "transcripts/streaming.ts",
+      "label": "after",
+      "runs": [
+        4.15069,
+        4.198599,
+        4.154593
+      ],
+      "error": null,
+      "bytes": 85825,
+      "closureBytes": 85825,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "types/_template.ts",
+      "label": "after",
+      "runs": [
+        24.115828,
+        22.931068,
+        22.518544
+      ],
+      "error": null,
+      "bytes": 209139,
+      "closureBytes": 209139,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "types/api/index.ts",
+      "label": "after",
+      "runs": [
+        1.009575,
+        0.868408,
+        1.213876
+      ],
+      "error": null,
+      "bytes": 4035,
+      "closureBytes": 4035,
+      "contributors": []
+    },
+    {
+      "module": "types/api/pagination.ts",
+      "label": "after",
+      "runs": [
+        0.992067,
+        0.896772,
+        0.874432
+      ],
+      "error": null,
+      "bytes": 3177,
+      "closureBytes": 3177,
+      "contributors": []
+    },
+    {
+      "module": "types/api/responses.ts",
+      "label": "after",
+      "runs": [
+        1.282067,
+        0.786152,
+        0.834194
+      ],
+      "error": null,
+      "bytes": 868,
+      "closureBytes": 868,
+      "contributors": []
+    },
+    {
+      "module": "types/domain/index.ts",
+      "label": "after",
+      "runs": [
+        0.820592,
+        1.194263,
+        1.016956
+      ],
+      "error": null,
+      "bytes": 1611,
+      "closureBytes": 1611,
+      "contributors": []
+    },
+    {
+      "module": "types/domain/operationalTransform.ts",
+      "label": "after",
+      "runs": [
+        0.850926,
+        0.85115,
+        1.003281
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/domain/realTime.ts",
+      "label": "after",
+      "runs": [
+        1.017444,
+        1.241259,
+        0.874958
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/domain/vectorSearch.ts",
+      "label": "after",
+      "runs": [
+        0.844084,
+        1.329112,
+        0.826046
+      ],
+      "error": null,
+      "bytes": 1611,
+      "closureBytes": 1611,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/embedding.ts",
+      "label": "after",
+      "runs": [
+        1.916045,
+        0.794884,
+        0.767787
+      ],
+      "error": null,
+      "bytes": 1611,
+      "closureBytes": 1611,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/index.ts",
+      "label": "after",
+      "runs": [
+        0.787998,
+        0.891493,
+        0.861332
+      ],
+      "error": null,
+      "bytes": 1611,
+      "closureBytes": 1611,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/matching.ts",
+      "label": "after",
+      "runs": [
+        0.895346,
+        1.292799,
+        1.092322
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/meeting.ts",
+      "label": "after",
+      "runs": [
+        0.990388,
+        0.808487,
+        0.882669
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/messaging.ts",
+      "label": "after",
+      "runs": [
+        1.37093,
+        0.745925,
+        0.728092
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/note.ts",
+      "label": "after",
+      "runs": [
+        0.771158,
+        0.808809,
+        0.687665
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/prompt.ts",
+      "label": "after",
+      "runs": [
+        0.774276,
+        0.774794,
+        0.689825
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/stream.ts",
+      "label": "after",
+      "runs": [
+        0.829193,
+        0.749601,
+        0.778742
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/system.ts",
+      "label": "after",
+      "runs": [
+        0.810505,
+        0.744196,
+        0.864544
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/transcript.ts",
+      "label": "after",
+      "runs": [
+        7.596936,
+        0.789929,
+        0.90665
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/user.ts",
+      "label": "after",
+      "runs": [
+        0.825407,
+        0.781778,
+        0.728616
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/entities/webrtc.ts",
+      "label": "after",
+      "runs": [
+        1.440663,
+        0.87307,
+        0.861972
+      ],
+      "error": null,
+      "bytes": 0,
+      "closureBytes": 0,
+      "contributors": []
+    },
+    {
+      "module": "types/index.ts",
+      "label": "after",
+      "runs": [
+        21.373426,
+        20.918601,
+        21.287417
+      ],
+      "error": null,
+      "bytes": 177703,
+      "closureBytes": 177703,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "types/utils.ts",
+      "label": "after",
+      "runs": [
+        0.805112,
+        0.851715,
+        0.808854
+      ],
+      "error": null,
+      "bytes": 1078,
+      "closureBytes": 1078,
+      "contributors": []
+    },
+    {
+      "module": "types/validators/common.ts",
+      "label": "after",
+      "runs": [
+        3.018019,
+        3.19522,
+        2.576292
+      ],
+      "error": null,
+      "bytes": 31761,
+      "closureBytes": 31761,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "types/validators/embedding.ts",
+      "label": "after",
+      "runs": [
+        5.106551,
+        4.950901,
+        4.842632
+      ],
+      "error": null,
+      "bytes": 37638,
+      "closureBytes": 37638,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/index.ts",
+      "label": "after",
+      "runs": [
+        20.556584,
+        26.707207,
+        19.791151
+      ],
+      "error": null,
+      "bytes": 171001,
+      "closureBytes": 171001,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "types/validators/matching.ts",
+      "label": "after",
+      "runs": [
+        5.21447,
+        5.329559,
+        5.36569
+      ],
+      "error": null,
+      "bytes": 40782,
+      "closureBytes": 40782,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/meeting.ts",
+      "label": "after",
+      "runs": [
+        5.804968,
+        5.887091,
+        6.314977
+      ],
+      "error": null,
+      "bytes": 44675,
+      "closureBytes": 44675,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/messaging.ts",
+      "label": "after",
+      "runs": [
+        2.516886,
+        2.690995,
+        2.533897
+      ],
+      "error": null,
+      "bytes": 26841,
+      "closureBytes": 26841,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/note.ts",
+      "label": "after",
+      "runs": [
+        2.764403,
+        2.746268,
+        2.624429
+      ],
+      "error": null,
+      "bytes": 28412,
+      "closureBytes": 28412,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/operationalTransform.ts",
+      "label": "after",
+      "runs": [
+        5.335304,
+        5.311145,
+        5.271354
+      ],
+      "error": null,
+      "bytes": 42010,
+      "closureBytes": 42010,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/pagination.ts",
+      "label": "after",
+      "runs": [
+        2.447539,
+        2.307256,
+        7.206271
+      ],
+      "error": null,
+      "bytes": 26212,
+      "closureBytes": 26212,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/prompt.ts",
+      "label": "after",
+      "runs": [
+        12.971879,
+        3.497134,
+        4.338415
+      ],
+      "error": null,
+      "bytes": 29948,
+      "closureBytes": 29948,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/realTime.ts",
+      "label": "after",
+      "runs": [
+        3.510611,
+        3.026757,
+        8.065588
+      ],
+      "error": null,
+      "bytes": 28535,
+      "closureBytes": 28535,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/responses.ts",
+      "label": "after",
+      "runs": [
+        2.771676,
+        2.576882,
+        3.69135
+      ],
+      "error": null,
+      "bytes": 29633,
+      "closureBytes": 29633,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/stream.ts",
+      "label": "after",
+      "runs": [
+        3.264248,
+        2.771853,
+        2.533045
+      ],
+      "error": null,
+      "bytes": 23979,
+      "closureBytes": 23979,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/system.ts",
+      "label": "after",
+      "runs": [
+        5.008884,
+        4.178617,
+        5.067488
+      ],
+      "error": null,
+      "bytes": 30046,
+      "closureBytes": 30046,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/transcript.ts",
+      "label": "after",
+      "runs": [
+        2.944903,
+        2.986801,
+        2.802913
+      ],
+      "error": null,
+      "bytes": 28468,
+      "closureBytes": 28468,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/user.ts",
+      "label": "after",
+      "runs": [
+        5.081773,
+        2.766484,
+        4.866369
+      ],
+      "error": null,
+      "bytes": 29182,
+      "closureBytes": 29182,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "types/validators/webrtc.ts",
+      "label": "after",
+      "runs": [
+        6.164568,
+        6.182228,
+        7.716766
+      ],
+      "error": null,
+      "bytes": 43728,
+      "closureBytes": 43728,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 33249
+        }
+      ]
+    },
+    {
+      "module": "users/mutations.ts",
+      "label": "after",
+      "runs": [
+        4.695682,
+        4.658591,
+        5.706782
+      ],
+      "error": null,
+      "bytes": 21847,
+      "closureBytes": 87127,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    },
+    {
+      "module": "users/queries.ts",
+      "label": "after",
+      "runs": [
+        8.821329,
+        4.994344,
+        8.101781
+      ],
+      "error": null,
+      "bytes": 16810,
+      "closureBytes": 77003,
+      "contributors": [
+        {
+          "pkg": "convex",
+          "bytes": 108625
+        }
+      ]
+    }
+  ]
+}
