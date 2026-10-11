@@ -61,11 +61,35 @@ export const webrtcTables = {
     .index("by_timestamp", ["timestamp"])
     .index("by_processed", ["processed"])
     .index("by_processed_and_timestamp", ["processed", "timestamp"])
+    // Session-scoped recipient query: getPendingSignals fetches one
+    // session's pending signals for one caller directly from this index,
+    // so unrelated sessions can never fill the batch and push the wanted
+    // signals out of reach. toUserId equality supports both the direct
+    // (caller) and broadcast (undefined) ranges.
+    .index("by_meeting_session_target_and_processed", [
+      "meetingId",
+      "sessionId",
+      "toUserId",
+      "processed",
+    ])
     .index("by_meeting_target_and_processed", [
       "meetingId",
       "toUserId",
       "processed",
     ]),
+
+  // Per-caller acknowledgements of broadcast signals. A broadcast signal
+  // (no toUserId) is never flipped to processed=true — that would hide it
+  // from every other participant — so each caller's ack is recorded here
+  // and delivery filters it out per caller instead.
+  webrtcSignalAcks: defineTable({
+    meetingId: v.id("meetings"),
+    signalId: v.id("webrtcSignals"),
+    userId: v.id("users"),
+    ackedAt: v.number(),
+  })
+    .index("by_signal_and_user", ["signalId", "userId"])
+    .index("by_meeting_and_user", ["meetingId", "userId"]),
 
   // Connection Quality Metrics
   connectionMetrics: defineTable({

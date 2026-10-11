@@ -63,6 +63,10 @@ export const StreamApiResponseV = {
 } as const;
 
 export const StreamWebhookPayloadV = v.object({
+  // Every Stream webhook payload carries its event type at the top level;
+  // without this field the strict validator rejects every delivery and the
+  // pipeline dead-loops in 500s.
+  type: v.optional(v.string()),
   call: v.optional(
     v.object({
       id: v.string(),

@@ -136,11 +136,23 @@ export async function withIdempotency<T>(
           previousError: metadata.error || "Previous execution failed",
         };
       } else {
-        // Previous execution succeeded
-        return {
-          isFirstExecution: false,
-          result: metadata?.result,
-        };
+        // Previous execution succeeded. persistResultMutation stores results
+        // as resultInline (primitives) or resultJson (objects) — metadata.result
+        // is never populated, so reads must decode the right field or replays
+        // lose the original result.
+        if (metadata?.resultType === "inline") {
+          return {
+            isFirstExecution: false,
+            result: metadata.resultInline as T,
+          };
+        }
+        if (metadata?.resultType === "json") {
+          return {
+            isFirstExecution: false,
+            result: JSON.parse(String(metadata.resultJson)) as T,
+          };
+        }
+        return { isFirstExecution: false };
       }
     }
   }

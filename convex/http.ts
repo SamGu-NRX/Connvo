@@ -11,6 +11,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { StreamWebhookPayload } from "./types/entities/stream";
 
 const http = httpRouter();
 
@@ -23,121 +24,73 @@ const http = httpRouter();
  */
 // GetStream webhook dispatcher implemented in V8 runtime; uses Web Crypto for HMAC.
 const handleStreamWebhookAction = httpAction(async (ctx, request) => {
+  // Signature-before-effect: verify the HMAC before parsing or applying
+  // anything. A missing header is a rejection (401), never a bypass; a
+  // missing secret fails closed (500) so a misconfigured deployment retries
+  // via Stream instead of silently accepting forged traffic.
+  const body = await request.text();
+  const signature =
+    request.headers.get("x-signature") || request.headers.get("signature");
+
+  if (!signature) {
+    console.error("GetStream webhook rejected: missing signature header");
+    return new Response("Missing signature", { status: 401 });
+  }
+
+  const streamSecret = process.env.STREAM_SECRET;
+  if (!streamSecret) {
+    console.error("GetStream secret not configured for webhook verification");
+    return new Response("Webhook secret not configured", { status: 500 });
+  }
+
   try {
-    const body = await request.text();
-    const signature =
-      request.headers.get("x-signature") || request.headers.get("signature");
+    const provided = signature.replace(/^sha256=/, "");
+    // Use Web Crypto API (supported in Convex V8 runtime)
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(streamSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const mac = await crypto.subtle.sign("HMAC", key, enc.encode(body));
+    const actual = Array.from(new Uint8Array(mac))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
 
-    // Verify webhook signature for security (optional: only if header present)
-    if (signature) {
-      const streamSecret = process.env.STREAM_SECRET;
-      if (!streamSecret) {
-        console.error(
-          "GetStream secret not configured for webhook verification",
-        );
-        return new Response("Webhook secret not configured", { status: 500 });
-      }
-
-      const provided = signature.replace("sha256=", "");
-      // Use Web Crypto API (supported in Convex V8 runtime)
-      const enc = new TextEncoder();
-      const key = await crypto.subtle.importKey(
-        "raw",
-        enc.encode(streamSecret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"],
-      );
-      const mac = await crypto.subtle.sign("HMAC", key, enc.encode(body));
-      const actual = Array.from(new Uint8Array(mac))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-      if (actual !== provided) {
-        console.error("Invalid webhook signature");
-        return new Response("Invalid signature", { status: 401 });
-      }
+    // Constant-time compare. Length is public (hex-encoded SHA-256), so the
+    // length mismatch shortcut leaks nothing exploitable.
+    let diff = provided.length === actual.length ? 0 : 1;
+    for (let i = 0; i < Math.min(provided.length, actual.length); i++) {
+      diff |= provided.charCodeAt(i) ^ actual.charCodeAt(i);
+    }
+    if (diff !== 0) {
+      console.error("Invalid webhook signature");
+      return new Response("Invalid signature", { status: 401 });
     }
 
-    // Parse webhook payload
-    const payload = JSON.parse(body);
-    const eventType = payload.type as string;
-    const eventData = payload;
+    const payload = JSON.parse(body) as StreamWebhookPayload;
+    console.log(`Received GetStream webhook: ${payload.type}`);
 
-    console.log(`Received GetStream webhook: ${eventType}`);
+    // Idempotent dispatch: the dedupe key insert and the handler run in one
+    // transaction (see dispatchWebhook), so Stream retries cannot double-
+    // schedule post-processing or duplicate recording rows.
+    const result = await ctx.runMutation(
+      internal.meetings.stream.streamHandlers.dispatchWebhook,
+      { data: payload },
+    );
 
-    // Dispatch to internal V8 mutations
-    let processingResult: { success: boolean } = { success: false };
-
-    switch (eventType) {
-      case "call.session_started":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleCallSessionStarted,
-          { data: eventData },
-        );
-        break;
-      case "call.session_ended":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleCallSessionEnded,
-          { data: eventData },
-        );
-        break;
-      case "call.member_joined":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleMemberJoined,
-          { data: eventData },
-        );
-        break;
-      case "call.member_left":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleMemberLeft,
-          { data: eventData },
-        );
-        break;
-      case "call.recording_started":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleRecordingStarted,
-          { data: eventData },
-        );
-        break;
-      case "call.recording_stopped":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleRecordingStopped,
-          { data: eventData },
-        );
-        break;
-      case "call.recording_ready":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleRecordingReady,
-          { data: eventData },
-        );
-        break;
-      case "call.transcription_started":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleTranscriptionStarted,
-          { data: eventData },
-        );
-        break;
-      case "call.transcription_stopped":
-        processingResult = await ctx.runMutation(
-          internal.meetings.stream.streamHandlers.handleTranscriptionStopped,
-          { data: eventData },
-        );
-        break;
-      default:
-        console.log(`Unhandled GetStream webhook event: ${eventType}`);
-        processingResult = { success: true };
-    }
-
-    if (processingResult.success) {
+    if (result.success) {
       return new Response("OK", { status: 200 });
-    } else {
-      return new Response("Processing failed", { status: 500 });
     }
+    return new Response("Processing failed", { status: 500 });
   } catch (error) {
     console.error("Failed to handle GetStream webhook:", error);
     return new Response("Internal server error", { status: 500 });
   }
 });
+
 
 http.route({
   path: "/webhooks/getstream",

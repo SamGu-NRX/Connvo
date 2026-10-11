@@ -53,5 +53,7 @@ export const offlineTables = {
     .index("by_checkpoint_id", ["checkpointId"])
     .index("by_meeting_and_client", ["meetingId", "clientId"])
     .index("by_created_at", ["createdAt"])
-    .index("by_meeting_client_sequence", ["meetingId", "clientId", "sequence"]),
+    .index("by_meeting_client_sequence", ["meetingId", "clientId", "sequence"])
+    // Newest durable checkpoint per meeting, for replay-safe log pruning.
+    .index("by_meeting_sequence", ["meetingId", "sequence"]),
 };
