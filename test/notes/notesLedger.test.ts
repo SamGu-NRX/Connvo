@@ -7,6 +7,7 @@
  */
 
 import { describe, expect, test } from "vitest";
+import type { Id } from "@convex/_generated/dataModel";
 import { NotesLedger } from "@/hooks/notes/notesLedger";
 import type {
   BatchApplyNoteOperationsResponse,
@@ -16,6 +17,10 @@ import type {
 
 let idCounter = 0;
 
+/** Fixture cast: the scripted transport ignores the meeting id, so any
+ * string stands in for the branded Id<"meetings"> the real hook receives. */
+const asMeetingId = (id: string): Id<"meetings"> => id as Id<"meetings">;
+
 function makeLedger(options?: {
   storage?: Storage | null;
   debounceMs?: number;
@@ -24,7 +29,7 @@ function makeLedger(options?: {
 }): NotesLedger {
   idCounter = 0;
   return new NotesLedger({
-    meetingId: options?.meetingId ?? "meeting-1",
+    meetingId: asMeetingId(options?.meetingId ?? "meeting-1"),
     clientId: options?.clientId ?? "client-1",
     debounceMs: options?.debounceMs ?? 0,
     storage: options?.storage === undefined ? null : options.storage,
@@ -164,11 +169,10 @@ describe("client ledger core (§3)", () => {
     const ledger = makeLedger();
     const transport = new ScriptedTransport();
     transport.setInitial(snapshotOf({ content: "abc", version: 3, headSequence: 2 }));
-    transport.enqueue(echoResponse({ operations: [] } as SentBatch, 3));
     ledger.start(transport);
 
     ledger.onEdit("abc d");
-    await tick();
+    await tick(); // batch parked in flight
 
     const batch = transport.batches[0] as SentBatch;
     expect(batch.operations).toHaveLength(1);
@@ -178,16 +182,25 @@ describe("client ledger core (§3)", () => {
       position: 3,
       content: " d",
     });
-    // A later op, after the server incorporated two more ops, uses the NEW
-    // watermark — proving it tracks the basis, not a local counter.
-    transport.deliver(
-      snapshotOf({ content: "abc d!", version: 5, headSequence: 4 }),
-    );
-    transport.enqueue(echoResponse({ operations: [] } as SentBatch, 5));
-    ledger.onEdit("abc d!");
+
+    // The response acks our op; the next fresh read carries TWO more server
+    // ops (headSequence 2 → 4) and adopts version 5.
+    transport.enqueue(echoResponse(transport.batches[0] as SentBatch, 3));
+    await tick();
+    transport.deliver(snapshotOf({ content: "abc d!", version: 5, headSequence: 4 }));
+    await tick();
+
+    // A later op diffs from the NEW base and stamps the NEW watermark —
+    // proving clientSequence tracks the incorporated basis, not a counter.
+    ledger.onEdit("abc d! e");
     await tick();
     const second = transport.batches[1] as SentBatch;
     expect(second.operations[0]?.clientSequence).toBe(4);
+    expect(second.operations[0]?.operation).toEqual({
+      type: "insert",
+      position: 6,
+      content: " e",
+    });
   });
 
   test("emits sibling delete+insert from ONE base coordinate system for replacements", async () => {
@@ -206,7 +219,7 @@ describe("client ledger core (§3)", () => {
       "insert",
     ]);
     const [first, second] = batch.operations;
-    expect(first?.position).toBe(second?.position); // one base coordinate system
+    expect(first?.operation.position).toBe(second?.operation.position); // one base coordinate system
     expect(first?.clientSequence).toBe(second?.clientSequence);
     expect(first?.operation).toEqual({ type: "delete", position: 0, length: 3 });
     expect(second?.operation).toEqual({ type: "insert", position: 0, content: "dog" });
@@ -273,10 +286,13 @@ describe("client ledger core (§3)", () => {
     transport.setInitial(snapshotOf({ content: "kept", version: 2, headSequence: 1 }));
     ledger.start(transport);
 
-    ledger.onEdit("kept words");
+    ledger.onEdit("kept words"); // flushes immediately (debounceMs 0), send parked
     transport.deliver(undefined); // a loading result arrives
-    expect(ledger.getSnapshot().content).toBe("kept"); // unchanged base
-    expect(ledger.getSnapshot().isEditing).toBe(true); // buffer preserved
+    // A loading result carries no evidence — the pending words stay composed
+    // over the base and visible (D4: loading must never drop edits).
+    expect(ledger.getSnapshot().content).toBe("kept words");
+    expect(ledger.getSnapshot().isEditing).toBe(true); // work still tracked
+    expect(ledger.getSnapshot().unsavedRecords).toHaveLength(1);
   });
 
   test("monotonic ingest: a stale snapshot never rewinds content", async () => {
@@ -285,13 +301,24 @@ describe("client ledger core (§3)", () => {
     transport.setInitial(snapshotOf({ content: "v1", version: 1, headSequence: 0 }));
     ledger.start(transport);
     ledger.onEdit("v1 words");
-    transport.enqueue(echoResponse(transport.batches[0] as SentBatch, 1));
-    await tick();
+    await tick(); // batch parked in flight — the op is unacked
+
+    // A NEWER server snapshot arrives while our op is unacked: the view holds
+    // at base+ops (adopting the newer content would need unknown transforms).
     transport.deliver(snapshotOf({ content: "v2 latest", version: 2, headSequence: 1 }));
     expect(ledger.getSnapshot().content).toBe("v1 words"); // unacked words still composed
 
-    transport.deliver(snapshotOf({ content: "v1", version: 1, headSequence: 0 })); // STALE
-    expect(ledger.getSnapshot().version).toBe(2); // never rewound
+    // The response acks our op; the next fresh read is adopted wholesale —
+    // the server's OT already rebased our words into its truth.
+    transport.enqueue(echoResponse(transport.batches[0] as SentBatch, 1));
+    await tick();
+    transport.deliver(snapshotOf({ content: "v2 latest!", version: 3, headSequence: 2 }));
+    expect(ledger.getSnapshot().content).toBe("v2 latest!");
+
+    // A STALE redelivery (version 1) must never rewind state.
+    transport.deliver(snapshotOf({ content: "v1", version: 1, headSequence: 0 }));
+    expect(ledger.getSnapshot().version).toBe(3); // never rewound
+    expect(ledger.getSnapshot().content).toBe("v2 latest!"); // never rewound
   });
 
   test("useSyncExternalStore snapshots are identity-stable between real changes", () => {
@@ -393,18 +420,27 @@ describe("client ledger core (§3)", () => {
     transport.setInitial(snapshotOf({ content: "seed", version: 1, headSequence: 1 }));
     ledger.start(transport);
     ledger.onEdit("seed typed words");
-    await tick(); // batch in flight, no response queued
-    // Another client coincidentally produces the same text.
+    await tick(); // batch parked in flight, no response queued
+    const firstId = (transport.batches[0] as SentBatch).operations[0]?.clientOpId;
+    // The send settles with an UNKNOWN outcome → the record goes unconfirmed.
+    transport.enqueueFailure(new Error("mystery transport collapse"));
+    await tick();
+    expect(ledger.getSnapshot().unconfirmedCount).toBe(1);
+
+    // Another client coincidentally produces the same text; the fresh read
+    // carries NO ack for our op. Text matching would retire it here (D6);
+    // identity evidence must not: the op re-pends and resends under the SAME
+    // clientOpId, which server dedupe makes safe.
     transport.deliver(
-      snapshotOf({
-        content: "seed typed words",
-        version: 2,
-        headSequence: 2,
-      }),
+      snapshotOf({ content: "seed typed words", version: 2, headSequence: 2 }),
     );
+    await tick();
     const state = ledger.getSnapshot();
-    expect(state.unsavedRecords).toHaveLength(1); // NOT retired by text
-    expect(state.unconfirmedCount).toBe(1);
+    expect(state.unsavedRecords[0]?.clientOpId).toBe(firstId); // identity preserved
+    expect(state.unsavedRecords[0]?.state).not.toBe("saved"); // NOT retired by text
+    expect(state.content).toContain("typed words"); // words stay visible
+    expect(transport.batches).toHaveLength(2); // evidence-gated resend
+    expect((transport.batches[1] as SentBatch).operations[0]?.clientOpId).toBe(firstId);
   });
 
   test("resends after a definite delivery failure reusing the SAME clientOpId", async () => {
@@ -461,14 +497,17 @@ describe("client ledger core (§3)", () => {
 
     // Fresh truth arrives; retry recomputes as fresh sibling ops.
     transport.deliver(snapshotOf({ content: "other", version: 2, headSequence: 1 }));
+    ledger.retryConflicts(); // sends the retry batch (parked)
     transport.enqueue(echoResponse(transport.batches[1] as SentBatch, 2));
-    ledger.retryConflicts();
     await tick();
     const retry = transport.batches[1] as SentBatch;
     expect(retry.operations[0]?.clientOpId).not.toBe(firstId); // fresh identity
-    expect(retry.operations[0]?.operation).toEqual({
+    // A full replacement is a delete+insert SIBLING PAIR from the fresh base.
+    expect(retry.operations).toHaveLength(2);
+    expect(retry.operations[0]?.operation).toEqual({ type: "delete", position: 0, length: 5 });
+    expect(retry.operations[1]?.operation).toEqual({
       type: "insert",
-      position: 5,
+      position: 0,
       content: "clashing words",
     });
     expect(retry.operations[0]?.clientSequence).toBe(1); // rebased watermark
@@ -487,13 +526,19 @@ describe("client ledger core (§3)", () => {
       snapshotOf({ content: "remote a remote b", version: 3, headSequence: 2 }),
     );
     // Flush now: the diff runs against the FRESH base, words intact.
+    ledger.flushNow(); // sends the batch (parked)
     transport.enqueue(echoResponse(transport.batches[0] as SentBatch, 3));
-    ledger.flushNow();
     await tick();
     const batch = transport.batches[0] as SentBatch;
-    expect(batch.operations[0]?.operation).toEqual({
+    // Full replacement = delete+insert sibling pair from the fresh base.
+    expect(batch.operations.map((op) => op.operation.type)).toEqual([
+      "delete",
+      "insert",
+    ]);
+    expect(batch.operations[0]?.operation).toEqual({ type: "delete", position: 0, length: 17 });
+    expect(batch.operations[1]?.operation).toEqual({
       type: "insert",
-      position: 17,
+      position: 0,
       content: "buffer words",
     });
     expect(batch.operations[0]?.clientSequence).toBe(2); // fresh watermark

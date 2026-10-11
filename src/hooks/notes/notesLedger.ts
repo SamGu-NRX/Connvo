@@ -20,6 +20,7 @@
  * `useSyncExternalStore`; all logic lives here, framework-free.
  */
 
+import type { Id } from "@convex/_generated/dataModel";
 import { applyOperations, diffToSiblingOps } from "./notesDiff";
 import type {
   BatchApplyNoteOperationsResponse,
@@ -56,7 +57,8 @@ export interface NotesLedgerRecord {
 }
 
 export interface NotesLedgerOptions {
-  meetingId: string;
+  /** Branded meeting id — passed verbatim to the transport seam (types.ts). */
+  meetingId: Id<"meetings">;
   clientId: string;
   /** Debounce for keystroke flushes; 0 sends on the next microtask-ish tick. */
   debounceMs?: number;
@@ -154,6 +156,17 @@ function normalizeRestoredRecord(record: NotesLedgerRecord): NotesLedgerRecord {
   return record;
 }
 
+/** Record states the pinned contract exposes as visible unsaved work. */
+type UnsavedRecordState = Exclude<NotesLedgerRecordState, "saved">;
+
+/** Type predicate: filtering on it proves the mapped records match the pinned
+ * `unsavedRecords` state union — no cast between map and snapshot. */
+function isUnsaved(
+  record: NotesLedgerRecord,
+): record is NotesLedgerRecord & { state: UnsavedRecordState } {
+  return record.state !== "saved";
+}
+
 function isWellFormedSnapshot(snapshot: NotesServerSnapshot): boolean {
   return (
     typeof snapshot.content === "string" &&
@@ -176,13 +189,13 @@ function defaultStorage(): Storage | null {
 }
 
 export class NotesLedger {
-  readonly meetingId: string;
+  readonly meetingId: Id<"meetings">;
   readonly clientId: string;
 
   private readonly debounceMs: number;
   private readonly storage: Storage | null;
   private readonly now: () => number;
-  private readonly generateId: () => number | string;
+  private readonly generateId: () => number;
   private readonly listeners = new Set<() => void>();
 
   private records = new Map<string, NotesLedgerRecord>();
@@ -408,9 +421,15 @@ export class NotesLedger {
    * keep their clientOpIds (their outcome must resolve on identity evidence).
    */
   private recomputeStalePendingOps(snapshot: NotesServerSnapshot): void {
+    // Only NEVER-SENT pending ops are stale (attempts === 0): they carry no
+    // server identity to preserve. A pended op that was already transmitted
+    // — including one just demoted from unconfirmed — keeps its clientOpId:
+    // its outcome must resolve on identity evidence, and the resend under
+    // the same id is exactly what server dedupe makes safe.
     const stale = [...this.records.values()].filter(
       (record) =>
         record.state === "pending" &&
+        record.attempts === 0 &&
         record.clientSequence < snapshot.headSequence,
     );
     if (stale.length === 0) return;
@@ -440,9 +459,7 @@ export class NotesLedger {
 
   /** Rebase onto server truth when no live records exist. */
   private rebaseIfSafe(): void {
-    const live = [...this.records.values()].filter(
-      (record) => record.state !== "saved",
-    );
+    const live = [...this.records.values()].filter(isUnsaved);
     if (live.length > 0) return;
     this.baseVersion = this.serverVersion;
     this.baseContent = this.serverContent;
@@ -664,7 +681,7 @@ export class NotesLedger {
 
   private buildSnapshot(): UseNotesLedgerResult {
     const all = [...this.records.values()];
-    const live = all.filter((record) => record.state !== "saved");
+    const live = all.filter(isUnsaved);
     const isLoading = this.serverVersion < 0;
     const hasConflict = live.some(
       (record) => record.state === "conflict" || record.state === "rejected",
