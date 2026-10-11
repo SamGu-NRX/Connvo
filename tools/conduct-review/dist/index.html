@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connvo conduct review — offline demo</title>
+<style>
+  :root {
+    --ink: #1c1e21; --ink-soft: #565b62; --ink-faint: #8a9099;
+    --paper: #f5f5f4; --card: #ffffff; --line: #d9dbde; --line-strong: #b7babf;
+    --good: #2e5d3f; --warn: #7a4a12; --focus: #3b5bdb;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; padding: 1.25rem; background: var(--paper); color: var(--ink);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 60rem; margin: 0 auto; }
+  h1 { font-size: 1.15rem; margin: 0 0 .2rem; }
+  .synthetic-note { margin: 0 0 1rem; color: var(--ink-soft); font-size: .85rem; }
+  [role="tablist"] { display: flex; gap: .35rem; border-bottom: 1px solid var(--line-strong); }
+  [role="tab"] {
+    appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none;
+    padding: .5rem .9rem; font: inherit; color: var(--ink-soft); cursor: pointer;
+    border-radius: .5rem .5rem 0 0;
+  }
+  [role="tab"][aria-selected="true"] {
+    background: var(--card); border-color: var(--line-strong); color: var(--ink);
+    margin-bottom: -1px; font-weight: 600;
+  }
+  [role="tab"]:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 2px;
+  }
+  main { padding-top: 1rem; }
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: .6rem;
+    padding: 1rem 1.1rem; margin-bottom: 1rem;
+  }
+  .panel h2 { font-size: 1rem; margin: 0 0 .6rem; }
+  .notice { color: var(--ink-soft); font-size: .9rem; margin: .3rem 0 .8rem; }
+  .badge {
+    display: inline-block; border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: .05rem .6rem; font-size: .8rem; color: var(--ink-soft); background: var(--paper);
+  }
+  .badge.state-closed { color: var(--good); border-color: var(--good); }
+  .opaque { padding: 1.1rem; text-align: center; color: var(--ink-soft); }
+  label { display: block; font-size: .9rem; margin: .7rem 0 .25rem; font-weight: 600; }
+  textarea, select, input {
+    width: 100%; font: inherit; padding: .45rem .6rem; border: 1px solid var(--line-strong);
+    border-radius: .4rem; background: #fff; color: var(--ink);
+  }
+  textarea { min-height: 7rem; resize: vertical; }
+  .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+  button.action {
+    font: inherit; padding: .45rem .95rem; border-radius: .4rem; cursor: pointer;
+    border: 1px solid var(--line-strong); background: #fff; color: var(--ink);
+  }
+  button.action.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  button.action:disabled { opacity: .45; cursor: not-allowed; }
+  .statement-block {
+    border-left: 3px solid var(--line-strong); padding: .4rem .8rem; margin: .5rem 0;
+    white-space: pre-wrap; background: var(--paper); border-radius: 0 .4rem .4rem 0;
+  }
+  .evidence-entry { border: 1px dashed var(--line-strong); border-radius: .4rem; padding: .5rem .75rem; margin: .5rem 0; }
+  .evidence-entry .facts { margin: .3rem 0 0; padding-left: 1.1rem; }
+  .export-pre {
+    background: #14161a; color: #d7dadf; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: .8rem; border-radius: .5rem; overflow: auto; max-height: 22rem; white-space: pre-wrap;
+  }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { display: flex; gap: .7rem; padding: .3rem 0; font-size: .9rem; color: var(--ink-soft); }
+  .timeline time { font-variant-numeric: tabular-nums; color: var(--ink-faint); min-width: 7.2rem; }
+  .error-line { color: var(--warn); font-size: .9rem; min-height: 1.2em; margin: .4rem 0; }
+  footer { margin-top: 1.2rem; color: var(--ink-faint); font-size: .8rem; }
+  @media (max-width: 480px) {
+    body { padding: .8rem; }
+    [role="tablist"] { flex-wrap: wrap; }
+    .panel { padding: .85rem; }
+    .timeline time { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Conduct review — offline proposal demo</h1>
+    <p class="synthetic-note">Every person, id and note on this page is synthetic. The page makes no network calls and never reads a clock: timestamps come from the demo script.</p>
+  </header>
+
+  <nav role="tablist" aria-label="Role view">
+    <button role="tab" id="tab-reporter" aria-controls="panel-reporter" aria-selected="true">Reporter</button>
+    <button role="tab" id="tab-subject" aria-controls="panel-subject" aria-selected="false" tabindex="-1">Subject</button>
+    <button role="tab" id="tab-reviewer" aria-controls="panel-reviewer" aria-selected="false" tabindex="-1">Reviewer</button>
+  </nav>
+
+  <main>
+    <section id="panel-reporter" role="tabpanel" aria-labelledby="tab-reporter"></section>
+    <section id="panel-subject" role="tabpanel" aria-labelledby="tab-subject" hidden></section>
+    <section id="panel-reviewer" role="tabpanel" aria-labelledby="tab-reviewer" hidden></section>
+
+    <section class="panel" aria-labelledby="timeline-h">
+      <h2 id="timeline-h">Case history</h2>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <div class="error-line" id="error-line" role="status" aria-live="polite"></div>
+  </main>
+
+  <footer id="build-footer"></footer>
+</div>
+
+<script>/*__ENGINE_BUNDLE_START__*/
+
+/* ---- core (core.js) ---- */
+/**
+ * Connvo conduct-review — policy-first offline engine (synthetic data only).
+ *
+ * Zero dependencies. No clock reads (every call takes `now`), no randomness,
+ * no I/O, no notifications, no irreversible operations: every transition is
+ * reversible and every actor action is checked against role, state, and
+ * per-case authorization, in that order.
+ *
+ * Disclosure is an allowlist, never a blocklist: `buildView` returns exactly
+ * the fields a role may see in the record's current state — nothing more.
+ */
+
+const STATES = ['draft', 'submitted', 'triaged', 'closed'];
+
+const CATEGORIES = ['general_conduct', 'communication_conduct', 'harassment_conduct'];
+
+const OUTCOMES = ['no_concern', 'documented_feedback', 'insufficient_evidence'];
+
+const TRANSITIONS = {
+  submit: { from: 'draft', to: 'submitted', role: 'reporter' },
+  withdraw_to_draft: { from: 'submitted', to: 'draft', role: 'reporter' },
+  triage: { from: 'submitted', to: 'triaged', role: 'reviewer', requiresAuthorization: true },
+  close: { from: 'triaged', to: 'closed', role: 'reviewer', requiresAuthorization: true },
+  reopen_to_triaged: { from: 'closed', to: 'triaged', role: 'reviewer', requiresAuthorization: true },
+};
+
+const DISCLOSURE_POLICY = {
+  // reporter: sees their own report end to end; never evidence, never
+  // reviewer identity, never the subject's response.
+  reporter: {
+    draft: ['caseId', 'state', 'stateLabel', 'notice', 'canEdit', 'statement', 'category', 'meetingId', 'availableActions'],
+    submitted: ['caseId', 'state', 'stateLabel', 'notice', 'statement', 'category', 'meetingId', 'availableActions'],
+    triaged: ['caseId', 'state', 'stateLabel', 'notice', 'statement', 'category', 'meetingId', 'availableActions'],
+    closed: ['caseId', 'state', 'stateLabel', 'notice', 'statement', 'category', 'meetingId', 'outcome', 'outcomeNotice', 'availableActions'],
+  },
+  // subject: learns a report exists only once it is triaged, gets the
+  // category and meeting (never the statement, never names), and may add
+  // one response.
+  subject: {
+    draft: [],
+    submitted: [],
+    triaged: ['exists', 'caseId', 'state', 'stateLabel', 'notice', 'category', 'categoryNotice', 'meetingId', 'canRespond', 'responseRecorded', 'availableActions'],
+    closed: ['exists', 'caseId', 'state', 'stateLabel', 'notice', 'category', 'categoryNotice', 'meetingId', 'canRespond', 'responseRecorded', 'outcome', 'outcomeNotice', 'availableActions'],
+  },
+  // reviewer: content only after an explicit per-case grant; otherwise a
+  // bare queue card.
+  reviewer: {
+    draft: ['caseId', 'state', 'stateLabel', 'authorized', 'availableActions'],
+    submitted: ['caseId', 'state', 'stateLabel', 'authorized', 'availableActions'],
+    triaged: ['caseId', 'state', 'stateLabel', 'authorized', 'statement', 'statementNotice', 'evidence', 'subjectResponse', 'availableActions'],
+    closed: ['caseId', 'state', 'stateLabel', 'authorized', 'statement', 'statementNotice', 'evidence', 'subjectResponse', 'outcome', 'resolutionNote', 'outcomeNotice', 'availableActions'],
+  },
+};
+
+const EXPORT_FORMAT = 'connvo.conduct-review.redacted-export';
+const EXPORT_VERSION = '1.0.0';
+
+class AccessError extends Error { constructor(m) { super(m); this.name = 'AccessError'; } }
+class StateError extends Error { constructor(m) { super(m); this.name = 'StateError'; } }
+class ConflictError extends Error { constructor(m) { super(m); this.name = 'ConflictError'; } }
+class ValidationError extends Error { constructor(m) { super(m); this.name = 'ValidationError'; } }
+class AuthorizationError extends Error { constructor(m) { super(m); this.name = 'AuthorizationError'; } }
+class ExportRefusalError extends Error { constructor(m) { super(m); this.name = 'ExportRefusalError'; } }
+
+function resolveActorRole(record, personId) {
+  if (!record || typeof personId !== 'string') return null;
+  if (record.reporterId === personId) return 'reporter';
+  if (record.subjectId === personId) return 'subject';
+  // Anyone else is on the reviewer side of the counterparty relationship —
+  // what they may do is decided by the per-case grant (AuthorizationError),
+  // not by role resolution.
+  return 'reviewer';
+}
+
+function isAuthorized(record, reviewerId) {
+  return Array.isArray(record.reviewGrants) &&
+    record.reviewGrants.some(function (g) { return g.reviewerId === reviewerId; });
+}
+
+function pushHistory(record, action, from, to, role, now) {
+  if (typeof now !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(now)) throw new ValidationError('now must be an ISO timestamp string; the engine never reads a clock');
+  record.history.push({ at: now, byRole: role, action: action, from: from, to: to });
+}
+
+function bumpRevision(record) {
+  record.revision = record.revision + 1;
+}
+
+function assertExpectedRevision(record, expectedRevision) {
+  if (expectedRevision === undefined || expectedRevision === null) throw new ConflictError('expectedRevision is required for every mutating call (optimistic concurrency)');
+  if (record.revision !== expectedRevision) {
+    throw new ConflictError('revision conflict: the record changed since you loaded it (expected ' + String(expectedRevision) + ', current ' + String(record.revision) + ')');
+  }
+}
+
+/** Create a case in draft. The subject is not notified of anything — ever — by this engine. */
+function createCase(input) {
+  if (!input || typeof input !== 'object') throw new ValidationError('input object required');
+  for (const k of ['caseId', 'reporterId', 'subjectId', 'meetingId', 'category']) {
+    if (typeof input[k] !== 'string' || !input[k]) throw new ValidationError(k + ' must be a non-empty string');
+  }
+  if (CATEGORIES.indexOf(input.category) === -1) throw new ValidationError('unknown category: ' + input.category);
+  if (typeof input.now !== 'string') throw new ValidationError('now must be an ISO timestamp string');
+  var record = {
+    caseId: input.caseId,
+    reporterId: input.reporterId,
+    subjectId: input.subjectId,
+    meetingId: input.meetingId,
+    category: input.category,
+    state: 'draft',
+    revision: 0,
+    statement: '',
+    evidence: Array.isArray(input.evidence) ? input.evidence : [],
+    subjectResponse: null,
+    reviewGrants: [],
+    outcome: null,
+    resolutionNote: null,
+    history: [],
+  };
+  pushHistory(record, 'create', null, 'draft', 'reporter', input.now);
+  return record;
+}
+
+/** Reporter-only draft edit. Guards: role → state → revision. */
+function updateDraft(record, actorId, patch, expectedRevision, now) {
+  var role = resolveActorRole(record, actorId);
+  if (role !== 'reporter') throw new AccessError('only the reporter can edit the draft');
+  if (record.state !== 'draft') throw new StateError('the report is only editable in draft (current: ' + record.state + ')');
+  assertExpectedRevision(record, expectedRevision);
+  if (!patch || typeof patch !== 'object') throw new ValidationError('patch object required');
+  if ('statement' in patch && typeof patch.statement !== 'string') throw new ValidationError('statement must be a string');
+  if ('category' in patch && CATEGORIES.indexOf(patch.category) === -1) throw new ValidationError('unknown category: ' + String(patch.category));
+  if ('meetingId' in patch && (typeof patch.meetingId !== 'string' || !patch.meetingId)) throw new ValidationError('meetingId must be a non-empty string');
+  if ('statement' in patch) record.statement = patch.statement;
+  if ('category' in patch) record.category = patch.category;
+  if ('meetingId' in patch) record.meetingId = patch.meetingId;
+  bumpRevision(record);
+  pushHistory(record, 'update_draft', 'draft', 'draft', role, now);
+  return record;
+}
+
+/** Per-case reviewer authorization, granted by a second reviewer. Grant-only; never self-served. */
+function grantReviewAuthorization(record, grant, expectedRevision, now) {
+  if (!grant || typeof grant.reviewerId !== 'string' || !grant.reviewerId) throw new ValidationError('reviewerId required');
+  if (typeof grant.grantedBy !== 'string' || !grant.grantedBy) throw new ValidationError('grantedBy (second reviewer) required');
+  if (grant.reviewerId === record.reporterId || grant.reviewerId === record.subjectId) {
+    throw new ValidationError('the reporter or subject of a case cannot be its reviewer');
+  }
+  assertExpectedRevision(record, expectedRevision);
+  if (isAuthorized(record, grant.reviewerId)) throw new ValidationError('reviewer is already authorized for this case');
+  record.reviewGrants.push({ reviewerId: grant.reviewerId, grantedBy: grant.grantedBy, at: now });
+  bumpRevision(record);
+  pushHistory(record, 'grant_authorization', record.state, record.state, 'reviewer', now);
+  return record;
+}
+
+/** Subject adds their account, once, while the case is open. Visible to authorized reviewers only. */
+function addSubjectResponse(record, actorId, response, expectedRevision, now) {
+  var role = resolveActorRole(record, actorId);
+  if (role !== 'subject') throw new AccessError('only the subject can add their account');
+  if (record.state !== 'triaged') throw new StateError('the subject account is open only while the case is triaged (current: ' + record.state + ')');
+  if (record.subjectResponse) throw new ConflictError('the subject account was already shared (once only)');
+  assertExpectedRevision(record, expectedRevision);
+  if (!response || typeof response.text !== 'string' || !response.text.trim()) throw new ValidationError('a non-empty text is required');
+  record.subjectResponse = { text: response.text, at: now };
+  bumpRevision(record);
+  pushHistory(record, 'subject_response', record.state, record.state, 'subject', now);
+  return record;
+}
+
+/**
+ * The only state machine entry. Guards run in a fixed order: actor role →
+ * transition validity for the current state → per-case authorization →
+ * revision conflict → transition-specific guards (evidence rules on close).
+ */
+function applyTransition(record, action, actorId, options) {
+  var t = TRANSITIONS[action];
+  if (!t) throw new ValidationError('unknown transition: ' + String(action));
+  var role = resolveActorRole(record, actorId);
+  if (role !== t.role) throw new AccessError('transition ' + action + ' requires the ' + t.role + ' role');
+  if (record.state !== t.from) throw new StateError('transition ' + action + ' is not valid from state ' + record.state);
+  if (t.requiresAuthorization && !isAuthorized(record, actorId)) {
+    throw new AuthorizationError('this reviewer has not been granted per-case authorization by a second reviewer');
+  }
+  assertExpectedRevision(record, options ? options.expectedRevision : undefined);
+
+  if (action === 'close') {
+    var opts = options || {};
+    var outcome = opts.outcome;
+    if (OUTCOMES.indexOf(outcome) === -1) throw new ValidationError('close requires an outcome among: ' + OUTCOMES.join(', '));
+    var factEvidence = (record.evidence || []).filter(function (e) { return Array.isArray(e.facts) && e.facts.length > 0; });
+    if (factEvidence.length === 0 && outcome !== 'insufficient_evidence') {
+      throw new StateError('no independently collected evidence on file: close as insufficient_evidence instead of ' + outcome);
+    }
+    var hasConflict = factEvidence.length > 1 && new Set(factEvidence.map(function (e) { return e.facts.join('|'); })).size > 1;
+    if (outcome === 'no_concern' && hasConflict && (!opts.resolutionNote || !String(opts.resolutionNote).trim())) {
+      throw new StateError('evidence on file conflicts: a quiet no-concern closure requires a written resolution note');
+    }
+    record.outcome = outcome;
+    record.resolutionNote = opts.resolutionNote ? String(opts.resolutionNote) : null;
+  }
+
+  var from = record.state;
+  record.state = t.to;
+  if (action !== 'close' && action !== 'reopen_to_triaged') { /* outcome fields persist only via close/reopen */ }
+  if (action === 'reopen_to_triaged') { record.outcome = null; record.resolutionNote = null; }
+  bumpRevision(record);
+  pushHistory(record, action, from, t.to, role, options ? options.now : undefined);
+  return record;
+}
+
+var STATE_LABELS = {
+  draft: 'draft',
+  submitted: 'submitted',
+  triaged: 'triaged',
+  closed: 'closed',
+};
+
+var STATE_NOTICES = {
+  reporter: {
+    draft: 'draft (only the reporter knows this report exists)',
+    submitted: 'submitted — the review team can accept it for review',
+    triaged: 'accepted for review — a reviewer with per-case authorization is looking at it',
+    closed: 'closed — the outcome below is final for this proposal (it can be reopened by the review team)',
+  },
+  subject: {
+    triaged: 'A report about one of your meetings was accepted for review. The reviewer sees the meeting and the category — not who is involved. You can add your account once, optionally.',
+    closed: 'The review of the report about your meeting has closed. The outcome is shown below; no other case content is shared with you.',
+  },
+  reviewer: {},
+};
+
+/**
+ * Actions the given actor may take right now, derived only from the policy
+ * tables and the record — the UI never invents its own action list.
+ */
+function allowedActions(record, actorId) {
+  var role = resolveActorRole(record, actorId);
+  var out = [];
+  for (var name in TRANSITIONS) {
+    var t = TRANSITIONS[name];
+    if (t.role !== role || record.state !== t.from) continue;
+    if (t.requiresAuthorization && !isAuthorized(record, actorId)) continue;
+    out.push(name);
+  }
+  return out;
+}
+
+/** Computed view fields per role (in addition to the policy allowlist). */
+var DISCLOSURE_COMPUTED = {
+  reporter: ['notice', 'canEdit', 'availableActions'],
+  subject: ['notice', 'categoryNotice', 'canRespond', 'responseRecorded', 'outcomeNotice', 'availableActions'],
+  reviewer: ['authorized', 'statementNotice', 'evidence', 'subjectResponse', 'availableActions'],
+};
+
+/** Exact-disclosure view: only allowlisted fields, computed per role × state. */
+function buildView(record, role) {
+  if (!record || typeof role !== 'string') throw new ValidationError('record and role required');
+  var stateFields = (DISCLOSURE_POLICY[role] || {})[record.state];
+  if (!stateFields || stateFields.length === 0) {
+    // Unknown role, or a state with no disclosure for this role (the subject
+    // in draft/submitted): the view shows nothing, not even existence.
+    return { exists: false };
+  }
+  var view = { state: record.state, stateLabel: STATE_LABELS[record.state] };
+  for (var f of stateFields) {
+    if (f === 'exists') { view.exists = true; continue; }
+    view[f] = record[f];
+  }
+
+  // Computed, non-identity fields.
+  if (role === 'reporter') {
+    view.notice = STATE_NOTICES.reporter[record.state];
+    view.canEdit = record.state === 'draft';
+  }
+  if (role === 'subject') {
+    view.notice = STATE_NOTICES.subject[record.state] || null;
+    view.categoryNotice = 'Review category: ' + record.category;
+    view.canRespond = record.state === 'triaged' && !record.subjectResponse;
+    view.responseRecorded = Boolean(record.subjectResponse);
+    view.outcomeNotice = record.state === 'closed'
+      ? 'Outcome: ' + record.outcome + '. This is the only case content shared with you.'
+      : null;
+  }
+  if (role === 'reviewer') {
+    // View-layer authorization reflects the demo's single reviewer seat:
+    // per-person enforcement happens in applyTransition/buildExport, which
+    // take explicit caller ids.
+    view.authorized = Array.isArray(record.reviewGrants) && record.reviewGrants.length > 0;
+    if (stateFields.indexOf('statement') !== -1) {
+      view.statementNotice = 'an unverified account, not a finding — weigh it against independently collected evidence';
+      view.evidence = (record.evidence || []).map(function (e) {
+        return { at: e.at, facts: e.facts, collectedBy: '[reviewer]' };
+      });
+      view.subjectResponse = record.subjectResponse
+        ? { text: record.subjectResponse.text, at: record.subjectResponse.at }
+        : null;
+    }
+  }
+  // The action list always comes from the engine's policy table — for the
+  // demo's single reviewer seat, the first per-case grant is the seat.
+  var seatId = role === 'reporter' ? record.reporterId
+    : role === 'subject' ? record.subjectId
+    : (view.authorized ? record.reviewGrants[0].reviewerId : null);
+  if (seatId && stateFields.indexOf('availableActions') !== -1) {
+    view.availableActions = allowedActions(record, seatId);
+  }
+  return view;
+}
+
+/** Identity-shaped substrings that must never survive into an export. */
+var IDENTITY_PATTERNS = [
+  /[\w.+-]+@[\w-]+\.[\w.]{2,}/g,   // emails
+  /https?:\/\/\S+/g,               // urls
+  /\+?\d[\d\s().-]{7,}\d/g,        // phone-like digit runs
+  /\B@[a-z0-9_]{3,}/gi,            // @handles
+  /\bper_[a-z0-9_]+\b/gi,          // person ids
+  /\bcase_[a-z0-9_-]+\b/gi,        // case refs
+  /\bmtg_[a-z0-9_-]+\b/gi,         // meeting refs
+];
+
+function scrubPatterns(text) {
+  var out = String(text);
+  for (var re of IDENTITY_PATTERNS) out = out.replace(new RegExp(re.source, re.flags), '[redacted]');
+  return out;
+}
+
+function scrub(text, tokens) {
+  var out = scrubPatterns(text);
+  for (var t of tokens) {
+    if (!t || t.length < 4) continue; // ignore ultra-short tokens to avoid mangling text
+    while (out.indexOf(t) !== -1) out = out.replace(t, '[redacted]');
+  }
+  return out;
+}
+
+/** Deep scrub: every string in a value, at any nesting depth. */
+function scrubValue(v, tokens) {
+  if (typeof v === 'string') return scrub(v, tokens);
+  if (Array.isArray(v)) return v.map(function (x) { return scrubValue(x, tokens); });
+  if (v && typeof v === 'object') {
+    var out = {};
+    for (var k in v) out[k] = scrubValue(v[k], tokens);
+    return out;
+  }
+  return v;
+}
+
+/**
+ * Redacted export for an explicitly authorized reviewer. Fails closed: an
+ * unauthorized caller gets a refusal; an unknown field in the export shape
+ * is a hard error, never a silent pass-through. Identity tokens (names, ids,
+ * emails, phones, urls, handles) are scrubbed from every string.
+ */
+function buildExport(record, caller) {
+  if (!caller || typeof caller.reviewerId !== 'string') throw new ExportRefusalError('export requires an explicit reviewer identity');
+  if (!isAuthorized(record, caller.reviewerId)) {
+    throw new ExportRefusalError('export refused: this reviewer has not been granted per-case authorization');
+  }
+  var allowed = new Set(['statement', 'evidence', 'subjectResponse', 'category', 'outcome', 'resolutionNote']);
+  var requested = caller.fields || ['statement', 'evidence', 'subjectResponse', 'category', 'outcome', 'resolutionNote'];
+  for (var f of requested) {
+    if (!allowed.has(f)) throw new ExportRefusalError('export refused: unknown or disallowed field ' + String(f));
+  }
+  var identityTokens = caller.identityTokens || [];
+  var content = {};
+  for (var f2 of requested) {
+    content[f2] = scrubValue(record[f2], identityTokens);
+    if (f2 === 'evidence' && Array.isArray(content[f2])) {
+      // Provenance and internal ids never survive; collectedBy is a role.
+      content[f2] = content[f2].map(function (item) {
+        var clean = {};
+        for (var k in item) {
+          if (k === 'id') continue;
+          clean[k] = k === 'collectedBy' && typeof item[k] === 'string' && item[k].indexOf('per_') === 0 ? '[reviewer]' : item[k];
+        }
+        return clean;
+      });
+    }
+  }
+  return {
+    format: EXPORT_FORMAT,
+    version: EXPORT_VERSION,
+    caseRevision: record.revision,
+    generatedAt: caller.now,
+    state: record.state,
+    content: content,
+  };
+}
+
+
+/* ---- fixtures (fixtures.js) ---- */
+/**
+ * Synthetic fixtures — every person, id, email and note here is invented.
+ * The clock is fixed: no test or build ever reads the real time.
+ */
+
+
+const TS = {
+  t0: '2026-10-10T19:00:00.000Z', // case created
+  t1: '2026-10-10T19:03:00.000Z', // draft statement written
+  t2: '2026-10-10T19:06:00.000Z', // submitted
+  t3: '2026-10-10T19:10:00.000Z', // per-case reviewer authorization granted
+  t4: '2026-10-10T19:20:00.000Z', // triaged
+  t5: '2026-10-10T19:35:00.000Z', // subject account shared
+  t6: '2026-10-10T19:50:00.000Z', // closed
+};
+
+const PEOPLE = {
+  reporter: { id: 'per_casey_rivera', name: 'Casey Rivera', email: 'casey.rivera@example.net', phone: '+1 555 010 2233' },
+  subject: { id: 'per_jordan_lee', name: 'Jordan Lee' },
+  reviewerAuthorized: { id: 'per_priya_rao', name: 'Priya Rao' },
+  reviewerGrantor: { id: 'per_marco_diaz', name: 'Marco Diaz' },
+  witness: { id: 'per_morgan_tan', name: 'Morgan Tan' },
+};
+
+/** Fresh deep copies, so a test can never mutate another test's people. */
+function makePeople() {
+  return JSON.parse(JSON.stringify(PEOPLE));
+}
+
+function makeReviewers() {
+  var p = makePeople();
+  return { grantor: p.reviewerGrantor, authorized: p.reviewerAuthorized };
+}
+
+const SYNTHETIC_STATEMENT =
+  'During our coffee chat in meeting mtg_syn_001, Jordan Lee repeatedly talked over me and ' +
+  'dismissed my questions, and the meeting became unproductive for me. Morgan Tan was also in ' +
+  'the meeting and may have seen part of it. I am asking for a reviewer to look at this; I am ' +
+  'not asking for any specific action. If needed you can reach me at casey.rivera@example.net ' +
+  'or +1 555 010 2233.';
+
+/** Reviewer-collected evidence entry. `facts` carry what was independently observed. */
+function evidenceWithFacts() {
+  return [
+    {
+      id: 'ev_syn_001',
+      collectedBy: PEOPLE.reviewerAuthorized.id,
+      at: TS.t4,
+      facts: ['Meeting notes from mtg_syn_001 independently confirm the described exchange took place as reported.'],
+    },
+  ];
+}
+
+/** Two evidence entries whose facts contradict each other. */
+function conflictingEvidence() {
+  return [
+    {
+      id: 'ev_syn_001',
+      collectedBy: PEOPLE.reviewerAuthorized.id,
+      at: TS.t4,
+      facts: ['Meeting notes from mtg_syn_001 independently confirm the described exchange took place as reported.'],
+    },
+    {
+      id: 'ev_syn_002',
+      collectedBy: PEOPLE.reviewerGrantor.id,
+      at: TS.t4,
+      facts: ['A separate attendee present for the whole meeting recalls no such exchange and describes the discussion as calm.'],
+    },
+  ];
+}
+
+/**
+ * Draft case with a statement and evidence on file, built through the real
+ * engine calls so the history reads exactly like a lived-in case.
+ */
+function draftCaseWithEvidence(options) {
+  var opts = options || {};
+  var p = makePeople();
+  var rec = createCase({
+    caseId: opts.caseId || 'case_syn_001',
+    reporterId: p.reporter.id,
+    subjectId: p.subject.id,
+    meetingId: opts.meetingId || 'mtg_syn_001',
+    category: opts.category || 'communication_conduct',
+    now: TS.t0,
+  });
+  rec = updateDraft(rec, p.reporter.id, { statement: SYNTHETIC_STATEMENT, category: opts.category || 'communication_conduct', meetingId: opts.meetingId || 'mtg_syn_001' }, rec.revision, TS.t1);
+  // Default to one collected evidence entry; pass evidence: [] to model a
+  // case with nothing independently collected.
+  rec.evidence = opts.evidence !== undefined ? opts.evidence : evidenceWithFacts();
+  return rec;
+}
+
+/** A case with nothing independently collected — must close as insufficient evidence. */
+function missingEvidenceCase() {
+  return draftCaseWithEvidence({ evidence: [] });
+}
+
+/** A case whose two evidence entries contradict each other. */
+function conflictingEvidenceCase() {
+  return draftCaseWithEvidence({ evidence: conflictingEvidence() });
+}
+
+
+/* ---- validate (validate.js) ---- */
+/**
+ * Independent export validator — deliberately does NOT import the engine's
+ * redaction logic. It re-derives the identity lexicon from the raw record and
+ * re-checks any export bundle against it. Fails closed: any doubt is a
+ * failing verdict, never a warning.
+ */
+
+const EXPECTED_EXPORT_FORMAT = 'connvo.conduct-review.redacted-export';
+const EXPECTED_EXPORT_VERSION = '1.0.0';
+
+const ALLOWED_CONTENT_FIELDS = new Set([
+  'statement', 'evidence', 'subjectResponse', 'category', 'outcome', 'resolutionNote',
+]);
+
+class InvalidExportError extends Error { constructor(m) { super(m); this.name = 'InvalidExportError'; } }
+
+/* Identity-shaped substrings, mirroring the engine's pattern list. */
+const VALIDATOR_IDENTITY_PATTERNS = [
+  /[\w.+-]+@[\w-]+\.[\w.]{2,}/g,
+  /https?:\/\/\S+/g,
+  /\+?\d[\d\s().-]{7,}\d/g,
+  /\B@[a-z0-9_]{3,}/gi,
+  /\bper_[a-z0-9_]+\b/gi,
+  /\bcase_[a-z0-9_-]+\b/gi,
+  /\bmtg_[a-z0-9_-]+\b/gi,
+];
+
+function collectRecordTokens(record) {
+  const tokens = new Set();
+  if (record.reporterId) tokens.add(record.reporterId);
+  if (record.subjectId) tokens.add(record.subjectId);
+  for (const g of record.reviewGrants || []) {
+    if (g.reviewerId) tokens.add(g.reviewerId);
+    if (g.grantedBy) tokens.add(g.grantedBy);
+  }
+  // Scan every string in the record, including statement and evidence free
+  // text: contact details embedded in a statement are exactly what must not
+  // survive into an export.
+  const scan = (value) => {
+    if (typeof value === 'string') {
+      for (const re of VALIDATOR_IDENTITY_PATTERNS) {
+        for (const m of value.match(new RegExp(re.source, re.flags)) || []) tokens.add(m);
+      }
+    } else if (Array.isArray(value)) {
+      value.forEach(scan);
+    } else if (value && typeof value === 'object') {
+      Object.values(value).forEach(scan);
+    }
+  };
+  scan(record);
+  return [...tokens].filter((t) => t.length >= 4);
+}
+
+function describeSource(token, record) {
+  if (token === record.reporterId) return 'reporter identity';
+  if (token === record.subjectId) return 'subject identity';
+  return 'identity-shaped token';
+}
+
+/**
+ * Validate an export bundle against the record it claims to come from.
+ * Returns { ok: true } or { ok: false, error }. Error messages name the
+ * problem and field, and never echo the offending value.
+ */
+function validateExport(bundle, record) {
+  if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle)) {
+    throw new InvalidExportError('bundle must be an object');
+  }
+  if (bundle.format !== EXPECTED_EXPORT_FORMAT) {
+    return { ok: false, error: 'format mismatch: expected ' + EXPECTED_EXPORT_FORMAT };
+  }
+  if (bundle.version !== EXPECTED_EXPORT_VERSION) {
+    return { ok: false, error: 'version mismatch: expected ' + EXPECTED_EXPORT_VERSION };
+  }
+  if (bundle.caseRevision !== record.revision) {
+    return { ok: false, error: 'stale bundle: built against revision ' + String(bundle.caseRevision) + ' but the record is at revision ' + String(record.revision) };
+  }
+  if (!bundle.content || typeof bundle.content !== 'object' || Array.isArray(bundle.content)) {
+    return { ok: false, error: 'content must be an object' };
+  }
+  for (const k of Object.keys(bundle.content)) {
+    if (!ALLOWED_CONTENT_FIELDS.has(k)) {
+      return { ok: false, error: 'unknown field in export content: ' + k };
+    }
+  }
+  for (const k of ['state', 'generatedAt', 'caseRevision']) {
+    if (!(k in bundle)) {
+      return { ok: false, error: 'missing bundle field: ' + k };
+    }
+  }
+
+  // Leak scan: no identity-shaped token from the record may survive.
+  const tokens = collectRecordTokens(record);
+  const contentJson = JSON.stringify(bundle.content);
+  for (const t of tokens) {
+    if (contentJson.indexOf(t) !== -1) {
+      return { ok: false, error: 'identity leak detected in export content (source: ' + describeSource(t, record) + ')' };
+    }
+  }
+  // Shape scan, independent of the record: anything that LOOKS like an
+  // identity (person/case/meeting id, email, url, phone, handle) fails even
+  // if the raw record never contained it. ISO timestamps are stripped first
+  // so digit-dash datetimes are not mistaken for phone numbers.
+  const KINDS = ['email or url', 'url', 'phone-like number', 'handle', 'person id', 'case ref', 'meeting ref'];
+  const probe = contentJson.replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z/g, '');
+  for (let i = 0; i < VALIDATOR_IDENTITY_PATTERNS.length; i++) {
+    const re = new RegExp(VALIDATOR_IDENTITY_PATTERNS[i].source, VALIDATOR_IDENTITY_PATTERNS[i].flags.replace('g', ''));
+    if (re.test(probe)) {
+      return { ok: false, error: 'identity-shaped content detected (' + KINDS[i] + ')' };
+    }
+  }
+  return { ok: true };
+}
+
+/** Test helper: plant a leak into a bundle so the validator must catch it. */
+function plantLeak(bundle, token) {
+  const copy = JSON.parse(JSON.stringify(bundle));
+  copy.content.statement = String(copy.content.statement || '') + ' ' + token;
+  return copy;
+}
+
+
+window.__ENGINE__ = {
+  core: { STATES, CATEGORIES, OUTCOMES, TRANSITIONS, DISCLOSURE_POLICY, AccessError, StateError, ConflictError, ValidationError, AuthorizationError, ExportRefusalError, resolveActorRole, isAuthorized, allowedActions, createCase, updateDraft, grantReviewAuthorization, addSubjectResponse, applyTransition, buildView, buildExport, EXPORT_FORMAT, EXPORT_VERSION },
+  fixtures: { TS, PEOPLE, makePeople, makeReviewers, SYNTHETIC_STATEMENT, evidenceWithFacts, conflictingEvidence, draftCaseWithEvidence, missingEvidenceCase, conflictingEvidenceCase },
+  validate: { validateExport, InvalidExportError, plantLeak, EXPECTED_EXPORT_FORMAT, EXPECTED_EXPORT_VERSION }
+};
+/*__ENGINE_BUNDLE_END__*/</script>
+<script>
+(function () {
+  'use strict';
+  var core = window.__ENGINE__.core;
+  var fixtures = window.__ENGINE__.fixtures;
+
+  var SEATS = { reporter: fixtures.PEOPLE.reporter.id, subject: fixtures.PEOPLE.subject.id, reviewer: fixtures.PEOPLE.reviewerAuthorized.id, grantor: fixtures.PEOPLE.reviewerGrantor.id };
+  var FIXED = fixtures.TS; // the demo script's clock — the page never reads the real time
+
+  var state = { record: null, tab: 'reporter', exportPreview: null };
+
+  function lastAt() {
+    var h = state.record.history;
+    return h[h.length - 1].at;
+  }
+
+  function freshCase() {
+    var rec = core.createCase({
+      caseId: 'case_syn_001',
+      reporterId: SEATS.reporter,
+      subjectId: SEATS.subject,
+      meetingId: 'mtg_syn_001',
+      category: 'communication_conduct',
+      now: FIXED.t0,
+    });
+    rec = core.updateDraft(rec, SEATS.reporter, { statement: fixtures.SYNTHETIC_STATEMENT, category: 'communication_conduct', meetingId: 'mtg_syn_001' }, rec.revision, FIXED.t1);
+    return rec;
+  }
+
+  function try_(fn, after) {
+    try { fn(); setError(''); } catch (e) { setError(e.message || String(e)); }
+    if (after) after();
+    render();
+  }
+
+  function setError(msg) { document.getElementById('error-line').textContent = msg || ''; }
+
+  /* ---- rendering: panels consume ONLY buildView output ------------------ */
+
+  function renderTimeline() {
+    var ol = document.getElementById('timeline');
+    ol.textContent = '';
+    state.record.history.forEach(function (h) {
+      var li = document.createElement('li');
+      var t = document.createElement('time');
+      t.textContent = h.at;
+      li.appendChild(t);
+      var span = document.createElement('span');
+      span.textContent = h.byRole + ' — ' + h.action + (h.from !== h.to ? ' (' + h.from + ' → ' + h.to + ')' : '');
+      li.appendChild(span);
+      ol.appendChild(li);
+    });
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function renderReporter(view, panel) {
+    panel.appendChild(el('h2', null, 'Reporter'));
+    panel.appendChild(el('p', 'badge', view.stateLabel));
+    panel.appendChild(el('p', 'notice', view.notice));
+    if (view.statement !== undefined) {
+      var lbl = el('label', null, 'Your statement');
+      lbl.htmlFor = 'rep-statement';
+      panel.appendChild(lbl);
+      var ta = el('textarea');
+      ta.id = 'rep-statement';
+      ta.value = view.statement || '';
+      ta.disabled = !view.canEdit;
+      ta.addEventListener('change', function () {
+        try_(function () {
+          state.record = core.updateDraft(state.record, SEATS.reporter, { statement: ta.value, category: view.category, meetingId: view.meetingId }, state.record.revision, FIXED.t2);
+        });
+      });
+      panel.appendChild(ta);
+      var cat = el('label', null, 'Category');
+      cat.htmlFor = 'rep-category';
+      panel.appendChild(cat);
+      var sel = el('select');
+      sel.id = 'rep-category';
+      sel.disabled = !view.canEdit;
+      core.CATEGORIES.forEach(function (c) {
+        var o = el('option', null, c);
+        o.value = c;
+        if (c === view.category) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function () {
+        try_(function () {
+          state.record = core.updateDraft(state.record, SEATS.reporter, { statement: ta.value, category: sel.value, meetingId: view.meetingId }, state.record.revision, FIXED.t2);
+        });
+      });
+      panel.appendChild(sel);
+      if (view.meetingId) panel.appendChild(el('p', 'notice', 'Meeting: ' + view.meetingId));
+    }
+    var actions = el('div', 'actions');
+    (view.availableActions || []).forEach(function (a) {
+      var b = el('button', 'action' + (a === 'submit' ? ' primary' : null), a === 'submit' ? 'Submit for review' : a === 'withdraw_to_draft' ? 'Withdraw to draft' : a);
+      b.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.applyTransition(state.record, a, SEATS.reporter, { expectedRevision: state.record.revision, now: FIXED.t2 });
+        });
+      });
+      actions.appendChild(b);
+    });
+    panel.appendChild(actions);
+  }
+
+  function renderSubject(view, panel) {
+    panel.appendChild(el('h2', null, 'Subject'));
+    if (!view.exists) {
+      panel.appendChild(el('div', 'opaque', 'Nothing is shared with you about this case yet.'));
+      return;
+    }
+    panel.appendChild(el('p', 'badge', view.stateLabel));
+    panel.appendChild(el('p', 'notice', view.notice));
+    panel.appendChild(el('p', 'notice', view.categoryNotice));
+    if (view.meetingId) panel.appendChild(el('p', 'notice', 'Meeting: ' + view.meetingId));
+    if (view.canRespond) {
+      var lbl = el('label', null, 'Add your account (once, optional)');
+      lbl.htmlFor = 'sub-response';
+      panel.appendChild(lbl);
+      var ta = el('textarea');
+      ta.id = 'sub-response';
+      panel.appendChild(ta);
+      var actions = el('div', 'actions');
+      var b = el('button', 'action primary', 'Share with reviewer');
+      b.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.addSubjectResponse(state.record, SEATS.subject, { text: ta.value }, state.record.revision, FIXED.t5);
+        });
+      });
+      actions.appendChild(b);
+      panel.appendChild(actions);
+    } else if (view.responseRecorded) {
+      panel.appendChild(el('p', 'notice', 'Your account was shared with the reviewer. It can be added only once.'));
+    }
+    if (view.outcomeNotice) panel.appendChild(el('p', 'notice', view.outcomeNotice));
+    (view.availableActions || []).forEach(function () { /* the subject has no state transitions by policy */ });
+  }
+
+  function renderReviewer(view, panel) {
+    panel.appendChild(el('h2', null, 'Reviewer'));
+    if (view.authorized !== undefined) {
+      panel.appendChild(el('p', 'badge', view.authorized ? 'per-case authorization: granted' : 'per-case authorization: none'));
+    }
+    if (!view.authorized && view.state === 'submitted') {
+      var gb = el('button', 'action primary', 'Grant per-case authorization (second reviewer)');
+      gb.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.grantReviewAuthorization(state.record, { reviewerId: SEATS.reviewer, grantedBy: SEATS.grantor }, state.record.revision, FIXED.t3);
+        });
+      });
+      panel.appendChild(el('div', 'actions')).appendChild(gb);
+      panel.appendChild(el('p', 'notice', 'Reading this case requires per-case authorization granted by a second reviewer (' + fixtures.PEOPLE.reviewerGrantor.name + ').'));
+    }
+    if (view.availableActions && view.availableActions.indexOf('triage') !== -1) {
+      var actions = el('div', 'actions');
+      var b = el('button', 'action primary', 'Triage (accept for review)');
+      b.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.applyTransition(state.record, 'triage', SEATS.reviewer, { expectedRevision: state.record.revision, now: FIXED.t4 });
+          // Demo setup, not a state bypass: attach one entry of reviewer-collected evidence.
+          state.record.evidence = fixtures.evidenceWithFacts();
+        });
+      });
+      actions.appendChild(b);
+      panel.appendChild(actions);
+    }
+    if (view.statement !== undefined && view.statement !== null) {
+      panel.appendChild(el('p', 'notice', 'Statement — ' + view.statementNotice));
+      panel.appendChild(el('div', 'statement-block', view.statement || '(empty)'));
+      (view.evidence || []).forEach(function (e) {
+        var box = el('div', 'evidence-entry');
+        box.appendChild(el('strong', null, 'Independently collected evidence (' + e.collectedBy + ')'));
+        var ul = el('ul', 'facts');
+        (e.facts || []).forEach(function (f) { ul.appendChild(el('li', null, f)); });
+        box.appendChild(ul);
+        panel.appendChild(box);
+      });
+      if (view.subjectResponse) {
+        panel.appendChild(el('p', 'notice', 'Subject account (shared by the subject):'));
+        panel.appendChild(el('div', 'statement-block', view.subjectResponse.text));
+      } else if (view.canRespond !== undefined) {
+        /* subject has not responded yet */
+      } else {
+        panel.appendChild(el('p', 'notice', 'The subject has not added an account.'));
+      }
+    } else if (view.authorized === false) {
+      panel.appendChild(el('p', 'notice', 'Case content is hidden until a second reviewer grants per-case authorization.'));
+    }
+    if (view.outcome) panel.appendChild(el('p', 'notice', 'Outcome: ' + view.outcome + (view.resolutionNote ? ' — ' + view.resolutionNote : '')));
+    if (view.availableActions && view.availableActions.indexOf('close') !== -1) {
+      var ocLbl = el('label', null, 'Outcome');
+      ocLbl.htmlFor = 'rev-outcome';
+      panel.appendChild(ocLbl);
+      var sel = el('select');
+      sel.id = 'rev-outcome';
+      core.OUTCOMES.forEach(function (o) { sel.appendChild((function () { var op = el('option', null, o); op.value = o; return op; })()); });
+      panel.appendChild(sel);
+      var noteLbl = el('label', null, 'Resolution note (required to close quietly with conflicting evidence)');
+      noteLbl.htmlFor = 'rev-note';
+      panel.appendChild(noteLbl);
+      var note = el('input');
+      note.id = 'rev-note';
+      panel.appendChild(note);
+      var actions2 = el('div', 'actions');
+      var cb = el('button', 'action primary', 'Close case');
+      cb.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.applyTransition(state.record, 'close', SEATS.reviewer, { expectedRevision: state.record.revision, now: FIXED.t6, outcome: sel.value, resolutionNote: note.value });
+        });
+      });
+      actions2.appendChild(cb);
+      panel.appendChild(actions2);
+    }
+    (view.availableActions || []).forEach(function (a) {
+      if (a !== 'triage' && a !== 'close') {
+        var rb = el('button', 'action', a === 'reopen_to_triaged' ? 'Reopen for review' : a);
+        rb.addEventListener('click', function () {
+          try_(function () {
+            state.record = core.applyTransition(state.record, a, SEATS.reviewer, { expectedRevision: state.record.revision, now: FIXED.t6 });
+          });
+        });
+        panel.appendChild(el('div', 'actions')).appendChild(rb);
+      }
+    });
+    if (view.authorized) {
+      var eb = el('button', 'action', 'Build redacted export');
+      eb.addEventListener('click', function () {
+        try_(function () {
+          state.exportPreview = core.buildExport(state.record, { reviewerId: SEATS.reviewer, now: lastAt() });
+          renderExport(state.exportPreview);
+        }, function () {});
+      });
+      panel.appendChild(el('div', 'actions')).appendChild(eb);
+    }
+  }
+
+  function renderExport(bundle) {
+    var old = document.getElementById('export-panel');
+    if (old) old.remove();
+    var p = el('section', 'panel');
+    p.id = 'export-panel';
+    p.appendChild(el('h2', null, 'Redacted export (' + bundle.format + ' v' + bundle.version + ')'));
+    var verdict = window.__ENGINE__.validate.validateExport(bundle, state.record);
+    p.appendChild(el('p', 'notice', verdict.ok ? 'Independent validator: PASS (no identity-shaped content)' : 'Independent validator: FAIL — ' + verdict.error));
+    var pre = el('pre', 'export-pre');
+    pre.textContent = JSON.stringify(bundle, null, 2);
+    p.appendChild(pre);
+    var dl = el('button', 'action', 'Download JSON');
+    dl.addEventListener('click', function () {
+      var blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'conduct-review-export.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    p.appendChild(el('div', 'actions')).appendChild(dl);
+    document.querySelector('main').appendChild(p);
+  }
+
+  function render() {
+    var r = state.record;
+    var map = { reporter: renderReporter, subject: renderSubject, reviewer: renderReviewer };
+    ['reporter', 'subject', 'reviewer'].forEach(function (role) {
+      var panel = document.getElementById('panel-' + role);
+      panel.textContent = '';
+      var view = core.buildView(r, role);
+      map[role](view, panel);
+      panel.hidden = state.tab !== role;
+      var tab = document.getElementById('tab-' + role);
+      tab.setAttribute('aria-selected', state.tab === role ? 'true' : 'false');
+      tab.tabIndex = state.tab === role ? 0 : -1;
+    });
+    renderTimeline();
+  }
+
+  /* ---- keyboard-accessible tabs ---------------------------------------- */
+  var TABS = ['reporter', 'subject', 'reviewer'];
+  TABS.forEach(function (role, i) {
+    document.getElementById('tab-' + role).addEventListener('click', function () { state.tab = role; render(); });
+    document.getElementById('tab-' + role).addEventListener('keydown', function (ev) {
+      var dir = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (!dir) return;
+      ev.preventDefault();
+      var next = TABS[(i + dir + TABS.length) % TABS.length];
+      state.tab = next;
+      render();
+      document.getElementById('tab-' + next).focus();
+    });
+  });
+
+  document.getElementById('build-footer').textContent =
+    'Synthetic demo · engine built offline · ' + core.STATES.join(' → ');
+
+  state.record = freshCase();
+  render();
+})();
+</script>
+</body>
+</html>

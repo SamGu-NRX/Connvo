@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connvo conduct review — offline demo</title>
+<style>
+  :root {
+    --ink: #1c1e21; --ink-soft: #565b62; --ink-faint: #8a9099;
+    --paper: #f5f5f4; --card: #ffffff; --line: #d9dbde; --line-strong: #b7babf;
+    --good: #2e5d3f; --warn: #7a4a12; --focus: #3b5bdb;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; padding: 1.25rem; background: var(--paper); color: var(--ink);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 60rem; margin: 0 auto; }
+  h1 { font-size: 1.15rem; margin: 0 0 .2rem; }
+  .synthetic-note { margin: 0 0 1rem; color: var(--ink-soft); font-size: .85rem; }
+  [role="tablist"] { display: flex; gap: .35rem; border-bottom: 1px solid var(--line-strong); }
+  [role="tab"] {
+    appearance: none; background: transparent; border: 1px solid transparent; border-bottom: none;
+    padding: .5rem .9rem; font: inherit; color: var(--ink-soft); cursor: pointer;
+    border-radius: .5rem .5rem 0 0;
+  }
+  [role="tab"][aria-selected="true"] {
+    background: var(--card); border-color: var(--line-strong); color: var(--ink);
+    margin-bottom: -1px; font-weight: 600;
+  }
+  [role="tab"]:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 2px;
+  }
+  main { padding-top: 1rem; }
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: .6rem;
+    padding: 1rem 1.1rem; margin-bottom: 1rem;
+  }
+  .panel h2 { font-size: 1rem; margin: 0 0 .6rem; }
+  .notice { color: var(--ink-soft); font-size: .9rem; margin: .3rem 0 .8rem; }
+  .badge {
+    display: inline-block; border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: .05rem .6rem; font-size: .8rem; color: var(--ink-soft); background: var(--paper);
+  }
+  .badge.state-closed { color: var(--good); border-color: var(--good); }
+  .opaque { padding: 1.1rem; text-align: center; color: var(--ink-soft); }
+  label { display: block; font-size: .9rem; margin: .7rem 0 .25rem; font-weight: 600; }
+  textarea, select, input {
+    width: 100%; font: inherit; padding: .45rem .6rem; border: 1px solid var(--line-strong);
+    border-radius: .4rem; background: #fff; color: var(--ink);
+  }
+  textarea { min-height: 7rem; resize: vertical; }
+  .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+  button.action {
+    font: inherit; padding: .45rem .95rem; border-radius: .4rem; cursor: pointer;
+    border: 1px solid var(--line-strong); background: #fff; color: var(--ink);
+  }
+  button.action.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  button.action:disabled { opacity: .45; cursor: not-allowed; }
+  .statement-block {
+    border-left: 3px solid var(--line-strong); padding: .4rem .8rem; margin: .5rem 0;
+    white-space: pre-wrap; background: var(--paper); border-radius: 0 .4rem .4rem 0;
+  }
+  .evidence-entry { border: 1px dashed var(--line-strong); border-radius: .4rem; padding: .5rem .75rem; margin: .5rem 0; }
+  .evidence-entry .facts { margin: .3rem 0 0; padding-left: 1.1rem; }
+  .export-pre {
+    background: #14161a; color: #d7dadf; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: .8rem; border-radius: .5rem; overflow: auto; max-height: 22rem; white-space: pre-wrap;
+  }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { display: flex; gap: .7rem; padding: .3rem 0; font-size: .9rem; color: var(--ink-soft); }
+  .timeline time { font-variant-numeric: tabular-nums; color: var(--ink-faint); min-width: 7.2rem; }
+  .error-line { color: var(--warn); font-size: .9rem; min-height: 1.2em; margin: .4rem 0; }
+  footer { margin-top: 1.2rem; color: var(--ink-faint); font-size: .8rem; }
+  @media (max-width: 480px) {
+    body { padding: .8rem; }
+    [role="tablist"] { flex-wrap: wrap; }
+    .panel { padding: .85rem; }
+    .timeline time { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Conduct review — offline proposal demo</h1>
+    <p class="synthetic-note">Every person, id and note on this page is synthetic. The page makes no network calls and never reads a clock: timestamps come from the demo script.</p>
+  </header>
+
+  <nav role="tablist" aria-label="Role view">
+    <button role="tab" id="tab-reporter" aria-controls="panel-reporter" aria-selected="true">Reporter</button>
+    <button role="tab" id="tab-subject" aria-controls="panel-subject" aria-selected="false" tabindex="-1">Subject</button>
+    <button role="tab" id="tab-reviewer" aria-controls="panel-reviewer" aria-selected="false" tabindex="-1">Reviewer</button>
+  </nav>
+
+  <main>
+    <section id="panel-reporter" role="tabpanel" aria-labelledby="tab-reporter"></section>
+    <section id="panel-subject" role="tabpanel" aria-labelledby="tab-subject" hidden></section>
+    <section id="panel-reviewer" role="tabpanel" aria-labelledby="tab-reviewer" hidden></section>
+
+    <section class="panel" aria-labelledby="timeline-h">
+      <h2 id="timeline-h">Case history</h2>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <div class="error-line" id="error-line" role="status" aria-live="polite"></div>
+  </main>
+
+  <footer id="build-footer"></footer>
+</div>
+
+<script>/*__ENGINE_BUNDLE_START__*/window.__ENGINE__ = { core: {}, fixtures: {}, validate: {} };/*__ENGINE_BUNDLE_END__*/</script>
+<script>
+(function () {
+  'use strict';
+  var core = window.__ENGINE__.core;
+  var fixtures = window.__ENGINE__.fixtures;
+
+  var SEATS = { reporter: fixtures.PEOPLE.reporter.id, subject: fixtures.PEOPLE.subject.id, reviewer: fixtures.PEOPLE.reviewerAuthorized.id, grantor: fixtures.PEOPLE.reviewerGrantor.id };
+  var FIXED = fixtures.TS; // the demo script's clock — the page never reads the real time
+
+  var state = { record: null, tab: 'reporter', exportPreview: null };
+
+  function lastAt() {
+    var h = state.record.history;
+    return h[h.length - 1].at;
+  }
+
+  function freshCase() {
+    var rec = core.createCase({
+      caseId: 'case_syn_001',
+      reporterId: SEATS.reporter,
+      subjectId: SEATS.subject,
+      meetingId: 'mtg_syn_001',
+      category: 'communication_conduct',
+      now: FIXED.t0,
+    });
+    rec = core.updateDraft(rec, SEATS.reporter, { statement: fixtures.SYNTHETIC_STATEMENT, category: 'communication_conduct', meetingId: 'mtg_syn_001' }, rec.revision, FIXED.t1);
+    return rec;
+  }
+
+  function try_(fn, after) {
+    try { fn(); setError(''); } catch (e) { setError(e.message || String(e)); }
+    if (after) after();
+    render();
+  }
+
+  function setError(msg) { document.getElementById('error-line').textContent = msg || ''; }
+
+  /* ---- rendering: panels consume ONLY buildView output ------------------ */
+
+  function renderTimeline() {
+    var ol = document.getElementById('timeline');
+    ol.textContent = '';
+    state.record.history.forEach(function (h) {
+      var li = document.createElement('li');
+      var t = document.createElement('time');
+      t.textContent = h.at;
+      li.appendChild(t);
+      var span = document.createElement('span');
+      span.textContent = h.byRole + ' — ' + h.action + (h.from !== h.to ? ' (' + h.from + ' → ' + h.to + ')' : '');
+      li.appendChild(span);
+      ol.appendChild(li);
+    });
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function renderReporter(view, panel) {
+    panel.appendChild(el('h2', null, 'Reporter'));
+    panel.appendChild(el('p', 'badge', view.stateLabel));
+    panel.appendChild(el('p', 'notice', view.notice));
+    if (view.statement !== undefined) {
+      var lbl = el('label', null, 'Your statement');
+      lbl.htmlFor = 'rep-statement';
+      panel.appendChild(lbl);
+      var ta = el('textarea');
+      ta.id = 'rep-statement';
+      ta.value = view.statement || '';
+      ta.disabled = !view.canEdit;
+      ta.addEventListener('change', function () {
+        try_(function () {
+          state.record = core.updateDraft(state.record, SEATS.reporter, { statement: ta.value, category: view.category, meetingId: view.meetingId }, state.record.revision, FIXED.t2);
+        });
+      });
+      panel.appendChild(ta);
+      var cat = el('label', null, 'Category');
+      cat.htmlFor = 'rep-category';
+      panel.appendChild(cat);
+      var sel = el('select');
+      sel.id = 'rep-category';
+      sel.disabled = !view.canEdit;
+      core.CATEGORIES.forEach(function (c) {
+        var o = el('option', null, c);
+        o.value = c;
+        if (c === view.category) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function () {
+        try_(function () {
+          state.record = core.updateDraft(state.record, SEATS.reporter, { statement: ta.value, category: sel.value, meetingId: view.meetingId }, state.record.revision, FIXED.t2);
+        });
+      });
+      panel.appendChild(sel);
+      if (view.meetingId) panel.appendChild(el('p', 'notice', 'Meeting: ' + view.meetingId));
+    }
+    var actions = el('div', 'actions');
+    (view.availableActions || []).forEach(function (a) {
+      var b = el('button', 'action' + (a === 'submit' ? ' primary' : null), a === 'submit' ? 'Submit for review' : a === 'withdraw_to_draft' ? 'Withdraw to draft' : a);
+      b.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.applyTransition(state.record, a, SEATS.reporter, { expectedRevision: state.record.revision, now: FIXED.t2 });
+        });
+      });
+      actions.appendChild(b);
+    });
+    panel.appendChild(actions);
+  }
+
+  function renderSubject(view, panel) {
+    panel.appendChild(el('h2', null, 'Subject'));
+    if (!view.exists) {
+      panel.appendChild(el('div', 'opaque', 'Nothing is shared with you about this case yet.'));
+      return;
+    }
+    panel.appendChild(el('p', 'badge', view.stateLabel));
+    panel.appendChild(el('p', 'notice', view.notice));
+    panel.appendChild(el('p', 'notice', view.categoryNotice));
+    if (view.meetingId) panel.appendChild(el('p', 'notice', 'Meeting: ' + view.meetingId));
+    if (view.canRespond) {
+      var lbl = el('label', null, 'Add your account (once, optional)');
+      lbl.htmlFor = 'sub-response';
+      panel.appendChild(lbl);
+      var ta = el('textarea');
+      ta.id = 'sub-response';
+      panel.appendChild(ta);
+      var actions = el('div', 'actions');
+      var b = el('button', 'action primary', 'Share with reviewer');
+      b.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.addSubjectResponse(state.record, SEATS.subject, { text: ta.value }, state.record.revision, FIXED.t5);
+        });
+      });
+      actions.appendChild(b);
+      panel.appendChild(actions);
+    } else if (view.responseRecorded) {
+      panel.appendChild(el('p', 'notice', 'Your account was shared with the reviewer. It can be added only once.'));
+    }
+    if (view.outcomeNotice) panel.appendChild(el('p', 'notice', view.outcomeNotice));
+    (view.availableActions || []).forEach(function () { /* the subject has no state transitions by policy */ });
+  }
+
+  function renderReviewer(view, panel) {
+    panel.appendChild(el('h2', null, 'Reviewer'));
+    if (view.authorized !== undefined) {
+      panel.appendChild(el('p', 'badge', view.authorized ? 'per-case authorization: granted' : 'per-case authorization: none'));
+    }
+    if (!view.authorized && view.state === 'submitted') {
+      var gb = el('button', 'action primary', 'Grant per-case authorization (second reviewer)');
+      gb.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.grantReviewAuthorization(state.record, { reviewerId: SEATS.reviewer, grantedBy: SEATS.grantor }, state.record.revision, FIXED.t3);
+        });
+      });
+      panel.appendChild(el('div', 'actions')).appendChild(gb);
+      panel.appendChild(el('p', 'notice', 'Reading this case requires per-case authorization granted by a second reviewer (' + fixtures.PEOPLE.reviewerGrantor.name + ').'));
+    }
+    if (view.availableActions && view.availableActions.indexOf('triage') !== -1) {
+      var actions = el('div', 'actions');
+      var b = el('button', 'action primary', 'Triage (accept for review)');
+      b.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.applyTransition(state.record, 'triage', SEATS.reviewer, { expectedRevision: state.record.revision, now: FIXED.t4 });
+          // Demo setup, not a state bypass: attach one entry of reviewer-collected evidence.
+          state.record.evidence = fixtures.evidenceWithFacts();
+        });
+      });
+      actions.appendChild(b);
+      panel.appendChild(actions);
+    }
+    if (view.statement !== undefined && view.statement !== null) {
+      panel.appendChild(el('p', 'notice', 'Statement — ' + view.statementNotice));
+      panel.appendChild(el('div', 'statement-block', view.statement || '(empty)'));
+      (view.evidence || []).forEach(function (e) {
+        var box = el('div', 'evidence-entry');
+        box.appendChild(el('strong', null, 'Independently collected evidence (' + e.collectedBy + ')'));
+        var ul = el('ul', 'facts');
+        (e.facts || []).forEach(function (f) { ul.appendChild(el('li', null, f)); });
+        box.appendChild(ul);
+        panel.appendChild(box);
+      });
+      if (view.subjectResponse) {
+        panel.appendChild(el('p', 'notice', 'Subject account (shared by the subject):'));
+        panel.appendChild(el('div', 'statement-block', view.subjectResponse.text));
+      } else if (view.canRespond !== undefined) {
+        /* subject has not responded yet */
+      } else {
+        panel.appendChild(el('p', 'notice', 'The subject has not added an account.'));
+      }
+    } else if (view.authorized === false) {
+      panel.appendChild(el('p', 'notice', 'Case content is hidden until a second reviewer grants per-case authorization.'));
+    }
+    if (view.outcome) panel.appendChild(el('p', 'notice', 'Outcome: ' + view.outcome + (view.resolutionNote ? ' — ' + view.resolutionNote : '')));
+    if (view.availableActions && view.availableActions.indexOf('close') !== -1) {
+      var ocLbl = el('label', null, 'Outcome');
+      ocLbl.htmlFor = 'rev-outcome';
+      panel.appendChild(ocLbl);
+      var sel = el('select');
+      sel.id = 'rev-outcome';
+      core.OUTCOMES.forEach(function (o) { sel.appendChild((function () { var op = el('option', null, o); op.value = o; return op; })()); });
+      panel.appendChild(sel);
+      var noteLbl = el('label', null, 'Resolution note (required to close quietly with conflicting evidence)');
+      noteLbl.htmlFor = 'rev-note';
+      panel.appendChild(noteLbl);
+      var note = el('input');
+      note.id = 'rev-note';
+      panel.appendChild(note);
+      var actions2 = el('div', 'actions');
+      var cb = el('button', 'action primary', 'Close case');
+      cb.addEventListener('click', function () {
+        try_(function () {
+          state.record = core.applyTransition(state.record, 'close', SEATS.reviewer, { expectedRevision: state.record.revision, now: FIXED.t6, outcome: sel.value, resolutionNote: note.value });
+        });
+      });
+      actions2.appendChild(cb);
+      panel.appendChild(actions2);
+    }
+    (view.availableActions || []).forEach(function (a) {
+      if (a !== 'triage' && a !== 'close') {
+        var rb = el('button', 'action', a === 'reopen_to_triaged' ? 'Reopen for review' : a);
+        rb.addEventListener('click', function () {
+          try_(function () {
+            state.record = core.applyTransition(state.record, a, SEATS.reviewer, { expectedRevision: state.record.revision, now: FIXED.t6 });
+          });
+        });
+        panel.appendChild(el('div', 'actions')).appendChild(rb);
+      }
+    });
+    if (view.authorized) {
+      var eb = el('button', 'action', 'Build redacted export');
+      eb.addEventListener('click', function () {
+        try_(function () {
+          state.exportPreview = core.buildExport(state.record, { reviewerId: SEATS.reviewer, now: lastAt() });
+          renderExport(state.exportPreview);
+        }, function () {});
+      });
+      panel.appendChild(el('div', 'actions')).appendChild(eb);
+    }
+  }
+
+  function renderExport(bundle) {
+    var old = document.getElementById('export-panel');
+    if (old) old.remove();
+    var p = el('section', 'panel');
+    p.id = 'export-panel';
+    p.appendChild(el('h2', null, 'Redacted export (' + bundle.format + ' v' + bundle.version + ')'));
+    var verdict = window.__ENGINE__.validate.validateExport(bundle, state.record);
+    p.appendChild(el('p', 'notice', verdict.ok ? 'Independent validator: PASS (no identity-shaped content)' : 'Independent validator: FAIL — ' + verdict.error));
+    var pre = el('pre', 'export-pre');
+    pre.textContent = JSON.stringify(bundle, null, 2);
+    p.appendChild(pre);
+    var dl = el('button', 'action', 'Download JSON');
+    dl.addEventListener('click', function () {
+      var blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'conduct-review-export.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    p.appendChild(el('div', 'actions')).appendChild(dl);
+    document.querySelector('main').appendChild(p);
+  }
+
+  function render() {
+    var r = state.record;
+    var map = { reporter: renderReporter, subject: renderSubject, reviewer: renderReviewer };
+    ['reporter', 'subject', 'reviewer'].forEach(function (role) {
+      var panel = document.getElementById('panel-' + role);
+      panel.textContent = '';
+      var view = core.buildView(r, role);
+      map[role](view, panel);
+      panel.hidden = state.tab !== role;
+      var tab = document.getElementById('tab-' + role);
+      tab.setAttribute('aria-selected', state.tab === role ? 'true' : 'false');
+      tab.tabIndex = state.tab === role ? 0 : -1;
+    });
+    renderTimeline();
+  }
+
+  /* ---- keyboard-accessible tabs ---------------------------------------- */
+  var TABS = ['reporter', 'subject', 'reviewer'];
+  TABS.forEach(function (role, i) {
+    document.getElementById('tab-' + role).addEventListener('click', function () { state.tab = role; render(); });
+    document.getElementById('tab-' + role).addEventListener('keydown', function (ev) {
+      var dir = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (!dir) return;
+      ev.preventDefault();
+      var next = TABS[(i + dir + TABS.length) % TABS.length];
+      state.tab = next;
+      render();
+      document.getElementById('tab-' + next).focus();
+    });
+  });
+
+  document.getElementById('build-footer').textContent =
+    'Synthetic demo · engine built offline · ' + core.STATES.join(' → ');
+
+  state.record = freshCase();
+  render();
+})();
+</script>
+</body>
+</html>
