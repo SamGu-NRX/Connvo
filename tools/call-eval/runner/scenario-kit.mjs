@@ -71,11 +71,14 @@ export async function click(peer, testId) {
 }
 
 /**
- * Join A and B against ctx.url with optional query params and a relay-only
- * RTCConfiguration override (applied to BOTH peers — the H-07 debug proved
- * host/relay asymmetry stalls candidates).
+ * Join A and B against ctx.url with optional query params. The rtcConfig
+ * parameter stays undefined unless a caller pins one: when the context has
+ * relay enabled (H-07/H-15), ctx.launchPeer then resolves each peer's own
+ * relay-only RTCConfiguration through that peer's shaper, so media flows the
+ * harness-controlled path. Passing null explicitly also resolves from the
+ * context (launchPeer treats null as "no explicit config").
  */
-export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = {}, rtcConfig = null, timeoutMs = 30000 } = {}) {
+export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = {}, rtcConfig, timeoutMs = 30000 } = {}) {
   const t0 = Date.now();
   const [peerA, peerB] = await Promise.all([
     ctx.launchPeer(a, paramsA, rtcConfig),

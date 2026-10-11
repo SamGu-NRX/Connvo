@@ -179,12 +179,13 @@ export class RunContext {
   }
 
   /**
-   * Launch one peer page. `rtcConfig` overrides the participant-specific
-   * default (joinPair passes a single config for both peers unless given
-   * per-participant overrides).
+   * Launch one peer page. `rtcConfig` overrides the per-participant default;
+   * null or undefined both mean "no explicit config" — the context then
+   * resolves the relay-only config itself (H-07/H-15 route media through the
+   * participant's shaper). joinPair deliberately passes neither.
    */
   async launchPeer(participant, params = {}, rtcConfig) {
-    const config = rtcConfig !== undefined ? rtcConfig : await this.rtcConfigFor(participant);
+    const config = rtcConfig ?? (await this.rtcConfigFor(participant));
     const { video, audio } = this.fixturePaths(participant);
     const { launchPeer: launch } = await import("./peers.mjs");
     const query = new URLSearchParams({ as: participant, meeting: this.meetingId ?? "bench-meeting", ...params });
