@@ -524,6 +524,11 @@ export class FakeConvexClient {
     this.ackLossArmed = true;
   }
 
+  /** Read-only probe used by the walk to prove the armed state is visible. */
+  get isAckLossArmed(): boolean {
+    return this.ackLossArmed;
+  }
+
   async runAction(name: string, args: Record<string, unknown>): Promise<unknown> {
     // Actions are one-shot and NOT replayed by Convex; offline they fail.
     if (this.connection === "offline") {

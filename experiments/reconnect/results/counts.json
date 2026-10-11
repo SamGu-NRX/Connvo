@@ -3,8 +3,8 @@
   "question": "What happens to unsent, unacknowledged, and re-sent note operations and meeting lifecycle mutations across connection cuts in the real hooks?",
   "vitest": {
     "config": "experiments/reconnect/vitest.config.ts",
-    "suites": 3,
-    "scenarios": 23,
+    "suites": 4,
+    "scenarios": 29,
     "status": "passed"
   },
   "scenarios": [
@@ -367,6 +367,72 @@
       },
       "handler": "meetings/lifecycle.ts: createMeeting",
       "observedDuplicateVerdict": "duplicate ACCEPTED again — two separate meeting documents created (retry after a lost create ack duplicates the meeting)"
+    },
+    {
+      "id": "production-handlers/notes-first-delivery",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "first delivery of insert 'hello' @expectedVersion 0 is accepted by notes.applyNoteOperation",
+      "sources": [],
+      "counts": {
+        "observed": "accepted"
+      },
+      "handler": "notes.applyNoteOperation"
+    },
+    {
+      "id": "production-handlers/notes-duplicate-identical-args",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a blind re-send (same args) is REJECTED: CONFLICT 409 Version mismatch; op applied exactly once",
+      "sources": [],
+      "counts": {
+        "observed": "rejected"
+      },
+      "handler": "notes.applyNoteOperation"
+    },
+    {
+      "id": "production-handlers/notes-duplicate-version-aware",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a re-based duplicate (same clientSequence, refetched expectedVersion) is ACCEPTED and applied again — content duplicated",
+      "sources": [],
+      "counts": {
+        "observed": "accepted"
+      },
+      "handler": "notes.applyNoteOperation"
+    },
+    {
+      "id": "production-handlers/lifecycle-start-duplicate",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a duplicate startMeeting is REJECTED: Meeting is already active (state guard; no idempotency key consulted)",
+      "sources": [],
+      "counts": {
+        "observed": "rejected"
+      },
+      "handler": "meetings.lifecycle.startMeeting"
+    },
+    {
+      "id": "production-handlers/lifecycle-end-duplicate",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a duplicate endMeeting is REJECTED: Can only end active meetings (VALIDATION_ERROR 400)",
+      "sources": [],
+      "counts": {
+        "observed": "rejected"
+      },
+      "handler": "meetings.lifecycle.endMeeting"
+    },
+    {
+      "id": "production-handlers/webhook-duplicate-redelivery",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a redelivered GetStream webhook is DEDUPED by withIdempotency (keys 0->1->1, first result replayed)",
+      "sources": [],
+      "counts": {
+        "observed": "deduped"
+      },
+      "handler": "meetings.stream.streamHandlers.dispatchWebhook"
     }
   ]
 }

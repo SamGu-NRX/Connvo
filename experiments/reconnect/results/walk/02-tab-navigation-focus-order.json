@@ -1,0 +1,23 @@
+{
+  "step": "tab-navigation-focus-order",
+  "mechanism": "tab",
+  "focus": "editor",
+  "focusOutline": "solid 3px rgb(110, 168, 255)",
+  "state": {
+    "conn": "status: online",
+    "inflight": "unacked/queued mutations: 0",
+    "ackArmed": "ack loss armed: false",
+    "isLoading": "isLoading: false",
+    "isSyncing": "isSyncing: false",
+    "saved": "saved (query cache): hello @v3",
+    "serverTruth": "server truth: hello @v3",
+    "duplicates": "duplicate acceptances: 0",
+    "meetingState": "server meeting state: scheduled",
+    "isStarting": "isStarting: false",
+    "isEnding": "isEnding: false",
+    "error": "error: null",
+    "keyboardLegend": true,
+    "focus": "editor",
+    "focusOutline": "solid 3px rgb(110, 168, 255)"
+  }
+}

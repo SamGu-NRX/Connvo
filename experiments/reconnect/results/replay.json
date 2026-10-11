@@ -116,6 +116,36 @@
       "id": "production/lifecycle-create-duplicate",
       "layer": "production-handler",
       "agrees": true
+    },
+    {
+      "id": "production-handlers/notes-first-delivery",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/notes-duplicate-identical-args",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/notes-duplicate-version-aware",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/lifecycle-start-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/lifecycle-end-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/webhook-duplicate-redelivery",
+      "layer": "production-handler",
+      "agrees": true
     }
   ]
 }

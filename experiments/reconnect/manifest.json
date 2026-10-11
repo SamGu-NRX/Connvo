@@ -118,7 +118,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (notes/mutations.ts: applyNoteOperation)",
-      "expectation": "verbatim duplicate (stale expectedVersion) rejected; a re-based duplicate re-applies — clientSequence dedupes nothing [OBSERVED — see results/vitest receipt]",
+      "expectation": "verbatim duplicate (stale expectedVersion) rejected; a re-based duplicate re-applies \u2014 clientSequence dedupes nothing [OBSERVED \u2014 see results/vitest receipt]",
       "order": 1
     },
     {
@@ -126,7 +126,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (notes/mutations.ts: applyNoteOperation)",
-      "expectation": "the hook's clientTimestamp shape is rejected by the validator (clientSequence required) [OBSERVED — see results/vitest receipt]",
+      "expectation": "the hook's clientTimestamp shape is rejected by the validator (clientSequence required) [OBSERVED \u2014 see results/vitest receipt]",
       "order": 2
     },
     {
@@ -134,7 +134,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (notes/mutations.ts: batchApplyNoteOperations)",
-      "expectation": "stale duplicate rejected; re-based duplicate re-applies with server-side position transformation [OBSERVED — see results/vitest receipt]",
+      "expectation": "stale duplicate rejected; re-based duplicate re-applies with server-side position transformation [OBSERVED \u2014 see results/vitest receipt]",
       "order": 3
     },
     {
@@ -142,7 +142,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (notes/offline.ts: queueOfflineOperations)",
-      "expectation": "duplicate accepted: two queue rows for the same operationId, distinct server queueIds [OBSERVED — see results/vitest receipt]",
+      "expectation": "duplicate accepted: two queue rows for the same operationId, distinct server queueIds [OBSERVED \u2014 see results/vitest receipt]",
       "order": 4
     },
     {
@@ -150,7 +150,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (notes/offline.ts: syncOfflineOperations)",
-      "expectation": "duplicate deduped by the pending->synced status transition; content applied once [OBSERVED — see results/vitest receipt]",
+      "expectation": "duplicate deduped by the pending->synced status transition; content applied once [OBSERVED \u2014 see results/vitest receipt]",
       "order": 5
     },
     {
@@ -158,7 +158,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (notes/offline.ts: retryFailedOperations)",
-      "expectation": "duplicate retries reject deterministically (nested-sync identity loss under convex-test — harness artifact); exhausted rows excluded silently [OBSERVED — see results/vitest receipt]",
+      "expectation": "duplicate retries reject deterministically (nested-sync identity loss under convex-test \u2014 harness artifact); exhausted rows excluded silently [OBSERVED \u2014 see results/vitest receipt]",
       "order": 6
     },
     {
@@ -166,7 +166,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (meetings/lifecycle.ts: startMeeting)",
-      "expectation": "duplicate rejected by the state guard; no idempotency keys engaged [OBSERVED — see results/vitest receipt]",
+      "expectation": "duplicate rejected by the state guard; no idempotency keys engaged [OBSERVED \u2014 see results/vitest receipt]",
       "order": 7
     },
     {
@@ -174,7 +174,7 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (meetings/lifecycle.ts: endMeeting)",
-      "expectation": "duplicate rejected by the state guard [OBSERVED — see results/vitest receipt]",
+      "expectation": "duplicate rejected by the state guard [OBSERVED \u2014 see results/vitest receipt]",
       "order": 8
     },
     {
@@ -182,8 +182,62 @@
       "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
       "layer": "production-handler",
       "world": "registered production handler under convex-test (meetings/lifecycle.ts: createMeeting)",
-      "expectation": "duplicate accepted: two separate meeting documents created [OBSERVED — see results/vitest receipt]",
+      "expectation": "duplicate accepted: two separate meeting documents created [OBSERVED \u2014 see results/vitest receipt]",
       "order": 9
+    },
+    {
+      "id": "production-handlers/notes-first-delivery",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "first delivery of insert 'hello' @expectedVersion 0 is accepted by notes.applyNoteOperation",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "notes/first-delivery"
+    },
+    {
+      "id": "production-handlers/notes-duplicate-identical-args",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a blind re-send (same args) is REJECTED: CONFLICT 409 Version mismatch; op applied exactly once",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "notes/duplicate-identical-args"
+    },
+    {
+      "id": "production-handlers/notes-duplicate-version-aware",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a re-based duplicate (same clientSequence, refetched expectedVersion) is ACCEPTED and applied again \u2014 content duplicated",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "notes/duplicate-version-aware"
+    },
+    {
+      "id": "production-handlers/lifecycle-start-duplicate",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a duplicate startMeeting is REJECTED: Meeting is already active (state guard; no idempotency key consulted)",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "lifecycle/start-duplicate"
+    },
+    {
+      "id": "production-handlers/lifecycle-end-duplicate",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a duplicate endMeeting is REJECTED: Can only end active meetings (VALIDATION_ERROR 400)",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "lifecycle/end-duplicate"
+    },
+    {
+      "id": "production-handlers/webhook-duplicate-redelivery",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a redelivered GetStream webhook is DEDUPED by withIdempotency (keys 0->1->1, first result replayed)",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "webhook/duplicate-redelivery"
     }
   ],
   "layers": {

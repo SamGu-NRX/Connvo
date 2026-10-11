@@ -2,112 +2,152 @@
   "layer": "production-handler",
   "backend": "convex-test 0.0.38 against the real schema, validators, and auth guards",
   "note": "verdicts are what the REGISTERED handlers did when the same delivery arrived twice — observed, not scripted in the fake transport",
-  "scenarios": [
-    {
-      "id": "production/notes-apply-duplicate",
-      "handler": "notes/mutations.ts: applyNoteOperation",
-      "observedDuplicateVerdict": "verbatim duplicate (stale expectedVersion) REJECTED by the expectedVersion guard; a re-based duplicate (same clientSequence) is ACCEPTED and applied a second time — clientSequence dedupes nothing, content doubled",
-      "counts": {
-        "deliveries": 3,
-        "outcomes": {
-          "accepted": 2,
-          "rejected": 1
+  "suites": {
+    "scenariosProductionHandlersTest": [
+      {
+        "id": "production/notes-apply-duplicate",
+        "handler": "notes/mutations.ts: applyNoteOperation",
+        "observedDuplicateVerdict": "verbatim duplicate (stale expectedVersion) REJECTED by the expectedVersion guard; a re-based duplicate (same clientSequence) is ACCEPTED and applied a second time — clientSequence dedupes nothing, content doubled",
+        "counts": {
+          "deliveries": 3,
+          "outcomes": {
+            "accepted": 2,
+            "rejected": 1
+          }
+        }
+      },
+      {
+        "id": "production/notes-hook-args",
+        "handler": "notes/mutations.ts: applyNoteOperation",
+        "observedDuplicateVerdict": "n/a — single delivery; confirms hook↔validator arg mismatch",
+        "counts": {
+          "deliveries": 1,
+          "outcomes": {
+            "rejected": 1
+          }
+        }
+      },
+      {
+        "id": "production/notes-batch-duplicate",
+        "handler": "notes/mutations.ts: batchApplyNoteOperations",
+        "observedDuplicateVerdict": "stale duplicate REJECTED by the expectedVersion guard (seen as CONFLICT after the first batch bumped the version); a re-based duplicate (same clientSequences) is ACCEPTED and re-applies every op with positions transformed server-side — sequence numbers dedupe nothing",
+        "counts": {
+          "deliveries": 3,
+          "outcomes": {
+            "accepted": 2,
+            "rejected": 1
+          }
+        }
+      },
+      {
+        "id": "production/offline-queue-duplicate",
+        "handler": "notes/offline.ts: queueOfflineOperations",
+        "observedDuplicateVerdict": "duplicate ACCEPTED again — two queue rows for the same operationId (no dedupe; queueIds differ per call)",
+        "counts": {
+          "deliveries": 2,
+          "outcomes": {
+            "accepted": 2
+          }
+        }
+      },
+      {
+        "id": "production/offline-sync-duplicate",
+        "handler": "notes/offline.ts: syncOfflineOperations",
+        "observedDuplicateVerdict": "duplicate DEDUPED by the pending->synced status transition (second sync is a no-op); content applied once",
+        "counts": {
+          "deliveries": 2,
+          "outcomes": {
+            "accepted": 1,
+            "deduped": 1
+          }
+        }
+      },
+      {
+        "id": "production/offline-retry-duplicate",
+        "handler": "notes/offline.ts: retryFailedOperations",
+        "observedDuplicateVerdict": "duplicate retries reject deterministically (UNAUTHORIZED 'Authentication required' — nested sync loses caller identity under convex-test, a harness artifact; transaction rolls back, row untouched); retries on an exhausted row (attempts >= maxRetries) are zero-delta no-ops (retriedCount 0) — silently, with no surfaced error",
+        "harnessNote": "convex-test 0.0.38 does not propagate caller identity into nested ctx.runMutation (get-convex/convex-test#50, open), so a retry whose row-set is non-empty rejects UNAUTHORIZED before the nested sync can run; the post-reset sync behavior is not observable through this harness. Recorded as observed.",
+        "counts": {
+          "deliveries": 4,
+          "outcomes": {
+            "rejected": 2,
+            "deduped": 2
+          }
+        }
+      },
+      {
+        "id": "production/lifecycle-start-duplicate",
+        "handler": "meetings/lifecycle.ts: startMeeting",
+        "observedDuplicateVerdict": "duplicate REJECTED by the state guard ('Meeting is already active') — protection is incidental state-machine ordering, not idempotency (idempotencyKeys rows: 0)",
+        "counts": {
+          "deliveries": 2,
+          "outcomes": {
+            "accepted": 1,
+            "rejected": 1
+          }
+        }
+      },
+      {
+        "id": "production/lifecycle-end-duplicate",
+        "handler": "meetings/lifecycle.ts: endMeeting",
+        "observedDuplicateVerdict": "duplicate REJECTED by the state guard ('Can only end active meetings') — again ordering, not idempotency",
+        "counts": {
+          "deliveries": 2,
+          "outcomes": {
+            "accepted": 1,
+            "rejected": 1
+          }
+        }
+      },
+      {
+        "id": "production/lifecycle-create-duplicate",
+        "handler": "meetings/lifecycle.ts: createMeeting",
+        "observedDuplicateVerdict": "duplicate ACCEPTED again — two separate meeting documents created (retry after a lost create ack duplicates the meeting)",
+        "counts": {
+          "deliveries": 2,
+          "outcomes": {
+            "accepted": 2
+          }
         }
       }
-    },
-    {
-      "id": "production/notes-hook-args",
-      "handler": "notes/mutations.ts: applyNoteOperation",
-      "observedDuplicateVerdict": "n/a — single delivery; confirms hook↔validator arg mismatch",
-      "counts": {
-        "deliveries": 1,
-        "outcomes": {
-          "rejected": 1
-        }
+    ],
+    "productionHandlersScript": [
+      {
+        "id": "notes/first-delivery",
+        "handler": "notes.applyNoteOperation",
+        "delivery": "op insert 'hello' @0, clientSequence 0, expectedVersion 0",
+        "observed": "accepted"
+      },
+      {
+        "id": "notes/duplicate-identical-args",
+        "handler": "notes.applyNoteOperation",
+        "delivery": "exact redelivery: same op, same clientSequence 0, same expectedVersion 0",
+        "observed": "rejected"
+      },
+      {
+        "id": "notes/duplicate-version-aware",
+        "handler": "notes.applyNoteOperation",
+        "delivery": "same op + clientSequence 0, expectedVersion bumped to current",
+        "observed": "accepted"
+      },
+      {
+        "id": "lifecycle/start-duplicate",
+        "handler": "meetings.lifecycle.startMeeting",
+        "delivery": "start twice (first accepted, ack-lost retry simulated by immediate resend)",
+        "observed": "rejected"
+      },
+      {
+        "id": "lifecycle/end-duplicate",
+        "handler": "meetings.lifecycle.endMeeting",
+        "delivery": "end twice after a successful start (second send = ack-lost retry)",
+        "observed": "rejected"
+      },
+      {
+        "id": "webhook/duplicate-redelivery",
+        "handler": "meetings.stream.streamHandlers.dispatchWebhook",
+        "delivery": "same webhook payload delivered twice (Stream-style retry)",
+        "observed": "deduped"
       }
-    },
-    {
-      "id": "production/notes-batch-duplicate",
-      "handler": "notes/mutations.ts: batchApplyNoteOperations",
-      "observedDuplicateVerdict": "stale duplicate REJECTED by the expectedVersion guard (seen as CONFLICT after the first batch bumped the version); a re-based duplicate (same clientSequences) is ACCEPTED and re-applies every op with positions transformed server-side — sequence numbers dedupe nothing",
-      "counts": {
-        "deliveries": 3,
-        "outcomes": {
-          "accepted": 2,
-          "rejected": 1
-        }
-      }
-    },
-    {
-      "id": "production/offline-queue-duplicate",
-      "handler": "notes/offline.ts: queueOfflineOperations",
-      "observedDuplicateVerdict": "duplicate ACCEPTED again — two queue rows for the same operationId (no dedupe; queueIds differ per call)",
-      "counts": {
-        "deliveries": 2,
-        "outcomes": {
-          "accepted": 2
-        }
-      }
-    },
-    {
-      "id": "production/offline-sync-duplicate",
-      "handler": "notes/offline.ts: syncOfflineOperations",
-      "observedDuplicateVerdict": "duplicate DEDUPED by the pending->synced status transition (second sync is a no-op); content applied once",
-      "counts": {
-        "deliveries": 2,
-        "outcomes": {
-          "accepted": 1,
-          "deduped": 1
-        }
-      }
-    },
-    {
-      "id": "production/offline-retry-duplicate",
-      "handler": "notes/offline.ts: retryFailedOperations",
-      "observedDuplicateVerdict": "duplicate retries reject deterministically (UNAUTHORIZED 'Authentication required' — nested sync loses caller identity under convex-test, a harness artifact; transaction rolls back, row untouched); retries on an exhausted row (attempts >= maxRetries) are zero-delta no-ops (retriedCount 0) — silently, with no surfaced error",
-      "harnessNote": "convex-test 0.0.38 does not propagate caller identity into nested ctx.runMutation (get-convex/convex-test#50, open), so a retry whose row-set is non-empty rejects UNAUTHORIZED before the nested sync can run; the post-reset sync behavior is not observable through this harness. Recorded as observed.",
-      "counts": {
-        "deliveries": 4,
-        "outcomes": {
-          "rejected": 2,
-          "deduped": 2
-        }
-      }
-    },
-    {
-      "id": "production/lifecycle-start-duplicate",
-      "handler": "meetings/lifecycle.ts: startMeeting",
-      "observedDuplicateVerdict": "duplicate REJECTED by the state guard ('Meeting is already active') — protection is incidental state-machine ordering, not idempotency (idempotencyKeys rows: 0)",
-      "counts": {
-        "deliveries": 2,
-        "outcomes": {
-          "accepted": 1,
-          "rejected": 1
-        }
-      }
-    },
-    {
-      "id": "production/lifecycle-end-duplicate",
-      "handler": "meetings/lifecycle.ts: endMeeting",
-      "observedDuplicateVerdict": "duplicate REJECTED by the state guard ('Can only end active meetings') — again ordering, not idempotency",
-      "counts": {
-        "deliveries": 2,
-        "outcomes": {
-          "accepted": 1,
-          "rejected": 1
-        }
-      }
-    },
-    {
-      "id": "production/lifecycle-create-duplicate",
-      "handler": "meetings/lifecycle.ts: createMeeting",
-      "observedDuplicateVerdict": "duplicate ACCEPTED again — two separate meeting documents created (retry after a lost create ack duplicates the meeting)",
-      "counts": {
-        "deliveries": 2,
-        "outcomes": {
-          "accepted": 2
-        }
-      }
-    }
-  ]
+    ]
+  }
 }

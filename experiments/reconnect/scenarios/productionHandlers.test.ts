@@ -28,6 +28,8 @@ import { describe, expect, it } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "@convex/schema";
 import { api } from "@convex/_generated/api";
+import { internalAction } from "@convex/_generated/server";
+import { v } from "convex/values";
 
 /**
  * Explicit module map for convex-test (keys are file-relative paths; the key
@@ -37,6 +39,24 @@ import { api } from "@convex/_generated/api";
  * above experiments/reconnect/, and an explicit map also keeps the layer's
  * dependency surface (exactly the handlers under test) auditable.
  */
+// startMeeting/endMeeting SCHEDULE internal side effects (GetStream room
+// creation, transcription init, post-meeting processing). The real modules
+// for those scheduled functions call EXTERNAL services and chain further
+// scheduled work that no scenario asserts on — and their zero-delay timers
+// fire during teardown, surfacing as unhandled errors. The map therefore
+// registers experiment-owned no-op stubs for the three SCHEDULED internal
+// actions only; every handler under observation (lifecycle.ts,
+// notes/mutations.ts, notes/offline.ts, idempotency) stays fully real.
+function scheduledStub() {
+  return internalAction({
+    args: { meetingId: v.optional(v.id("meetings")), endedAt: v.optional(v.number()) },
+    handler: async () => undefined,
+  });
+}
+const stubStreamIndex = { createStreamRoom: scheduledStub() };
+const stubTranscriptsInit = { initializeTranscription: scheduledStub() };
+const stubPostProcessing = { handleMeetingEnd: scheduledStub() };
+
 const modules = {
   "../../convex/_generated/api.js": () => import("@convex/_generated/api"),
   "../../convex/_generated/server.js": () => import("@convex/_generated/server"),
@@ -44,6 +64,9 @@ const modules = {
   "../../convex/notes/offline.ts": () => import("@convex/notes/offline"),
   "../../convex/meetings/lifecycle.ts": () => import("@convex/meetings/lifecycle"),
   "../../convex/lib/idempotency.ts": () => import("@convex/lib/idempotency"),
+  "../../convex/meetings/stream/index.ts": async () => stubStreamIndex,
+  "../../convex/transcripts/initialization.ts": async () => stubTranscriptsInit,
+  "../../convex/meetings/postProcessing.ts": async () => stubPostProcessing,
 };
 
 const HOST_SUBJECT = "workos-host-user";

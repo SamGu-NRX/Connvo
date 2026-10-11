@@ -38,6 +38,8 @@ const RESULTS = path.join(EXP, "results");
 
 const replay = process.argv.includes("--replay");
 function arg(name: string, fallback: string): string {
+  const eq = process.argv.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.slice(name.length + 3);
   const idx = process.argv.indexOf(`--${name}`);
   return idx >= 0 && process.argv[idx + 1] ? process.argv[idx + 1] : fallback;
 }

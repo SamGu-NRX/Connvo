@@ -11,6 +11,11 @@
       textarea { width: 100%; min-height: 90px; font-family: inherit; background: #1b1b1b; color: #eee; }
       button { margin-right: .5rem; padding: .35rem .7rem; }
       .warn { color: #ff8f8f; } .ok { color: #8fd694; }
+      /* Keyboard operability: always-visible focus for keyboard users. */
+      :focus { outline: 2px dashed #6ea8ff; outline-offset: 2px; }
+      :focus-visible { outline: 3px solid #6ea8ff; outline-offset: 2px; }
+      button:focus-visible, textarea:focus-visible { outline: 3px solid #6ea8ff; outline-offset: 2px; }
+      .kbd-legend { color: #8ab4f8; font-size: .8rem; margin-top: .5rem; }
     </style>
   </head>
   <body>

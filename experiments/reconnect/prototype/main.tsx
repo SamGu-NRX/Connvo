@@ -46,6 +46,28 @@ function App() {
     return () => clearInterval(id);
   }, []);
 
+  // Keyboard operation: letter shortcuts so the walk controls work without
+  // a mouse; Tab/Enter/Space operate the buttons natively.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
+      const fn: Record<string, () => void> = {
+        c: () => client.cutConnection("before-server"),
+        a: () => client.armAckLoss(),
+        r: () => client.restore(),
+        s: () => void life.startMeeting(MEETING),
+        e: () => void life.endMeeting(MEETING),
+      };
+      const run = fn[e.key.toLowerCase()];
+      if (!run) return;
+      e.preventDefault();
+      run();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [life]);
+
   const note = server.getNote(MEETING);
   const meeting = server.getMeeting(MEETING);
 
@@ -66,6 +88,9 @@ function App() {
         </div>
         <div className="row" data-testid="inflight">
           unacked/queued mutations: <b>{client.inFlightCount}</b>
+        </div>
+        <div className="row" data-testid="ack-armed">
+          ack loss armed: <b>{String(client.isAckLossArmed)}</b>
         </div>
         <button data-testid="btn-cut" onClick={() => client.cutConnection("before-server")}>
           Cut connection (request loss)
@@ -123,6 +148,10 @@ function App() {
         <button data-testid="btn-end" onClick={() => void life.endMeeting(MEETING)}>
           End meeting
         </button>
+      </div>
+
+      <div className="row kbd-legend" data-testid="kbd-legend">
+        keyboard: c=cut · a=arm ack loss · r=restore · s=start · e=end · Tab/Enter/Space operate the buttons
       </div>
     </>
   );
