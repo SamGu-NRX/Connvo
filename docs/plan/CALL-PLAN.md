@@ -3,6 +3,14 @@
 Owner: the Connvo/LinkedUp lead (fleet). Task prompts quote this file by section ID. Integration branch: `alpha`
 (cut from `main` at 8d73d9bbaf93). Nothing here merges to `main`.
 
+**Why `alpha` starts at main (checked 2026-10-11, Sam's rule: cut from the definitive latest version).** Main
+8d73d9bbaf93 is Andrew Wang's last merge (#11, 2025-11-17 07:59Z, bringing in "feat/goat" and "fix settings").
+Andrew's `newfeat` (5d2eea1498, PR #9, still open) is two commits ahead only by a merge of main and its revert, both
+at 06:42Z that day. Against main its tree mostly adds old `.kiro/` spec documents and lacks those later settings
+fixes, so it is older, not newer. `kgu-continuation` (cc33929259, PR #13) only changes the landing page for kgu.one,
+and `sg/docs` is 11 commits behind. No other branch carries newer app code. `newfeat`, the landing and the dashboard
+stay Andrew's: build beside them, never write to them.
+
 ## Goal
 
 Two real people open the same meeting in two browsers and talk: each sees and hears the other, mute and camera-off
