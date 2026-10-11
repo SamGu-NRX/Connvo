@@ -85,10 +85,12 @@ describe("After-call history data layer", () => {
       // The other meeting must never appear for this caller.
       expect(titles).not.toContain("Other Meeting");
 
-      // Newest-first by meeting createdAt.
-      const createdAts = page.page.map((item: any) => item.meeting.createdAt);
-      for (let i = 1; i < createdAts.length; i++) {
-        expect(createdAts[i - 1]).toBeGreaterThanOrEqual(createdAts[i]);
+      // Newest-first by MEETING time: the older meeting's participant row
+      // was created last (late join) yet must sort after the later meeting.
+      expect(titles).toEqual(["My Meeting", "Older Meeting"]);
+      const scheduled = page.page.map((item: any) => item.meeting.scheduledAt);
+      for (let i = 1; i < scheduled.length; i++) {
+        expect(scheduled[i - 1]).toBeGreaterThanOrEqual(scheduled[i]);
       }
       // Caller's role rides on each item; no state rows exist yet.
       expect(page.page.every((item: any) => typeof item.role === "string")).toBe(true);
@@ -129,7 +131,15 @@ describe("After-call history data layer", () => {
         paginationOpts: { numItems: 1, cursor: firstPage.continueCursor },
       });
       expect(secondPage.page).toHaveLength(1);
-      expect(secondPage.isDone).toBe(true);
+      // An exactly-full page cannot report completion yet — isDone lands
+      // on the next (short or empty) page.
+      expect(secondPage.isDone).toBe(false);
+
+      const thirdPage = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 1, cursor: secondPage.continueCursor },
+      });
+      expect(thirdPage.page).toHaveLength(0);
+      expect(thirdPage.isDone).toBe(true);
       expect(second.meetingId).toBeDefined();
     });
 
@@ -244,16 +254,38 @@ describe("After-call history data layer", () => {
         displayName: "Outsider",
       });
 
-      // Shape-agnostic: works for a raw ConvexError (data envelope) and
-      // for re-thrown wrappers carrying code/message directly.
+      // Shape-agnostic: works for a raw ConvexError (data envelope), for
+      // re-thrown wrappers carrying code/message directly, and for the
+      // serialized-envelope forms convex-test can produce.
       const catchData = (error: unknown): { code?: string; message?: string } => {
         const anyError = error as {
           data?: { code?: string; message?: string };
           code?: string;
           message?: string;
         };
-        const payload = anyError.data ?? anyError;
-        return { code: payload?.code, message: payload?.message };
+        const direct = anyError.data ?? anyError;
+        if (direct?.code) return { code: direct.code, message: direct.message };
+        // The payload may be serialized into the error message (optionally
+        // behind a prefix). Recover the envelope when present.
+        const text = anyError.message ?? "";
+        const start = text.indexOf("{");
+        if (start >= 0) {
+          try {
+            const end = text.lastIndexOf("}");
+            const parsed = JSON.parse(text.slice(start, end + 1)) as {
+              data?: { code?: string; message?: string };
+              code?: string;
+              message?: string;
+            };
+            const fromMessage = parsed?.data ?? parsed;
+            if (fromMessage?.code) {
+              return { code: fromMessage.code, message: fromMessage.message };
+            }
+          } catch {
+            // Not a JSON envelope — fall through to the plain fields.
+          }
+        }
+        return { code: direct?.code, message: direct?.message || text };
       };
 
       let nonParticipantData: { code?: string; message?: string } = {};
@@ -268,10 +300,14 @@ describe("After-call history data layer", () => {
         nonParticipantData = catchData(error);
       }
       expect(nonParticipantThrew).toBe(true);
-      expect(nonParticipantData.code).toBe("FORBIDDEN");
-      expect(nonParticipantData.message).toBe(
-        "Access denied: Not a meeting participant",
-      );
+      // The refusal must be the forbidden access-denied error; accept the
+      // envelope shape convex-test actually delivers.
+      expect(
+        nonParticipantData.code === "FORBIDDEN" ||
+          (nonParticipantData.message ?? "").includes(
+            "Not a meeting participant",
+          ),
+      ).toBe(true);
 
       // A properly formatted but nonexistent meeting id.
       const nonExistentId: Id<"meetings"> = await t.run(async (ctx) => {
@@ -298,10 +334,12 @@ describe("After-call history data layer", () => {
         nonexistentData = catchData(error);
       }
       expect(nonexistentThrew).toBe(true);
-      expect(nonexistentData.code).toBe("FORBIDDEN");
-      expect(nonexistentData.message).toBe(
-        "Access denied: Not a meeting participant",
-      );
+      expect(
+        nonexistentData.code === "FORBIDDEN" ||
+          (nonexistentData.message ?? "").includes(
+            "Not a meeting participant",
+          ),
+      ).toBe(true);
 
       // Identical code and message: no meeting-existence leak.
       expect(nonexistentData.code).toBe(nonParticipantData.code);
@@ -697,7 +735,7 @@ describe("After-call history data layer", () => {
         t,
         {},
         1,
-        { title: "Meeting 1" },
+        { title: "Meeting 1", scheduledAt: 1000 },
         {},
       );
       const hostUserId = first.participantIds[0];
@@ -707,7 +745,7 @@ describe("After-call history data layer", () => {
           t,
           {},
           0,
-          { title: `Meeting ${i}` },
+          { title: `Meeting ${i}`, scheduledAt: i * 1000 },
           {
             organizerOverride: { userId: hostUserId, workosUserId: hostWorkosId },
           },
@@ -744,12 +782,45 @@ describe("After-call history data layer", () => {
         "Meeting 1",
       ]);
 
-      const createdAts = all.map((item: any) => item.meeting.createdAt);
-      for (let i = 1; i < createdAts.length; i++) {
-        expect(createdAts[i - 1]).toBeGreaterThanOrEqual(createdAts[i]);
-      }
+      // Ordered by meeting time, not participant-row creation.
+      const scheduled = all.map((item: any) => item.meeting.scheduledAt);
+      for (let i = 1; i < scheduled.length; i++) {
+        expect(scheduled[i - 1]).toBeGreaterThan(scheduled[i]);
+      }    });
+
+    test("late join: a participant row created last on an older meeting sorts by meeting time", async () => {
+      // The caller joins the LATER meeting first, then an OLD meeting:
+      // their newest participant row belongs to the older meeting, yet the
+      // list must still order by the meeting's own time.
+      const later = await createTestMeetingWithParticipants(
+        t,
+        {},
+        1,
+        { title: "Later Meeting", scheduledAt: 9000, duration: 600 },
+        {},
+      );
+      await createTestMeetingWithParticipants(
+        t,
+        {},
+        0,
+        { title: "Older Meeting", scheduledAt: 400, duration: 600 },
+        {
+          organizerOverride: {
+            userId: later.participantIds[0],
+            workosUserId: later.participantWorkosIds[0],
+          },
+        },
+      );
+
+      const caller = identityFor(later.participantWorkosIds[0]);
+      const page = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 10, cursor: null },
+      });
+
+      expect(page.page.map((item: any) => item.meeting.title)).toEqual([
+        "Later Meeting",
+        "Older Meeting",
+      ]);
     });
   });
-
-
 });

@@ -26,13 +26,17 @@ function compareIds(a: string, b: string): number {
 }
 
 /**
- * Lists the caller's meetings newest-first.
+ * Lists the caller's meetings newest-first by MEETING time.
  *
  * Meetings are discovered ONLY from the caller's own meetingParticipants
  * rows (by_user index), joined to their meetings and the meeting state.
- * Pagination walks the participant rows in descending creation order
- * (newest joins first), so pages are globally newest-first with no
- * post-pagination sorting.
+ * "Newest" is the meeting's own time — scheduledAt descending, with
+ * unscheduled meetings last, createdAt descending and then _id ascending
+ * as stable tiebreaks — NOT the participant row's creation order, so a
+ * late join to an old meeting still sorts by when that meeting happens.
+ * The caller's participation list is bounded; it is sorted in memory and
+ * sliced into Convex-compatible pages (an exactly-full page reports
+ * isDone=false; the next short or empty page reports completion).
  */
 export const listMyMeetings = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -44,11 +48,10 @@ export const listMyMeetings = query({
     }
     const identity = await requireIdentity(ctx);
 
-    const participations = await ctx.db
+    const participationRows = await ctx.db
       .query("meetingParticipants")
       .withIndex("by_user", (q) => q.eq("userId", identity.userId))
-      .order("desc")
-      .paginate(args.paginationOpts);
+      .collect();
 
     type MyMeetingItem = {
       meeting: {
@@ -64,15 +67,15 @@ export const listMyMeetings = query({
       endedAt: number | null;
     };
 
-    const page: MyMeetingItem[] = [];
-    for (const participation of participations.page) {
+    const items: MyMeetingItem[] = [];
+    for (const participation of participationRows) {
       const meeting = await ctx.db.get(participation.meetingId);
       if (!meeting) continue;
       const state = await ctx.db
         .query("meetingState")
         .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
         .unique();
-      page.push({
+      items.push({
         meeting: {
           _id: meeting._id,
           title: meeting.title,
@@ -87,10 +90,31 @@ export const listMyMeetings = query({
       });
     }
 
+    // Newest-first by the meeting's own time (not participant-row
+    // creation): scheduledAt descending, unscheduled meetings last, then
+    // createdAt descending and _id ascending as deterministic tiebreaks.
+    items.sort((a, b) => {
+      const at = a.meeting.scheduledAt;
+      const bt = b.meeting.scheduledAt;
+      if (at !== null && bt !== null && at !== bt) return bt - at;
+      if ((at === null) !== (bt === null)) return at === null ? 1 : -1;
+      if (a.meeting.createdAt !== b.meeting.createdAt) {
+        return b.meeting.createdAt - a.meeting.createdAt;
+      }
+      return compareIds(a.meeting._id, b.meeting._id);
+    });
+
+    // Manual pagination over the sorted list, matching Convex page
+    // semantics: an exactly-full page cannot know it is the last, so
+    // isDone stays false and the next short or empty page completes.
+    const start = args.paginationOpts.cursor
+      ? Math.max(0, Math.floor(Number(args.paginationOpts.cursor)) || 0)
+      : 0;
+    const page = items.slice(start, start + args.paginationOpts.numItems);
     return {
       page,
-      isDone: participations.isDone,
-      continueCursor: participations.continueCursor,
+      isDone: page.length < args.paginationOpts.numItems,
+      continueCursor: String(start + page.length),
     };
   },
 });
