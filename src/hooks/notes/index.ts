@@ -3,6 +3,8 @@
  * Contract and protocol: docs/notes-ledger-f1/design.md.
  */
 
+import type { UseNotesLedgerResult } from "./types";
+
 export type {
   BatchApplyNoteOperationsResponse,
   NotesBatchOp,
