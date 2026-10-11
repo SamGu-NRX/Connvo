@@ -25,6 +25,10 @@ export { useNotesLedger } from "./useNotesLedger";
 export type { UseNotesLedgerOptions } from "./useNotesLedger";
 export { NotesConvexTransportProvider } from "./notesConvexTransport";
 export {
+  stableNotesClientId,
+  useStableNotesClientId,
+} from "./stableClientId";
+export {
   NotesLedger,
   classifyTransportError,
 } from "./notesLedger";

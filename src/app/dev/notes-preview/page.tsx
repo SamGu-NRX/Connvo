@@ -8,11 +8,12 @@
  * screenshots and manual verification only; functional proof lives in the
  * test/in-call suites. Not linked from any product surface.
  *
- * NOTE: the panel renders against the real ledger hook, which lands with the
- * ledger milestone (M2, docs/notes-ledger-f1/design.md §3). Until that join,
- * this route surfaces the hook's placeholder error — expected and honest.
+ * NOTE: since the M2/M3 join this route runs the REAL ledger hook against
+ * the demo backend transport (the demo provides NotesTransportProvider
+ * explicitly, so the production Convex default is not used here).
  */
 
+import { notFound } from "next/navigation";
 import { useState } from "react";
 import { NotesTransportProvider } from "@/hooks/notes";
 import { Id } from "@convex/_generated/dataModel";
@@ -56,6 +57,10 @@ function ToggleRow({
 }
 
 export default function NotesPreviewPage() {
+  // The middleware matcher excludes /dev routes (sandbox-local verification
+  // without a WorkOS handshake), so this gate keeps the demo route out of
+  // production builds — no unauthenticated demo surface in deployment.
+  if (process.env.NODE_ENV !== "development") notFound();
   const [backend] = useState(() => createDemoNotesBackend());
   const [offline, setOffline] = useState(false);
   const [dropAck, setDropAck] = useState(false);

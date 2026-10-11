@@ -30,10 +30,9 @@ import {
 } from "react";
 import { Id } from "@convex/_generated/dataModel";
 import {
-  NotesTransportProvider,
-  useNotesLedger as useNotesLedgerPlaceholder,
+  useNotesLedger,
+  useStableNotesClientId,
 } from "@/hooks/notes";
-import type { UseNotesLedgerResult } from "@/hooks/notes";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -52,15 +51,11 @@ import { FadeRise } from "./FadeRise";
 import { DefaultNotesTransportProvider } from "./defaultNotesTransport";
 
 /**
- * Pinned §3 contract: `useNotesLedger(meetingId)`. The M0 placeholder on this
- * branch declares zero parameters, so the panel codes against the contract via
- * this signature alignment — a compile-time identity against the real ledger
- * hook (same return type, so behavior is unchanged at the M2 join, where this
- * collapses back into the direct import).
+ * The pinned §3 contract `useNotesLedger(meetingId)` is the real ledger hook
+ * since the M2/M3 join — no signature alignment needed: the optional options
+ * argument carries the stable client identity the panel decides above both
+ * the ledger and the transport.
  */
-const useNotesLedger = useNotesLedgerPlaceholder as (
-  meetingId: Id<"meetings">,
-) => UseNotesLedgerResult;
 
 export interface MeetingNotesPanelProps {
   meetingId: Id<"meetings">;
@@ -75,7 +70,7 @@ export interface MeetingNotesPanelProps {
 const MISSING_TRANSPORT_SNIPPET = "used without a NotesTransportProvider";
 
 class TransportGuard extends Component<
-  { children: ReactNode },
+  { meetingId: Id<"meetings">; clientId: string; children: ReactNode },
   { error: unknown | null }
 > {
   state = { error: null as unknown | null };
@@ -91,7 +86,10 @@ class TransportGuard extends Component<
     }
     if (error instanceof Error && error.message.includes(MISSING_TRANSPORT_SNIPPET)) {
       return (
-        <DefaultNotesTransportProvider>
+        <DefaultNotesTransportProvider
+          meetingId={this.props.meetingId}
+          clientId={this.props.clientId}
+        >
           {this.props.children}
         </DefaultNotesTransportProvider>
       );
@@ -102,9 +100,10 @@ class TransportGuard extends Component<
 
 function MeetingNotesPanelBody({
   meetingId,
+  clientId,
   className,
-}: MeetingNotesPanelProps) {
-  const ledger = useNotesLedger(meetingId);
+}: MeetingNotesPanelProps & { clientId: string }) {
+  const ledger = useNotesLedger(meetingId, { clientId });
   const [draft, setDraft] = useState<string | null>(null);
   const titleId = useId();
 
@@ -244,9 +243,16 @@ function MeetingNotesPanelBody({
 }
 
 export function MeetingNotesPanel({ meetingId, className }: MeetingNotesPanelProps) {
+  // One identity above BOTH the ledger and the transport (design.md §3):
+  // identity acknowledgements and dedupe join only when both sides share it.
+  const clientId = useStableNotesClientId(meetingId);
   return (
-    <TransportGuard>
-      <MeetingNotesPanelBody meetingId={meetingId} className={className} />
+    <TransportGuard meetingId={meetingId} clientId={clientId}>
+      <MeetingNotesPanelBody
+        meetingId={meetingId}
+        clientId={clientId}
+        className={className}
+      />
     </TransportGuard>
   );
 }

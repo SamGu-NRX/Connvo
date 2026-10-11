@@ -34,6 +34,9 @@ const h = vi.hoisted(() => ({
 vi.mock("@/hooks/notes", () => ({
   // Pass-through provider: unit tests seed ledger state directly.
   NotesTransportProvider: ({ children }: { children: React.ReactNode }) => children,
+  // Interim until the real-hook swap: the joined panel derives its stable
+  // identity above the ledger; the mock pins one so seeds are deterministic.
+  useStableNotesClientId: () => "a11y-client",
   useNotesTransport: () => {
     throw new Error("unit tests inject ledger state directly");
   },

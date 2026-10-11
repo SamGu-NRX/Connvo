@@ -4,45 +4,33 @@
  * Self-containment seam for MeetingNotesPanel (docs/notes-ledger-f1/design.md §4).
  *
  * When no NotesTransportProvider sits above the panel, the panel supplies this
- * default provider. The production Convex wiring (useQuery/useMutation against
- * api.notes.queries.getMeetingNotes / api.notes.mutations.batchApplyNoteOperations)
- * is the ledger milestone's deliverable (design.md §3) and is built in parallel —
- * until that join lands, this placeholder fails loudly on first use instead of
- * pretending to save.
+ * default provider: the production Convex wiring (M2's
+ * NotesConvexTransportProvider) bound to the meeting and the panel's stable
+ * per-tab client identity. The identity is decided ABOVE both the ledger and
+ * the transport — the panel computes it once via useStableNotesClientId and
+ * hands the same value to useNotesLedger and here, so identity
+ * acknowledgements and server-side dedupe join (design.md §3).
  *
- * TODO-M2(join): swap the placeholder transport for the ledger milestone's
- * exported Convex default wiring. One-line change, nothing else in this file.
+ * Joined at the M2/M3 join: this replaces M3's loud-failure placeholder; the
+ * panel's TransportGuard fallback path is now fully functional.
  */
 
-import { useMemo, type ReactNode } from "react";
-import { NotesTransportProvider } from "@/hooks/notes";
-import type { NotesTransport } from "@/hooks/notes";
-
-const UNWIRED_MESSAGE =
-  "MeetingNotesPanel: the production Convex notes transport is not wired yet — " +
-  "it lands with the notes ledger milestone (docs/notes-ledger-f1/design.md §3). " +
-  "Until then, provide a NotesTransportProvider explicitly (the /dev/notes-preview " +
-  "route does this with the in-memory demo backend).";
-
-function createUnwiredTransport(): NotesTransport {
-  return {
-    subscribe: () => {
-      throw new Error(UNWIRED_MESSAGE);
-    },
-    applyBatch: () => Promise.reject(new Error(UNWIRED_MESSAGE)),
-    close: () => {},
-  };
-}
+import { NotesConvexTransportProvider } from "@/hooks/notes";
+import type { Id } from "@convex/_generated/dataModel";
+import type { ReactNode } from "react";
 
 export function DefaultNotesTransportProvider({
+  meetingId,
+  clientId,
   children,
 }: {
+  meetingId: Id<"meetings">;
+  clientId: string;
   children: ReactNode;
 }) {
-  const placeholderTransport = useMemo(() => createUnwiredTransport(), []);
   return (
-    <NotesTransportProvider transport={placeholderTransport}>
+    <NotesConvexTransportProvider meetingId={meetingId} clientId={clientId}>
       {children}
-    </NotesTransportProvider>
+    </NotesConvexTransportProvider>
   );
 }

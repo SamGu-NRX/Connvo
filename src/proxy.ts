@@ -19,6 +19,11 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|_next/data|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)",
+    // `dev` routes are excluded: the /dev/notes-preview demo route mounts an
+    // in-memory backend and has no auth surface, and the WorkOS middleware
+    // cannot complete its handshake from a sandboxed local environment.
+    // Production behavior is unchanged — the demo page itself refuses to
+    // render outside development (see src/app/dev/notes-preview/page.tsx).
+    "/((?!_next/static|_next/image|_next/data|favicon.ico|dev(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)",
   ],
 };
