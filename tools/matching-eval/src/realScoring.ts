@@ -192,7 +192,7 @@ function realFinish(
   return matches.map((m) => {
     const p = byPair.get(`${m.userA}|${m.userB}`);
     const reasons: MatchReason[] = p
-      ? buildReasons(mainToHarnessKeys(p.features), REAL_WEIGHTS)
+      ? buildReasons(p.features, REAL_WEIGHTS)
       : [];
     return { ...m, reasons };
   });
