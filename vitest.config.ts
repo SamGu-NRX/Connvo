@@ -51,6 +51,18 @@ export default defineConfig({
         },
         resolve: commonResolve,
       },
+      // M3 (connvo-notes-ledger-f1): mounted panel tests under test/in-call.
+      // Additive only — jsdom + testing-library + jest-axe; the convex and
+      // frontend projects above are untouched.
+      {
+        test: {
+          name: "in-call",
+          include: ["test/in-call/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./test/in-call/setup.ts"],
+        },
+        resolve: commonResolve,
+      },
     ],
   },
   resolve: commonResolve,
