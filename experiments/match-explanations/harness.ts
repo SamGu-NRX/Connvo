@@ -104,6 +104,23 @@ export interface PairResult {
 
 /**
  * Score an arbitrary (possibly mutated) profile pair through the real
+ * entrypoint and return the FULL output (score, features, explanation).
+ */
+export async function runPairFull(
+  left: SyntheticProfile,
+  right: SyntheticProfile,
+): Promise<ScoreOutput> {
+  const ctx = makeStubContext([left, right]);
+  return REAL_SCORING_HANDLER(ctx, {
+    user1Id: left.scoringData.user._id,
+    user2Id: right.scoringData.user._id,
+    user1Constraints: left.constraints,
+    user2Constraints: right.constraints,
+  });
+}
+
+/**
+ * Score an arbitrary (possibly mutated) profile pair through the real
  * entrypoint and return only the computed features.
  */
 export async function runHandlerPair(

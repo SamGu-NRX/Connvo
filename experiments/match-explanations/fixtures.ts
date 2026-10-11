@@ -62,6 +62,33 @@ function sentinels(
   return list;
 }
 
+/**
+ * Synthetic embedder: the production pipeline derives a profile embedding
+ * FROM user-controlled profile content (the platform recomputes it whenever
+ * profile content changes). This stand-in is deterministic per `profile.field`
+ * and stands in for the production embedding model, which is not part of this
+ * repository. Vectors are two-dimensional for legibility.
+ */
+export const FIELD_VECTORS: Record<string, [number, number]> = {
+  Technology: [3, 1],
+  Software: [1, 0.5],
+  Design: [0, 1],
+};
+
+/**
+ * Deterministically derive the embedding the platform would compute for the
+ * given scoring data. Profiles without a usable `profile.field` embed to
+ * null (the missing-vector path).
+ */
+export function deriveEmbedding(
+  scoringData: UserScoringData,
+): { vector: ArrayBuffer; model: string } | null {
+  const field = scoringData.profile?.field;
+  const components = field != null ? FIELD_VECTORS[field] : undefined;
+  if (!components) return null;
+  return { vector: embeddingBuffer([...components]), model: EMBEDDING_MODEL };
+}
+
 export const PROFILES: SyntheticProfile[] = [
   {
     id: "mentee-junior-technology",
@@ -227,6 +254,101 @@ export const PROFILES: SyntheticProfile[] = [
       "member",
     ),
   },
+  {
+    id: "mentee-twin-a",
+    description:
+      "Twin A of the tied-score pair: scoring-identical to mentee-twin-b; " +
+      "only the experiment id and PRIVATE identity fields differ. Exists to " +
+      "exercise tie handling: both twins must produce identical features, " +
+      "identical composite scores, and identical explanations.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_twin_a"),
+        displayName: "Canary Name Twin A",
+        orgId: "canary-org-twin-a",
+        orgRole: "member",
+      },
+      profile: {
+        experience: "junior",
+        languages: ["English"],
+        field: "Technology",
+      },
+      interests: ["ai", "technology"],
+      embedding: null,
+    },
+    constraints: {
+      interests: ["ai"],
+      roles: ["mentee"],
+    },
+    privateSentinels: sentinels(
+      "Canary Name Twin A",
+      "canary-org-twin-a",
+      "member",
+    ),
+  },
+  {
+    id: "mentee-twin-b",
+    description:
+      "Twin B of the tied-score pair: scoring-identical to mentee-twin-a; " +
+      "only the experiment id and PRIVATE identity fields differ.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_twin_b"),
+        displayName: "Canary Name Twin B",
+        orgId: "canary-org-twin-b",
+        orgRole: "member",
+      },
+      profile: {
+        experience: "junior",
+        languages: ["English"],
+        field: "Technology",
+      },
+      interests: ["ai", "technology"],
+      embedding: null,
+    },
+    constraints: {
+      interests: ["ai"],
+      roles: ["mentee"],
+    },
+    privateSentinels: sentinels(
+      "Canary Name Twin B",
+      "canary-org-twin-b",
+      "member",
+    ),
+  },
+  {
+    id: "leaky-mentee-control",
+    description:
+      "NEGATIVE CONTROL for the canary scan, never part of PAIRS: the " +
+      "scanner is fed a fabricated explanation sentence that interpolates " +
+      "this profile's PRIVATE displayName sentinel, and must flag it. The " +
+      "real handler itself is not leaking; this fixture proves the scan " +
+      "fails when a leak exists.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_leaky"),
+        displayName: "Canary Name Leaky",
+        orgId: "canary-org-leaky",
+        orgRole: "member",
+      },
+      profile: {
+        experience: "junior",
+        languages: ["English"],
+        field: "Technology",
+      },
+      interests: ["ai", "technology"],
+      embedding: null,
+    },
+    constraints: {
+      interests: ["ai"],
+      roles: ["mentee"],
+    },
+    privateSentinels: sentinels(
+      "Canary Name Leaky",
+      "canary-org-leaky",
+      "member",
+    ),
+  },
 ];
 
 export interface ScoredPair {
@@ -271,6 +393,39 @@ export const PAIRS: ScoredPair[] = [
       "Missing profile data (neutral 0.5 branches) plus a one-sided same_org " +
       "constraint against a differing org; exercises the explanation fallback.",
   },
+  {
+    pairId: "twin-a-x-mentor",
+    leftId: "mentee-twin-a",
+    rightId: "mentor-senior-technology",
+    purpose:
+      "Tie case: scoring-identical to twin-b-x-mentor by construction; the " +
+      "two pairs must tie on composite score with identical explanations.",
+  },
+  {
+    pairId: "twin-b-x-mentor",
+    leftId: "mentee-twin-b",
+    rightId: "mentor-senior-technology",
+    purpose:
+      "Tie case: scoring-identical to twin-a-x-mentor by construction; the " +
+      "two pairs must tie on composite score with identical explanations.",
+  },
+];
+
+/**
+ * NEGATIVE-CONTROL pairs for the canary scan. Never scored in the main run
+ * or shown on the results page: the fabricated explanation corpus derived
+ * from these pairs deliberately interpolates a private sentinel so the
+ * privacy check can be seen FAILING (positive control for the scanner).
+ */
+export const CONTROL_PAIRS: ScoredPair[] = [
+  {
+    pairId: "canary-leak-control",
+    leftId: "leaky-mentee-control",
+    rightId: "mentor-senior-technology",
+    purpose:
+      "Negative control only: proves the canary scan detects a leak when " +
+      "one is planted.",
+  },
 ];
 
 /** A user id deliberately absent from the fixture store. */
@@ -284,7 +439,7 @@ export function profileById(id: string): SyntheticProfile {
 
 /** Exact fixture counts asserted by the tests and recorded in results. */
 export const EXACT_COUNTS = {
-  profiles: PROFILES.length, // 5
-  scoredPairs: PAIRS.length, // 4
+  profiles: PROFILES.length, // 8 (5 study + 2 tie twins + 1 leak control)
+  scoredPairs: PAIRS.length, // 6 (4 study + 2 tie pairs)
   missingUserCases: 1,
 } as const;

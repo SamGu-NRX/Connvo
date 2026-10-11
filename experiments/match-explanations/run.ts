@@ -40,7 +40,12 @@ import path from "node:path";
 import { PAIRS, PROFILES, type SyntheticProfile } from "./fixtures";
 import { REPO_ROOT, runAllPairs, runHandlerPair } from "./harness";
 import { buildBaseline } from "./emit-baseline";
-import { PROFILES as FIXTURE_PROFILES } from "./fixtures";
+import {
+  deriveEmbedding,
+  PROFILES as FIXTURE_PROFILES,
+  profileById,
+} from "./fixtures";
+import { pathToFileURL } from "node:url";
 import {
   COMPUTED_BUT_UNSURFACED,
   CONTRIBUTION_CONDITIONS,
@@ -68,6 +73,12 @@ interface EligibilitySentence {
   sentence: string;
   ruleId: string;
   caveat?: string;
+  /**
+   * When the computed feature equals this value, the rule's outcome
+   * contradicts the sentence's claim and the sentence is a false reason
+   * rather than an eligibility-backed statement.
+   */
+  contradicts?: { feature: string; value: number };
 }
 
 const ELIGIBILITY_SENTENCES: EligibilitySentence[] = [
@@ -78,6 +89,7 @@ const ELIGIBILITY_SENTENCES: EligibilitySentence[] = [
       "Backed by identical constraint strings, NOT by org equality: the " +
       "witness pair's orgIds differ. See the as-implemented semantics in " +
       "results/eligibility-references.json.",
+    contradicts: { feature: "orgConstraintMatch", value: 0 },
   },
 ];
 
@@ -164,6 +176,21 @@ function classifySentence(sentence: string, features: Features): Classification 
     (e) => e.sentence === sentence,
   );
   if (eligibility) {
+    if (
+      eligibility.contradicts &&
+      features[eligibility.contradicts.feature] ===
+        eligibility.contradicts.value
+    ) {
+      return {
+        classification: "false_reason",
+        ruleId: eligibility.ruleId,
+        feature: eligibility.contradicts.feature,
+        computedValue: features[eligibility.contradicts.feature],
+        reason:
+          "Eligibility rule outcome contradicts the claim " +
+          `(${eligibility.contradicts.feature} === ${eligibility.contradicts.value}).`,
+      };
+    }
     return {
       classification: "eligibility_rule",
       ruleId: eligibility.ruleId,
@@ -266,6 +293,8 @@ async function classifyManifest(
 
 interface CounterfactualCase {
   id: string;
+  /** The user-facing surface through which this input is legitimately changed. */
+  permittedInput: string;
   variedInput: string;
   note: string;
   pairId: string;
@@ -284,80 +313,111 @@ function cloneProfile(profile: SyntheticProfile): SyntheticProfile {
   return structuredClone(profile);
 }
 
+export const COUNTERFACTUAL_CASES: CounterfactualCase[] = [
+  {
+    id: "CF_INTERESTS",
+    permittedInput: "Profile editor: the user edits their interest list.",
+    variedInput: "scoringData.interests",
+    note:
+      "User-controlled interests no longer overlap; the interest sentence " +
+      "must lose its feature support.",
+    pairId: "mentee-x-mentor",
+    mutatedProfileId: "mentee-junior-technology",
+    mutate: (p) => {
+      p.scoringData.interests = ["cooking"];
+    },
+    sentence: "Strong interest alignment",
+    before: "supported_contribution",
+    after: "false_reason",
+  },
+  {
+    id: "CF_EXPERIENCE",
+    permittedInput: "Profile editor: the user updates their experience level.",
+    variedInput: "scoringData.profile.experience",
+    note:
+      "Experience moved to the mentor's own level (gap 0 -> 0.7); the " +
+      "ideal-gap sentence must lose support.",
+    pairId: "mentee-x-mentor",
+    mutatedProfileId: "mentee-junior-technology",
+    mutate: (p) => {
+      p.scoringData.profile!.experience = "senior";
+    },
+    sentence: "Ideal experience gap for mentorship",
+    before: "supported_contribution",
+    after: "false_reason",
+  },
+  {
+    id: "CF_FIELD_REEMBED",
+    permittedInput:
+      "Profile editor: the user changes their professional field from " +
+      "Software to Design; the platform then recomputes the profile " +
+      "embedding from profile content.",
+    variedInput:
+      "scoringData.profile.field, with the embedding recomputed via " +
+      "deriveEmbedding (the synthetic embedder standing in for the " +
+      "production embedding model)",
+    note:
+      "The embedding vector is NEVER edited directly: only the " +
+      "user-controlled profile field changes, and the embedder recomputes " +
+      "the vector from it, exactly as the production pipeline would. " +
+      "Cosine similarity with the mentor drops from ~0.99 to ~0.32, below " +
+      "the 0.8 threshold; the semantic-similarity sentence must lose support.",
+    pairId: "mentor-x-peer",
+    mutatedProfileId: "peer-mid-software",
+    mutate: (p) => {
+      p.scoringData.profile!.field = "Design";
+      const re = deriveEmbedding(p.scoringData);
+      if (re) p.scoringData.embedding = re;
+    },
+    sentence: "High semantic profile similarity",
+    before: "supported_contribution",
+    after: "false_reason",
+  },
+  {
+    id: "CF_ROLE_PREFERENCE",
+    permittedInput:
+      "Match-settings editor: the user changes the role they are seeking " +
+      "from mentee to mentor.",
+    variedInput: "constraints.roles (user matching preferences)",
+    note:
+      "With both sides seeking the mentor role the roles are same-role " +
+      "(0.7), no longer complementary (1.0); the complementary-roles " +
+      "sentence must lose support.",
+    pairId: "mentor-x-peer",
+    mutatedProfileId: "peer-mid-software",
+    mutate: (p) => {
+      p.constraints.roles = ["mentor"];
+    },
+    sentence: "Complementary professional roles",
+    before: "supported_contribution",
+    after: "false_reason",
+  },
+  {
+    id: "CF_ORG_PREFERENCE",
+    permittedInput:
+      "Match-settings editor: the user changes their organization " +
+      "matching preference. orgId itself is system-assigned and is never " +
+      "varied here.",
+    variedInput: "constraints.orgConstraints (user matching preferences)",
+    note:
+      "The mentee's org matching preference changes from same_org to " +
+      "different_org. With constraint strings no longer identical the " +
+      "short-circuit is gone and the differing orgs resolve to " +
+      "orgConstraintMatch 0.0; the same-organization sentence must become " +
+      "a false reason.",
+    pairId: "mentee-x-mentor",
+    mutatedProfileId: "mentee-junior-technology",
+    mutate: (p) => {
+      p.constraints.orgConstraints = "different_org";
+    },
+    sentence: "You are in the same organization as this match.",
+    before: "eligibility_rule",
+    after: "false_reason",
+  },
+];
+
 async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
-  const cases: CounterfactualCase[] = [
-    {
-      id: "CF_INTERESTS",
-      variedInput: "scoringData.interests",
-      note:
-        "User-controlled interests removed; the interest sentence must lose " +
-        "its feature support.",
-      pairId: "mentee-x-mentor",
-      mutatedProfileId: "mentee-junior-technology",
-      mutate: (p) => {
-        p.scoringData.interests = ["cooking"];
-      },
-      sentence: "Strong interest alignment",
-      before: "supported_contribution",
-      after: "false_reason",
-    },
-    {
-      id: "CF_EXPERIENCE",
-      variedInput: "scoringData.profile.experience",
-      note:
-        "Experience moved to the mentor's own level (gap 0 -> 0.7); the " +
-        "ideal-gap sentence must lose support.",
-      pairId: "mentee-x-mentor",
-      mutatedProfileId: "mentee-junior-technology",
-      mutate: (p) => {
-        p.scoringData.profile!.experience = "senior";
-      },
-      sentence: "Ideal experience gap for mentorship",
-      before: "supported_contribution",
-      after: "false_reason",
-    },
-    {
-      id: "CF_EMBEDDING",
-      variedInput: "scoringData.embedding.vector",
-      note:
-        "Peer embedding rotated to a different direction (cosine ~0.6 -> " +
-        "similarity ~0.8, no longer > 0.8); the semantic-similarity sentence " +
-        "must lose support. Embeddings derive from user-controlled profile " +
-        "content.",
-      pairId: "mentor-x-peer",
-      mutatedProfileId: "peer-mid-software",
-      mutate: (p) => {
-        const embedding = p.scoringData.embedding as {
-          vector: ArrayBuffer;
-          model: string;
-        };
-        p.scoringData.embedding = {
-          vector: new Float32Array([1, 3]).buffer,
-          model: embedding.model,
-        };
-      },
-      sentence: "High semantic profile similarity",
-      before: "supported_contribution",
-      after: "false_reason",
-    },
-    {
-      id: "CF_ORG",
-      variedInput: "scoringData.user.orgId",
-      note:
-        "orgId changed; the same-organization sentence is expected to REMAIN " +
-        "eligibility-backed, recording that the identical-constraint " +
-        "short-circuit ignores org identity. No counterfactual promises a " +
-        "match.",
-      pairId: "mentee-x-mentor",
-      mutatedProfileId: "mentee-junior-technology",
-      mutate: (p) => {
-        p.scoringData.user.orgId = "canary-org-moved";
-      },
-      sentence: "You are in the same organization as this match.",
-      before: "eligibility_rule",
-      after: "unchanged",
-    },
-  ];
+  const cases = COUNTERFACTUAL_CASES;
 
   const results: unknown[] = [];
   let allExpected = true;
@@ -403,6 +463,7 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
     if (!matched) allExpected = false;
     results.push({
       id: cf.id,
+      permittedInput: cf.permittedInput,
       variedInput: cf.variedInput,
       note: cf.note,
       sentence: cf.sentence,
@@ -423,8 +484,10 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
     note:
       "Counterfactuals vary ONE user-controlled input at a time, re-score " +
       "through the REAL handler, and re-classify the affected sentence. " +
-      "CF_ORG is expected NOT to flip and records the short-circuit's " +
-      "insensitivity to org identity.",
+      "Every varied input is something a user can legitimately change " +
+      "(profile content or matching preferences); system-assigned fields " +
+      "(orgId) and derived artifacts (embedding vectors) are never edited " +
+      "directly.",
     allExpectationsMet: allExpected,
     cases: results,
   };
@@ -436,6 +499,31 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
   if (!allExpected) process.exitCode = 1;
 }
 
+
+export interface LeakHit {
+  corpus: string;
+  sentinel: string;
+}
+
+/**
+ * Canary scanner: report every occurrence of a private-field sentinel in a
+ * proposed-public text corpus. Exported so tests can exercise it directly,
+ * including the deliberately leaked negative control.
+ */
+export function scanCorpusForLeaks(
+  corpus: string[],
+  sentinels: string[],
+): LeakHit[] {
+  const hits: LeakHit[] = [];
+  for (const text of corpus) {
+    for (const sentinel of sentinels) {
+      if (text.includes(sentinel)) {
+        hits.push({ corpus: text.slice(0, 100), sentinel });
+      }
+    }
+  }
+  return hits;
+}
 
 // ---------------------------------------------------------------------------
 // Milestone 3: replay, stability, and page generation
@@ -456,6 +544,12 @@ interface StabilityReport {
   scoreTies: { score: number; pairIds: string[] }[];
   tieExplanationsStable: boolean;
   canaryLeaks: string[];
+  canaryControl: {
+    corpus: string;
+    sentinelPlanted: string;
+    detectedLeaks: string[];
+    detected: boolean;
+  };
   falseReasonMutations: { total: number; met: number };
   pageKeyboardStructure: {
     focusableElements: number;
@@ -629,59 +723,81 @@ async function runReplay(): Promise<void> {
   rmSync(tmp2, { recursive: true, force: true });
 
   // 3. Scoring determinism: two consecutive full runs must agree exactly.
-  const runA = JSON.stringify(await runAllPairs());
-  const runB = JSON.stringify(await runAllPairs());
-  const scoringDeterministic = runA === runB;
+  const runA = await runAllPairs();
+  const runB = await runAllPairs();
+  const scoringDeterministic = JSON.stringify(runA) === JSON.stringify(runB);
 
-  // 4. Tie stability: pairs sharing an equal score must have identical
-  //    explanation TEMPLATE sets (same sentences, deterministic format).
-  const pairs = JSON.parse(
-    readFileSync(
-      path.join(RESULTS_DIR, "contribution-references.json"),
-      "utf8",
-    ),
-  ).pairs as { pairId: string; score: number; explanation: string[] }[];
-  const byScore = new Map<string, string[]>();
-  for (const p of pairs) {
-    const key = p.score.toFixed(6);
-    byScore.set(key, [...(byScore.get(key) ?? []), p.pairId]);
+  // 4. Tie stability: pairs that tie on composite score AND share identical
+  //    computed features (the twin pairs) must also produce identical
+  //    explanations — a deterministic generator cannot disagree with itself
+  //    on identical inputs.
+  const byScore = new Map<string, typeof runA>();
+  for (const r of runA) {
+    const key = r.score.toFixed(6);
+    byScore.set(key, [...(byScore.get(key) ?? []), r]);
   }
   const scoreTies = [...byScore.entries()]
-    .filter(([, ids]) => ids.length > 1)
-    .map(([score, ids]) => ({ score: Number(score), pairIds: ids }));
-  const explanationsByPair = new Map(
-    pairs.map((p) => [p.pairId, p.explanation]),
-  );
+    .filter(([, rs]) => rs.length > 1)
+    .map(([score, rs]) => ({
+      score: Number(score),
+      pairIds: rs.map((r) => r.pairId),
+    }));
   const tieExplanationsStable = scoreTies.every((tie) => {
-    const explanations = new Set(
-      tie.pairIds.map((id) => JSON.stringify(explanationsByPair.get(id))),
+    const group = tie.pairIds.map(
+      (id) => runA.find((r) => r.pairId === id)!,
     );
-    // Tied pairs may have different explanations; stability means each
-    // explanation is reproducible from its own features (checked by tests).
-    return explanations.size >= 1;
+    const featureSignatures = new Set(
+      group.map((r) => JSON.stringify(r.features)),
+    );
+    if (featureSignatures.size !== 1) return true; // numeric-only tie
+    const explanationSignatures = new Set(
+      group.map((r) => JSON.stringify(r.explanation)),
+    );
+    return explanationSignatures.size === 1;
   });
 
-  // 5. Canary scan: no private sentinel may appear in explanations or in
-  //    any committed results file.
+  // 5. Canary scan: no private sentinel may appear in any explanation or in
+  //    any committed results file — and the NEGATIVE CONTROL corpus (a
+  //    deliberately leaked sentence) MUST be flagged, proving the scan
+  //    fails when a leak actually exists.
   const canaryLeaks: string[] = [];
   const sentinels = FIXTURE_PROFILES.flatMap((p) =>
     p.privateSentinels.map((s) => s.value),
   );
-  for (const p of pairs) {
-    for (const sentence of p.explanation) {
-      for (const sentinel of sentinels) {
-        if (sentence.includes(sentinel)) {
-          canaryLeaks.push(`${p.pairId}: ${sentinel}`);
-        }
-      }
+  for (const p of runA) {
+    for (const leak of scanCorpusForLeaks(p.explanation, sentinels)) {
+      canaryLeaks.push(`${p.pairId}: ${leak.sentinel}`);
     }
   }
   for (const file of [...BASELINE_FILES, "classification.json", "counterfactuals.json"]) {
     const content = readFileSync(path.join(RESULTS_DIR, file), "utf8");
-    for (const sentinel of sentinels) {
-      if (content.includes(sentinel)) canaryLeaks.push(`${file}: ${sentinel}`);
+    for (const leak of scanCorpusForLeaks([content], sentinels)) {
+      canaryLeaks.push(`${file}: ${leak.sentinel}`);
     }
   }
+
+  // 5b. Negative control: fabricate the leak a broken generator would emit
+  //     (a real explanation sentence with a private displayName interpolated)
+  //     and require the scanner to flag it. The real handler is NOT leaking —
+  //     this corpus is deliberately corrupted to exercise the check.
+  const controlProfile = profileById("leaky-mentee-control");
+  const controlSentinel =
+    controlProfile.privateSentinels.find((s) => s.field === "displayName")!
+      .value;
+  const baseExplanation =
+    runA.find((r) => r.pairId === "mentee-x-mentor")!.explanation;
+  const controlCorpus = [
+    `${baseExplanation[0]} — recommended by ${controlSentinel} (admin note)`,
+  ];
+  const controlLeaks = scanCorpusForLeaks(controlCorpus, sentinels);
+  const canaryControl = {
+    corpus:
+      "fabricated leak: real mentee-x-mentor explanation sentence with the " +
+      "private displayName of leaky-mentee-control interpolated",
+    sentinelPlanted: controlSentinel,
+    detectedLeaks: controlLeaks.map((l) => l.sentinel),
+    detected: controlLeaks.length > 0,
+  };
 
   // 6. False-reason mutation outcomes.
   const counterfactuals = JSON.parse(
@@ -706,6 +822,7 @@ async function runReplay(): Promise<void> {
     scoringDeterministic &&
     tieExplanationsStable &&
     canaryLeaks.length === 0 &&
+    canaryControl.detected &&
     falseReasonMutations.met === falseReasonMutations.total &&
     pageKeyboardStructure.passed;
 
@@ -717,6 +834,7 @@ async function runReplay(): Promise<void> {
     scoreTies,
     tieExplanationsStable,
     canaryLeaks,
+    canaryControl,
     falseReasonMutations,
     pageKeyboardStructure,
     allPassed,
@@ -753,7 +871,14 @@ async function main(): Promise<void> {
   process.exit(1);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Only execute when invoked directly (tsx run.ts ...); importing this module
+// (e.g. from the test suite) must stay side-effect free.
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

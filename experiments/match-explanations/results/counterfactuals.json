@@ -1,11 +1,12 @@
 {
-  "note": "Counterfactuals vary ONE user-controlled input at a time, re-score through the REAL handler, and re-classify the affected sentence. CF_ORG is expected NOT to flip and records the short-circuit's insensitivity to org identity.",
+  "note": "Counterfactuals vary ONE user-controlled input at a time, re-score through the REAL handler, and re-classify the affected sentence. Every varied input is something a user can legitimately change (profile content or matching preferences); system-assigned fields (orgId) and derived artifacts (embedding vectors) are never edited directly.",
   "allExpectationsMet": true,
   "cases": [
     {
       "id": "CF_INTERESTS",
+      "permittedInput": "Profile editor: the user edits their interest list.",
       "variedInput": "scoringData.interests",
-      "note": "User-controlled interests removed; the interest sentence must lose its feature support.",
+      "note": "User-controlled interests no longer overlap; the interest sentence must lose its feature support.",
       "sentence": "Strong interest alignment",
       "before": {
         "classification": "supported_contribution",
@@ -23,6 +24,7 @@
     },
     {
       "id": "CF_EXPERIENCE",
+      "permittedInput": "Profile editor: the user updates their experience level.",
       "variedInput": "scoringData.profile.experience",
       "note": "Experience moved to the mentor's own level (gap 0 -> 0.7); the ideal-gap sentence must lose support.",
       "sentence": "Ideal experience gap for mentorship",
@@ -41,9 +43,10 @@
       "expectationMet": true
     },
     {
-      "id": "CF_EMBEDDING",
-      "variedInput": "scoringData.embedding.vector",
-      "note": "Peer embedding rotated to a different direction (cosine ~0.6 -> similarity ~0.8, no longer > 0.8); the semantic-similarity sentence must lose support. Embeddings derive from user-controlled profile content.",
+      "id": "CF_FIELD_REEMBED",
+      "permittedInput": "Profile editor: the user changes their professional field from Software to Design; the platform then recomputes the profile embedding from profile content.",
+      "variedInput": "scoringData.profile.field, with the embedding recomputed via deriveEmbedding (the synthetic embedder standing in for the production embedding model)",
+      "note": "The embedding vector is NEVER edited directly: only the user-controlled profile field changes, and the embedder recomputes the vector from it, exactly as the production pipeline would. Cosine similarity with the mentor drops from ~0.99 to ~0.32, below the 0.8 threshold; the semantic-similarity sentence must lose support.",
       "sentence": "High semantic profile similarity",
       "before": {
         "classification": "supported_contribution",
@@ -51,7 +54,7 @@
       },
       "after": {
         "classification": "false_reason",
-        "computedValue": 0.7999999999999999
+        "computedValue": 0.658113883008419
       },
       "expectation": {
         "before": "supported_contribution",
@@ -60,19 +63,41 @@
       "expectationMet": true
     },
     {
-      "id": "CF_ORG",
-      "variedInput": "scoringData.user.orgId",
-      "note": "orgId changed; the same-organization sentence is expected to REMAIN eligibility-backed, recording that the identical-constraint short-circuit ignores org identity. No counterfactual promises a match.",
+      "id": "CF_ROLE_PREFERENCE",
+      "permittedInput": "Match-settings editor: the user changes the role they are seeking from mentee to mentor.",
+      "variedInput": "constraints.roles (user matching preferences)",
+      "note": "With both sides seeking the mentor role the roles are same-role (0.7), no longer complementary (1.0); the complementary-roles sentence must lose support.",
+      "sentence": "Complementary professional roles",
+      "before": {
+        "classification": "supported_contribution",
+        "computedValue": 1
+      },
+      "after": {
+        "classification": "false_reason",
+        "computedValue": 0.7
+      },
+      "expectation": {
+        "before": "supported_contribution",
+        "after": "false_reason"
+      },
+      "expectationMet": true
+    },
+    {
+      "id": "CF_ORG_PREFERENCE",
+      "permittedInput": "Match-settings editor: the user changes their organization matching preference. orgId itself is system-assigned and is never varied here.",
+      "variedInput": "constraints.orgConstraints (user matching preferences)",
+      "note": "The mentee's org matching preference changes from same_org to different_org. With constraint strings no longer identical the short-circuit is gone and the differing orgs resolve to orgConstraintMatch 0.0; the same-organization sentence must become a false reason.",
       "sentence": "You are in the same organization as this match.",
       "before": {
         "classification": "eligibility_rule"
       },
       "after": {
-        "classification": "eligibility_rule"
+        "classification": "false_reason",
+        "computedValue": 0
       },
       "expectation": {
         "before": "eligibility_rule",
-        "after": "unchanged"
+        "after": "false_reason"
       },
       "expectationMet": true
     }

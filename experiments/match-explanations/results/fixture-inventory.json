@@ -1,7 +1,7 @@
 {
   "exactCounts": {
-    "profiles": 5,
-    "scoredPairs": 4,
+    "profiles": 8,
+    "scoredPairs": 6,
     "missingUserCases": 1
   },
   "profiles": [
@@ -74,6 +74,48 @@
         "orgConstraints": false
       },
       "privateSentinelCount": 3
+    },
+    {
+      "id": "mentee-twin-a",
+      "description": "Twin A of the tied-score pair: scoring-identical to mentee-twin-b; only the experiment id and PRIVATE identity fields differ. Exists to exercise tie handling: both twins must produce identical features, identical composite scores, and identical explanations.",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": false,
+        "languages": true,
+        "embedding": false,
+        "orgConstraints": false
+      },
+      "privateSentinelCount": 3
+    },
+    {
+      "id": "mentee-twin-b",
+      "description": "Twin B of the tied-score pair: scoring-identical to mentee-twin-a; only the experiment id and PRIVATE identity fields differ.",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": false,
+        "languages": true,
+        "embedding": false,
+        "orgConstraints": false
+      },
+      "privateSentinelCount": 3
+    },
+    {
+      "id": "leaky-mentee-control",
+      "description": "NEGATIVE CONTROL for the canary scan, never part of PAIRS: the scanner is fed a fabricated explanation sentence that interpolates this profile's PRIVATE displayName sentinel, and must flag it. The real handler itself is not leaking; this fixture proves the scan fails when a leak exists.",
+      "fieldPresence": {
+        "profile": true,
+        "experience": true,
+        "field": true,
+        "company": false,
+        "languages": true,
+        "embedding": false,
+        "orgConstraints": false
+      },
+      "privateSentinelCount": 3
     }
   ],
   "pairs": [
@@ -100,6 +142,18 @@
       "leftId": "mentee-junior-technology",
       "rightId": "executive-sparse-no-profile",
       "purpose": "Missing profile data (neutral 0.5 branches) plus a one-sided same_org constraint against a differing org; exercises the explanation fallback."
+    },
+    {
+      "pairId": "twin-a-x-mentor",
+      "leftId": "mentee-twin-a",
+      "rightId": "mentor-senior-technology",
+      "purpose": "Tie case: scoring-identical to twin-b-x-mentor by construction; the two pairs must tie on composite score with identical explanations."
+    },
+    {
+      "pairId": "twin-b-x-mentor",
+      "leftId": "mentee-twin-b",
+      "rightId": "mentor-senior-technology",
+      "purpose": "Tie case: scoring-identical to twin-a-x-mentor by construction; the two pairs must tie on composite score with identical explanations."
     }
   ],
   "missingUserCase": {

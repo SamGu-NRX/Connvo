@@ -177,6 +177,90 @@
         "traceable": 1,
         "traceableShare": 0.25
       }
+    },
+    {
+      "pairId": "twin-a-x-mentor",
+      "sentences": [
+        {
+          "sentence": "Strong interest alignment",
+          "classification": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "classification": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "classification": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "You're in compatible time zones.",
+          "classification": "untraceable_assertion",
+          "reason": "timezoneCompatibility is a hardcoded 1.0 placeholder (TIMEZONE_PLACEHOLDER): it derives from no user-controlled data, so no sentence can truthfully cite it."
+        },
+        {
+          "sentence": "You will definitely hit it off.",
+          "classification": "untraceable_assertion",
+          "reason": "Promise language: explanations must not promise a match.",
+          "flag": "promise_language"
+        }
+      ],
+      "counts": {
+        "total": 5,
+        "traceable": 3,
+        "traceableShare": 0.6
+      }
+    },
+    {
+      "pairId": "twin-b-x-mentor",
+      "sentences": [
+        {
+          "sentence": "Strong interest alignment",
+          "classification": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "classification": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "classification": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "You're in compatible time zones.",
+          "classification": "untraceable_assertion",
+          "reason": "timezoneCompatibility is a hardcoded 1.0 placeholder (TIMEZONE_PLACEHOLDER): it derives from no user-controlled data, so no sentence can truthfully cite it."
+        },
+        {
+          "sentence": "You will definitely hit it off.",
+          "classification": "untraceable_assertion",
+          "reason": "Promise language: explanations must not promise a match.",
+          "flag": "promise_language"
+        }
+      ],
+      "counts": {
+        "total": 5,
+        "traceable": 3,
+        "traceableShare": 0.6
+      }
     }
   ]
 }

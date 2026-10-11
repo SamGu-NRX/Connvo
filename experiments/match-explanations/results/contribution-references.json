@@ -195,6 +195,94 @@
           "computedValue": null
         }
       ]
+    },
+    {
+      "pairId": "twin-a-x-mentor",
+      "leftId": "mentee-twin-a",
+      "rightId": "mentor-senior-technology",
+      "score": 0.875,
+      "features": {
+        "interestOverlap": 1,
+        "experienceGap": 1,
+        "industryMatch": 1,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Strong interest alignment",
+          "kind": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "pairId": "twin-b-x-mentor",
+      "leftId": "mentee-twin-b",
+      "rightId": "mentor-senior-technology",
+      "score": 0.875,
+      "features": {
+        "interestOverlap": 1,
+        "experienceGap": 1,
+        "industryMatch": 1,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Strong interest alignment",
+          "kind": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
     }
   ]
 }
