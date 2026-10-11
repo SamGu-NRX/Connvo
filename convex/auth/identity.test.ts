@@ -28,9 +28,8 @@ import {
 // The stream token path minting is mocked: no GetStream SDK or network is
 // touched. Everything else in the module stays real.
 vi.mock("@convex/lib/getstreamServer", async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import("@convex/lib/getstreamServer")
-  >();
+  const actual =
+    await importOriginal<typeof import("@convex/lib/getstreamServer")>();
   return {
     ...actual,
     createStreamToken: vi.fn(() => "test-stream-token"),
@@ -45,7 +44,11 @@ interface TestUser {
   workosUserId: string;
 }
 
-function auth(server: TestServer, user: TestUser, extra: Partial<UserIdentity> = {}): AuthedTestServer {
+function auth(
+  server: TestServer,
+  user: TestUser,
+  extra: Partial<UserIdentity> = {},
+): AuthedTestServer {
   return server.withIdentity({
     subject: user.workosUserId,
     tokenIdentifier: `test|${user.workosUserId}`,
@@ -75,7 +78,11 @@ describe("Identity binding and tenancy", () => {
         orgRole: "member",
       });
 
-      const authedT = auth(t, { userId, workosUserId }, { email: "active@example.com" });
+      const authedT = auth(
+        t,
+        { userId, workosUserId },
+        { email: "active@example.com" },
+      );
       const profile = await authedT.query(
         api.profiles.queries.getProfileByUserIdPublic,
         { userId },
@@ -94,9 +101,15 @@ describe("Identity binding and tenancy", () => {
         isActive: false,
       });
 
-      const authedT = auth(t, { userId, workosUserId }, { email: "deactivated@example.com" });
+      const authedT = auth(
+        t,
+        { userId, workosUserId },
+        { email: "deactivated@example.com" },
+      );
       await expect(
-        authedT.query(api.profiles.queries.getProfileByUserIdPublic, { userId }),
+        authedT.query(api.profiles.queries.getProfileByUserIdPublic, {
+          userId,
+        }),
       ).rejects.toThrow("Account deactivated");
     });
 
@@ -273,9 +286,12 @@ describe("Identity binding and tenancy", () => {
         });
       });
 
-      const result = await t.mutation(internal.audit.logging.cleanupOldAuditLogs, {
-        olderThanMs: 60 * 1000,
-      });
+      const result = await t.mutation(
+        internal.audit.logging.cleanupOldAuditLogs,
+        {
+          olderThanMs: 60 * 1000,
+        },
+      );
       expect(result.deleted).toBe(1);
 
       const page = await t.query(internal.audit.logging.getAuditLogs, {
@@ -356,7 +372,9 @@ describe("Identity binding and tenancy", () => {
     });
 
     it("allows a co-participant on a shared meeting", async () => {
-      const authedT = auth(t, coparticipant, { email: "coparticipant@example.com" });
+      const authedT = auth(t, coparticipant, {
+        email: "coparticipant@example.com",
+      });
       const profile = await authedT.query(
         api.profiles.queries.getProfileByUserIdPublic,
         { userId: target.userId },
@@ -366,7 +384,13 @@ describe("Identity binding and tenancy", () => {
     });
 
     it("allows a same-org caller", async () => {
-      const authedT = auth(t, sameOrgUser, { email: "sameorg@example.com" });
+      // Org scoping now requires the VERIFIED token claims (org_id/org_role);
+      // stored document values are never used for authorization.
+      const authedT = auth(t, sameOrgUser, {
+        email: "sameorg@example.com",
+        org_id: "target-org",
+        org_role: "member",
+      });
       const profile = await authedT.query(
         api.profiles.queries.getProfileByUserIdPublic,
         { userId: target.userId },
@@ -375,7 +399,12 @@ describe("Identity binding and tenancy", () => {
     });
 
     it("allows an org admin", async () => {
-      const authedT = auth(t, admin, { email: "admin@example.com" });
+      // Org-admin visibility now requires verified admin claims.
+      const authedT = auth(t, admin, {
+        email: "admin@example.com",
+        org_id: "admin-org",
+        org_role: "admin",
+      });
       const profile = await authedT.query(
         api.profiles.queries.getProfileByUserIdPublic,
         { userId: target.userId },
@@ -393,10 +422,20 @@ describe("Identity binding and tenancy", () => {
     });
 
     it("never returns age, gender, or linkedinUrl", async () => {
-      for (const caller of [coparticipant, sameOrgUser, admin, target]) {
+      // Callers relying on org visibility present their verified org claims.
+      const callersWithClaims: Array<
+        [TestUser, { org_id: string; org_role: string }?]
+      > = [
+        [coparticipant],
+        [sameOrgUser, { org_id: "target-org", org_role: "member" }],
+        [admin, { org_id: "admin-org", org_role: "admin" }],
+        [target],
+      ];
+      for (const [caller, claims] of callersWithClaims) {
         const authedT = t.withIdentity({
           subject: caller.workosUserId,
           tokenIdentifier: `test|${caller.workosUserId}`,
+          ...claims,
         });
         const profile = await authedT.query(
           api.profiles.queries.getProfileByUserIdPublic,

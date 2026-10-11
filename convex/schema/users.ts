@@ -8,6 +8,11 @@ export const userTables = {
     email: v.string(),
     orgId: v.optional(v.string()),
     orgRole: v.optional(v.string()),
+    // Quarantine fields: unproven legacy org values moved out of orgId/orgRole
+    // by requireIdentity when the current verified token claims do not
+    // corroborate them (see convex/auth/guards.ts for the provenance policy).
+    legacyOrgId: v.optional(v.string()),
+    legacyOrgRole: v.optional(v.string()),
     // Denormalized for performance
     displayName: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
