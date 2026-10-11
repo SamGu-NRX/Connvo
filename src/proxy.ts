@@ -2,6 +2,9 @@ import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
 const BENCH_PREFIX = "/dev/call-bench";
+// The bench page fetches call tokens from the eval-only test-auth endpoint
+// (CONTRACT.md), and the bench browser has no WorkOS session — this one path
+// rides the same carve-out as the bench route itself.
 
 /**
  * Eval-only carve-out (S0 call harness, tools/call-eval/CONTRACT.md): the dev
@@ -17,7 +20,11 @@ export function benchPathPassesThrough(
 ): boolean {
   if (env.benchFlag !== "1") return false;
   if (env.vercelEnv === "production") return false;
-  return pathname === BENCH_PREFIX || pathname.startsWith(`${BENCH_PREFIX}/`);
+  return (
+    pathname === BENCH_PREFIX ||
+    pathname.startsWith(`${BENCH_PREFIX}/`) ||
+    pathname === "/api/test-auth/token"
+  );
 }
 
 const handleAuth = authkitMiddleware({
