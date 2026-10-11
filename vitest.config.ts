@@ -51,6 +51,14 @@ export default defineConfig({
         },
         resolve: commonResolve,
       },
+      {
+        test: {
+          name: "eval",
+          include: ["tools/call-eval/**/*.test.ts", "tools/call-eval/**/*.test.mjs"],
+          environment: "node",
+        },
+        resolve: commonResolve,
+      },
     ],
   },
   resolve: commonResolve,
