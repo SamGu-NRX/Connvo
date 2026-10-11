@@ -8,6 +8,11 @@ export const userTables = {
     email: v.string(),
     orgId: v.optional(v.string()),
     orgRole: v.optional(v.string()),
+    // Provenance of the org fields above. true only when the values were
+    // written from verified JWT org claims; absent or false means unproven
+    // (legacy rows, pre-hardening writes, or claims-free re-logins), and
+    // unproven values must never grant admin trust.
+    orgClaimsVerified: v.optional(v.boolean()),
     // Denormalized for performance
     displayName: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),

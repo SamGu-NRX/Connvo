@@ -200,7 +200,7 @@ describe("Identity binding and tenancy", () => {
       expect(user?.orgRole).toBeUndefined();
     });
 
-    it("leaves an existing INACTIVE user deactivated and never takes org fields from client args", async () => {
+    it("leaves an existing INACTIVE user deactivated and quarantines org fields on a claims-free re-login", async () => {
       const { userId, workosUserId } = await createCompleteTestUser(t, {
         workosUserId: "inactive-user-1",
         email: "old@example.com",
@@ -228,9 +228,11 @@ describe("Identity binding and tenancy", () => {
       // The update branch ran (email refreshed) but never re-activated...
       expect(user?.email).toBe("fresh@example.com");
       expect(user?.isActive).toBe(false);
-      // ...and org fields stayed at existing values (JWT had no org claims).
-      expect(user?.orgId).toBe("existing-org");
-      expect(user?.orgRole).toBe("member");
+      // ...and the stored org values are unproven under the claims-free
+      // token: cleared and stripped of verified provenance.
+      expect(user?.orgId).toBeUndefined();
+      expect(user?.orgRole).toBeUndefined();
+      expect(user?.orgClaimsVerified).toBe(false);
     });
   });
 

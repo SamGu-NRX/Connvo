@@ -62,6 +62,7 @@ export async function requireIdentity(
     displayName?: string | undefined;
     orgId?: string;
     orgRole?: string;
+    orgClaimsVerified?: boolean | undefined;
     isActive?: boolean | undefined;
   } | null = null;
   const hasDb = (ctx as any).db && typeof (ctx as any).db.query === "function";
@@ -103,8 +104,14 @@ export async function requireIdentity(
 
   const email = identity.email ?? userDoc.email ?? null;
   const name = identity.name ?? userDoc.displayName ?? null;
-  const orgId = (userDoc as any).orgId ?? null;
-  const orgRole = (userDoc as any).orgRole ?? null;
+
+  // Quarantine: stored org values are trusted only when their provenance is
+  // verified. A legacy forged record (or any row written without verified
+  // JWT org claims) must never grant admin trust, even with a valid current
+  // token that carries no organization claims.
+  const orgClaimsVerified = userDoc.orgClaimsVerified === true;
+  const orgId = orgClaimsVerified ? ((userDoc as any).orgId ?? null) : null;
+  const orgRole = orgClaimsVerified ? ((userDoc as any).orgRole ?? null) : null;
 
   return {
     userId: userDoc._id,
