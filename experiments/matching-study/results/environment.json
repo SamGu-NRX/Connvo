@@ -1,12 +1,12 @@
 {
-  "recordedAt": "2026-10-10T21:59:09.975Z",
+  "recordedAt": "2026-10-11T02:08:37.823Z",
   "platform": "linux x64",
   "uname": "Linux 6.1.158+",
   "node": "v20.20.2",
   "cpuModel": "Intel(R) Xeon(R) Processor @ 2.60GHz",
   "cpuCount": 8,
   "totalMemBytes": 8342290432,
-  "freeMemBytes": 7429083136,
-  "gitSha": "43d8d9882feecd4eeb1ef143d76c2e7eeb1f9dfa",
+  "freeMemBytes": 7411974144,
+  "gitSha": "faf45f6358bc685266d1595a10793a2fd26a08b6",
   "note": "package versions pinned in package.json / pnpm-lock.yaml (convex, convex-test, vitest)"
 }

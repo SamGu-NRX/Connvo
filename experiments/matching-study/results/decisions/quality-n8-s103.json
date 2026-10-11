@@ -20,6 +20,16 @@
       "shard": 2
     }
   ],
+  "userIds": [
+    "10000;users",
+    "10005;users",
+    "10010;users",
+    "10016;users",
+    "10022;users",
+    "10027;users",
+    "10033;users",
+    "10039;users"
+  ],
   "shardMembership": {
     "10000;users": 2,
     "10005;users": 1,
