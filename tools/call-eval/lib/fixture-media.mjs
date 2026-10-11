@@ -41,11 +41,35 @@ export const COUNTER_MOD = 4096;
 export const BLACK = { r: 20, g: 20, b: 20 };
 export const WHITE = { r: 235, g: 235, b: 235 };
 
+/** @typedef {{ r: number, g: number, b: number }} Color */
+
+/** @typedef {{ y: Uint8Array, cb: Uint8Array, cr: Uint8Array }} I420Planes */
+
+/** @typedef {{ data: Uint8ClampedArray, width: number, height: number }} ImageDataLike */
+
+/**
+ * @typedef {Object} WavOptions
+ * @property {number} freqHz Sine frequency in Hz, in (0, sampleRate/2).
+ * @property {number} [sampleRate]
+ * @property {number} [durationS]
+ * @property {number} [amplitude]
+ * @property {number} [fadeS]
+ */
+
+/**
+ * @param {number} frameNumber
+ * @returns {number}
+ */
 export function counterForFrame(frameNumber) {
   return ((frameNumber % COUNTER_MOD) + COUNTER_MOD) % COUNTER_MOD;
 }
 
 // Color of one band pixel (half-open ranges, matching the pinned geometry).
+/**
+ * @param {number} x
+ * @param {number} counter
+ * @returns {Color}
+ */
 function bandColorAt(x, counter) {
   if (x >= SENTINEL_LEFT.x0 && x < SENTINEL_LEFT.x1) return BLACK;
   if (x >= SENTINEL_RIGHT.x0 && x < SENTINEL_RIGHT.x1) return BLACK;
@@ -59,6 +83,11 @@ function bandColorAt(x, counter) {
 
 // RGB frame (Uint8Array, WIDTH*HEIGHT*3): peer color above the band, barcode
 // band at the bottom. frameNumber (not yet reduced) is wrapped internally.
+/**
+ * @param {number} frameNumber
+ * @param {Color} color
+ * @returns {Uint8Array}
+ */
 export function buildFrameRgb(frameNumber, { r, g, b }) {
   const counter = counterForFrame(frameNumber);
   const frame = new Uint8Array(WIDTH * HEIGHT * 3);
@@ -81,12 +110,22 @@ export function buildFrameRgb(frameNumber, { r, g, b }) {
   return frame;
 }
 
+/**
+ * @param {number} v
+ * @returns {number}
+ */
 function clampByte(v) {
   return v < 0 ? 0 : v > 255 ? 255 : v;
 }
 
 // BT.601 with JPEG/JFIF full range — the conversion paired with the y4m
 // `C420jpeg` colorspace token pinned by the contract.
+/**
+ * @param {number} r
+ * @param {number} g
+ * @param {number} b
+ * @returns {[number, number, number]} Y, Cb, Cr bytes
+ */
 export function rgbToYCbCr(r, g, b) {
   const y = 0.299 * r + 0.587 * g + 0.114 * b;
   const cb = -0.168736 * r - 0.331264 * g + 0.5 * b + 128;
@@ -98,6 +137,10 @@ export function rgbToYCbCr(r, g, b) {
 // the 2x2 box-filtered RGB block at pixels (2u..2u+1, 2v..2v+1); the transform
 // is linear in RGB, so this equals averaging per-pixel chroma for in-range
 // colors. Arithmetic is inlined: the generator calls this 300x4 times.
+/**
+ * @param {Uint8Array} rgb
+ * @returns {I420Planes}
+ */
 export function frameToI420(rgb) {
   if (!ArrayBuffer.isView(rgb) || rgb.length !== WIDTH * HEIGHT * 3) {
     throw new TypeError(`rgb frame must be a typed array of ${WIDTH * HEIGHT * 3} bytes`);
@@ -134,6 +177,10 @@ export function frameToI420(rgb) {
 // I420 planes -> ImageData-like ({ data RGBA, width, height }) as a canvas
 // getImageData would produce. Chroma is taken from sample (x>>1, y>>1).
 // Mirrors the JFIF full-range inverse of rgbToYCbCr.
+/**
+ * @param {I420Planes} frame
+ * @returns {ImageDataLike}
+ */
 export function i420ToImageDataLike(frame) {
   const { y, cb, cr } = frame;
   const data = new Uint8ClampedArray(WIDTH * HEIGHT * 4);
@@ -156,13 +203,17 @@ export function i420ToImageDataLike(frame) {
 
 // Canonical 44-byte-header RIFF/WAVE container, 16-bit mono PCM:
 // sine at freqHz, amplitude 0.6, linear 20 ms fade in/out.
+/**
+ * @param {WavOptions} options
+ * @returns {Buffer}
+ */
 export function buildWavPcm({
   freqHz,
   sampleRate = SAMPLE_RATE,
   durationS = DURATION_S,
   amplitude = TONE_AMPLITUDE,
   fadeS = FADE_S,
-} = {}) {
+}) {
   if (!(freqHz > 0) || freqHz >= sampleRate / 2) {
     throw new RangeError(`freqHz must be in (0, ${sampleRate / 2}) Hz`);
   }
@@ -198,6 +249,10 @@ export function buildWavPcm({
 
 // Minimal parser for the canonical 44-byte-header PCM16 mono WAVs written by
 // buildWavPcm (self-check / tests only, not a general WAV reader).
+/**
+ * @param {Buffer} buf
+ * @returns {{ sampleRate: number, channels: number, bitsPerSample: number, samples: Float32Array }}
+ */
 export function parseWavPcm(buf) {
   if (
     buf.length < 44 ||

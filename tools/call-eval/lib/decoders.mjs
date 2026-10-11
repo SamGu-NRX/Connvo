@@ -23,6 +23,30 @@ const COUNTER_MOD = 4096;
 // 128 is the Rec.601 luma midpoint between them.
 const LUMA_THRESHOLD = 128;
 
+/**
+ * The minimal image shape the decoders accept: exactly what canvas
+ * `getImageData()` returns, and trivially constructible from any RGBA source.
+ * The runner serializes these functions into the page, so types are plain.
+ *
+ * @typedef {Object} ImageDataLike
+ * @property {Uint8ClampedArray} data RGBA, 4 bytes per pixel, row-major.
+ * @property {number} width
+ * @property {number} height
+ */
+
+/** @typedef {{ r: number, g: number, b: number }} Color */
+
+/** @typedef {{ counter: number, ok: boolean }} CounterResult */
+
+/** @typedef {{ peakHz: number, rms: number }} ToneResult */
+
+/** @typedef {{ t: number, counter: number }} FpsSample */
+
+/**
+ * Runtime shape check that doubles as the narrowed destructure source.
+ * @param {ImageDataLike} imageData
+ * @returns {{ data: Uint8ClampedArray, width: number, height: number }}
+ */
 function validateImageData(imageData) {
   if (imageData === null || typeof imageData !== "object") {
     throw new TypeError("imageData must be an object like { data, width, height }");
@@ -32,8 +56,8 @@ function validateImageData(imageData) {
     throw new TypeError("imageData.width/height must be positive integers");
   }
   const needed = width * height * 4;
-  if (!ArrayBuffer.isView(data) || data.length < needed) {
-    throw new TypeError(`imageData.data must be a typed array of at least ${needed} bytes`);
+  if (!(data instanceof Uint8ClampedArray) || data.length < needed) {
+    throw new TypeError(`imageData.data must be a Uint8ClampedArray of at least ${needed} bytes`);
   }
   return { data, width, height };
 }
@@ -43,6 +67,10 @@ function validateImageData(imageData) {
 // for a same-frame capture at another resolution. Samples the region on a
 // stride grid, picks the winning 5-bit-quantized color bucket, and returns the
 // mean of that bucket's pixels (so the result keeps full 8-bit precision).
+/**
+ * @param {ImageDataLike} imageData
+ * @returns {Color}
+ */
 export function decodeBarcodeColor(imageData) {
   const { data, width, height } = validateImageData(imageData);
   const bandTop = Math.round((BAND_TOP / FRAME_H) * height);
@@ -67,10 +95,11 @@ export function decodeBarcodeColor(imageData) {
       }
     }
   }
-  let best = null;
+  let /** @type {{ n: number, r: number, g: number, b: number } | null} */ best = null;
   for (const bucket of buckets.values()) {
     if (!best || bucket.n > best.n) best = bucket;
   }
+  if (!best) throw new TypeError("imageData has no sampleable pixels above the band");
   return {
     r: Math.round(best.r / best.n),
     g: Math.round(best.g / best.n),
@@ -83,6 +112,10 @@ export function decodeBarcodeColor(imageData) {
 // is not trusted in that case. Geometry is the pinned 320x240 layout applied
 // proportionally (exact at 320x240); bit cells are sampled over their middle
 // half so a pixel of scaling blur at cell edges cannot flip a bit.
+/**
+ * @param {ImageDataLike} imageData
+ * @returns {CounterResult}
+ */
 export function decodeFrameCounter(imageData) {
   const { data, width, height } = validateImageData(imageData);
   const bandTop = Math.round((BAND_TOP / FRAME_H) * height);
@@ -94,13 +127,13 @@ export function decodeFrameCounter(imageData) {
     mid,
     Math.min(height - 1, mid + 4),
   ];
-  const sx0 = (x) => Math.min(width, Math.round((x / FRAME_W) * width));
-  const lumaAt = (x, y) => {
+  const sx0 = /** @param {number} x */ (x) => Math.min(width, Math.round((x / FRAME_W) * width));
+  const lumaAt = /** @param {number} x @param {number} y */ (x, y) => {
     const i = (y * width + x) * 4;
     return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
   };
   // Mean luma over the middle half of [x0, x1) at the sampled band rows.
-  const meanLuma = (x0, x1) => {
+  const meanLuma = /** @param {number} x0 @param {number} x1 */ (x0, x1) => {
     const inset = Math.floor((x1 - x0) / 4);
     let sum = 0;
     let n = 0;
@@ -140,6 +173,10 @@ export function decodeFrameCounter(imageData) {
 // frame counter (mod 4096). Handles the mod-4096 wrap; duplicate counters
 // (repeated frames) advance by 0 and skipped counters advance by their gap, so
 // both dropped frames and stalls lower the computed fps.
+/**
+ * @param {FpsSample[]} samples
+ * @returns {number}
+ */
 export function computeFps(samples) {
   if (!Array.isArray(samples)) {
     throw new TypeError("samples must be an array of { t, counter }");
@@ -168,6 +205,11 @@ export function computeFps(samples) {
 // { peakHz, rms }; pure digital silence yields peakHz 0. The analysis window
 // is capped at 12000 samples (~0.25 s at 48 kHz), so cost is bounded even for
 // long buffers.
+/**
+ * @param {Float32Array | ArrayLike<number>} samples
+ * @param {number} sampleRate
+ * @returns {ToneResult}
+ */
 export function decodeToneHz(samples, sampleRate) {
   if (!Number.isFinite(sampleRate) || sampleRate <= 0) {
     throw new TypeError("sampleRate must be a positive number");
@@ -201,6 +243,14 @@ export function decodeToneHz(samples, sampleRate) {
   return { peakHz: Math.round(bestF * 10) / 10, rms };
 }
 
+/**
+ * Goertzel power of `freq` over x[0..n).
+ * @param {Float32Array} x
+ * @param {number} n
+ * @param {number} freq
+ * @param {number} sampleRate
+ * @returns {number}
+ */
 function goertzelPower(x, n, freq, sampleRate) {
   const coeff = 2 * Math.cos((2 * Math.PI * freq) / sampleRate);
   let s1 = 0;

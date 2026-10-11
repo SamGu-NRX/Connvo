@@ -26,12 +26,29 @@ import {
   WHITE,
 } from "./fixture-media.mjs";
 
+/** @typedef {import("./fixture-media.mjs").ImageDataLike} ImageDataLike */
+/** @typedef {import("./fixture-media.mjs").Color} Color */
+
 // Fixture frame at frameNumber, carried through RGB -> I420 -> ImageData-like
 // (the same conversion the y4m files undergo when a canvas decodes them).
+/**
+ * @param {number} frameNumber
+ * @param {Color} [color]
+ * @returns {ImageDataLike}
+ */
 function frameImage(frameNumber, color = PEER_COLORS.A) {
   return i420ToImageDataLike(frameToI420(buildFrameRgb(frameNumber, color)));
 }
 
+/**
+ * @param {ImageDataLike} image
+ * @param {number} x0
+ * @param {number} x1
+ * @param {number} y0
+ * @param {number} y1
+ * @param {Color} color
+ * @returns {ImageDataLike}
+ */
 function paintRect(image, x0, x1, y0, y1, { r, g, b }) {
   for (let y = y0; y < y1; y++) {
     for (let x = x0; x < x1; x++) {
@@ -165,6 +182,11 @@ describe("computeFps", () => {
 describe("decodeToneHz", () => {
   const windowS = 0.25;
 
+  /**
+   * @param {number} freqHz
+   * @param {{ sampleRate?: number, amplitude?: number }} [opts]
+   * @returns {Float32Array}
+   */
   function sine(freqHz, { sampleRate = SAMPLE_RATE, amplitude = TONE_AMPLITUDE } = {}) {
     const n = Math.round(sampleRate * windowS);
     const x = new Float32Array(n);
