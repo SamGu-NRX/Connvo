@@ -30,20 +30,42 @@ export function mulberry32(seed) {
 
 export function createShaper({ seed = 1 } = {}) {
   const rng = mulberry32(seed);
-  let socket = null;
+  let socket = null; // client-facing listener
+  let uplink = null; // coturn-facing socket
   let target = null; // { port, host }
+  let client = null; // { address, port } — the participant's last source, learned per packet
   let profile = { lossPct: 0, delayMs: 0 }; // H-07: 100% loss; H-15: 5/15% + 300 ms
   const timers = new Set();
   const stats = { forwarded: 0, dropped: 0 };
 
-  function forward(msg, rinfo) {
+  // One shaper serves one participant's browser: its STUN/TURN client socket
+  // reaches coturn through here, so this proxy sees the participant's egress
+  // on the listen socket and everything coturn sends back — replies from the
+  // TURN port AND relayed media from allocation ports — on the uplink socket.
+  // Routing by socket (not by source port) is what keeps coturn's replies out
+  // of a loop: the reviewed bug forwarded every inbound datagram to coturn,
+  // so replies never reached the browser and relay-only media was dead.
+  function onClient(msg, rinfo) {
+    client = { address: rinfo.address, port: rinfo.port };
     if (profile.lossPct > 0 && rng() * 100 < profile.lossPct) {
       stats.dropped++;
       return;
     }
+    shapedSend(msg, target, uplink);
+  }
+
+  function onUplink(msg) {
+    if (!client) {
+      stats.dropped++; // reply before any client packet: nothing to route to
+      return;
+    }
+    shapedSend(msg, client, socket);
+  }
+
+  function shapedSend(msg, dest, via) {
     const send = () => {
-      if (!socket) return;
-      socket.send(msg, target.port, target.host);
+      if (!via) return;
+      via.send(msg, dest.port, dest.address);
       stats.forwarded++;
     };
     if (profile.delayMs > 0) {
@@ -63,11 +85,17 @@ export function createShaper({ seed = 1 } = {}) {
       target = { port: targetPort, host: targetHost };
       return new Promise((resolve, reject) => {
         socket = dgram.createSocket("udp4");
-        socket.on("message", forward);
+        uplink = dgram.createSocket("udp4");
+        socket.on("message", onClient);
+        uplink.on("message", onUplink);
         socket.on("error", reject);
+        uplink.on("error", reject);
         socket.bind(listenPort, "127.0.0.1", () => {
-          socket.on("error", () => {}); // late errors: sweep logs only
-          resolve(listenPort);
+          uplink.bind(0, "127.0.0.1", () => {
+            socket.on("error", () => {}); // late errors: sweep logs only
+            uplink.on("error", () => {});
+            resolve(listenPort);
+          });
         });
       });
     },
@@ -89,7 +117,13 @@ export function createShaper({ seed = 1 } = {}) {
       } catch {
         /* already closed */
       }
+      try {
+        uplink?.close();
+      } catch {
+        /* already closed */
+      }
       socket = null;
+      uplink = null;
     },
   };
 }
