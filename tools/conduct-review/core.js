@@ -263,8 +263,13 @@ export function buildView(record, role) {
     return { exists: false };
   }
   var view = { state: record.state, stateLabel: STATE_LABELS[record.state] };
+  // Names computed below from policy/engine — never copied off the record
+  // (the record does not carry them; copying would clobber to undefined).
+  var COMPUTED = { stateLabel: 1, notice: 1, canEdit: 1, canRespond: 1, responseRecorded: 1,
+    categoryNotice: 1, outcomeNotice: 1, statementNotice: 1, authorized: 1, availableActions: 1 };
   for (var f of stateFields) {
     if (f === 'exists') { view.exists = true; continue; }
+    if (COMPUTED[f]) continue;
     view[f] = record[f];
   }
 
@@ -272,6 +277,7 @@ export function buildView(record, role) {
   if (role === 'reporter') {
     view.notice = STATE_NOTICES.reporter[record.state];
     view.canEdit = record.state === 'draft';
+    if (record.state === 'closed') view.outcomeNotice = 'Outcome: ' + record.outcome + '.';
   }
   if (role === 'subject') {
     view.notice = STATE_NOTICES.subject[record.state] || null;
@@ -295,6 +301,7 @@ export function buildView(record, role) {
       view.subjectResponse = record.subjectResponse
         ? { text: record.subjectResponse.text, at: record.subjectResponse.at }
         : null;
+      if (record.state === 'closed') view.outcomeNotice = 'Outcome: ' + record.outcome + '.';
     }
   }
   // The action list always comes from the engine's policy table — for the
@@ -302,8 +309,8 @@ export function buildView(record, role) {
   var seatId = role === 'reporter' ? record.reporterId
     : role === 'subject' ? record.subjectId
     : (view.authorized ? record.reviewGrants[0].reviewerId : null);
-  if (seatId && stateFields.indexOf('availableActions') !== -1) {
-    view.availableActions = allowedActions(record, seatId);
+  if (stateFields.indexOf('availableActions') !== -1) {
+    view.availableActions = seatId ? allowedActions(record, seatId) : [];
   }
   return view;
 }
