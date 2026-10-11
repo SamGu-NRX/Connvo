@@ -44,6 +44,9 @@ export const probeInit = String.raw`
       connectionState: pc.connectionState,
       iceConnectionState: pc.iceConnectionState,
       signalingState: pc.signalingState,
+      // H-11 asserts on closed directly; the reviewed bug never recorded it,
+      // so every record read as not-closed regardless of the real state.
+      closed: pc.connectionState === 'closed',
       everConnected: false,
     };
     probe.pcs.push(rec);
@@ -51,6 +54,7 @@ export const probeInit = String.raw`
       rec.connectionState = pc.connectionState;
       rec.iceConnectionState = pc.iceConnectionState;
       rec.signalingState = pc.signalingState;
+      rec.closed = pc.connectionState === 'closed';
       if (pc.connectionState === 'connected') rec.everConnected = true;
       recount();
     };

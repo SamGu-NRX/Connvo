@@ -165,13 +165,20 @@ export async function scenario_H_03(ctx) {
 export async function scenario_H_04(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
+  // Capture A's OWN capture tracks before toggling: window.__h11tracks is
+  // only ever set by H-11's pre-leave capture, so H-04's read was always []
+  // and the ended-track assertion compared against nothing (reviewed bug).
+  await peerA.page.evaluate(`(() => {
+    window.__h04tracks = [...(document.querySelector('[data-testid="local-video"]')?.srcObject?.getTracks() ?? [])];
+  })()`);
+
   const t0 = Date.now();
   await click(peerA, "toggle-camera");
   await waitAttr(peerB, "A", "data-video-off", "true", 1000);
   const offFlipMs = Date.now() - t0;
 
-  const trackStates = await peerA.page.evaluate(`(() => (window.__h11tracks ?? []).map(t => t.readyState))()`);
-  if (!trackStates.includes("ended")) {
+  const trackStates = await peerA.page.evaluate(`(() => (window.__h04tracks ?? []).map(t => t.readyState))()`);
+  if (trackStates.length === 0 || !trackStates.includes("ended")) {
     throw new ScenarioError(`H-04: sender's capture track is not ended (${JSON.stringify(trackStates)})`);
   }
 
@@ -333,7 +340,7 @@ export async function scenario_H_10(ctx) {
     timeoutMs: 15000,
     describe: "A's tile gone within 15 s (heartbeat sweep)",
   });
-  const events = ctx.sessionEvents();
+  const events = await ctx.sessionEvents(); // promise under the reference signaling handle, array on the mock relay
   return { closed, tileGone: true, sessionEvents: events.slice(-4) };
 }
 
@@ -373,8 +380,11 @@ export async function scenario_H_11(ctx) {
     throw new ScenarioError(`H-11: getStats still called after leave (${calls1} -> ${calls2})`);
   }
 
-  const events = ctx.sessionEvents();
-  const leftEvent = events.find((e) => e.participant === "A" && e.reason === "leave");
+  const events = await ctx.sessionEvents();
+  // relay.mjs records reason "left" for a clean departure ("disconnected"
+  // for a bare socket drop) — the reviewed bug asserted the never-recorded
+  // "leave".
+  const leftEvent = events.find((e) => e.participant === "A" && e.reason === "left");
   if (!leftEvent) throw new ScenarioError("H-11: no leave session event on the relay", { events });
 
   // B observes the departure (tile gone).
