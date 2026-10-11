@@ -53,19 +53,19 @@ export function simulatePair(
     state.fatigue.get(b.id) ?? 0,
   );
 
-  const pAccept = sigmoid(9 * (g - 0.52) + 2.2 * (soc - 0.5) - 1.1 * fatigue);
+  const pAccept = sigmoid(9 * (g - 0.47) + 2.2 * (soc - 0.5) - 1.1 * fatigue);
   const outcome: PairOutcome = { userA: a.id, userB: b.id, outcome: "declined" };
 
   if (rng.bool(pAccept)) {
     const dTz = Math.abs((a.timezoneOffset ?? 0) - (b.timezoneOffset ?? 0));
-    const tzPenalty = Math.max(0, (dTz - 3) / 9) * 1.3;
-    const pComplete = sigmoid(7 * (g - 0.42) - tzPenalty);
+    const tzPenalty = Math.max(0, (dTz - 3) / 9) * 0.8;
+    const pComplete = sigmoid(7 * (g - 0.36) - tzPenalty);
     outcome.outcome = rng.bool(pComplete) ? "completed" : "no_show";
   }
 
   state.history.push(outcome);
   if (outcome.outcome !== "completed") {
-    const bump = outcome.outcome === "declined" ? 0.5 : 0.35;
+    const bump = outcome.outcome === "declined" ? 0.3 : 0.2;
     state.fatigue.set(a.id, Math.min(2.5, (state.fatigue.get(a.id) ?? 0) + bump));
     state.fatigue.set(b.id, Math.min(2.5, (state.fatigue.get(b.id) ?? 0) + bump));
   }

@@ -186,6 +186,7 @@ export class LinearModel {
 export function learnedLinear(): Matcher {
   const model = new LinearModel();
   const perUser: Map<string, { sum: number; n: number }> = new Map();
+  const samples: LearningSample[] = [];
   let lastPairs: PairScored[] = [];
   return {
     name: "learned-linear",
@@ -214,7 +215,9 @@ export function learnedLinear(): Matcher {
       const pairs = scoreAllPairs(population, embeddingCosine ?? (() => undefined), TUNED_WEIGHTS);
       const scored: PairScored[] = pairs.map((p) => ({
         ...p,
-        score: model.predict(Object.values(p.features)),
+        // Model predicts outcome labels centered at 0.5 (advantage-
+        // centering) — shift back into score space before ranking.
+        score: Math.max(0, Math.min(1, model.predict(Object.values(p.features)) + 0.5)),
       }));
       const raw = buildQueue(scored, { perUserCap: PER_USER_CAP, minScore: 0.45 });
       const withTopUp = topUp(scored, raw, PER_USER_CAP);
@@ -222,8 +225,6 @@ export function learnedLinear(): Matcher {
       return { matches: finishMatches(scored, withTopUp, TUNED_WEIGHTS) };
     },
   };
-  var samples: LearningSample[] = [];
-  void lastPairs;
 }
 
 // -- 4. adaptive-hybrid -----------------------------------------------------

@@ -19,10 +19,9 @@ import {
 export const POP_SIZE = 300;
 
 const INTERESTS = [
-  "startups", "AI/ML", "web dev", "design", "fintech", "climate",
-  "hardware", "games", "music", "film", "writing", "fitness",
-  "cooking", "travel", "photography", "investing", "robotics", "biology",
-  "space", "education", "crypto", "open source", "databases", "psychology",
+  "AI/ML", "web dev", "design", "fintech", "climate",
+  "games", "music", "writing", "fitness", "investing",
+  "robotics", "biology", "space", "education", "crypto", "psychology",
 ];
 
 const INDUSTRIES = [
@@ -41,27 +40,33 @@ const TITLES: Record<RoleFamily, string[]> = {
 
 const LANGUAGES = ["English", "Spanish", "Mandarin", "Hindi", "French", "German", "Portuguese", "Arabic", "Japanese", "Korean"];
 
-/** Bio fragments whose selection is driven by the taste vector. */
+/** Bio fragments whose selection is driven by the taste vector — one
+ * per interest, so the bio carries the same signal as the interests
+ * channel with distinct phrasing. */
 const BIO_HEADS: Array<{ interest: string; text: string }> = [
   { interest: "AI/ML", text: "Building with LLMs and trying to ship useful things" },
-  { interest: "startups", text: "Working on a very early idea and enjoying the chaos" },
+  { interest: "web dev", text: "Shipping web apps and arguing about CSS in my spare time" },
   { interest: "design", text: "Care a lot about interfaces that feel calm" },
+  { interest: "fintech", text: "Ex-banking, now building payments tooling" },
   { interest: "climate", text: "Spending my weekends on carbon accounting side projects" },
   { interest: "games", text: "Modding an old RPG in my spare time" },
-  { interest: "fintech", text: "Ex-banking, now building payments tooling" },
-  { interest: "fitness", text: "Training for a half marathon between deploys" },
-  { interest: "writing", text: "Keeping a public engineering journal" },
   { interest: "music", text: "Half-decent guitar, terrible singing" },
+  { interest: "writing", text: "Keeping a public engineering journal" },
+  { interest: "fitness", text: "Training for a half marathon between deploys" },
+  { interest: "investing", text: "Way too many open browser tabs about index funds" },
   { interest: "robotics", text: "Tinkering with a ROS2 setup in the garage" },
+  { interest: "biology", text: "Reading papers about RNA folding for fun" },
+  { interest: "space", text: "Amateur telescope, professional star-gazing ambitions" },
+  { interest: "education", text: "Teaching a weekend coding class for beginners" },
+  { interest: "crypto", text: "Running a node and avoiding the hype cycles" },
+  { interest: "psychology", text: "Reading Kahneman again, fourth time" },
 ];
 
 const BIO_TAILS = [
-  "Happy to trade notes with anyone adjacent.",
+  "Happy to trade notes.",
   "Looking for people who ship.",
-  "Mostly here to learn from people further along.",
-  "Prefer small honest catch-ups over big networking.",
-  "Ask me about my spreadsheet habit.",
-  "Slow to reply, quick to meet.",
+  "Mostly here to learn.",
+  "Prefer small honest catch-ups.",
 ];
 
 /** Sample a 16-dim unit-ish taste vector. */
@@ -82,13 +87,14 @@ export function makePopulation(seed: number, size = POP_SIZE): Population {
     const taste = tasteVector(rng);
     const sociability = Math.min(1, Math.max(0, 0.5 + 0.22 * rng.normal()));
 
-    // Interests: top-k affinity plus one wildcard — this is the channel
-    // the ground truth rewards for trueInterestAlign.
+    // Interests: top-k taste affinity plus one wildcard — the channel
+    // the ground truth rewards for trueInterestAlign. Interest k maps
+    // to taste dim k (both are 16-long), so affinity is a direct read.
     const scored = INTERESTS.map((name, k) => ({
       name,
-      a: taste.reduce((acc, x, d) => acc + x * ((k * 7 + d * 13) % 16 === 0 ? 2 : 1), 0),
+      a: taste[k % taste.length] + 0.3 * rng.normal(),
     })).sort((x, y) => y.a - x.a);
-    const interests = scored.slice(0, 3 + rng.int(3)).map((s) => s.name);
+    const interests = scored.slice(0, 4 + rng.int(3)).map((s) => s.name);
     interests.push(rng.pick(INTERESTS));
 
     const roleFamily = rng.pick(ROLE_FAMILIES);

@@ -14,7 +14,7 @@ type FastembedModule = {
   embed: (input: string[]) => Promise<Array<AsyncIterable<number[]>>>;
 };
 
-let fastembed: FastembedModule | null | undefined;
+let fastembed: FastembedModule | null = null;
 let tried = false;
 
 async function tryLoadFastembed(): Promise<FastembedModule | null> {

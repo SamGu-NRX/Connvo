@@ -159,10 +159,12 @@ export function allocationCheckAtN8(
 
 // ---------------------------------------------------------------------------
 // Permission differential (#19 negative-control technique)
+// Value-permutation semantics: a compliant scorer must not depend on the
+// VALUES of fields a subject withheld.
 // ---------------------------------------------------------------------------
 
 export interface PermissionResult {
-  /** Max |score(full) - score(restricted)| for the matcher under test. */
+  /** Max |score(permuted) - score(original)| over sampled pairs. */
   maxDelta: number;
   /** Pairs exceeding the tolerance (empty when compliant). */
   violations: number;
@@ -181,49 +183,100 @@ function leakyScore(a: EvalProfile, b: EvalProfile): number {
   const ind = a.industry === b.industry ? 1 : 0;
   const tz = Math.max(0, 1 - Math.abs((a.timezoneOffset ?? 0) - (b.timezoneOffset ?? 0)) / 10);
   const org = a.orgId !== undefined && a.orgId === b.orgId ? 1 : 0;
-  return 0.25 * exp / 20 + 0.25 * ind + 0.25 * tz + 0.25 * org;
+  return 0.25 * (exp / 20) + 0.25 * ind + 0.25 * tz + 0.25 * org;
 }
 
+/** Field-value pools sampled when randomizing withheld data. */
+export interface FieldPools {
+  experience: number[];
+  industry: string[];
+  timezone: number[];
+  organization: string[];
+}
+
+const DEFAULT_POOLS: FieldPools = {
+  experience: [-2, 1, 3, 6, 9, 14, 22],
+  industry: ["software", "fintech", "healthcare", "education", "climate"],
+  timezone: [-8, -5, 0, 1, 5.5, 9],
+  organization: ["org-0", "org-1", "org-2", "org-3", "org-4", "org-5"],
+};
+
+const permitsField = (p: EvalProfile, f: string): boolean =>
+  p.permittedFields.includes(f as EvalProfile["permittedFields"][number]);
+
+function permuteProfile(
+  p: EvalProfile,
+  pools: FieldPools,
+  rng: Rng,
+): EvalProfile {
+  // Only withheld fields move; permitted values must stay (the score
+  // may legitimately depend on those).
+  return {
+    ...p,
+    experienceYears: permitsField(p, "experience")
+      ? p.experienceYears
+      : rng.pick(pools.experience),
+    industry: permitsField(p, "industry") ? p.industry : rng.pick(pools.industry),
+    timezoneOffset: permitsField(p, "timezone")
+      ? p.timezoneOffset
+      : rng.pick(pools.timezone),
+    orgId: permitsField(p, "organization") ? p.orgId : rng.pick(pools.organization),
+  };
+}
+
+/**
+ * Permission differential, value-permutation semantics: for each
+ * sampled pair, randomize every WITHHELD field's stored value and
+ * re-score. A compliant scorer's features depend only on permitted
+ * values (withheld inputs collapse to the neutral constant), so its
+ * score must be invariant; any movement is a leak. The leaky control
+ * reads stored values directly and MUST move; if it does not, the
+ * test is vacuous and fails.
+ */
 export function permissionDifferential(
   population: Population,
   cos: (a: string, b: string) => number | undefined,
   scoreFn: (a: EvalProfile, b: EvalProfile) => number,
-  tol = 0.02,
+  tol = 1e-9,
+  pools: FieldPools = DEFAULT_POOLS,
 ): PermissionResult {
   const rng = new Rng(1234);
   let violations = 0;
   let maxDelta = 0;
-  const sample = rng.sample(population.profiles, 80);
+  const sample = rng.sample(population.profiles, 60);
   for (let i = 0; i < sample.length; i++) {
     for (let j = i + 1; j < sample.length; j++) {
       const a = sample[i];
       const b = sample[j];
-      const sFull = scoreFn(a, b);
-      const sRestrict = scoreFn(restrict(a), restrict(b));
-      const d = Math.abs(sFull - sRestrict);
+      const s0 = scoreFn(a, b);
+      const s1 = scoreFn(
+        permuteProfile(a, pools, rng),
+        permuteProfile(b, pools, rng),
+      );
+      const d = Math.abs(s0 - s1);
       if (d > maxDelta) maxDelta = d;
       if (d > tol) violations++;
     }
   }
-  // Negative control: the leaky scorer MUST move on restriction.
+  // Negative control with an independent stream.
+  const rng2 = new Rng(5678);
   let leakyMoved = false;
-  for (let i = 0; i < sample.length; i++) {
+  for (let i = 0; i < sample.length && !leakyMoved; i++) {
     for (let j = i + 1; j < sample.length; j++) {
       const a = sample[i];
       const b = sample[j];
-      if (leakyScore(a, b) !== leakyScore(restrict(a), restrict(b))) {
+      const s0 = leakyScore(a, b);
+      const s1 = leakyScore(
+        permuteProfile(a, pools, rng2),
+        permuteProfile(b, pools, rng2),
+      );
+      if (s0 !== s1) {
         leakyMoved = true;
         break;
       }
     }
-    if (leakyMoved) break;
   }
   return { maxDelta, violations, leakyCaught: leakyMoved, vacuous: !leakyMoved };
-}
-
-/** A copy of the profile with ALL optional fields withheld. */
-function restrict(p: EvalProfile): EvalProfile {
-  return { ...p, permittedFields: [], experienceYears: undefined, industry: undefined, timezoneOffset: undefined, orgId: undefined };
 }
 
 // ---------------------------------------------------------------------------
