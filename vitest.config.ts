@@ -63,6 +63,26 @@ export default defineConfig({
         },
         resolve: commonResolve,
       },
+      // M2 (connvo-notes-ledger-f1): notes ledger suite under test/notes —
+      // ledger/diff units, the convex-test smoke, and the mounted fault
+      // matrix. Additive only — jsdom + testing-library, convex-test inlined
+      // like the convex project (the harness runs the real notes API).
+      {
+        test: {
+          name: "notes",
+          include: ["test/notes/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./test/notes/setup.ts"],
+          pool: "threads",
+          maxWorkers: 1,
+          server: {
+            deps: {
+              inline: ["convex-test"],
+            },
+          },
+        },
+        resolve: commonResolve,
+      },
     ],
   },
   resolve: commonResolve,
