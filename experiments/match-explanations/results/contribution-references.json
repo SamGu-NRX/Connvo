@@ -1,0 +1,288 @@
+{
+  "fallbackSentence": "Basic compatibility based on available data",
+  "conditionTable": [
+    {
+      "sentence": "Strong interest alignment",
+      "feature": "interestOverlap",
+      "condition": "interestOverlap > 0.7"
+    },
+    {
+      "sentence": "Some shared interests",
+      "feature": "interestOverlap",
+      "condition": "interestOverlap > 0.4 && interestOverlap <= 0.7"
+    },
+    {
+      "sentence": "Ideal experience gap for mentorship",
+      "feature": "experienceGap",
+      "condition": "experienceGap === 1.0"
+    },
+    {
+      "sentence": "Similar experience levels",
+      "feature": "experienceGap",
+      "condition": "experienceGap > 0.7 && experienceGap !== 1.0"
+    },
+    {
+      "sentence": "High semantic profile similarity",
+      "feature": "vectorSimilarity",
+      "condition": "vectorSimilarity != null && vectorSimilarity > 0.8"
+    },
+    {
+      "sentence": "Complementary professional roles",
+      "feature": "roleComplementarity",
+      "condition": "roleComplementarity === 1.0"
+    },
+    {
+      "sentence": "Strong language compatibility",
+      "feature": "languageOverlap",
+      "condition": "languageOverlap > 0.8"
+    }
+  ],
+  "computedButUnsurfaced": [
+    {
+      "feature": "industryMatch",
+      "note": "industryMatch is computed (exact match 1.0, related fields 0.8, same company 0.9, different 0.3) but no explanation sentence references it."
+    },
+    {
+      "feature": "timezoneCompatibility",
+      "note": "timezoneCompatibility is a hardcoded 1.0 placeholder and no sentence references it."
+    },
+    {
+      "feature": "orgConstraintMatch",
+      "note": "orgConstraintMatch is computed (including the 0.0 falsified-same_org case) but no explanation sentence references it."
+    }
+  ],
+  "pairs": [
+    {
+      "pairId": "mentee-x-mentor",
+      "leftId": "mentee-junior-technology",
+      "rightId": "mentor-senior-technology",
+      "score": 0.8645833333333334,
+      "features": {
+        "interestOverlap": 0.7666666666666666,
+        "experienceGap": 1,
+        "industryMatch": 1,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 1,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Strong interest alignment",
+          "kind": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 0.7666666666666666
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "pairId": "mentor-x-peer",
+      "leftId": "mentor-senior-technology",
+      "rightId": "peer-mid-software",
+      "score": 0.6289949493661168,
+      "features": {
+        "interestOverlap": 0,
+        "experienceGap": 1,
+        "industryMatch": 0.3,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": 0.9949747468305832,
+        "orgConstraintMatch": 1,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Ideal experience gap for mentorship",
+        "High semantic profile similarity",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "High semantic profile similarity",
+          "kind": "supported_contribution",
+          "feature": "vectorSimilarity",
+          "condition": "vectorSimilarity != null && vectorSimilarity > 0.8",
+          "computedValue": 0.9949747468305832
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "pairId": "mentee-x-design",
+      "leftId": "mentee-junior-technology",
+      "rightId": "lead-design-cross-org",
+      "score": 0.4906249999999999,
+      "features": {
+        "interestOverlap": 0.35,
+        "experienceGap": 0.6,
+        "industryMatch": 0.3,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 0.7
+      },
+      "explanation": [
+        "Basic compatibility based on available data"
+      ],
+      "references": [
+        {
+          "sentence": "Basic compatibility based on available data",
+          "kind": "fallback",
+          "feature": null,
+          "condition": "no other condition fired",
+          "computedValue": null
+        }
+      ]
+    },
+    {
+      "pairId": "mentee-x-sparse",
+      "leftId": "mentee-junior-technology",
+      "rightId": "executive-sparse-no-profile",
+      "score": 0.34375,
+      "features": {
+        "interestOverlap": 0,
+        "experienceGap": 0.5,
+        "industryMatch": 0.5,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 0
+      },
+      "explanation": [
+        "Basic compatibility based on available data"
+      ],
+      "references": [
+        {
+          "sentence": "Basic compatibility based on available data",
+          "kind": "fallback",
+          "feature": null,
+          "condition": "no other condition fired",
+          "computedValue": null
+        }
+      ]
+    },
+    {
+      "pairId": "twin-a-x-mentor",
+      "leftId": "mentee-twin-a",
+      "rightId": "mentor-senior-technology",
+      "score": 0.875,
+      "features": {
+        "interestOverlap": 1,
+        "experienceGap": 1,
+        "industryMatch": 1,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Strong interest alignment",
+          "kind": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "pairId": "twin-b-x-mentor",
+      "leftId": "mentee-twin-b",
+      "rightId": "mentor-senior-technology",
+      "score": 0.875,
+      "features": {
+        "interestOverlap": 1,
+        "experienceGap": 1,
+        "industryMatch": 1,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Strong interest alignment",
+          "kind": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
+    }
+  ]
+}

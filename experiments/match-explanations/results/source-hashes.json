@@ -1,0 +1,20 @@
+{
+  "algorithm": "sha256",
+  "note": "Hashes of the untouched production sources this experiment binds to. The binding invokes calculateCompatibilityScore's registered handler (_handler) with a stub ctx.runQuery serving synthetic profiles in place of internal.matching.scoring.getUserScoringData.",
+  "files": {
+    "convex/matching/scoring.ts": "1c0692ce966821f081a22512c9f31685a47e569c7d59484ec8eca12e259d64b7",
+    "convex/matching/engine.ts": "ff54943f4e42291c4d5db8275acec60053ac21b46402d86ae28a4cf50c9fd628",
+    "convex/matching/index.ts": "dac3e9071f2d7e280532c56f5cc5edb7036b474c2e2f9c1c86d383982aba3735",
+    "convex/types/entities/matching.ts": "84e71514998a0cbca60d917ff5e06d2db4b17171d3d82cb689c0d30b98ef1f16",
+    "convex/types/entities/embedding.ts": "720592ea0cbbfe1009563c12c57623e33b0223ba03afb4da7aa55b1764ae9a42",
+    "convex/types/validators/matching.ts": "81b5dde318dbcb93dd9a8400330d733c022d8018ae7bac6b15aa4e3266bb4833"
+  },
+  "boundEntrypoints": {
+    "scoring": {
+      "module": "convex/matching/scoring.ts",
+      "export": "calculateCompatibilityScore",
+      "invocation": "_handler(ctx, args) with ctx.runQuery resolving synthetic UserScoringData by userId",
+      "runQueryCallsPerPair": 2
+    }
+  }
+}

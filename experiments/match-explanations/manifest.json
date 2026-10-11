@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "note": "Proposed public explanations to audit. Sentences use the production template wording where they claim a contribution; free-form sentences test whether the classifier catches untraceable or false claims. Version 2 adds the twin tie pairs (scoring-identical fixtures).",
+  "pairs": [
+    {
+      "pairId": "mentee-x-mentor",
+      "proposedExplanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles",
+        "You are in the same organization as this match.",
+        "You're in compatible time zones.",
+        "You will definitely hit it off."
+      ]
+    },
+    {
+      "pairId": "mentor-x-peer",
+      "proposedExplanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "High semantic profile similarity",
+        "Strong language compatibility",
+        "You are in the same industry.",
+        "We had limited profile data for this match."
+      ]
+    },
+    {
+      "pairId": "mentee-x-design",
+      "proposedExplanation": [
+        "Strong interest alignment",
+        "Similar experience levels",
+        "Basic compatibility based on available data"
+      ]
+    },
+    {
+      "pairId": "mentee-x-sparse",
+      "proposedExplanation": [
+        "Some profile information was missing, so we compared basic compatibility.",
+        "Complementary professional roles",
+        "Basic compatibility based on available data",
+        "You're in compatible time zones."
+      ]
+    },
+    {
+      "pairId": "twin-a-x-mentor",
+      "proposedExplanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles",
+        "You're in compatible time zones.",
+        "You will definitely hit it off."
+      ]
+    },
+    {
+      "pairId": "twin-b-x-mentor",
+      "proposedExplanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles",
+        "You're in compatible time zones.",
+        "You will definitely hit it off."
+      ]
+    }
+  ]
+}

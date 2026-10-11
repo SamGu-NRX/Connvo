@@ -1,0 +1,32 @@
+{
+  "viewport": "390x844 (phone width)",
+  "page": "page/index.html (static, read-only snapshot, regenerated after the review rework)",
+  "tabOrder": [
+    "a.skip (Skip to results)",
+    "summary mentee-x-mentor",
+    "summary mentor-x-peer",
+    "summary mentee-x-design",
+    "summary mentee-x-sparse",
+    "summary twin-a-x-mentor",
+    "summary twin-b-x-mentor",
+    "cycles back to body"
+  ],
+  "activation": {
+    "key": "Space",
+    "target": "twin-b-x-mentor summary",
+    "expanded": true,
+    "focusRetainedOnSummary": true,
+    "enterAlsoToggles": true
+  },
+  "structuralChecks": {
+    "focusableElements": 7,
+    "positiveTabindex": 0,
+    "detailsWithoutSummary": 0
+  },
+  "evidence": [
+    "evidence/tc-3-page-initial.png",
+    "evidence/tc-4-twin-keyboard-walk.webm",
+    "evidence/tc-4-twin-expanded.png"
+  ],
+  "passed": true
+}

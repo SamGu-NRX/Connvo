@@ -1,0 +1,53 @@
+{
+  "replayMatches": [
+    {
+      "file": "source-hashes.json",
+      "matches": true
+    },
+    {
+      "file": "fixture-inventory.json",
+      "matches": true
+    },
+    {
+      "file": "contribution-references.json",
+      "matches": true
+    },
+    {
+      "file": "eligibility-references.json",
+      "matches": true
+    }
+  ],
+  "classificationReplayMatches": true,
+  "counterfactualReplayMatches": true,
+  "scoringDeterministic": true,
+  "scoreTies": [
+    {
+      "score": 0.875,
+      "pairIds": [
+        "twin-a-x-mentor",
+        "twin-b-x-mentor"
+      ]
+    }
+  ],
+  "tieExplanationsStable": true,
+  "canaryLeaks": [],
+  "canaryControl": {
+    "corpus": "fabricated leak: real mentee-x-mentor explanation sentence with the private displayName of leaky-mentee-control interpolated",
+    "sentinelPlanted": "Canary Name Leaky",
+    "detectedLeaks": [
+      "Canary Name Leaky"
+    ],
+    "detected": true
+  },
+  "falseReasonMutations": {
+    "total": 5,
+    "met": 5
+  },
+  "pageKeyboardStructure": {
+    "focusableElements": 7,
+    "positiveTabindex": 0,
+    "detailsWithoutSummary": 0,
+    "passed": true
+  },
+  "allPassed": true
+}
