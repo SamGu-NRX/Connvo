@@ -175,22 +175,45 @@ export const syncOfflineOperations = mutation({
     // Verify user is a participant
     const participant = await assertMeetingAccess(ctx, meetingId);
 
-    // Get queued operations
+    // Get queued operations. Queue rows are bound to their meeting and to the
+    // verified caller's identity (authorId) at write time; a queueId or
+    // clientId is client-supplied metadata and never grants access on its own.
     let queuedOps;
     if (queueId) {
-      queuedOps = await ctx.db
+      const queueRows = await ctx.db
         .query("offlineOperationQueue")
         .withIndex("by_queue_id", (q) => q.eq("queueId", queueId))
         .filter((q) => q.eq(q.field("status"), "pending"))
         .order("asc")
         .take(maxOperations);
+
+      // A queueId that resolves to rows from any other meeting or any other
+      // author is an injection/replay attempt: reject outright instead of
+      // silently syncing someone else's operations into this meeting.
+      const foreign = queueRows.find(
+        (row) =>
+          row.meetingId !== meetingId || row.authorId !== participant.userId,
+      );
+      if (foreign) {
+        throw createError.forbidden(
+          "Queue does not belong to this meeting or caller",
+        );
+      }
+      queuedOps = queueRows;
     } else {
       queuedOps = await ctx.db
         .query("offlineOperationQueue")
         .withIndex("by_meeting_and_client", (q) =>
           q.eq("meetingId", meetingId).eq("clientId", clientId),
         )
-        .filter((q) => q.eq(q.field("status"), "pending"))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("status"), "pending"),
+            // Identity binding: even within an accessible meeting, a caller
+            // may only sync their own queue rows.
+            q.eq(q.field("authorId"), participant.userId),
+          ),
+        )
         .order("asc")
         .take(maxOperations);
     }
@@ -341,13 +364,18 @@ export const syncOfflineOperations = mutation({
       });
     }
 
-    // Get remaining queue count
+    // Get remaining queue count (caller's own rows only)
     const remainingOps = await ctx.db
       .query("offlineOperationQueue")
       .withIndex("by_meeting_and_client", (q) =>
         q.eq("meetingId", meetingId).eq("clientId", clientId),
       )
-      .filter((q) => q.eq(q.field("status"), "pending"))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "pending"),
+          q.eq(q.field("authorId"), participant.userId),
+        ),
+      )
       .collect();
 
     // Log sync result
@@ -404,13 +432,15 @@ export const getOfflineQueueStatus = mutation({
   }),
   handler: async (ctx, { meetingId, clientId }) => {
     // Verify user is a participant
-    await assertMeetingAccess(ctx, meetingId);
+    const participant = await assertMeetingAccess(ctx, meetingId);
 
     const queuedOps = await ctx.db
       .query("offlineOperationQueue")
       .withIndex("by_meeting_and_client", (q) =>
         q.eq("meetingId", meetingId).eq("clientId", clientId),
       )
+      // Identity binding: a caller may only observe their own queue rows.
+      .filter((q) => q.eq(q.field("authorId"), participant.userId))
       .collect();
 
     const statusCounts = {
@@ -491,7 +521,7 @@ export const retryFailedOperations = mutation({
   }),
   handler: async (ctx, { meetingId, clientId, maxRetries = 3 }) => {
     // Verify user is a participant
-    await assertMeetingAccess(ctx, meetingId);
+    const participant = await assertMeetingAccess(ctx, meetingId);
 
     // Get failed operations that haven't exceeded max retries
     const failedOps = await ctx.db
@@ -503,6 +533,8 @@ export const retryFailedOperations = mutation({
         q.and(
           q.eq(q.field("status"), "failed"),
           q.lt(q.field("attempts"), maxRetries),
+          // Identity binding: only retry the caller's own rows.
+          q.eq(q.field("authorId"), participant.userId),
         ),
       )
       .collect();
@@ -553,7 +585,7 @@ export const clearSyncedOperations = mutation({
   }),
   handler: async (ctx, { meetingId, clientId, olderThanMs = 3600000 }) => {
     // Verify user is a participant
-    await assertMeetingAccess(ctx, meetingId);
+    const participant = await assertMeetingAccess(ctx, meetingId);
 
     const cutoff = Date.now() - olderThanMs;
 
@@ -566,6 +598,8 @@ export const clearSyncedOperations = mutation({
         q.and(
           q.eq(q.field("status"), "synced"),
           q.lt(q.field("queuedAt"), cutoff),
+          // Identity binding: only clear the caller's own rows.
+          q.eq(q.field("authorId"), participant.userId),
         ),
       )
       .collect();

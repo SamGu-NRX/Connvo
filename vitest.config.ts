@@ -51,6 +51,21 @@ export default defineConfig({
         },
         resolve: commonResolve,
       },
+  {
+    // In-call client contract witnesses. Runs in the plain node
+    // environment: the existing "frontend" project requires jsdom (not
+    // installed) and only covers src/**, while these tests drive the real
+    // hooks through a fake transport via react-dom/server (no DOM needed).
+    test: {
+      name: "in-call",
+      include: ["test/in-call/**/*.test.ts"],
+      environment: "node",
+      testTimeout: 30000,
+      hookTimeout: 30000,
+    },
+    resolve: commonResolve,
+  }
+  
     ],
   },
   resolve: commonResolve,

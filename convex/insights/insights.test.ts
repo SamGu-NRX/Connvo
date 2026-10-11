@@ -7,7 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { api, internal } from "@convex/_generated/api";
+import { internal } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { createTestEnvironment } from "../../test/convex/helpers";
 
@@ -32,7 +32,7 @@ describe("Insights Module", () => {
       const meetingId = await createConcludedMeeting(t, organizerId, [participantId]);
       await seedInsightsContext(t, meetingId);
 
-      const result = await t.action(api.insights.generation.generateInsights, {
+      const result = await t.action(internal.insights.generation.generateInsights, {
         meetingId,
       });
 
@@ -52,18 +52,18 @@ describe("Insights Module", () => {
       const meetingId = await createConcludedMeeting(t, organizerId, []);
       await seedInsightsContext(t, meetingId);
 
-      const first = await t.action(api.insights.generation.generateInsights, {
+      const first = await t.action(internal.insights.generation.generateInsights, {
         meetingId,
       });
       expect(first.insightsGenerated).toBeGreaterThan(0);
 
-      const second = await t.action(api.insights.generation.generateInsights, {
+      const second = await t.action(internal.insights.generation.generateInsights, {
         meetingId,
       });
       expect(second.insightsGenerated).toBe(0);
       expect(second.participantInsights).toEqual(first.participantInsights);
 
-      const forced = await t.action(api.insights.generation.generateInsights, {
+      const forced = await t.action(internal.insights.generation.generateInsights, {
         meetingId,
         forceRegenerate: true,
       });
@@ -78,7 +78,7 @@ describe("Insights Module", () => {
       });
       const meetingId = await createConcludedMeeting(t, organizerId, []);
       await seedInsightsContext(t, meetingId);
-      await t.action(api.insights.generation.generateInsights, { meetingId });
+      await t.action(internal.insights.generation.generateInsights, { meetingId });
 
       const insight = await t.query(
         internal.insights.queries.getInsightsByUserAndMeeting,

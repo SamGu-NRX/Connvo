@@ -9,6 +9,7 @@
  */
 
 import {
+  query,
   mutation,
   internalMutation,
   internalQuery,
@@ -21,11 +22,62 @@ import { createError } from "@convex/lib/errors";
 import { enforceUserLimit } from "@convex/lib/rateLimiter";
 import { metadataRecordV } from "@convex/lib/validators";
 import { Id } from "@convex/_generated/dataModel";
+import type { MutationCtx } from "@convex/_generated/server";
+import type { Doc } from "@convex/_generated/dataModel";
 import { TranscriptV } from "@convex/types/validators/transcript";
 import type {
   TranscriptChunk,
   TranscriptStats,
 } from "@convex/types/entities/transcript";
+import { joinTranscriptText } from "@convex/lib/transcriptText";
+
+/**
+ * Resolves speaker attribution for a transcript chunk.
+ *
+ * speakerId is client-asserted, so it must never be trusted blindly: a caller
+ * may only attribute text to someone else if they are the meeting host, and
+ * the requested speaker must actually hold a meetingParticipants row for this
+ * meeting. Without a requested speaker, text is attributed to the caller.
+ */
+async function resolveSpeakerAttribution(
+  ctx: MutationCtx,
+  meetingId: Id<"meetings">,
+  requestedSpeakerId: string | undefined,
+  caller: Doc<"meetingParticipants">,
+): Promise<string> {
+  const requested = requestedSpeakerId?.trim();
+  if (!requested) {
+    return caller.userId;
+  }
+
+  if (requested === caller.userId) {
+    return requested;
+  }
+
+  if (caller.role !== "host") {
+    throw createError.forbidden(
+      "Only the meeting host may attribute transcript text to a different speaker",
+      { meetingId, requestedSpeakerId: requested },
+    );
+  }
+
+  // Look up by meeting rather than eq("userId", requested): speakerId is a
+  // free-form string, and an invalid id would make the indexed query itself
+  // throw instead of producing a clean validation error.
+  const participants = await ctx.db
+    .query("meetingParticipants")
+    .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+    .collect();
+
+  const target = participants.find((p) => p.userId === requested);
+  if (!target) {
+    throw createError.validation(
+      `Cannot attribute transcript to speaker ${requested}: not a participant of this meeting`,
+    );
+  }
+
+  return requested;
+}
 
 /**
  * @summary Ingests a single transcription chunk with validation and rate limiting
@@ -121,6 +173,15 @@ export const ingestTranscriptChunk = mutation({
       );
     }
 
+    // Resolve speaker attribution (G10): default to the caller; only hosts
+    // may attribute to another speaker, and only to a real meeting participant.
+    const speakerId = await resolveSpeakerAttribution(
+      ctx,
+      args.meetingId,
+      args.speakerId,
+      participant,
+    );
+
     // Enforce rate limits using shared component-backed limiter
     const rateLimitResult = await enforceUserLimit(
       ctx,
@@ -210,12 +271,14 @@ export const ingestTranscriptChunk = mutation({
       meetingId: args.meetingId,
       bucketMs,
       sequence: globalSequence,
-      speakerId: args.speakerId,
+      speakerId,
       text: args.text.trim(),
       confidence: args.confidence,
       startMs: args.startTime,
       endMs: args.endTime,
-      isInterim: args.isInterim,
+      // Normalized to a defined boolean so interim filtering reads exactly
+      // (legacy rows may still read back as undefined and are treated as final)
+      isInterim: args.isInterim === true,
       wordCount,
       language: args.language || "en",
       createdAt: now,
@@ -290,6 +353,7 @@ export const ingestTranscriptChunk = mutation({
  *     "success": true,
  *     "processed": 2,
  *     "failed": 0,
+ *     "errors": [],
  *     "batchId": "batch_1698765432_abc123",
  *     "performance": {
  *       "processingTimeMs": 145,
@@ -330,6 +394,7 @@ export const batchIngestTranscriptChunks = internalMutation({
     success: v.boolean(),
     processed: v.number(),
     failed: v.number(),
+    errors: v.array(v.string()),
     batchId: v.string(),
     performance: v.object({
       processingTimeMs: v.number(),
@@ -344,6 +409,7 @@ export const batchIngestTranscriptChunks = internalMutation({
 
     let processed = 0;
     let failed = 0;
+    const errors: string[] = [];
 
     // Validate meeting exists and is active
     const meeting = await ctx.db.get(meetingId);
@@ -385,34 +451,34 @@ export const batchIngestTranscriptChunks = internalMutation({
       return next;
     };
 
-    // Sort chunks by start time for proper sequence ordering
-    const sortedChunks = chunks
-      .filter((chunk) => chunk.text.trim().length > 0)
-      .sort((a, b) => a.startTime - b.startTime);
+    // Validate every chunk up front, keeping the drop-not-throw behavior but
+    // surfacing why each dropped chunk was rejected in the returned summary.
+    const validChunks: Array<{
+      chunk: (typeof chunks)[number];
+      originalIndex: number;
+    }> = [];
+    chunks.forEach((chunk, originalIndex) => {
+      const reason = validateBatchChunk(chunk);
+      if (reason) {
+        failed++;
+        errors.push(`chunk ${originalIndex}: ${reason}`);
+        return;
+      }
+      validChunks.push({ chunk, originalIndex });
+    });
+
+    // Sort valid chunks by start time for proper sequence ordering
+    const sortedChunks = validChunks.sort(
+      (a, b) => a.chunk.startTime - b.chunk.startTime,
+    );
 
     // Process chunks in batches to avoid transaction timeouts
     const BATCH_SIZE = 20;
     for (let i = 0; i < sortedChunks.length; i += BATCH_SIZE) {
       const batchChunks = sortedChunks.slice(i, i + BATCH_SIZE);
 
-      for (const chunk of batchChunks) {
+      for (const { chunk, originalIndex } of batchChunks) {
         try {
-          // Enhanced validation
-          if (chunk.text.length > 10000) {
-            failed++;
-            continue;
-          }
-
-          if (chunk.confidence < 0 || chunk.confidence > 1) {
-            failed++;
-            continue;
-          }
-
-          if (chunk.startTime >= chunk.endTime) {
-            failed++;
-            continue;
-          }
-
           // Calculate time bucket (5-minute windows)
           const bucketMs = Math.floor(chunk.startTime / 300000) * 300000;
           const wordCount = chunk.text
@@ -451,7 +517,7 @@ export const batchIngestTranscriptChunks = internalMutation({
             confidence: chunk.confidence,
             startMs: chunk.startTime,
             endMs: chunk.endTime,
-            isInterim: chunk.isInterim,
+            isInterim: chunk.isInterim === true,
             wordCount,
             language: chunk.language || "en",
             createdAt: Date.now(),
@@ -461,6 +527,11 @@ export const batchIngestTranscriptChunks = internalMutation({
         } catch (error) {
           console.error("Failed to process transcript chunk:", error);
           failed++;
+          errors.push(
+            `chunk ${originalIndex}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
         }
       }
     }
@@ -487,6 +558,7 @@ export const batchIngestTranscriptChunks = internalMutation({
       success: processed > 0,
       processed,
       failed,
+      errors,
       batchId: generatedBatchId,
       performance: {
         processingTimeMs,
@@ -760,6 +832,32 @@ export const createAlertInternal = internalMutation({
 });
 
 /**
+ * Returns a human-readable rejection reason for an invalid batch chunk, or
+ * null when the chunk passes validation. Pure so the drop-not-throw batch
+ * behavior stays easy to reason about.
+ */
+function validateBatchChunk(chunk: {
+  text: string;
+  confidence: number;
+  startTime: number;
+  endTime: number;
+}): string | null {
+  if (chunk.text.trim().length === 0) {
+    return "text is empty";
+  }
+  if (chunk.text.length > 10000) {
+    return "text too long (max 10,000 characters)";
+  }
+  if (chunk.confidence < 0 || chunk.confidence > 1) {
+    return "confidence must be between 0 and 1";
+  }
+  if (chunk.startTime >= chunk.endTime) {
+    return "start time must be before end time";
+  }
+  return null;
+}
+
+/**
  * Helper function to coalesce transcript chunks by speaker and time proximity
  */
 function coalesceTranscriptChunks(
@@ -802,8 +900,8 @@ function coalesceTranscriptChunks(
       !nextChunk.isInterim; // Don't coalesce interim results
 
     if (canCoalesce) {
-      // Merge chunks
-      currentChunk.text += " " + nextChunk.text;
+      // Merge chunks (boundary-aware join: no double spaces)
+      currentChunk.text = joinTranscriptText(currentChunk.text, nextChunk.text);
       currentChunk.endTime = nextChunk.endTime;
       currentChunk.confidence =
         (currentChunk.confidence + nextChunk.confidence) / 2;
@@ -826,6 +924,8 @@ function coalesceTranscriptChunks(
  * sequence number and time bucket. Supports pagination with configurable limits
  * (max 200 per request). Uses query optimizer for efficient index-backed retrieval.
  * Requires meeting participant access. Returns chunks in ascending sequence order.
+ * Interim (unsettled) chunks are excluded by default; pass isInterim to include
+ * or isolate them.
  *
  * @example request
  * ```json
@@ -883,17 +983,21 @@ function coalesceTranscriptChunks(
  * }
  * ```
  */
-export const getTranscriptChunks = mutation({
+export const getTranscriptChunks = query({
   args: {
     meetingId: v.id("meetings"),
     fromSequence: v.optional(v.number()),
     limit: v.optional(v.number()),
     bucketMs: v.optional(v.number()),
+    // Interim filter (G17): true → only interim hypotheses, false → only final
+    // chunks, omitted → settled view (final chunks only). Legacy chunks written
+    // without an explicit isInterim field are treated as final.
+    isInterim: v.optional(v.boolean()),
   },
   returns: v.array(TranscriptV.chunk),
   handler: async (
     ctx,
-    { meetingId, fromSequence = 0, limit = 100, bucketMs },
+    { meetingId, fromSequence = 0, limit = 100, bucketMs, isInterim },
   ): Promise<TranscriptChunk[]> => {
     // Verify user is a participant
     await assertMeetingAccess(ctx, meetingId);
@@ -920,19 +1024,24 @@ export const getTranscriptChunks = mutation({
       results = optimized.transcripts;
     }
 
-    // Transform to TranscriptChunk format
-    return results.map((t) => ({
-      _id: t._id,
-      sequence: t.sequence,
-      speakerId: t.speakerId,
-      text: t.text,
-      confidence: t.confidence,
-      startMs: t.startMs,
-      endMs: t.endMs,
-      wordCount: t.wordCount,
-      language: t.language,
-      createdAt: t.createdAt,
-    }));
+    // Transform to TranscriptChunk format, applying the interim filter after
+    // index pagination (isInterim is not indexed; a page may therefore return
+    // fewer than `limit` chunks when interims are dropped).
+    const wantInterim = isInterim === true;
+    return results
+      .filter((t) => Boolean(t.isInterim) === wantInterim)
+      .map((t) => ({
+        _id: t._id,
+        sequence: t.sequence,
+        speakerId: t.speakerId,
+        text: t.text,
+        confidence: t.confidence,
+        startMs: t.startMs,
+        endMs: t.endMs,
+        wordCount: t.wordCount,
+        language: t.language,
+        createdAt: t.createdAt,
+      }));
   },
 });
 
@@ -1059,7 +1168,7 @@ export const cleanupOldTranscripts = internalMutation({
  * }
  * ```
  */
-export const getTranscriptStats = mutation({
+export const getTranscriptStats = query({
   args: { meetingId: v.id("meetings") },
   returns: TranscriptV.stats,
   handler: async (ctx, { meetingId }): Promise<TranscriptStats> => {
