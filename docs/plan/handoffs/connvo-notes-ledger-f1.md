@@ -84,11 +84,12 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 **In flight**
 
 - M2 (ledger + hook) runs on the merged branch in its own fresh clone, reporting commits on `obv/connvo-notes-f1-m2-ledger`. M4 (property run at recorded seed + final proof) starts when M2 lands, along with the M2/M3 join work below.
+- **Incident (2026-10-11 ~17:00 UTC):** a shared-sandbox session loss during M2 destroyed its local-only milestone commit (`5dc0d39`, ledger/hook core + unit suite — verified passing on the worker's side, never pushed) and its uncommitted fault-matrix harness. The M2 worker confirmed it is the sole writer, self-recovered with a fresh clone, and is rebuilding its named branch from `b0b60a8` under tightened checkpoint discipline: push its own branch to origin after each passing milestone, not only at completion. Lesson recorded for all milestones on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
 
 **Left**
 
 - M2 merge + M4 as listed under Milestones; merge each milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push.
-- M2/M3 join (after M2 lands): replace the a11y tests' `@/hooks/notes` mock with the real hook; collapse M3's signature-alignment cast; swap `defaultNotesTransport`'s placeholder for the M2 Convex wiring (the marked one-liner); then run the deferred real-browser checks at 1440×900 and 390×844 (responsive, color-contrast, focus-visibility) and attach screenshots to the PR body copy.
+- M2/M3 join (after M2 lands): replace the a11y tests' `@/hooks/notes` mock with the real hook; collapse M3's signature-alignment cast; swap `defaultNotesTransport`'s placeholder for the M2 Convex wiring (the marked one-liner); then run the deferred real-browser checks at 1440×900 and 390×844 (responsive, color-contrast, focus-visibility) and attach screenshots to the PR body copy. **Browser-evidence blocker found and fix sketched (unverified, lead-owned):** `/dev/notes-preview` is unreachable locally — the WorkOS AuthKit middleware in `src/proxy.ts` throws without `WORKOS_REDIRECT_URI`/`NEXT_PUBLIC_WORKOS_REDIRECT_URI` (the installed authkit reads the `NEXT_PUBLIC_` name), and with dummy env it hangs on the middlewareAuth handshake to api.workos.com, which the egress proxy blocks. Sketch: exclude `dev` paths from the middleware matcher (the demo route has no auth surface). Re-apply the exact edit at the join and verify before re-running browser checks.
 
 **How to continue**
 
