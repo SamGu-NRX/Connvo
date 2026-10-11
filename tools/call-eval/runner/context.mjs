@@ -43,8 +43,10 @@ export class RunContext {
     this.turn = null;
     this.shapers = new Map(); // participant -> shaper handle
     this.meetingId = null;
+    this.benchPath = "/mock/mock-bench.html"; // integration mode points the same navigation at the real bench route
     this._relayConfigCache = new Map(); // participant -> RTCConfiguration|null
     this._relayEnabled = false; // H-07/H-15 flip this on
+    this._peers = new Set(); // live peer records - stop() closes them so failed scenarios never leak browsers
   }
 
   async start() {
@@ -139,16 +141,23 @@ export class RunContext {
     const { video, audio } = this.fixturePaths(participant);
     const { launchPeer: launch } = await import("./peers.mjs");
     const query = new URLSearchParams({ as: participant, meeting: this.meetingId ?? "bench-meeting", ...params });
-    return launch({
+    const peer = await launch({
       fixtureVideo: video,
       fixtureAudio: audio,
       baseUrl: this.url,
+      benchPath: this.benchPath,
       rtcConfig: config,
       participant,
-    }).then((peer) => {
-      peer.__query = query;
-      return peer;
     });
+    peer.__query = query;
+    await peer.page.goto(`${this.url}${this.benchPath}?${query}`, { waitUntil: "domcontentloaded" });
+    this._peers.add(peer);
+    const origClose = peer.close.bind(peer);
+    peer.close = () => {
+      this._peers.delete(peer);
+      return origClose();
+    };
+    return peer;
   }
 
   // Fault hooks (mock relay only; integration mode reports absence).
@@ -164,6 +173,8 @@ export class RunContext {
   }
 
   async stop() {
+    await Promise.allSettled([...this._peers].map((p) => p.close()));
+    this._peers.clear();
     for (const shaper of this.shapers.values()) shaper.stop();
     this.shapers.clear();
     this.turn?.stop();
