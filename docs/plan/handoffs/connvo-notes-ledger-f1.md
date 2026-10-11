@@ -114,7 +114,7 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 
 **In flight**
 
-- **M2 landed** (merged at `04f9454`, independently verified — see the M2 receipt above). **M2/M3 join landed** at `57b95ce` (lead-owned; receipt and real-browser evidence below). Remaining: the a11y suite's real-hook swap (worker in flight on `obv/connvo-notes-f1-a11y-real`, branched from `57b95ce`) and M4 (property run at recorded seed + final proof), which starts on the post-join tree.
+- **M2 landed** (merged at `04f9454`, independently verified — see the M2 receipt above). **M2/M3 join landed** at `57b95ce` (lead-owned; receipt and real-browser evidence below). Remaining: **M4 only** — a11y real-hook swap landed at `986fdfb` (worker branch at `c351459`, merged `--no-ff` after lead re-verification; receipt in Left), so M4 dispatches on this post-merge tree.
 - **Incident record (2026-10-11):** a shared-sandbox session reset destroyed M2's local-only milestone commit (`5dc0d39`), and its replacement worker died terminally after 5 rebirth attempts. Recovery preserved the surviving tree as checkpoint `7e810db` and the relaunched task completed the milestone from it. Lesson for every milestone on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
 
 **Left**
