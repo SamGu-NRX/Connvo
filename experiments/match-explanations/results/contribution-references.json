@@ -195,6 +195,78 @@
           "computedValue": null
         }
       ]
+    },
+    {
+      "pairId": "tie-a-x-b",
+      "leftId": "tie-a-mentee",
+      "rightId": "tie-b-mentor",
+      "score": 0.8645833333333334,
+      "features": {
+        "interestOverlap": 0.7666666666666666,
+        "experienceGap": 1,
+        "industryMatch": 1,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 1,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 1
+      },
+      "explanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles"
+      ],
+      "references": [
+        {
+          "sentence": "Strong interest alignment",
+          "kind": "supported_contribution",
+          "feature": "interestOverlap",
+          "condition": "interestOverlap > 0.7",
+          "computedValue": 0.7666666666666666
+        },
+        {
+          "sentence": "Ideal experience gap for mentorship",
+          "kind": "supported_contribution",
+          "feature": "experienceGap",
+          "condition": "experienceGap === 1.0",
+          "computedValue": 1
+        },
+        {
+          "sentence": "Complementary professional roles",
+          "kind": "supported_contribution",
+          "feature": "roleComplementarity",
+          "condition": "roleComplementarity === 1.0",
+          "computedValue": 1
+        }
+      ]
+    },
+    {
+      "pairId": "tie-c-x-d",
+      "leftId": "tie-c-mentee",
+      "rightId": "tie-d-sparse",
+      "score": 0.34375,
+      "features": {
+        "interestOverlap": 0,
+        "experienceGap": 0.5,
+        "industryMatch": 0.5,
+        "timezoneCompatibility": 1,
+        "vectorSimilarity": null,
+        "orgConstraintMatch": 0,
+        "languageOverlap": 0.5,
+        "roleComplementarity": 0
+      },
+      "explanation": [
+        "Basic compatibility based on available data"
+      ],
+      "references": [
+        {
+          "sentence": "Basic compatibility based on available data",
+          "kind": "fallback",
+          "feature": null,
+          "condition": "no other condition fired",
+          "computedValue": null
+        }
+      ]
     }
   ]
 }

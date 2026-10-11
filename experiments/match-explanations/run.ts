@@ -38,7 +38,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { PAIRS, PROFILES, type SyntheticProfile } from "./fixtures";
-import { REPO_ROOT, runAllPairs, runHandlerPair } from "./harness";
+import { REPO_ROOT, runAllPairs, runHandlerPairFull } from "./harness";
+import { scanCanaryLeaks } from "./canary";
+import type { ScoreOutput } from "./harness";
 import { buildBaseline } from "./emit-baseline";
 import { PROFILES as FIXTURE_PROFILES } from "./fixtures";
 import {
@@ -81,7 +83,8 @@ const ELIGIBILITY_SENTENCES: EligibilitySentence[] = [
   },
 ];
 
-const MISSING_DATA_CLAIM_RE = /limited (profile )?data|data (was|were|is) missing/i;
+const MISSING_DATA_CLAIM_RE =
+  /limited (profile )?data|data (was|were|is) missing/i;
 
 const PROMISE_RE =
   /\b(definitely|guaranteed|perfect match|destined|are sure to|will)\b/i;
@@ -116,7 +119,10 @@ interface Classification {
   neutralFeatures?: string[];
 }
 
-function classifySentence(sentence: string, features: Features): Classification {
+function classifySentence(
+  sentence: string,
+  features: Features,
+): Classification {
   // 0. Promise language is never traceable, even if it shares template words.
   if (PROMISE_RE.test(sentence)) {
     return {
@@ -129,7 +135,8 @@ function classifySentence(sentence: string, features: Features): Classification 
   if (sentence === FALLBACK_SENTENCE) {
     return {
       classification: "fallback_sentinel",
-      reason: "Production fallback; emitted when no contribution condition fired.",
+      reason:
+        "Production fallback; emitted when no contribution condition fired.",
     };
   }
   // 2. Contribution template: check the computed feature against threshold.
@@ -175,18 +182,22 @@ function classifySentence(sentence: string, features: Features): Classification 
   //    path). A lone 0.5 can be a genuine computed value (e.g. one of two
   //    languages shared) and must not corroborate the claim.
   if (MISSING_DATA_CLAIM_RE.test(sentence)) {
-    const neutral = ["experienceGap", "industryMatch", "languageOverlap"].filter(
-      (f) => features[f] === 0.5,
-    );
+    const neutral = [
+      "experienceGap",
+      "industryMatch",
+      "languageOverlap",
+    ].filter((f) => features[f] === 0.5);
     return neutral.length === 3
       ? {
           classification: "missing_data_statement",
-          reason: "Corroborated by the full neutral-branch signature (experienceGap, industryMatch, and languageOverlap all 0.5).",
+          reason:
+            "Corroborated by the full neutral-branch signature (experienceGap, industryMatch, and languageOverlap all 0.5).",
           neutralFeatures: neutral,
         }
       : {
           classification: "false_reason",
-          reason: "Missing-data claim contradicted: the neutral-branch signature is incomplete.",
+          reason:
+            "Missing-data claim contradicted: the neutral-branch signature is incomplete.",
         };
   }
   // 5. Known untraceable reasons.
@@ -264,6 +275,14 @@ async function classifyManifest(
   }
 }
 
+type ScoreDirection = "increase" | "decrease" | "none";
+
+function scoreDirection(before: number, after: number): ScoreDirection {
+  if (after > before) return "increase";
+  if (after < before) return "decrease";
+  return "none";
+}
+
 interface CounterfactualCase {
   id: string;
   variedInput: string;
@@ -276,6 +295,10 @@ interface CounterfactualCase {
   before: SentenceClass;
   /** Expected class after mutation, or "unchanged". */
   after: SentenceClass | "unchanged";
+  /** Expected composite-score movement when the input changes. */
+  expectScoreDirection: ScoreDirection;
+  /** When true, the full explanation array must be identical after mutation. */
+  expectExplanationUnchanged?: boolean;
 }
 
 function cloneProfile(profile: SyntheticProfile): SyntheticProfile {
@@ -290,8 +313,8 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
       id: "CF_INTERESTS",
       variedInput: "scoringData.interests",
       note:
-        "User-controlled interests removed; the interest sentence must lose " +
-        "its feature support.",
+        "User replaces their interest tags with an unrelated set; the " +
+        "interest sentence must lose its feature support.",
       pairId: "mentee-x-mentor",
       mutatedProfileId: "mentee-junior-technology",
       mutate: (p) => {
@@ -300,13 +323,15 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
       sentence: "Strong interest alignment",
       before: "supported_contribution",
       after: "false_reason",
+      expectScoreDirection: "decrease",
     },
     {
       id: "CF_EXPERIENCE",
       variedInput: "scoringData.profile.experience",
       note:
-        "Experience moved to the mentor's own level (gap 0 -> 0.7); the " +
-        "ideal-gap sentence must lose support.",
+        "User raises their experience level to the partner's own (gap 0 -> " +
+        "0.7) via the profile experience field accepted by updateProfile; " +
+        "the ideal-gap sentence must lose support.",
       pairId: "mentee-x-mentor",
       mutatedProfileId: "mentee-junior-technology",
       mutate: (p) => {
@@ -315,18 +340,62 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
       sentence: "Ideal experience gap for mentorship",
       before: "supported_contribution",
       after: "false_reason",
+      expectScoreDirection: "decrease",
+    },
+    {
+      id: "CF_LANGUAGES",
+      variedInput: "scoringData.profile.languages",
+      note:
+        "User adds a language they speak to their profile (updateProfile " +
+        "accepts languages); the language-compatibility sentence must GAIN " +
+        "support (false_reason -> supported_contribution), showing the audit " +
+        "also catches sentences newly backed by an edit.",
+      pairId: "mentee-x-mentor",
+      mutatedProfileId: "mentee-junior-technology",
+      mutate: (p) => {
+        p.scoringData.profile!.languages = ["English", "French"];
+      },
+      sentence: "Strong language compatibility",
+      before: "false_reason",
+      after: "supported_contribution",
+      expectScoreDirection: "increase",
+    },
+    {
+      id: "CF_FIELD",
+      variedInput: "scoringData.profile.field",
+      note:
+        "User moves their field from technology to design via their profile; " +
+        "industryMatch drops 1.0 -> 0.3 and the composite score must " +
+        "decrease, yet no sentence cites industryMatch (the " +
+        "computed-but-unsurfaced finding), so the emitted explanation set " +
+        "must be unchanged: a silent score change a profile edit can cause.",
+      pairId: "mentee-x-mentor",
+      mutatedProfileId: "mentee-junior-technology",
+      mutate: (p) => {
+        p.scoringData.profile!.field = "Design";
+      },
+      sentence: "Strong interest alignment",
+      before: "supported_contribution",
+      after: "unchanged",
+      expectScoreDirection: "decrease",
+      expectExplanationUnchanged: true,
     },
     {
       id: "CF_EMBEDDING",
-      variedInput: "scoringData.embedding.vector",
+      variedInput:
+        "scoringData.profile.interests + scoringData.embedding.vector " +
+        "(derived re-embed of the edited content)",
       note:
-        "Peer embedding rotated to a different direction (cosine ~0.6 -> " +
-        "similarity ~0.8, no longer > 0.8); the semantic-similarity sentence " +
-        "must lose support. Embeddings derive from user-controlled profile " +
-        "content.",
+        "User adds 'technology' to their interest tags; the experiment then " +
+        "substitutes a deterministic stand-in vector for the re-embedding of " +
+        "that changed profile content (rotated so similarity drops to 0.8, " +
+        "no longer > 0.8). The substituted vector is DERIVED, not " +
+        "user-authored: users edit content, the embedding model recomputes " +
+        "the vector. The semantic-similarity sentence must lose support.",
       pairId: "mentor-x-peer",
       mutatedProfileId: "peer-mid-software",
       mutate: (p) => {
+        p.scoringData.interests = ["business", "marketing", "technology"];
         const embedding = p.scoringData.embedding as {
           vector: ArrayBuffer;
           model: string;
@@ -339,94 +408,196 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
       sentence: "High semantic profile similarity",
       before: "supported_contribution",
       after: "false_reason",
-    },
-    {
-      id: "CF_ORG",
-      variedInput: "scoringData.user.orgId",
-      note:
-        "orgId changed; the same-organization sentence is expected to REMAIN " +
-        "eligibility-backed, recording that the identical-constraint " +
-        "short-circuit ignores org identity. No counterfactual promises a " +
-        "match.",
-      pairId: "mentee-x-mentor",
-      mutatedProfileId: "mentee-junior-technology",
-      mutate: (p) => {
-        p.scoringData.user.orgId = "canary-org-moved";
-      },
-      sentence: "You are in the same organization as this match.",
-      before: "eligibility_rule",
-      after: "unchanged",
+      expectScoreDirection: "decrease",
     },
   ];
 
-  const results: unknown[] = [];
-  let allExpected = true;
-
-  for (const cf of cases) {
-    const pair = PAIRS.find((p) => p.pairId === cf.pairId);
-    if (!pair) throw new Error(`unknown pairId ${cf.pairId}`);
-    const left = cloneProfile(
-      PROFILES.find((p) => p.id === pair.leftId)!,
-    );
-    const right = cloneProfile(
-      PROFILES.find((p) => p.id === pair.rightId)!,
-    );
-    const mutated =
-      pair.leftId === cf.mutatedProfileId ? left : right;
-    if (mutated.id !== cf.mutatedProfileId) {
+  async function runMutation(
+    spec: Pick<
+      CounterfactualCase,
+      "pairId" | "mutatedProfileId" | "mutate" | "sentence"
+    >,
+  ): Promise<{
+    beforeDetail: Classification;
+    afterDetail: Classification;
+    beforeOutput: ScoreOutput;
+    afterOutput: ScoreOutput;
+  }> {
+    const pair = PAIRS.find((p) => p.pairId === spec.pairId);
+    if (!pair) throw new Error(`unknown pairId ${spec.pairId}`);
+    const left = cloneProfile(PROFILES.find((p) => p.id === pair.leftId)!);
+    const right = cloneProfile(PROFILES.find((p) => p.id === pair.rightId)!);
+    const mutated = pair.leftId === spec.mutatedProfileId ? left : right;
+    if (mutated.id !== spec.mutatedProfileId) {
       throw new Error(
-        `mutatedProfileId ${cf.mutatedProfileId} is on neither side of ${cf.pairId}`,
+        `mutatedProfileId ${spec.mutatedProfileId} is on neither side of ${spec.pairId}`,
       );
     }
 
     // BEFORE: unmutated pair through the same real-handler path.
-    const beforeFeatures = (await runHandlerPair(
-      left,
-      right,
-    )) as unknown as Features;
-    const beforeDetail = classifySentence(cf.sentence, beforeFeatures);
+    const beforeOutput = await runHandlerPairFull(left, right);
+    const beforeDetail = classifySentence(
+      spec.sentence,
+      beforeOutput.features as unknown as Features,
+    );
 
-    // AFTER: one user-controlled input varied, same path.
-    cf.mutate(mutated);
-    const afterFeatures = (await runHandlerPair(
-      left,
-      right,
-    )) as unknown as Features;
-    const afterDetail = classifySentence(cf.sentence, afterFeatures);
+    // AFTER: one input varied, same path.
+    spec.mutate(mutated);
+    const afterOutput = await runHandlerPairFull(left, right);
+    const afterDetail = classifySentence(
+      spec.sentence,
+      afterOutput.features as unknown as Features,
+    );
+    return { beforeDetail, afterDetail, beforeOutput, afterOutput };
+  }
+
+  function observation(output: ScoreOutput, detail: Classification) {
+    return {
+      classification: detail.classification,
+      computedValue: detail.computedValue,
+      score: output.score,
+      explanation: output.explanation,
+    };
+  }
+
+  const results: unknown[] = [];
+  let allCasesMet = true;
+
+  for (const cf of cases) {
+    const { beforeDetail, afterDetail, beforeOutput, afterOutput } =
+      await runMutation(cf);
 
     const beforeMatched = beforeDetail.classification === cf.before;
     const afterMatched =
       cf.after === "unchanged"
         ? afterDetail.classification === cf.before
         : afterDetail.classification === cf.after;
-    const matched = beforeMatched && afterMatched;
-    if (!matched) allExpected = false;
+    const observedDirection = scoreDirection(
+      beforeOutput.score,
+      afterOutput.score,
+    );
+    const explanationUnchanged =
+      JSON.stringify(beforeOutput.explanation) ===
+      JSON.stringify(afterOutput.explanation);
+    const matched =
+      beforeMatched &&
+      afterMatched &&
+      observedDirection === cf.expectScoreDirection &&
+      (!cf.expectExplanationUnchanged || explanationUnchanged);
+    if (!matched) allCasesMet = false;
     results.push({
       id: cf.id,
       variedInput: cf.variedInput,
       note: cf.note,
       sentence: cf.sentence,
-      before: {
-        classification: beforeDetail.classification,
-        computedValue: beforeDetail.computedValue,
+      before: observation(beforeOutput, beforeDetail),
+      after: observation(afterOutput, afterDetail),
+      expectation: {
+        before: cf.before,
+        after: cf.after,
+        scoreDirection: cf.expectScoreDirection,
+        explanationUnchanged: cf.expectExplanationUnchanged === true,
       },
-      after: {
-        classification: afterDetail.classification,
-        computedValue: afterDetail.computedValue,
-      },
-      expectation: { before: cf.before, after: cf.after },
       expectationMet: matched,
     });
   }
 
+  // Simulator-level org-identity probe — NOT a user-action counterfactual.
+  // Reviewer feedback: orgId is assigned by the organization and no user edit
+  // path reaches it, so it must not appear in the user-action list above. It
+  // is kept only as a clearly-labeled simulator-only receipt that the
+  // same-organization sentence is backed by identical constraint strings,
+  // not org identity (see ORG_IDENTICAL_CONSTRAINT_SHORT_CIRCUIT in
+  // results/eligibility-references.json).
+  const orgProbeSpec = {
+    pairId: "mentee-x-mentor",
+    mutatedProfileId: "mentee-junior-technology",
+    mutate: (p: SyntheticProfile) => {
+      p.scoringData.user.orgId = "canary-org-moved";
+    },
+    sentence: "You are in the same organization as this match.",
+  };
+  const orgProbe = await runMutation(orgProbeSpec);
+  const orgProbeDirection = scoreDirection(
+    orgProbe.beforeOutput.score,
+    orgProbe.afterOutput.score,
+  );
+  const orgProbeMet =
+    orgProbe.beforeDetail.classification === "eligibility_rule" &&
+    orgProbe.afterDetail.classification === "eligibility_rule" &&
+    orgProbeDirection === "none";
+  const probeRecords = [
+    {
+      id: "ORG_IDENTITY_PROBE",
+      userCanPerform: false,
+      note:
+        "Simulator-only receipt: the simulator moves the org identifier to " +
+        "an arbitrary value — an action no user can perform, since that " +
+        "identifier is assigned by the organization. Both the sentence " +
+        "classification AND the composite score must stay unchanged, " +
+        "recording that the identical-constraint short-circuit ignores org " +
+        "identity entirely. Kept out of the user-action list per reviewer " +
+        "feedback.",
+      sentence: orgProbeSpec.sentence,
+      before: observation(orgProbe.beforeOutput, orgProbe.beforeDetail),
+      after: observation(orgProbe.afterOutput, orgProbe.afterDetail),
+      expectation: {
+        before: "eligibility_rule" as SentenceClass,
+        after: "unchanged" as const,
+        scoreDirection: "none" as ScoreDirection,
+      },
+      expectationMet: orgProbeMet,
+    },
+  ];
+
+  const allExpected = allCasesMet && orgProbeMet;
+
   const payload = {
     note:
-      "Counterfactuals vary ONE user-controlled input at a time, re-score " +
-      "through the REAL handler, and re-classify the affected sentence. " +
-      "CF_ORG is expected NOT to flip and records the short-circuit's " +
-      "insensitivity to org identity.",
+      "Counterfactuals vary ONE user-controlled profile input at a time, " +
+      "re-score through the REAL handler, and re-classify the affected " +
+      "sentence. The semantic-similarity case varies profile content AND a " +
+      "simulated re-embed of that changed content: the substituted vector " +
+      "is the experiment's deterministic stand-in for re-embedding the " +
+      "edited profile — vectors are computed, never user-authored. orgId is " +
+      "NOT varied as a user action (assigned by the organization); the " +
+      "retired probe is recorded separately under simulatorLevelProbes.",
+    userControlledInputs: {
+      verifiedAgainst: [
+        "convex/profiles/mutations.ts updateProfile: the signed-in user's own profile fields languages, experience, field, and company are editable",
+        "userInterests rows (interestKey) are the user's selected interest tags",
+      ],
+      used: [
+        "scoringData.interests (CF_INTERESTS; content edit in CF_EMBEDDING)",
+        "scoringData.profile.experience (CF_EXPERIENCE)",
+        "scoringData.profile.languages (CF_LANGUAGES)",
+        "scoringData.profile.field (CF_FIELD)",
+      ],
+      notVaried: [
+        {
+          input: "scoringData.profile.company",
+          reason:
+            "user-editable, but its only scoring use (the same-company bonus inside industryMatch) is unreachable while the fields match exactly, so varying it cannot move the score here",
+        },
+        {
+          input: "scoringData.user.orgId",
+          reason:
+            "assigned by the organization; no user edit path reaches it — retired from the user-action list, retained as a simulator-level probe",
+        },
+        {
+          input: "scoringData.user.orgRole",
+          reason: "assigned by the organization; not used by the score",
+        },
+        {
+          input: "scoringData.embedding.vector",
+          reason:
+            "computed from profile content, not authored; varied only as a derived re-embed alongside a profile-content edit (CF_EMBEDDING)",
+        },
+      ],
+    },
     allExpectationsMet: allExpected,
     cases: results,
+    simulatorLevelProbes: probeRecords,
   };
   writeFileSync(
     path.join(outDir, "counterfactuals.json"),
@@ -435,7 +606,6 @@ async function runCounterfactuals(outDir: string = RESULTS_DIR): Promise<void> {
   console.log(`Counterfactuals: allExpectationsMet=${allExpected}`);
   if (!allExpected) process.exitCode = 1;
 }
-
 
 // ---------------------------------------------------------------------------
 // Milestone 3: replay, stability, and page generation
@@ -454,9 +624,19 @@ interface StabilityReport {
   counterfactualReplayMatches: boolean;
   scoringDeterministic: boolean;
   scoreTies: { score: number; pairIds: string[] }[];
+  tieGroups: {
+    score: number;
+    pairIds: string[];
+    /** Fresh real-handler rerun reproduces score and explanation exactly. */
+    reproducibleByRerun: boolean;
+    /** Recorded explanations are identical across the group (rename-invariance). */
+    explanationsIdentical: boolean;
+  }[];
   tieExplanationsStable: boolean;
+  scoreTiesPresent: boolean;
   canaryLeaks: string[];
   falseReasonMutations: { total: number; met: number };
+  counterfactualExpectationsMet: boolean;
   pageKeyboardStructure: {
     focusableElements: number;
     positiveTabindex: number;
@@ -525,7 +705,8 @@ function generatePage(resultsDir: string): string {
           <tbody>
             ${pair.sentences
               .map(
-                (s) => `<tr><td>${escapeHtml(s.sentence)}</td><td>${escapeHtml(s.classification)}</td><td>${escapeHtml(s.feature ?? "—")}</td><td>${s.computedValue === undefined || s.computedValue === null ? "—" : escapeHtml(String(s.computedValue))}</td></tr>`,
+                (s) =>
+                  `<tr><td>${escapeHtml(s.sentence)}</td><td>${escapeHtml(s.classification)}</td><td>${escapeHtml(s.feature ?? "—")}</td><td>${s.computedValue === undefined || s.computedValue === null ? "—" : escapeHtml(String(s.computedValue))}</td></tr>`,
               )
               .join("\n")}
           </tbody>
@@ -589,7 +770,9 @@ function generatePage(resultsDir: string): string {
 }
 
 /** Structural keyboard-accessibility checks on the generated page. */
-function checkPageKeyboardStructure(pagePath: string): StabilityReport["pageKeyboardStructure"] {
+function checkPageKeyboardStructure(
+  pagePath: string,
+): StabilityReport["pageKeyboardStructure"] {
   const html = readFileSync(pagePath, "utf8");
   const focusable = (html.match(/<summary|<a\s|<button/g) ?? []).length;
   const positiveTabindex = (html.match(/tabindex="\d+"/g) ?? []).filter(
@@ -629,12 +812,20 @@ async function runReplay(): Promise<void> {
   rmSync(tmp2, { recursive: true, force: true });
 
   // 3. Scoring determinism: two consecutive full runs must agree exactly.
-  const runA = JSON.stringify(await runAllPairs());
+  //    The fresh run also backs the tie-stability checks below (fresh real
+  //    handler output vs the committed references).
+  const freshPairs = await runAllPairs();
+  const runA = JSON.stringify(freshPairs);
   const runB = JSON.stringify(await runAllPairs());
   const scoringDeterministic = runA === runB;
 
-  // 4. Tie stability: pairs sharing an equal score must have identical
-  //    explanation TEMPLATE sets (same sentences, deterministic format).
+  // 4. Tie stability: pairs sharing an equal score must be reproducible —
+  //    a fresh run through the real handler must return the exact recorded
+  //    score AND explanation for every tied pair (explanations are a pure
+  //    function of features, so ties are deterministic/reproducible).
+  //    explanationsIdentical is recorded per group as rename-invariance
+  //    evidence for the clone-constructed ties; the pass gate is
+  //    reproducibility, which holds for ANY tied group.
   const pairs = JSON.parse(
     readFileSync(
       path.join(RESULTS_DIR, "contribution-references.json"),
@@ -649,41 +840,59 @@ async function runReplay(): Promise<void> {
   const scoreTies = [...byScore.entries()]
     .filter(([, ids]) => ids.length > 1)
     .map(([score, ids]) => ({ score: Number(score), pairIds: ids }));
-  const explanationsByPair = new Map(
-    pairs.map((p) => [p.pairId, p.explanation]),
-  );
-  const tieExplanationsStable = scoreTies.every((tie) => {
-    const explanations = new Set(
-      tie.pairIds.map((id) => JSON.stringify(explanationsByPair.get(id))),
+  const recordedByPair = new Map(pairs.map((p) => [p.pairId, p]));
+  const freshByPair = new Map(freshPairs.map((r) => [r.pairId, r]));
+  const tieGroups = scoreTies.map((tie) => {
+    const reproducibleByRerun = tie.pairIds.every((id) => {
+      const fresh = freshByPair.get(id);
+      const recorded = recordedByPair.get(id);
+      return (
+        fresh !== undefined &&
+        recorded !== undefined &&
+        fresh.score === recorded.score &&
+        JSON.stringify(fresh.explanation) ===
+          JSON.stringify(recorded.explanation)
+      );
+    });
+    const recordedExplanations = new Set(
+      tie.pairIds.map((id) =>
+        JSON.stringify(recordedByPair.get(id)?.explanation),
+      ),
     );
-    // Tied pairs may have different explanations; stability means each
-    // explanation is reproducible from its own features (checked by tests).
-    return explanations.size >= 1;
+    return {
+      ...tie,
+      reproducibleByRerun,
+      explanationsIdentical: recordedExplanations.size === 1,
+    };
   });
+  const tieExplanationsStable = tieGroups.every((g) => g.reproducibleByRerun);
+  const scoreTiesPresent = scoreTies.length > 0;
 
   // 5. Canary scan: no private sentinel may appear in explanations or in
-  //    any committed results file.
-  const canaryLeaks: string[] = [];
+  //    any committed results file. The pure scan is shared with the
+  //    negative-control test, which plants a sentinel and asserts the scan
+  //    catches it (tests only — never written into results/).
+  const scannedFiles = [
+    ...BASELINE_FILES,
+    "classification.json",
+    "counterfactuals.json",
+  ];
   const sentinels = FIXTURE_PROFILES.flatMap((p) =>
     p.privateSentinels.map((s) => s.value),
   );
-  for (const p of pairs) {
-    for (const sentence of p.explanation) {
-      for (const sentinel of sentinels) {
-        if (sentence.includes(sentinel)) {
-          canaryLeaks.push(`${p.pairId}: ${sentinel}`);
-        }
-      }
-    }
-  }
-  for (const file of [...BASELINE_FILES, "classification.json", "counterfactuals.json"]) {
-    const content = readFileSync(path.join(RESULTS_DIR, file), "utf8");
-    for (const sentinel of sentinels) {
-      if (content.includes(sentinel)) canaryLeaks.push(`${file}: ${sentinel}`);
-    }
-  }
+  const canaryLeaks = scanCanaryLeaks({
+    sentences: pairs.flatMap((p) =>
+      p.explanation.map((sentence) => ({ pairId: p.pairId, sentence })),
+    ),
+    fileTexts: scannedFiles.map((file) => ({
+      name: file,
+      content: readFileSync(path.join(RESULTS_DIR, file), "utf8"),
+    })),
+    sentinels,
+  });
 
-  // 6. False-reason mutation outcomes.
+  // 6. False-reason mutation outcomes (user-action cases only; the
+  //    simulator-level probe is covered by allExpectationsMet below).
   const counterfactuals = JSON.parse(
     readFileSync(path.join(RESULTS_DIR, "counterfactuals.json"), "utf8"),
   );
@@ -692,6 +901,8 @@ async function runReplay(): Promise<void> {
     total: cfCases.length,
     met: cfCases.filter((c) => c.expectationMet).length,
   };
+  const counterfactualExpectationsMet =
+    counterfactuals.allExpectationsMet === true;
 
   // 7. Regenerate the page and check its keyboard structure.
   const pagePath = path.join(__dirname, "page", "index.html");

@@ -2,12 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  EXACT_COUNTS,
-  PAIRS,
-  PROFILES,
-  profileById,
-} from "./fixtures";
+import { EXACT_COUNTS, PAIRS, PROFILES, profileById } from "./fixtures";
 import {
   REAL_SCORING_HANDLER,
   REPO_ROOT,
@@ -59,9 +54,7 @@ describe("contribution references (sentence -> computed feature witness)", () =>
   it("explanation is fully determined by computed features via the condition table", async () => {
     const pairs = await runAllPairs();
     for (const result of pairs) {
-      expect(result.explanation).toEqual(
-        predictedExplanation(result.features),
-      );
+      expect(result.explanation).toEqual(predictedExplanation(result.features));
     }
   });
 
@@ -147,8 +140,10 @@ describe("eligibility references (rule structures exercised by fixtures)", () =>
     const pairs = await runAllPairs();
     const byId = new Map(pairs.map((p) => [p.pairId, p]));
     // The short-circuit pairs genuinely have DIFFERENT orgIds.
-    const mentor = profileById("mentor-senior-technology").scoringData.user.orgId;
-    const mentee = profileById("mentee-junior-technology").scoringData.user.orgId;
+    const mentor = profileById("mentor-senior-technology").scoringData.user
+      .orgId;
+    const mentee = profileById("mentee-junior-technology").scoringData.user
+      .orgId;
     const peer = profileById("peer-mid-software").scoringData.user.orgId;
     expect(mentor).not.toBe(mentee);
     expect(mentor).not.toBe(peer);
@@ -170,7 +165,9 @@ describe("eligibility references (rule structures exercised by fixtures)", () =>
   it("vector rules: undefined without embeddings, computed and > 0.8 for near-collinear vectors", async () => {
     const pairs = await runAllPairs();
     const byId = new Map(pairs.map((p) => [p.pairId, p]));
-    expect(byId.get("mentee-x-mentor")!.features.vectorSimilarity).toBeUndefined();
+    expect(
+      byId.get("mentee-x-mentor")!.features.vectorSimilarity,
+    ).toBeUndefined();
     const semantic = byId.get("mentor-x-peer")!.features.vectorSimilarity;
     expect(semantic).toBeDefined();
     expect(semantic!).toBeGreaterThan(0.8);
@@ -198,8 +195,8 @@ describe("eligibility references (rule structures exercised by fixtures)", () =>
 describe("exact fixture counts", () => {
   it("matches the declared exact counts", () => {
     expect(EXACT_COUNTS).toEqual({
-      profiles: 5,
-      scoredPairs: 4,
+      profiles: 9,
+      scoredPairs: 6,
       missingUserCases: 1,
     });
     const ids = PROFILES.map((p) => p.id);

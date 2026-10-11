@@ -40,6 +40,26 @@
         "Basic compatibility based on available data",
         "You're in compatible time zones."
       ]
+    },
+    {
+      "pairId": "tie-a-x-b",
+      "proposedExplanation": [
+        "Strong interest alignment",
+        "Ideal experience gap for mentorship",
+        "Complementary professional roles",
+        "You are in the same organization as this match.",
+        "You're in compatible time zones.",
+        "You will definitely hit it off."
+      ]
+    },
+    {
+      "pairId": "tie-c-x-d",
+      "proposedExplanation": [
+        "Some profile information was missing, so we compared basic compatibility.",
+        "Complementary professional roles",
+        "Basic compatibility based on available data",
+        "You're in compatible time zones."
+      ]
     }
   ]
 }

@@ -35,8 +35,16 @@ export interface ScoreOutput {
 interface ScoringArgs {
   user1Id: string;
   user2Id: string;
-  user1Constraints: { interests: string[]; roles: string[]; orgConstraints?: string };
-  user2Constraints: { interests: string[]; roles: string[]; orgConstraints?: string };
+  user1Constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  };
+  user2Constraints: {
+    interests: string[];
+    roles: string[];
+    orgConstraints?: string;
+  };
   customWeights?: CompatibilityFeatures;
 }
 
@@ -47,11 +55,13 @@ type RealHandler = (ctx: unknown, args: ScoringArgs) => Promise<ScoreOutput>;
  * object without modification. Fail fast if the runtime shape changes.
  */
 export const REAL_SCORING_HANDLER: RealHandler = (() => {
-  const fn = (calculateCompatibilityScore as unknown as {
-    _handler?: unknown;
-    isAction?: boolean;
-    isInternal?: boolean;
-  })._handler;
+  const fn = (
+    calculateCompatibilityScore as unknown as {
+      _handler?: unknown;
+      isAction?: boolean;
+      isInternal?: boolean;
+    }
+  )._handler;
   if (typeof fn !== "function") {
     throw new Error(
       "calculateCompatibilityScore no longer exposes _handler; the offline " +
@@ -82,9 +92,7 @@ export function makeStubContext(
       args: { userId: string },
     ): Promise<unknown> => {
       runQueryLog.push({ argNames: Object.keys(args ?? {}) });
-      const profile = store.find(
-        (p) => p.scoringData.user._id === args.userId,
-      );
+      const profile = store.find((p) => p.scoringData.user._id === args.userId);
       return profile ? profile.scoringData : null;
     },
   };
@@ -104,22 +112,32 @@ export interface PairResult {
 
 /**
  * Score an arbitrary (possibly mutated) profile pair through the real
+ * entrypoint, returning the full output (score, features, explanation).
+ */
+export async function runHandlerPairFull(
+  left: SyntheticProfile,
+  right: SyntheticProfile,
+): Promise<ScoreOutput> {
+  // Serve ONLY this pair's (possibly mutated) profiles, so counterfactual
+  // mutations are actually observed by the real handler.
+  const ctx = makeStubContext([left, right]);
+  return REAL_SCORING_HANDLER(ctx, {
+    user1Id: left.scoringData.user._id,
+    user2Id: right.scoringData.user._id,
+    user1Constraints: left.constraints,
+    user2Constraints: right.constraints,
+  });
+}
+
+/**
+ * Score an arbitrary (possibly mutated) profile pair through the real
  * entrypoint and return only the computed features.
  */
 export async function runHandlerPair(
   left: SyntheticProfile,
   right: SyntheticProfile,
 ): Promise<CompatibilityFeatures> {
-  // Serve ONLY this pair's (possibly mutated) profiles, so counterfactual
-  // mutations are actually observed by the real handler.
-  const ctx = makeStubContext([left, right]);
-  const output = await REAL_SCORING_HANDLER(ctx, {
-    user1Id: left.scoringData.user._id,
-    user2Id: right.scoringData.user._id,
-    user1Constraints: left.constraints,
-    user2Constraints: right.constraints,
-  });
-  return output.features;
+  return (await runHandlerPairFull(left, right)).features;
 }
 
 /** Score every declared pair through the real entrypoint, in fixed order. */
@@ -128,7 +146,9 @@ export async function runAllPairs(): Promise<PairResult[]> {
   for (const pair of PAIRS) {
     const ctx = makeStubContext();
     const left = PROFILES.find((p) => p.id === pair.leftId) as SyntheticProfile;
-    const right = PROFILES.find((p) => p.id === pair.rightId) as SyntheticProfile;
+    const right = PROFILES.find(
+      (p) => p.id === pair.rightId,
+    ) as SyntheticProfile;
     const output = await REAL_SCORING_HANDLER(ctx, {
       user1Id: left.scoringData.user._id,
       user2Id: right.scoringData.user._id,
@@ -163,7 +183,9 @@ export async function runMissingUserCase(): Promise<{ errorMessage: string }> {
   } catch (error) {
     return { errorMessage: (error as Error).message };
   }
-  throw new Error("Expected the real handler to reject when user data is missing");
+  throw new Error(
+    "Expected the real handler to reject when user data is missing",
+  );
 }
 
 /** Source files whose exact content this experiment is bound to. */

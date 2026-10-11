@@ -227,6 +227,145 @@ export const PROFILES: SyntheticProfile[] = [
       "member",
     ),
   },
+
+  // -------------------------------------------------------------------------
+  // Deliberate tied-match constructions. Each is a renamed counterpart of an
+  // existing pair with every scoring-relevant value held exactly equal, while
+  // everything the score ignores (display names, org identities, language
+  // identities, field spelling, interest order) differs. The hand solutions
+  // (83/96 and 11/32) are pinned in ties.test.ts.
+  // -------------------------------------------------------------------------
+  {
+    id: "tie-a-mentee",
+    description:
+      "Deliberate tie construction A (mentee side): renamed counterpart of " +
+      "the junior technologist with identical scoring-relevant values — same " +
+      "interests, junior experience, technology field (lowercase spelling, " +
+      "matched case-insensitively), one shared + one differing language, " +
+      "mentee role, identical same_org constraint strings, no embedding. The " +
+      "score ignores the renamed display name, org identity, language " +
+      "identities, and field casing.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_tie_a"),
+        displayName: "Canary Name Tie A",
+        orgId: "canary-org-tie-a",
+        orgRole: "member",
+      },
+      profile: {
+        experience: "junior",
+        languages: ["English", "German"],
+        field: "technology",
+      },
+      interests: ["technology", "ai", "startups"],
+      embedding: null,
+    },
+    constraints: {
+      interests: ["ai", "startups"],
+      roles: ["mentee"],
+      orgConstraints: "same_org",
+    },
+    privateSentinels: sentinels(
+      "Canary Name Tie A",
+      "canary-org-tie-a",
+      "member",
+    ),
+  },
+  {
+    id: "tie-b-mentor",
+    description:
+      "Deliberate tie construction B (mentor side): renamed counterpart of " +
+      "the senior technologist; uppercase field spelling still matches " +
+      "case-insensitively, language identities differ with the same 1-of-2 " +
+      "overlap ratio, no embedding.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_tie_b"),
+        displayName: "Canary Name Tie B",
+        orgId: "canary-org-tie-b",
+        orgRole: "member",
+      },
+      profile: {
+        experience: "senior",
+        languages: ["English", "Italian"],
+        field: "TECHNOLOGY",
+      },
+      interests: ["ai", "technology", "robotics"],
+      embedding: null,
+    },
+    constraints: {
+      interests: ["ai", "startups"],
+      roles: ["mentor"],
+      orgConstraints: "same_org",
+    },
+    privateSentinels: sentinels(
+      "Canary Name Tie B",
+      "canary-org-tie-b",
+      "member",
+    ),
+  },
+  {
+    id: "tie-c-mentee",
+    description:
+      "Deliberate tie construction C (mentee side): renamed counterpart of " +
+      "the junior technologist paired against a profile-less partner — " +
+      "interests present but unmatched, junior experience, two languages " +
+      "against an empty set, same_org constraint against a differing org, no " +
+      "embedding.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_tie_c"),
+        displayName: "Canary Name Tie C",
+        orgId: "canary-org-tie-c",
+        orgRole: "member",
+      },
+      profile: {
+        experience: "junior",
+        languages: ["English", "German"],
+        field: "Technology",
+      },
+      interests: ["technology", "ai", "startups"],
+      embedding: null,
+    },
+    constraints: {
+      interests: ["ai", "startups"],
+      roles: ["mentee"],
+      orgConstraints: "same_org",
+    },
+    privateSentinels: sentinels(
+      "Canary Name Tie C",
+      "canary-org-tie-c",
+      "member",
+    ),
+  },
+  {
+    id: "tie-d-sparse",
+    description:
+      "Deliberate tie construction D (sparse side): renamed counterpart of " +
+      "the profile-less executive — null profile, no interests, no embedding, " +
+      "investor role, no org constraint; forces the 0.5 neutral branches and " +
+      "a one-sided same_org mismatch.",
+    scoringData: {
+      user: {
+        _id: asUserId("u_canary_tie_d"),
+        displayName: "Canary Name Tie D",
+        orgId: "canary-org-tie-d",
+        orgRole: "member",
+      },
+      profile: null,
+      interests: [],
+      embedding: null,
+    },
+    constraints: {
+      interests: [],
+      roles: ["investor"],
+    },
+    privateSentinels: sentinels(
+      "Canary Name Tie D",
+      "canary-org-tie-d",
+      "member",
+    ),
+  },
 ];
 
 export interface ScoredPair {
@@ -271,6 +410,25 @@ export const PAIRS: ScoredPair[] = [
       "Missing profile data (neutral 0.5 branches) plus a one-sided same_org " +
       "constraint against a differing org; exercises the explanation fallback.",
   },
+  {
+    pairId: "tie-a-x-b",
+    leftId: "tie-a-mentee",
+    rightId: "tie-b-mentor",
+    purpose:
+      "Deliberate score tie with mentee-x-mentor: every scoring-relevant " +
+      "value is held identical while identity content (display names, org " +
+      "ids, language identities, field spelling) differs and is ignored by " +
+      "the score. Hand solution 83/96; pinned in ties.test.ts.",
+  },
+  {
+    pairId: "tie-c-x-d",
+    leftId: "tie-c-mentee",
+    rightId: "tie-d-sparse",
+    purpose:
+      "Deliberate score tie with mentee-x-sparse: zeroed and neutral-branch " +
+      "components reproduce exactly for renamed profiles. Hand solution " +
+      "11/32 = 0.34375; pinned in ties.test.ts.",
+  },
 ];
 
 /** A user id deliberately absent from the fixture store. */
@@ -284,7 +442,7 @@ export function profileById(id: string): SyntheticProfile {
 
 /** Exact fixture counts asserted by the tests and recorded in results. */
 export const EXACT_COUNTS = {
-  profiles: PROFILES.length, // 5
-  scoredPairs: PAIRS.length, // 4
+  profiles: PROFILES.length, // 9
+  scoredPairs: PAIRS.length, // 6
   missingUserCases: 1,
 } as const;
