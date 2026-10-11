@@ -86,6 +86,10 @@ const esbuild = resolveEsbuild();
 const CONVEX_DIR = path.join(REPO, "convex");
 const SKIP_DIR_NAMES = new Set(["_generated", "test", "__tests__", "node_modules"]);
 
+/**
+ * @param {string} dir
+ * @returns {string[]}
+ */
 function listEntries(dir) {
   const out = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -107,6 +111,10 @@ const entries = listEntries(CONVEX_DIR).sort();
 const selected = FILTER ? entries.filter((e) => FILTER.test(e)) : entries;
 
 // ------------------------------------------------------------------ helpers
+/**
+ * @param {string} p
+ * @returns {string}
+ */
 const packageOf = (p) => {
   // "node_modules/.pnpm/openai@6.x/node_modules/openai/index.mjs" -> "openai"
   const parts = p.split("node_modules/");
@@ -116,11 +124,19 @@ const packageOf = (p) => {
   return last.split("/").slice(0, last.startsWith("@") ? 2 : 1).join("/");
 };
 
+/**
+ * @param {number[]} xs
+ * @returns {number}
+ */
 const median = (xs) => {
   const s = [...xs].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 };
+/**
+ * @param {number | null} n
+ * @returns {string}
+ */
 const fmt = (n) => (n == null ? "n/a" : Number(n.toFixed(2)).toString());
 
 // Fresh-process timed import runner.
@@ -143,6 +159,10 @@ process.exit(0);
 `,
 );
 
+/**
+ * @param {string} bundleFile
+ * @returns {number}
+ */
 function timeImport(bundleFile) {
   const stdout = execFileSync(process.execPath, [runnerPath, bundleFile], {
     stdio: ["ignore", "pipe", "pipe"],
@@ -163,6 +183,7 @@ for (const entry of selected) {
   idx += 1;
   const rel = path.relative(CONVEX_DIR, entry);
   const outDir = path.join(BUNDLES, rel.replace(/[^a-zA-Z0-9._-]+/g, "__"));
+  /** @type {{module: string, label: string, runs: number[], error: string | null, bytes: number | null, closureBytes: number | null, contributors: {pkg: string, bytes: number}[]}} */
   const mod = { module: rel, label: LABEL, runs: [], error: null, bytes: null, closureBytes: null, contributors: [] };
 
   try {
@@ -205,8 +226,8 @@ for (const entry of selected) {
       mod.runs.push(timeImport(entryBundle));
     }
   } catch (e) {
-    const msg = String(e && e.message ? e.message : e).split("\n").slice(0, 6).join(" | ");
-    mod.error = e.stdout ? `BUILD_ERROR: ${msg}` : `ERROR: ${msg}`;
+    const msg = (e instanceof Error ? e.message : String(e)).split("\n").slice(0, 6).join(" | ");
+    mod.error = `ERROR: ${msg}`;
   }
 
   results.push(mod);
@@ -215,7 +236,7 @@ for (const entry of selected) {
     `[measure] ${String(idx).padStart(3)}/${selected.length} ${rel.padEnd(52)} ` +
       (mod.error
         ? `ERROR ${mod.error.slice(0, 90)}`
-        : `median ${fmt(med)}ms  runs [${mod.runs.map(fmt).join(", ")}]  closure ${(mod.closureBytes / 1024).toFixed(0)}KiB`),
+        : `median ${fmt(med)}ms  runs [${mod.runs.map(fmt).join(", ")}]  closure ${((mod.closureBytes ?? 0) / 1024).toFixed(0)}KiB`),
   );
   if (!KEEP) fs.rmSync(outDir, { recursive: true, force: true });
 }
@@ -257,9 +278,9 @@ md.push("");
 md.push(`| module | median ms | min | max | entry KiB | closure KiB | top npm contributors (KiB) |`);
 md.push(`|---|---|---|---|---|---|---|`);
 for (const r of rows) {
-  const contrib = r.contributors.map((c) => `${c.pkg} ${(c.bytes / 1024).toFixed(0)}`).join(", ") || "—";
+  const contrib = r.contributors.map((c) => `${c.pkg} ${((c.bytes ?? 0) / 1024).toFixed(0)}`).join(", ") || "—";
   md.push(
-    `| ${r.module} | ${fmt(r.med)} | ${fmt(Math.min(...r.runs))} | ${fmt(Math.max(...r.runs))} | ${(r.bytes / 1024).toFixed(0)} | ${(r.closureBytes / 1024).toFixed(0)} | ${contrib} |`,
+    `| ${r.module} | ${fmt(r.med)} | ${fmt(Math.min(...r.runs))} | ${fmt(Math.max(...r.runs))} | ${((r.bytes ?? 0) / 1024).toFixed(0)} | ${((r.closureBytes ?? 0) / 1024).toFixed(0)} | ${contrib} |`,
   );
 }
 if (errs.length) {
@@ -273,4 +294,4 @@ fs.writeFileSync(path.join(OUT, "table.md"), md.join("\n"));
 
 console.log(`[measure] wrote ${path.join(OUT, "results.json")} and ${path.join(OUT, "table.md")}`);
 console.log(`[measure] loadavg end: ${loadEnd.map((x) => x.toFixed(2)).join(" ")}`);
-console.log(`[measure] slowest 10:\n${rows.slice(0, 10).map((r, i) => `  ${i + 1}. ${r.module} median ${fmt(r.med)}ms (${(r.closureBytes / 1024).toFixed(0)} KiB closure)`).join("\n")}`);
+console.log(`[measure] slowest 10:\n${rows.slice(0, 10).map((r, i) => `  ${i + 1}. ${r.module} median ${fmt(r.med)}ms (${((r.closureBytes ?? 0) / 1024).toFixed(0)} KiB closure)`).join("\n")}`);
