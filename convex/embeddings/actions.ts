@@ -31,11 +31,12 @@ import { VectorUtils } from "@convex/types/entities/embedding";
 
 /**
  * Lazy OpenAI client loader. Convex bundles with esbuild `splitting: false`, so
- * a dynamic import keeps the SDK's bytes in the same bundle but defers its
- * top-level initialization to the first action that constructs a client
- * (measured: embeddings/actions.ts import median 22.1 ms -> ~7 ms; the ~326 KiB
- * of openai SDK bytes remain in the bundle either way). Behavior is unchanged:
- * same client class, same constructor args, same env-key check order.
+ * a dynamic import keeps the SDK's bytes in the same bundle (they still parse
+ * at module load) but defers the SDK's top-level initialization to the first
+ * action that constructs a client. Import-time savings are proxy measurements
+ * (tools/call-eval/verification/) until a real deployment push confirms them.
+ * Behavior is unchanged: same client class, same constructor args, same
+ * env-key check order.
  */
 type OpenAIClient = InstanceType<(typeof import("openai"))["default"]>;
 
