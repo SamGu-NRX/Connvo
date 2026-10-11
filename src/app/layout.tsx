@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Providers } from "./providers";
 import type { Metadata } from "next";
 import { cn } from "@/lib/shadcn";
+import { KGU_ARRIVAL } from "./kgu-arrival";
 
 const title = "Connvo – Real Conversations, Better Connections";
 const description =
@@ -36,6 +37,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: KGU_ARRIVAL }} />
+      </head>
       <body className={cn(cal.variable, inter.variable)}>
         <Providers>
           {children}
