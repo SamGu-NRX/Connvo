@@ -2,7 +2,7 @@
 
 **Branch** `obv/connvo-notes-ledger-f1` → `alpha` · **Draft PR #31** (opened from the host at `76d296d`)
 **This doc is the PR body's source of truth.** The sandbox cannot reach `api.github.com` (egress proxy blocks the host), so nothing in this workspace edits the PR: the lead copies this file into the PR body at review. Keep this file current with every push — update the SHA line, the Proof log and the Handoff in the same commit as each milestone.
-**Last updated at:** `0152a44` (M1 merged)
+**Last updated at:** `622cbb8` (M1 + M3 merged)
 
 ---
 
@@ -24,7 +24,7 @@ Step S1 of `docs/plan/CALL-PLAN.md` (base `alpha` @ `ddc94d4`): rebuild #24's no
 - [x] M0 — design contract, baseline receipt, pinned hook types (`3162e18`, `c33518f`, `76d296d`)
 - [x] M1 — server identity/watermark fields + convex-test suite (merged at `0152a44`)
 - [ ] M2 — ledger + hook + outcome matrix (failing-before receipts for every #24 defect)
-- [ ] M3 — panel + axe + keyboard + reduced-motion + screenshots (1440×900, 390×844)
+- [x] M3 — panel + axe + keyboard + reduced-motion (mounted matrix landed; real-browser screenshots deferred to the M2/M3 join)
 - [ ] M4 — property run clean at recorded seed (10k) + final Proof / Handoff
 
 ### Baseline @ `ddc94d4` (`docs/notes-ledger-f1/baseline.md`)
@@ -60,6 +60,13 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 - `pnpm vitest run test/convex/notes-watermark.test.ts` → exit 0, **11/11 passed** (also 11/11 in the worker's clone pre-merge).
 - Full `pnpm test:run` on merged tree: two pre-existing intermittent failures, both documented: `convex/transcripts/ingestion.test.ts` "time-bucketed sharding" (wall-clock flake, fails when `Date.now() mod 300000 ≥ 240000`, ~20% of runs; passed twice in isolation immediately after — 9/9 both runs) and the baseline `ArrayBuffer operations are efficient` perf test. Worker verified both test files byte-identical between base `76d296d` and M1 HEAD; no new failures.
 
+### M3 @ `e8f5b74` (merged into this branch at `622cbb8`)
+
+- Scope verified: 15 files, all inside bounds (`src/components/meeting-notes/**`, `src/app/dev/notes-preview/page.tsx`, `test/in-call/**`, additive `vitest.config.ts` project, `package.json`/`pnpm-lock.yaml` dev deps — jsdom pinned to 26 because 30's undici crashes Node 20). No forbidden paths; `src/hooks/notes/**` untouched. Author/trailer verified pre-merge.
+- Contract spot-check (owner, pre-merge): panel maps all seven states with a polite `role=status` live region, never claims "Saved" unless synced, keeps unsaved words visible with per-record state words; jest-axe over all seven states; keyboard walkthrough (tab to editor, native Enter newline, Tab to retry, no trap, focus-visible); reduced-motion honored (motion markers only under default motion); default transport fails loudly until the M2 join (one-line TODO swap) instead of pretending to save; demo backend implements the pinned transport seam with offline/drop-ack/slow-network/conflict toggles.
+- Bar on merged tree: `pnpm type-check` → `32` (holds); `pnpm vitest run test/in-call` → exit 0, **32/32 passed**; M1 suite still 11/11; full `pnpm test:run` clean in this run (282 passed, 0 failed) with the two documented pre-existing tests remaining intermittent.
+- Known M3 debts for the M2/M3 join (documented in code): the M0 placeholder's zero-arg `useNotesLedger` is signature-aligned via a typed cast (collapses at the join); a11y tests mock `@/hooks/notes` — swap in the real hook; jest-axe page-has-heading-one disabled (page shells own the h1); **real-browser responsive/color-contrast/focus-visibility checks at 1440×900 and 390×844 deferred to the join**.
+
 ---
 
 ## Handoff
@@ -72,14 +79,16 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 - Shared client contract pinned on the branch: `src/hooks/notes/types.ts`, `notesTransport.tsx` (provider + `useNotesTransport`), `index.ts` with a `useNotesLedger` placeholder (throws until M2) — verified to add zero new type errors.
 - Draft PR #31 open, maintained by the lead from the host; sandbox never touches `api.github.com`.
 - **M1 merged at `0152a44`**: additive `clientId`/`clientOpId`/`clientSequence` on `noteOps` + `by_meeting_client`/`by_meeting_client_op` indexes; idempotent dedupe with original-sequence return; per-op echo + `failedOps`; `getMeetingNotes` watermark/acks; protocol documented in `convex/notes/README.md` (deviations recorded there: identity triple persisted only when `clientOpId` present; `clientSequence` always echoed; `failedOps` absent when empty).
+- **M3 merged at `622cbb8`**: MeetingNotesPanel (seven-state honest status, unsaved-word visibility, retry only for conflict/rejected), FadeRise reduced-motion animation, `notesStatus` helpers, in-memory demo backend with fault toggles, `/dev/notes-preview` demo route, additive `in-call` vitest project with 32 mounted a11y/behavior tests.
 
 **In flight**
 
-- M3 (panel + a11y + demo preview route) runs as a parallel sub-thread off this branch in its own fresh clone, reporting commits on `obv/connvo-notes-f1-m3-panel` for the owner to merge. M2 (ledger + hook) starts on the merged branch (`0152a44`); M4 (property run at recorded seed + final proof) when M2 lands.
+- M2 (ledger + hook) runs on the merged branch in its own fresh clone, reporting commits on `obv/connvo-notes-f1-m2-ledger`. M4 (property run at recorded seed + final proof) starts when M2 lands, along with the M2/M3 join work below.
 
 **Left**
 
-- M1–M4 as listed under Milestones; merge each milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push.
+- M2 merge + M4 as listed under Milestones; merge each milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push.
+- M2/M3 join (after M2 lands): replace the a11y tests' `@/hooks/notes` mock with the real hook; collapse M3's signature-alignment cast; swap `defaultNotesTransport`'s placeholder for the M2 Convex wiring (the marked one-liner); then run the deferred real-browser checks at 1440×900 and 390×844 (responsive, color-contrast, focus-visibility) and attach screenshots to the PR body copy.
 
 **How to continue**
 
