@@ -39,6 +39,7 @@ export const UserV = {
     email: v.string(),
     orgId: v.optional(v.string()),
     orgRole: v.optional(v.string()),
+    orgClaimsVerified: v.optional(v.boolean()),
     // Denormalized for performance
     displayName: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),

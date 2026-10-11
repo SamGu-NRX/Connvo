@@ -164,6 +164,7 @@ export const upsertUser = mutation({
           displayName?: string;
           orgId?: string;
           orgRole?: string;
+          orgClaimsVerified?: boolean;
           lastSeenAt: number;
           updatedAt: number;
         } = {
@@ -174,11 +175,24 @@ export const upsertUser = mutation({
         if (displayName !== undefined) {
           patch.displayName = displayName;
         }
-        if (verifiedOrgId !== null) {
-          patch.orgId = verifiedOrgId;
-        }
-        if (verifiedOrgRole !== null) {
-          patch.orgRole = verifiedOrgRole;
+        if (verifiedOrgId !== null || verifiedOrgRole !== null) {
+          // Verified JWT org claims present: write them with verified
+          // provenance.
+          if (verifiedOrgId !== null) {
+            patch.orgId = verifiedOrgId;
+          }
+          if (verifiedOrgRole !== null) {
+            patch.orgRole = verifiedOrgRole;
+          }
+          patch.orgClaimsVerified = true;
+        } else {
+          // No verified org claims on this token: any stored org values are
+          // unproven. Clear them (undefined patches drop the fields) and
+          // remove provenance — legacy or previously verified values must not
+          // retain admin trust once the verified claims stop supplying them.
+          patch.orgId = undefined;
+          patch.orgRole = undefined;
+          patch.orgClaimsVerified = false;
         }
         await ctx.db.patch(existingUser._id, patch);
         
@@ -216,6 +230,8 @@ export const upsertUser = mutation({
           displayName,
           orgId: verifiedOrgId ?? undefined,
           orgRole: verifiedOrgRole ?? undefined,
+          orgClaimsVerified:
+            verifiedOrgId !== null || verifiedOrgRole !== null,
           isActive: true,
           lastSeenAt: now,
           createdAt: now,
@@ -1013,6 +1029,9 @@ export const createUser = internalMutation({
     isActive: v.optional(v.boolean()),
     orgId: v.optional(v.string()),
     orgRole: v.optional(v.string()),
+    // Internal callers that verify tokens themselves may assert provenance
+    // explicitly; org values written without it stay quarantined.
+    orgClaimsVerified: v.optional(v.boolean()),
   },
   returns: v.id("users"),
   handler: async (ctx, args): Promise<Id<"users">> => {
@@ -1030,6 +1049,7 @@ export const createUser = internalMutation({
         displayName: args.displayName,
         orgId: args.orgId ?? existing.orgId,
         orgRole: args.orgRole ?? existing.orgRole,
+        orgClaimsVerified: args.orgClaimsVerified ?? false,
         isActive: args.isActive ?? existing.isActive ?? true,
         updatedAt: now,
         lastSeenAt: now,
@@ -1043,6 +1063,7 @@ export const createUser = internalMutation({
       displayName: args.displayName,
       orgId: args.orgId ?? undefined,
       orgRole: args.orgRole ?? undefined,
+      orgClaimsVerified: args.orgClaimsVerified ?? false,
       isActive: args.isActive ?? true,
       lastSeenAt: now,
       createdAt: now,

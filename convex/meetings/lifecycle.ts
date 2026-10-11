@@ -182,8 +182,14 @@ export const createMeeting = mutation({
         throw createError.internal("Organizer resolution failed");
       }
 
+      // Paid tier follows verified provenance only: identity.orgRole is
+      // already quarantined by requireIdentity, and the organizer row's org
+      // values are trusted only when they carry verified provenance. The
+      // cast works around the stale generated Doc type (regen pending).
       const userPlan =
-        identity?.orgRole === "admin" || organizer.orgRole === "admin"
+        identity?.orgRole === "admin" ||
+        (organizer.orgRole === "admin" &&
+          (organizer as any).orgClaimsVerified === true)
           ? "paid"
           : "free";
       const isLargeMeeting =

@@ -70,6 +70,7 @@ export async function createTestUser(
     displayName: "Test User",
     orgId: "test-org",
     orgRole: "member" as const,
+    orgClaimsVerified: true,
     isActive: true,
     ...userData,
   };
@@ -82,6 +83,7 @@ export async function createTestUser(
       displayName: defaultData.displayName,
       orgId: defaultData.orgId,
       orgRole: defaultData.orgRole,
+      orgClaimsVerified: defaultData.orgClaimsVerified,
       isActive: defaultData.isActive,
       lastSeenAt: now,
       createdAt: now,
