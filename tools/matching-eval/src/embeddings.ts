@@ -1,41 +1,92 @@
 /**
- * Local bio embeddings via fastembed MiniLM (L2-normalised), with a
- * deterministic fallback when the model is unavailable. Mirrors
- * convex/matching/embeddings.ts: deriveEmbedding + cosine similarity.
+ * Local bio embeddings via fastembed MiniLM (L2-normalised).
+ * Mirrors convex/matching/embeddings.ts: deriveEmbedding + cosine similarity.
  *
- * README §embeddings: no network at runtime; fastembed caches its ONNX
- * weights at install. All vectors are L2-normalised so dot = cosine.
+ * Review fix 1 (PR #32, 2026-10-11): fastembed is a declared dependency
+ * (package.json + lockfile), the loaded model identity is recorded here, and
+ * every load or embed failure THROWS. There is no silent character-hash
+ * fallback: a hashed surrogate silently invalidates every vector-similarity
+ * measurement in the evaluation, which is the failure the review blocked.
  */
 
 export const EMBEDDING_DIM = 384;
-export const EMBEDDING_MODEL = "local-MiniLM-fallback-v1";
 
-type FastembedModule = {
-  embed: (input: string[]) => Promise<Array<AsyncIterable<number[]>>>;
-};
+/** Declared model served by this provider (fastembed dep in package.json). */
+export const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 
-let fastembed: FastembedModule | null = null;
-let tried = false;
+type FastembedEmbedFn = (
+  input: string[],
+  isQuery?: boolean,
+) => AsyncIterable<number[]> | Array<AsyncIterable<number[]>>;
 
-async function tryLoadFastembed(): Promise<FastembedModule | null> {
-  if (!tried) {
-    tried = true;
-    try {
-      // Optional dependency — harness works without it.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const mod = await import("fastembed");
-      fastembed = mod as unknown as FastembedModule;
-    } catch {
-      fastembed = null;
-    }
+type FastembedEmbedder = { embed: FastembedEmbedFn };
+
+let loader: Promise<FastembedEmbedder> | null = null;
+
+async function loadEmbedder(): Promise<FastembedEmbedder> {
+  if (!loader) {
+    loader = (async () => {
+      // Fails loud when the declared dependency is missing or the model
+      // cannot be loaded. Never falls back to a surrogate embedding.
+      const mod = (await import("fastembed")) as unknown as {
+        FlagEmbedding: {
+          init: (opts?: { model?: string }) => Promise<FastembedEmbedder>;
+        };
+      };
+      if (!mod?.FlagEmbedding?.init) {
+        throw new Error(
+          "fastembed did not expose FlagEmbedding.init — cannot embed honestly",
+        );
+      }
+      const embedder = await mod.FlagEmbedding.init({ model: EMBEDDING_MODEL });
+      if (typeof embedder?.embed !== "function") {
+        throw new Error(
+          "fastembed loaded but embed() is missing — cannot embed honestly",
+        );
+      }
+      return embedder;
+    })();
+    void loader.catch(() => {
+      loader = null; // transient failure: allow a retry on next call
+    });
   }
-  return fastembed;
+  return loader;
+}
+
+/** Model identity that will actually serve embeddings (loads the provider). */
+export async function embeddingModelId(): Promise<string> {
+  await loadEmbedder();
+  return EMBEDDING_MODEL;
+}
+
+function l2Normalize(vec: number[]): number[] {
+  const norm = Math.sqrt(vec.reduce((a, x) => a + x * x, 0)) || 1;
+  return vec.map((x) => x / norm);
+}
+
+/** Interface mirrors the Convex action's deriveEmbedding. */
+export async function deriveEmbedding(
+  text: string,
+  isQuery = false,
+): Promise<number[]> {
+  const embedder = await loadEmbedder();
+  const iterables = await embedder.embed([text], isQuery);
+  const first: AsyncIterable<number[]> = Array.isArray(iterables)
+    ? iterables[0]
+    : iterables;
+  if (!first) {
+    throw new Error("fastembed returned no embedding stream for the input");
+  }
+  for await (const vec of first) {
+    return l2Normalize(vec);
+  }
+  throw new Error("fastembed embedding stream was empty");
 }
 
 /**
- * Deterministic fallback: character 4-gram hashing into 384 dims,
- * L2-normalised. Weaker than MiniLM but stable, offline, and captures
- * lexical overlap — enough for the interest/bio signal the eval uses.
+ * @deprecated Deterministic character 4-gram hashing. Kept ONLY until the
+ * baseline rewiring commit removes its last consumer; it must never feed a
+ * vector-similarity measurement again (review fix 1). Do not call.
  */
 export function hashEmbedding(text: string): number[] {
   const v = new Array<number>(EMBEDDING_DIM).fill(0);
@@ -51,25 +102,4 @@ export function hashEmbedding(text: string): number[] {
   }
   const norm = Math.sqrt(v.reduce((a, x) => a + x * x, 0)) || 1;
   return v.map((x) => x / norm);
-}
-
-/** Interface mirrors the Convex action's deriveEmbedding. */
-export async function deriveEmbedding(
-  text: string,
-  isQuery = false,
-): Promise<number[]> {
-  void isQuery;
-  const mod = await tryLoadFastembed();
-  if (mod) {
-    try {
-      const iterables = await mod.embed([text]);
-      for await (const vec of iterables[0]) {
-        const norm = Math.sqrt(vec.reduce((a, x) => a + x * x, 0)) || 1;
-        return vec.map((x) => x / norm);
-      }
-    } catch {
-      // fall through to hashing
-    }
-  }
-  return hashEmbedding(text);
 }
