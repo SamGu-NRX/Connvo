@@ -9,6 +9,8 @@
 import { mutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
+import { isAfterCallEnabledServer } from "./flag";
+import { createError } from "@convex/lib/errors";
 
 /**
  * Records or clears the caller's stay-in-touch opt-in for a meeting.
@@ -20,6 +22,11 @@ import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 export const setStayInTouch = mutation({
   args: { meetingId: v.id("meetings"), enabled: v.boolean() },
   handler: async (ctx, { meetingId, enabled }) => {
+    // Server-side feature gate: checked before anything else (including
+    // identity) so the API surface disappears when the flag is off.
+    if (!isAfterCallEnabledServer()) {
+      throw createError.forbidden("Access denied: After-call history is disabled");
+    }
     const identity = await requireIdentity(ctx);
     await assertMeetingAccess(ctx, meetingId);
 

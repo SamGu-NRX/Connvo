@@ -21,14 +21,21 @@ import { buildRecap, RecapInput } from "../../src/lib/history/recap";
 
 describe("After-call history data layer", () => {
   let t: ReturnType<typeof createTestEnvironment>;
+  let envSavedFlag: string | undefined;
 
   beforeEach(() => {
     t = createTestEnvironment();
     setupTestMocks();
     resetAllMocks();
+    // Default the server flag ON for the existing suites; the flag-gating
+    // describe toggles it explicitly and afterEach restores the prior value.
+    envSavedFlag = process.env.CONNVO_AFTER_CALL;
+    process.env.CONNVO_AFTER_CALL = "1";
   });
 
   afterEach(() => {
+    if (envSavedFlag === undefined) delete process.env.CONNVO_AFTER_CALL;
+    else process.env.CONNVO_AFTER_CALL = envSavedFlag;
     cleanupTestMocks();
   });
 
@@ -237,24 +244,30 @@ describe("After-call history data layer", () => {
         displayName: "Outsider",
       });
 
+      // Shape-agnostic: works for a raw ConvexError (data envelope) and
+      // for re-thrown wrappers carrying code/message directly.
       const catchData = (error: unknown): { code?: string; message?: string } => {
         const anyError = error as {
           data?: { code?: string; message?: string };
+          code?: string;
           message?: string;
         };
-        return anyError.data ?? { message: anyError.message };
+        const payload = anyError.data ?? anyError;
+        return { code: payload?.code, message: payload?.message };
       };
 
       let nonParticipantData: { code?: string; message?: string } = {};
+      let nonParticipantThrew = false;
       try {
         await identityFor(outsider.workosUserId).query(
           api.history.queries.getMeetingHistory,
           { meetingId },
         );
-        expect.fail("Expected forbidden error for non-participant");
       } catch (error) {
+        nonParticipantThrew = true;
         nonParticipantData = catchData(error);
       }
+      expect(nonParticipantThrew).toBe(true);
       expect(nonParticipantData.code).toBe("FORBIDDEN");
       expect(nonParticipantData.message).toBe(
         "Access denied: Not a meeting participant",
@@ -274,15 +287,17 @@ describe("After-call history data layer", () => {
       });
 
       let nonexistentData: { code?: string; message?: string } = {};
+      let nonexistentThrew = false;
       try {
         await identityFor(participantWorkosIds[0]).query(
           api.history.queries.getMeetingHistory,
           { meetingId: nonExistentId },
         );
-        expect.fail("Expected forbidden error for nonexistent meeting");
       } catch (error) {
+        nonexistentThrew = true;
         nonexistentData = catchData(error);
       }
+      expect(nonexistentThrew).toBe(true);
       expect(nonexistentData.code).toBe("FORBIDDEN");
       expect(nonexistentData.message).toBe(
         "Access denied: Not a meeting participant",
@@ -578,4 +593,161 @@ describe("After-call history data layer", () => {
       });
     });
   });
-});
+  describe("server-side flag gating (CONNVO_AFTER_CALL)", () => {
+    test("listMyMeetings: refused when flag off, works when flag on", async () => {
+      const { participantWorkosIds } = await createTestMeetingWithParticipants(
+        t,
+        {},
+        1,
+        {},
+        {},
+      );
+      delete process.env.CONNVO_AFTER_CALL;
+      await expect(
+        identityFor(participantWorkosIds[0]).query(
+          api.history.queries.listMyMeetings,
+          { paginationOpts: { numItems: 10, cursor: null } },
+        ),
+      ).rejects.toThrow(/After-call history is disabled/);
+
+      process.env.CONNVO_AFTER_CALL = "1";
+      const page = await identityFor(participantWorkosIds[0]).query(
+        api.history.queries.listMyMeetings,
+        { paginationOpts: { numItems: 10, cursor: null } },
+      );
+      expect(page.isDone).toBe(true);
+    });
+
+    test("getMeetingHistory: refused when flag off, works when flag on", async () => {
+      const { meetingId, participantWorkosIds } =
+        await createTestMeetingWithParticipants(t, {}, 1, {}, {});
+      delete process.env.CONNVO_AFTER_CALL;
+      await expect(
+        identityFor(participantWorkosIds[0]).query(
+          api.history.queries.getMeetingHistory,
+          { meetingId },
+        ),
+      ).rejects.toThrow(/After-call history is disabled/);
+
+      process.env.CONNVO_AFTER_CALL = "1";
+      const history = await identityFor(participantWorkosIds[0]).query(
+        api.history.queries.getMeetingHistory,
+        { meetingId },
+      );
+      expect(history.meeting._id).toBe(meetingId);
+    });
+
+    test("getStayInTouchStatus: refused when flag off, works when flag on", async () => {
+      const { meetingId, participantWorkosIds } =
+        await createTestMeetingWithParticipants(t, {}, 1, {}, {});
+      delete process.env.CONNVO_AFTER_CALL;
+      await expect(
+        identityFor(participantWorkosIds[0]).query(
+          api.history.queries.getStayInTouchStatus,
+          { meetingId },
+        ),
+      ).rejects.toThrow(/After-call history is disabled/);
+
+      process.env.CONNVO_AFTER_CALL = "1";
+      const status = await identityFor(participantWorkosIds[0]).query(
+        api.history.queries.getStayInTouchStatus,
+        { meetingId },
+      );
+      expect(status.enabled).toBe(false);
+      expect(status.mutual).toBe(false);
+    });
+
+    test("setStayInTouch: refused when flag off, works when flag on", async () => {
+      const { meetingId, participantWorkosIds } =
+        await createTestMeetingWithParticipants(t, {}, 1, {}, {});
+      delete process.env.CONNVO_AFTER_CALL;
+      await expect(
+        identityFor(participantWorkosIds[0]).mutation(
+          api.history.mutations.setStayInTouch,
+          { meetingId, enabled: true },
+        ),
+      ).rejects.toThrow(/After-call history is disabled/);
+
+      process.env.CONNVO_AFTER_CALL = "1";
+      const after = await identityFor(participantWorkosIds[0]).mutation(
+        api.history.mutations.setStayInTouch,
+        { meetingId, enabled: true },
+      );
+      expect(after.enabled).toBe(true);
+    });
+
+    test("flag gate runs before identity: unauthenticated caller sees the flag error", async () => {
+      const { meetingId } = await createTestMeetingWithParticipants(
+        t,
+        {},
+        1,
+        {},
+        {},
+      );
+      delete process.env.CONNVO_AFTER_CALL;
+      await expect(
+        t.query(api.history.queries.getStayInTouchStatus, { meetingId }),
+      ).rejects.toThrow(/After-call history is disabled/);
+    });
+  });
+
+  describe("listMyMeetings pagination ordering", () => {
+    test("globally newest-first across pages, no duplicates or gaps", async () => {
+      const first = await createTestMeetingWithParticipants(
+        t,
+        {},
+        1,
+        { title: "Meeting 1" },
+        {},
+      );
+      const hostUserId = first.participantIds[0];
+      const hostWorkosId = first.participantWorkosIds[0];
+      for (let i = 2; i <= 5; i++) {
+        await createTestMeetingWithParticipants(
+          t,
+          {},
+          0,
+          { title: `Meeting ${i}` },
+          {
+            organizerOverride: { userId: hostUserId, workosUserId: hostWorkosId },
+          },
+        );
+      }
+
+      const caller = identityFor(hostWorkosId);
+      const page1 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 2, cursor: null },
+      });
+      const page2 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 2, cursor: page1.continueCursor },
+      });
+      const page3 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 2, cursor: page2.continueCursor },
+      });
+
+      expect(page1.page).toHaveLength(2);
+      expect(page2.page).toHaveLength(2);
+      expect(page3.page).toHaveLength(1);
+      expect(page3.isDone).toBe(true);
+
+      const all = [...page1.page, ...page2.page, ...page3.page];
+      const ids = all.map((item: any) => item.meeting._id);
+      expect(new Set(ids).size).toBe(5);
+
+      // Exact global order: reverse of creation sequence, across page
+      // boundaries — no duplicates, no gaps.
+      expect(all.map((item: any) => item.meeting.title)).toEqual([
+        "Meeting 5",
+        "Meeting 4",
+        "Meeting 3",
+        "Meeting 2",
+        "Meeting 1",
+      ]);
+
+      const createdAts = all.map((item: any) => item.meeting.createdAt);
+      for (let i = 1; i < createdAts.length; i++) {
+        expect(createdAts[i - 1]).toBeGreaterThanOrEqual(createdAts[i]);
+      }
+    });
+  });
+

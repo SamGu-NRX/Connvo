@@ -11,10 +11,11 @@
 import { query } from "@convex/_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { Id } from "@convex/_generated/dataModel";
+import { Doc, Id } from "@convex/_generated/dataModel";
 import { internal } from "@convex/_generated/api";
 import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
+import { isAfterCallEnabledServer } from "./flag";
 
 /**
  * Id-string comparator used as a deterministic tiebreak everywhere ordering
@@ -29,17 +30,24 @@ function compareIds(a: string, b: string): number {
  *
  * Meetings are discovered ONLY from the caller's own meetingParticipants
  * rows (by_user index), joined to their meetings and the meeting state.
- * Pagination walks the participant rows; each page is ordered by meeting
- * createdAt descending with a stable _id tiebreak.
+ * Pagination walks the participant rows in descending creation order
+ * (newest joins first), so pages are globally newest-first with no
+ * post-pagination sorting.
  */
 export const listMyMeetings = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
+    // Server-side feature gate: checked before anything else (including
+    // identity) so the API surface disappears when the flag is off.
+    if (!isAfterCallEnabledServer()) {
+      throw createError.forbidden("Access denied: After-call history is disabled");
+    }
     const identity = await requireIdentity(ctx);
 
     const participations = await ctx.db
       .query("meetingParticipants")
       .withIndex("by_user", (q) => q.eq("userId", identity.userId))
+      .order("desc")
       .paginate(args.paginationOpts);
 
     type MyMeetingItem = {
@@ -79,15 +87,6 @@ export const listMyMeetings = query({
       });
     }
 
-    // Newest-first by meeting createdAt with stable _id tiebreak. Sorting is
-    // applied to each page (the by_user index ordering drives pagination).
-    page.sort((a, b) => {
-      if (a.meeting.createdAt !== b.meeting.createdAt) {
-        return b.meeting.createdAt - a.meeting.createdAt;
-      }
-      return compareIds(a.meeting._id, b.meeting._id);
-    });
-
     return {
       page,
       isDone: participations.isDone,
@@ -103,7 +102,30 @@ export const listMyMeetings = query({
  */
 export const getMeetingHistory = query({
   args: { meetingId: v.id("meetings") },
-  handler: async (ctx, { meetingId }) => {
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<{
+    meeting: Doc<"meetings">;
+    myRole: Doc<"meetingParticipants">["role"];
+    participants: Array<{
+      userId: Id<"users">;
+      displayName: string | null;
+      role: Doc<"meetingParticipants">["role"];
+      presence: Doc<"meetingParticipants">["presence"];
+      joinedAt: number | null;
+      leftAt: number | null;
+    }>;
+    state: Doc<"meetingState"> | null;
+    lifecycleEvents: Doc<"meetingEvents">[];
+    notes: Doc<"meetingNotes"> | null;
+    prompts: Doc<"prompts">[];
+  }> => {
+    // Server-side feature gate: checked before anything else (including
+    // identity) so the API surface disappears when the flag is off.
+    if (!isAfterCallEnabledServer()) {
+      throw createError.forbidden("Access denied: After-call history is disabled");
+    }
     const identity = await requireIdentity(ctx);
 
     // Throws the same createError.forbidden("Access denied: Not a meeting
@@ -208,6 +230,11 @@ export const getMeetingHistory = query({
 export const getStayInTouchStatus = query({
   args: { meetingId: v.id("meetings") },
   handler: async (ctx, { meetingId }) => {
+    // Server-side feature gate: checked before anything else (including
+    // identity) so the API surface disappears when the flag is off.
+    if (!isAfterCallEnabledServer()) {
+      throw createError.forbidden("Access denied: After-call history is disabled");
+    }
     const identity = await requireIdentity(ctx);
     await assertMeetingAccess(ctx, meetingId);
 
