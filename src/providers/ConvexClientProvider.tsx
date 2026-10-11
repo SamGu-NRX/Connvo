@@ -5,6 +5,11 @@ import { ConvexReactClient, useMutation } from "convex/react";
 import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
 import { AuthKitProvider, useAuth as useWorkOSAuth, useAccessToken } from "@workos-inc/authkit-nextjs/components";
 import { api } from "@convex/_generated/api";
+import { useTestAuth } from "@/lib/test-auth";
+
+// CALL-PLAN.md D3 (eval-only): test auth is opt-in via env and refuses to
+// start in production — see src/lib/test-auth.tsx.
+const TEST_AUTH_ENABLED = process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
@@ -78,8 +83,11 @@ function useAuth() {
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   return (
     <AuthKitProvider>
-      <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
-        <UpsertUserOnAuth />
+      <ConvexProviderWithAuthKit
+        client={convex}
+        useAuth={TEST_AUTH_ENABLED ? useTestAuth : useAuth}
+      >
+        {TEST_AUTH_ENABLED ? null : <UpsertUserOnAuth />}
         {children}
       </ConvexProviderWithAuthKit>
     </AuthKitProvider>

@@ -13,6 +13,7 @@
     "convex:codegen": "convex codegen",
     "type-check": "tsc --noEmit",
     "type-diag": "tsc --noEmit --extendedDiagnostics --listFiles",
+    "call-eval:backend": "node tools/call-eval/scripts/local-backend.mjs",
     "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
     "test": "vitest",
     "test:run": "vitest run",
@@ -104,9 +105,11 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@redocly/cli": "^2.9.0",
+    "@axe-core/playwright": "^4.13.0",
     "@edge-runtime/vm": "^5.0.0",
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.64.0",
+    "@redocly/cli": "^2.9.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "24.9.2",
@@ -126,7 +129,8 @@
     "tailwindcss": "4.1.16",
     "tsx": "^4.20.6",
     "typescript": "5.9.3",
-    "vitest": "^4.0.4"
+    "vitest": "^4.0.4",
+    "ws": "^8.22.0"
   },
   "peerDependencies": {
     "next": "^15",
