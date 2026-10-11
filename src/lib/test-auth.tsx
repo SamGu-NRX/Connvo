@@ -107,7 +107,11 @@ export function useTestAuth(): UseTestAuthResult {
     isLoading: boolean;
   }>(() => ({
     user: cachedToken?.user ?? null,
-    isLoading: true,
+    // Derive from the cache, don't default to true: getAccessToken's
+    // cache-hit path returns early without publishing state, so a remount
+    // with a fresh cached token would stay isLoading until the refetch
+    // window nears expiry.
+    isLoading: !(cachedToken && Date.now() < cachedToken.expiresAtMs),
   }));
 
   const getAccessToken = useCallback(async (): Promise<string | null> => {
