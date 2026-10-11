@@ -49,6 +49,7 @@ const HARNESS_INCLUDE_DIRS = [
   "auth", "users", "meetings", "participants", "messaging", "realtime",
   "transcripts", "matching", "interests", "settings", "system",
   "schema", "lib", "types", "environments", "_generated",
+  "devEval", // eval seed mutation (devEval/seed) invoked in step 4/6
 ];
 const HARNESS_EXTERNAL = ["@stream-io/video-react-sdk", "openai"];
 
@@ -72,8 +73,12 @@ function applyConvexJsonOverride() {
   if (j.functions === "convex-harness") return null; // already overridden by a prior run
   j.functions = "convex-harness";
   j.node = { ...(j.node ?? {}), "18": true, externalDependencies: HARNESS_EXTERNAL };
+  // Back up BEFORE touching the repo file, and create out/ first (it is
+  // otherwise only created at the end of the run) so a failed backup can
+  // never leave a modified convex.json without a restorable original.
+  mkdirSync(OUT_DIR, { recursive: true });
+  writeFileSync(path.join(OUT_DIR, "convex.json.orig"), original);
   writeFileSync(CONVEX_JSON, JSON.stringify(j, null, 2) + "\n");
-  writeFileSync(path.join(EVAL_DIR, "out", "convex.json.orig"), original);
   return original;
 }
 
@@ -236,8 +241,59 @@ if (!convexUrl) {
 }
 console.log(`[backend] convex deployment up: ${convexUrl}`);
 
+// Deployment guard: `convex env set` writes into whichever deployment the
+// convex CLI selects (CONVEX_DEPLOYMENT env, else .env.local). Eval env vars
+// must never land on anything but the local anonymous backend.
+function resolveSelectedDeployment() {
+  if (process.env.CONVEX_DEPLOYMENT) {
+    return { source: "environment", value: process.env.CONVEX_DEPLOYMENT };
+  }
+  const envLocalPath = path.join(REPO, ".env.local");
+  if (existsSync(envLocalPath)) {
+    const m = readFileSync(envLocalPath, "utf8").match(/^CONVEX_DEPLOYMENT=(.+)$/m);
+    if (m) return { source: ".env.local", value: m[1].trim().replace(/^["']|["']$/g, "") };
+  }
+  return { source: "unset", value: null };
+}
+
+function localBackendAnswers(port) {
+  const code = sh(`curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:${port}/`, { capture: true, allowFail: true }).stdout.trim();
+  return code !== "" && code !== "000"; // any HTTP status proves a live backend
+}
+
+function assertLocalDeployment() {
+  const dep = resolveSelectedDeployment();
+  const problems = [];
+  if (!dep.value) {
+    problems.push("CONVEX_DEPLOYMENT is not set in the environment or .env.local, so the target deployment cannot be identified");
+  } else if (!dep.value.startsWith("anonymous")) {
+    // Anonymous deployments are the local backend's own (CLI versions spell
+    // the prefix "anonymous:" or "anonymous-"); anything else can be a cloud
+    // deployment the CLI would write eval env vars into.
+    problems.push(`CONVEX_DEPLOYMENT from ${dep.source} is "${dep.value}", not an anonymous local deployment`);
+  }
+  let port = 3210;
+  try {
+    // The status check's "url~deployment" form is tolerated the same way.
+    port = Number(new URL((convexUrl ?? "http://127.0.0.1:3210").split("~")[0]).port) || 3210;
+  } catch {}
+  if (!localBackendAnswers(port)) {
+    problems.push(`no local backend answered on 127.0.0.1:${port}`);
+  }
+  if (problems.length > 0) {
+    console.error(
+      "[backend] REFUSING to run 'convex env set': the selected deployment could not be verified as the local anonymous one:\n" +
+        problems.map((p) => `  - ${p}`).join("\n") +
+        "\n[backend] Eval env vars must never land on a shared or cloud backend. Start the local backend first (rerun this script) or fix CONVEX_DEPLOYMENT/.env.local.",
+    );
+    process.exit(1);
+  }
+  console.log(`[backend] deployment guard ok: ${dep.value} answering on 127.0.0.1:${port}`);
+}
+
 // Deployment env: dummy WorkOS client id (D2) + the harness JWKS provider.
 console.log("[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)");
+assertLocalDeployment();
 sh(`npx convex env set WORKOS_CLIENT_ID ${DUMMY_WORKOS_CLIENT_ID}`, { capture: true });
 sh(`npx convex env set CONNVO_LOCAL_TEST_JWKS '${jwksDataUri}'`, { capture: true });
 
