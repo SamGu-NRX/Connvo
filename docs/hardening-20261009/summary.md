@@ -21,6 +21,7 @@ deployed, or pushed to a default branch.
 ## What was wrong, and what changed
 
 ### Identity & tenancy (`eeeab64`, `a255d8e`)
+
 - `upsertUser` accepted anonymous callers and client-supplied WorkOS/org
   identity — a full account-takeover and role-forgery path. It now requires a
   verified identity and derives all claims from the verified token.
@@ -32,6 +33,7 @@ deployed, or pushed to a default branch.
   `convex/auth/identity.test.ts` and the tenancy suite).
 
 ### Stream webhooks (`9cb7af4`)
+
 - Signature verification was **optional**: a delivery with no signature header
   was processed. Now fail-closed — missing header → 401, missing
   `STREAM_SECRET` → 500 (Stream retries; never an accept), constant-time HMAC
@@ -55,6 +57,7 @@ deployed, or pushed to a default branch.
   retrying cannot succeed. Unexpected internal errors still return 500.
 
 ### Offline notes & batched writer (`9822c99` merge)
+
 - The offline sync queue was looked up by `queueId` with no scoping — a caller
   could inject/replay operations across meetings. Queue rows are now bound to
   the verified caller's identity and the meeting id server-side; all
@@ -68,6 +71,7 @@ deployed, or pushed to a default branch.
   UTF-16 code-unit offsets.
 
 ### WebRTC signaling (`c4791a8` merge)
+
 - `getPendingSignals` took a bounded batch **before** filtering by session and
   compared opaque signal ids as cursors, so signals could be silently skipped.
   Reads now use a `by_meeting_session_target_and_processed` composite index
@@ -82,6 +86,7 @@ deployed, or pushed to a default branch.
   forbidden otherwise.
 
 ### Matching & deactivation (`a92e99f` merge)
+
 - `deactivateUser` only flipped `isActive`: queue entries kept pairing the
   user and future meetings stayed scheduled. It now, in one transaction,
   cancels waiting `matchingQueue` rows (history preserved), cancels
@@ -94,6 +99,7 @@ deployed, or pushed to a default branch.
   re-check of both waiting rows is preserved byte-for-byte.
 
 ### Batched realtime writers (`6992c07`)
+
 - `batchIngestTranscriptChunk` and `batchUpdatePresence` enqueued into an
   in-memory processor whose flushers only logged — every acked write was
   guaranteed lost. Both now persist durably in the mutation transaction
@@ -115,11 +121,9 @@ mocked internals; only the external Stream service is mocked.
 
 ## Known follow-ups (deliberately out of scope)
 
-- `src/hooks/useCollaborativeNotes.ts` sends a shape incompatible with
-  `batchApplyNoteOperation` (`{type,position,text,length}` instead of
-  `{operation:{type,position,content},clientSequence}`). A correct fix needs
-  client sequence/version tracking that feeds OT transformation — not a small
-  patch. Flagged by the notes worker; pre-existing.
+- `src/hooks/useCollaborativeNotes.ts` sent a shape incompatible with
+  `batchApplyNoteOperation` — **RESOLVED in round 2** (see Handoff below and
+  `notes-payload-handoff.md`).
 - `offlineCheckpoints` remain client-supplied (sequence/contentHash
   unverified); pruning trusts them per the conservative-reuse decision.
 - Stale `_generated` tree: offline `convex codegen` needs deployment
@@ -131,14 +135,110 @@ mocked internals; only the external Stream service is mocked.
 
 ## Commit index
 
-| Commit | Slice |
-|---|---|
-| `21fba5d` | Baseline measurement (tests, type-check, lint, build) |
-| `9371841` | Red reproduction run (9F/1P) + webhook validator defect discovery |
-| `99e9385` | Transcripts hardening slice merge (speaker attribution, query registration, interim handling) |
-| `eeeab64` / `a255d8e` | Identity binding, tenancy closure, deactivated gating |
-| `9cb7af4` | Webhook fail-closed signatures, transactional dedupe, idempotent handlers |
-| `a92e99f` | Deactivation lifecycle closure |
-| `c4791a8` | WebRTC signaling repair |
-| `5bc0888` | Offline-notes scoping + persist-before-ack notes writer |
-| `6992c07` | Batched transcript/presence persist-before-ack repair |
+| Commit                | Slice                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| `21fba5d`             | Baseline measurement (tests, type-check, lint, build)                                         |
+| `9371841`             | Red reproduction run (9F/1P) + webhook validator defect discovery                             |
+| `99e9385`             | Transcripts hardening slice merge (speaker attribution, query registration, interim handling) |
+| `eeeab64` / `a255d8e` | Identity binding, tenancy closure, deactivated gating                                         |
+| `9cb7af4`             | Webhook fail-closed signatures, transactional dedupe, idempotent handlers                     |
+| `a92e99f`             | Deactivation lifecycle closure                                                                |
+| `c4791a8`             | WebRTC signaling repair                                                                       |
+| `5bc0888`             | Offline-notes scoping + persist-before-ack notes writer                                       |
+| `6992c07`             | Batched transcript/presence persist-before-ack repair                                         |
+| `d86620c`             | Round-1 summary + follow-ups                                                                  |
+| `737a482` / `9ff06ae` | Round 2, notes payload slice: contract pin tests + hook repair (sibling thread, see Handoff)  |
+| `e55a22f`             | Round 2, org-claim provenance: verified-claims-only admin checks + quarantine + audit         |
+
+## Handoff — round 2 (2026-10-11): org-claim provenance + notes payload repair
+
+### What changed
+
+**Finding 1 — legacy org/role values granted admin without verified claims
+(commit `e55a22f`).** `requireIdentity` previously resolved `orgId`/`orgRole`
+from the stored user document (`userDoc.orgId`/`userDoc.orgRole`), so a legacy
+or forged `orgRole: 'admin'` on the document granted admin through
+`assertOrgAccess`/`assertOwnershipOrAdmin` even when the current token carried
+no organization claims. Now:
+
+- `convex/auth/guards.ts` — new pure `resolveOrgProvenance`: `orgId`/`orgRole`
+  come **only** from the current verified token claims
+  (`identity.org_id`/`identity.org_role`), applied in both the no-DB
+  (`runQuery`) and DB branches. Policy (documented at `requireIdentity`):
+  verified claims are the only source of authorization values; unproven
+  stored values are treated as absent.
+- Unproven active org fields are quarantined in mutation contexts:
+  cleared from the document, preserved in new optional `legacyOrgId`/
+  `legacyOrgRole` fields (`convex/schema/users.ts`), and recorded via an
+  `auth.provenance_quarantined` audit event (quarantine bookkeeping failures
+  are logged and never restore trust in the stale fields). Read-only
+  contexts deny on the unproven values without mutating anything.
+- `convex/auth/permissions.ts` — `probeOrgAdminAccess` (registered query)
+  lets tests exercise `assertOrgAccess` through the registered function.
+- `convex/auth/guards.test.ts` — five provenance scenarios through registered
+  functions: (1) forged doc `admin` + claimless token → denied, values
+  quarantined, audit row written; (2) valid claims → granted; (3) claims
+  removed → revoked; (4) read-only context → denied, stored values intact;
+  (5) corroborated stored values → still granted.
+- `convex/auth/identity.test.ts` — org-scoped profile-visibility tests now
+  present verified `org_id`/`org_role` claims like real WorkOS tokens.
+
+**Finding 2 — client/server notes payload mismatch (commits `737a482` +
+`9ff06ae`, sibling notes-payload thread, adopted on this branch).** The hook
+sent `{type, position, text, length}` operations and `clientTimestamp`;
+registered mutations expect `NoteV.operation` (`content`, no `text`) plus
+`clientSequence`/`expectedVersion`, with batch items wrapped as
+`{operation, clientSequence}`. The pushed repair adds `toServerOperation`
+(pure boundary mapper), a monotonic `clientSequence` watermark from mutation
+responses, and `expectedVersion: notes?.version`; receipt =
+`notes-payload-handoff.md` (red run, per-layer receipts, defect pins, and
+corrected-shape E2E through registered functions in
+`convex/notes/payloadContract.test.ts`). Verified by this thread: full suite
+319/319, root tsc 30 errors (baseline 32 − the 2 the hook fix removed).
+
+### Provenance policy now enforced
+
+> `orgId` and `orgRole` used for ANY authorization decision come exclusively
+> from the CURRENT verified token claims (`identity.org_id`/`identity.org_role`).
+> Stored document values are never consulted for authorization: if the document
+> carries org fields the current claims do not corroborate, they are treated as
+> absent (read-only + action contexts) and, in mutation contexts, additionally
+> cleared into `legacyOrgId`/`legacyOrgRole` with an `auth.provenance_
+quarantined` audit event.
+
+### How to re-run
+
+```bash
+corepack pnpm install                                  # or reuse node_modules
+corepack pnpm exec vitest run                          # 319/319, 25 files
+corepack pnpm exec vitest run --project convex convex/auth/guards.test.ts
+npx tsc --noEmit -p convex/tsconfig.json               # clean
+npx tsc --noEmit                                       # 30 pre-existing errors
+```
+
+Expected: all green except the documented ambient noise (1 pre-existing
+unhandled rejection per full run — `Write outside of transaction
+10008;_scheduled_functions`, reproduces with all changes stashed) and the
+repo-wide `next lint` breakage (Next 16 removed `next lint`; baseline,
+untouched).
+
+### Follow-ups
+
+- **Batch version/sequence divergence** (notes payload slice): a batch's
+  response `newVersion` and per-op `serverSequence` watermarks can diverge
+  from per-op expectations under concurrent writers — documented in
+  `notes-payload-handoff.md`; needs a protocol decision, not a client patch.
+- **Competing Finding 1 implementation**: branch
+  `obv/products-connvo-legacy-claims-20261011` (commit `f035976`, based on
+  `d86620c`) carries an independent quarantine design (different from
+  `e55a22f` — no claims-probe, different helper names). Reconcile before
+  merge: this branch's version is the one with registered-function
+  provenance tests (guards 22/22).
+- **Worktree race incident (process note)**: this thread's uncommitted work
+  was overwritten in the shared `Connvo-pr16` worktree by the notes-payload
+  thread's branch integration at ~02:12 UTC; a sibling preserved it verbatim
+  on `obv/connvo-pr16-strays-20261011` (`079b356`), from which Finding 1 was
+  restored. Lesson recorded: commit+push each milestone; never leave a
+  completed slice uncommitted in a shared worktree.
+- `_generated` staleness and `offlineCheckpoints` trust carry over from
+  round 1 (above).
