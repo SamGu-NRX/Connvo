@@ -1,5 +1,5 @@
 {
-  "replayedAt": "2026-10-10T21:59:39.076Z",
+  "replayedAt": "2026-10-11T02:09:24.175Z",
   "manifestHashOriginal": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
   "manifestHashCurrent": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
   "sourceHashesMatch": true,
@@ -22,12 +22,17 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "1 committed pairs match by plan rank"
+          "detail": "1 committed pairs match by population plan index"
         },
         {
           "receipt": "exact-reference objectives",
           "agrees": true,
           "detail": "exact 2/1.306400 vs original 2/1.306400; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=4)",
+          "agrees": true,
+          "detail": "engine 1/0.852195 vs original 1/0.852195 at shardCount=4"
         },
         {
           "receipt": "waiting receipts",
@@ -51,8 +56,7 @@
         }
       },
       "notes": [
-        "regenerated 4 planned entries from seed 101",
-        "engine objective at shardCount=4 is id-dependent (informational: original 1, replayed 1)"
+        "regenerated 4 planned entries from seed 101"
       ]
     },
     {
@@ -73,12 +77,17 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "1 committed pairs match by plan rank"
+          "detail": "1 committed pairs match by population plan index"
         },
         {
           "receipt": "exact-reference objectives",
           "agrees": true,
           "detail": "exact 3/2.393786 vs original 3/2.393786; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=4)",
+          "agrees": true,
+          "detail": "engine 1/0.761639 vs original 1/0.761639 at shardCount=4"
         },
         {
           "receipt": "waiting receipts",
@@ -102,8 +111,7 @@
         }
       },
       "notes": [
-        "regenerated 6 planned entries from seed 102",
-        "engine objective at shardCount=4 is id-dependent (informational: original 1, replayed 1)"
+        "regenerated 6 planned entries from seed 102"
       ]
     },
     {
@@ -124,12 +132,17 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "2 committed pairs match by plan rank"
+          "detail": "2 committed pairs match by population plan index"
         },
         {
           "receipt": "exact-reference objectives",
           "agrees": true,
           "detail": "exact 3/2.358647 vs original 3/2.358647; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=4)",
+          "agrees": true,
+          "detail": "engine 2/1.579975 vs original 2/1.579975 at shardCount=4"
         },
         {
           "receipt": "waiting receipts",
@@ -153,8 +166,7 @@
         }
       },
       "notes": [
-        "regenerated 8 planned entries from seed 103",
-        "engine objective at shardCount=4 is id-dependent (informational: original 2, replayed 2)"
+        "regenerated 8 planned entries from seed 103"
       ]
     },
     {
@@ -175,7 +187,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "4 committed pairs match by plan rank"
+          "detail": "4 committed pairs match by population plan index"
         },
         {
           "receipt": "exact-reference objectives",
@@ -185,7 +197,7 @@
         {
           "receipt": "engine objective (shardCount=1)",
           "agrees": true,
-          "detail": "engine 4/3.237318 vs original 4/3.237318"
+          "detail": "engine 4/3.237318 vs original 4/3.237318 at shardCount=1"
         },
         {
           "receipt": "waiting receipts",
@@ -230,7 +242,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "7 committed pairs match by plan rank"
+          "detail": "7 committed pairs match by population plan index"
         },
         {
           "receipt": "waiting receipts",
@@ -275,7 +287,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "22 committed pairs match by plan rank"
+          "detail": "22 committed pairs match by population plan index"
         },
         {
           "receipt": "waiting receipts",
@@ -320,7 +332,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "32 committed pairs match by plan rank"
+          "detail": "32 committed pairs match by population plan index"
         },
         {
           "receipt": "waiting receipts",
@@ -365,7 +377,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "86 committed pairs match by plan rank"
+          "detail": "86 committed pairs match by population plan index"
         },
         {
           "receipt": "waiting receipts",
@@ -410,7 +422,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "first 100 of 173 committed pairs match by plan rank (capped artifact: prefix + total compared)"
+          "detail": "first 100 of 173 committed pairs match by population plan index (capped artifact: prefix + total compared)"
         },
         {
           "receipt": "waiting receipts",
@@ -455,7 +467,7 @@
         {
           "receipt": "matched-pair decisions",
           "agrees": true,
-          "detail": "first 100 of 374 committed pairs match by plan rank (capped artifact: prefix + total compared)"
+          "detail": "first 100 of 374 committed pairs match by population plan index (capped artifact: prefix + total compared)"
         },
         {
           "receipt": "waiting receipts",
