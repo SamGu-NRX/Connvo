@@ -2,7 +2,7 @@
 
 **Branch** `obv/connvo-notes-ledger-f1` → `alpha` · **Draft PR #31** (opened from the host at `76d296d`)
 **This doc is the PR body's source of truth.** The sandbox cannot reach `api.github.com` (egress proxy blocks the host), so nothing in this workspace edits the PR: the lead copies this file into the PR body at review. Keep this file current with every push — update the SHA line, the Proof log and the Handoff in the same commit as each milestone.
-**Last updated at:** `622cbb8` (M1 + M3 merged)
+**Last updated at:** `04f9454` (M1 + M3 + M2 merged)
 
 ---
 
@@ -23,7 +23,7 @@ Step S1 of `docs/plan/CALL-PLAN.md` (base `alpha` @ `ddc94d4`): rebuild #24's no
 
 - [x] M0 — design contract, baseline receipt, pinned hook types (`3162e18`, `c33518f`, `76d296d`)
 - [x] M1 — server identity/watermark fields + convex-test suite (merged at `0152a44`)
-- [ ] M2 — ledger + hook + outcome matrix (failing-before receipts for every #24 defect)
+- [x] M2 — ledger + hook + outcome matrix (failing-before receipts for every #24 defect; merged at `04f9454`)
 - [x] M3 — panel + axe + keyboard + reduced-motion (mounted matrix landed; real-browser screenshots deferred to the M2/M3 join)
 - [ ] M4 — property run clean at recorded seed (10k) + final Proof / Handoff
 
@@ -51,6 +51,16 @@ Reproduction environment: fresh clone of `SamGu-NRX/Connvo`, branch `obv/connvo-
 | @ `76d296d` | `76d296d` | authorship | `git log --format='%h %an <%ae>' -3` | all three commits `Sam Gu <127461594+SamGu-NRX@users.noreply.github.com>`; each ends with the `Co-authored-by: obvious-autobuild[bot]` trailer |
 
 Milestone receipts (M1–M4) are appended here as they land, each with failing-before evidence where applicable (M2's matrix over every #24 defect; M4's fast-check run with the recorded seed).
+
+### M2 @ `211e4f4` (merged into this branch at `04f9454`)
+
+- Delivery note: the original M2 worker was lost twice — once to a shared-sandbox session reset (local-only `5dc0d39` destroyed) and then terminally after 5 rebirth attempts (~17:54 UTC). Its surviving working tree was preserved as checkpoint `7e810db` on `obv/connvo-notes-f1-m2-ledger` and a relaunched task completed the milestone from it (milestone 1 `a96688d`, milestone 2 `211e4f4`). No rebase/amend/force anywhere; every commit `Sam Gu` + `Co-authored-by: obvious-autobuild[bot]`.
+- Scope verified pre-merge: 15 files, all under `src/hooks/notes/**`, `test/notes/**`, or an additive `vitest.config.ts` `notes` project (jsdom). None of the forbidden paths touched; `src/components/**` untouched (the M3 join is a separate lead-owned step).
+- `pnpm type-check` on merged tree → **32** (exact baseline, zero errors in notes files).
+- `pnpm exec vitest run --project notes` on merged tree → **48/48 passed, 5 files**: mounted fault matrix 12/12 on the real ledger, failing-before receipts 7/7 (one per audited #24 defect class D1–D7), notesLedger unit 19/19, notesDiff 9/9, convex-test smoke 1/1 (ran against convex-test — not deferred).
+- Replica control: a defect-replica ledger built only from the #24 audit descriptions fails 11/12 of the same matrix (stable across 3 runs), demonstrating the matrix discriminates. Case 5's replica pass is explained (text-matching retirement coincidentally matches a batch the server applied) and covered by a dedicated D6 receipt.
+- Full `pnpm test:run` on merged tree → **331/331 passed, 25 files, exit 0**; both documented pre-existing intermittents passed this run.
+- Three real ledger bugs the matrix caught and fixed (worth reviewer attention): adoption gate cleared at set (a push can precede the adopting response, which silently blocked the next flush after reconnect cycles); retryConflicts now hands buffered words to re-created records; no-op edits no longer latch `bufferHoldsUnsentWords`.
 
 ### M1 @ `6a5238b` (merged into this branch at `0152a44`)
 
@@ -83,12 +93,12 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 
 **In flight**
 
-- M2 (ledger + hook) runs on the merged branch in its own fresh clone, reporting commits on `obv/connvo-notes-f1-m2-ledger`. M4 (property run at recorded seed + final proof) starts when M2 lands, along with the M2/M3 join work below.
-- **Incident (2026-10-11 ~17:00 UTC):** a shared-sandbox session loss during M2 destroyed its local-only milestone commit (`5dc0d39`, ledger/hook core + unit suite — verified passing on the worker's side, never pushed) and its uncommitted fault-matrix harness. The M2 worker confirmed it is the sole writer, self-recovered with a fresh clone, and is rebuilding its named branch from `b0b60a8` under tightened checkpoint discipline: push its own branch to origin after each passing milestone, not only at completion. Lesson recorded for all milestones on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
+- **M2 landed** (merged at `04f9454`, independently verified — see the M2 receipt above). Remaining: the M2/M3 join (lead-owned, below) and M4 (property run at recorded seed + final proof), which starts on the post-join tree.
+- **Incident record (2026-10-11):** a shared-sandbox session reset destroyed M2's local-only milestone commit (`5dc0d39`), and its replacement worker died terminally after 5 rebirth attempts. Recovery preserved the surviving tree as checkpoint `7e810db` and the relaunched task completed the milestone from it. Lesson for every milestone on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
 
 **Left**
 
-- M2 merge + M4 as listed under Milestones; merge each milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push.
+- M4 as listed under Milestones; merge each remaining milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push. M4 runs on the post-join tree.
 - M2/M3 join (after M2 lands): replace the a11y tests' `@/hooks/notes` mock with the real hook; collapse M3's signature-alignment cast; swap `defaultNotesTransport`'s placeholder for the M2 Convex wiring (the marked one-liner); then run the deferred real-browser checks at 1440×900 and 390×844 (responsive, color-contrast, focus-visibility) and attach screenshots to the PR body copy. **Browser-evidence blocker found and fix sketched (unverified, lead-owned):** `/dev/notes-preview` is unreachable locally — the WorkOS AuthKit middleware in `src/proxy.ts` throws without `WORKOS_REDIRECT_URI`/`NEXT_PUBLIC_WORKOS_REDIRECT_URI` (the installed authkit reads the `NEXT_PUBLIC_` name), and with dummy env it hangs on the middlewareAuth handshake to api.workos.com, which the egress proxy blocks. Sketch: exclude `dev` paths from the middleware matcher (the demo route has no auth surface). Re-apply the exact edit at the join and verify before re-running browser checks.
 
 **How to continue**
