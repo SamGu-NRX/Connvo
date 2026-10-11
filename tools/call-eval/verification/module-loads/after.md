@@ -1,4 +1,7 @@
 # Convex per-module import-load times — `after`
+> **PROXY (pre-fix script):** produced by measure-module-loads.mjs before two review fixes — the `splitting: true` proxy excluded deferred SDK bytes from the entry's byte accounting and parse cost, and `loadavgStart` was sampled after the run (start == end in the header below). Directional evidence only; the umbrella re-measurement with the fixed script replaces this table.
+
+
 
 Recorded 2026-10-11T22:28:53.647Z by `tools/call-eval/verification/measure-module-loads.mjs` (esbuild 0.25.4).
 

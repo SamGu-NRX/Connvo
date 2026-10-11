@@ -6,8 +6,9 @@ Evidence snapshots for the local-Convex "module load exceeded 2 s" work, produce
 - `before.md` / `before.json` — pristine base `df2f6e4` (obv/connvo-local-convex-f1a branchpoint), recorded 2026-10-11.
 - `after.md` / `after.json` — after the lazy-import fix (same script, same box, same settings).
 - `paired-before.*` / `paired-after.*` — the decisive comparison: pristine convex/ tree from a
-  worktree at `c9551d4` and the refactored tree, run back-to-back in one matched load window
-  (loadavg 4.66–5.60 on 2 cpus), so box-load drift cannot pollute the delta.
+  worktree at `c9551d4` and the refactored tree, run back-to-back in one time window (2 cpus).
+  The loadavg values printed in their headers are post-run samples from the pre-fix script
+  (start == end); drift during the runs was not captured.
 
 ## Method (one line per fact)
 
@@ -18,15 +19,19 @@ tsconfig paths honored, npm deps bundled (the repo `convex.json` carries no
 `process.hrtime` around the import only, so the number is parse + top-level evaluation of the whole
 closure — the same shape of cost the Convex backend pays when loading a module at push time.
 `--runs` fresh processes per module; tables report medians. This script bundles with
-`splitting: true`: a dynamic `import()` becomes a separate chunk the entry does NOT evaluate at
-load. The Convex 1.28.0 bundler pins `splitting: false` with `format: "esm"`
-(node_modules/convex/dist/cjs/cli/lib/components/definition/bundle.js): there a dynamic `import()`
-is inlined into the same single file but rewritten to `Promise.resolve().then(() => init())`, so
-its top-level initialization is likewise deferred off module load. Both configs move the SDK's
-top-level init out of module load — the effect being measured — and differ only in whether the
-deferred bytes live in a side chunk or the main file (a parse-only cost on the backend).
+`splitting: false` + `format: "esm"`, mirroring the Convex 1.28.0 bundler
+(node_modules/convex/dist/cjs/cli/lib/components/definition/bundle.js): a dynamic `import()` of an
+npm dep keeps its bytes in the single output file — they PARSE at module load — while its
+top-level initialization is deferred to the first call that awaits it
+(`Promise.resolve().then(() => init())`). Entry `bytes`/`closureBytes` therefore include the
+deferred bytes; only their initialization is excluded from the timed import.
 
-## Result (paired same-window run, 2026-10-11)
+## Result (paired same-window run, 2026-10-11) — PROXY, pre-fix script
+
+**These numbers are a proxy produced by the pre-fix script (see Known proxy limitations below):
+treat the deltas as directional evidence that SDK top-level initialization dominated module-load
+cost — not as facts about the backend. The umbrella re-measurement with the fixed script, and a
+real deployment push, must confirm them.**
 
 | module | before median | after median | delta |
 |---|---|---|---|
@@ -45,6 +50,18 @@ Untouched convex-package-floor controls (`types/*`) moved ≤ 6 ms, so the 82–
 treated modules are attributable to the lazy imports, not box load. With the treated modules
 deferred, the heaviest import in the tree is now the convex-package floor itself
 (`types/index.ts`, ~44 ms).
+
+## Known proxy limitations (script fixed after operator review; tables below predate the fix)
+
+- The pre-fix script bundled with `splitting: true`, so a dynamic import()'s bytes landed in a
+  side chunk the timed entry never parsed: the `bytes` column under-reported what the Convex
+  backend (splitting:false) would load, and the timed medians excluded deferred-chunk parse cost.
+- The pre-fix script sampled `loadavgStart` after the run, so committed tables show start == end
+  and cannot show load drift during measurement. The fixed script samples loadavg before any
+  heavy work.
+- All committed tables (before/after/paired-before/paired-after) were produced by the pre-fix
+  script. They remain as recorded history; the paired re-measurement on the umbrella (after the
+  node.externalPackages fix merges) replaces them.
 
 ## Caveats
 
