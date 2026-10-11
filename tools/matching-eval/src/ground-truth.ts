@@ -72,10 +72,10 @@ export function makeGroundTruth(population: Population): GroundTruth {
     const tasteSim = (cosine(la.taste, lb.taste) + 1) / 2; // [0,1]
     const interestAlign = (cosine(affinities[ia], affinities[ib]) + 1) / 2;
 
-    const dGap = Math.abs(a.experienceYears ?? 0 - b.experienceYears ?? 0);
+    const dGap = Math.abs((a.experienceYears ?? 0) - (b.experienceYears ?? 0));
     const expScore = Math.exp(-Math.pow(dGap - 4, 2) / 18);
 
-    const dTz = Math.abs(a.timezoneOffset ?? 0 - b.timezoneOffset ?? 0);
+    const dTz = Math.abs((a.timezoneOffset ?? 0) - (b.timezoneOffset ?? 0));
     const tz = Math.max(0, 1 - Math.pow(dTz / 10, 1.5));
 
     const shared = a.languages.some((l) => b.languages.includes(l));
