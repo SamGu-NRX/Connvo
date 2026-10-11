@@ -444,3 +444,60 @@ When contributing to the collaborative notes system:
 - [Operational Transform Theory](https://en.wikipedia.org/wiki/Operational_transformation)
 - [Convex Reactive Queries](https://docs.convex.dev/database/queries)
 - [Real-time Collaboration Patterns](https://docs.convex.dev/production/best-practices)
+
+## Operation Identity & Watermark Protocol (notes-ledger F1, M1)
+
+Additive server-side support for at-least-once, identity-acknowledged editing.
+All fields are optional; callers that send none see exactly the legacy shapes.
+
+### Identity on `noteOps`
+
+Each op may carry `clientId` (batch-level), `clientOpId` (per op), and
+`clientSequence`. `clientSequence` is the **OT basis** — the server-history
+watermark (the `headSequence` the client had incorporated when the op was
+created), not a per-client counter. Identity is written on the noteOps row in
+the same transaction as the text change (**persist-before-ack**), so a client
+that saw the text can trust the identity was stored.
+
+### Idempotent dedupe
+
+Before applying an op, if a noteOps row with the same
+`(meetingId, clientId, clientOpId)` exists, the server does **not** reapply.
+It returns the stored row's result with `deduped: true` and the **original**
+`serverSequence` — safe to resend even if a read raced a late commit. Dedupe
+requires the full triple: ops sent without `clientId` are persisted with
+identity fields but not deduped. Uniqueness of the triple is enforced
+transactionally (check-then-insert inside Convex's serialized mutations; Convex
+indexes have no declarative unique option). Note: a batch whose ops all dedupe
+still bumps `version` once — batch version semantics are registered behavior
+and are unchanged.
+
+### Response echo and `failedOps`
+
+`results[]` echoes each op's `clientOpId` / `clientSequence` (and `deduped`
+when deduped) so the client can retire exactly the accepted ops. The
+`clientSequence` echo is always present (it is a required arg — the op's OT
+basis); `clientOpId` / `deduped` appear only when identity was sent. The
+single-op mutation echoes the same fields on its result. Failed ops appear in
+`failedOps` as `{ index, clientOpId?, clientSequence?, reason? }` — failures
+are no longer invisible. `failedOps` is absent when nothing failed.
+
+### Watermarks in `getMeetingNotes`
+
+With a `clientId` argument, the query additively returns:
+
+- `headSequence` — max `noteOps.sequence` for the meeting (0 when none): the
+  incorporated-history watermark W used as the basis for new ops.
+- `clientAcks` — the ≤100 most recent **applied** ops carrying this client's
+  identity, ascending by serverSequence:
+  `{ clientOpId, clientSequence, serverSequence, appliedAt }`. Rows without
+  identity are excluded (they are not in `by_meeting_client`).
+
+Without `clientId`, the response is exactly the legacy row.
+
+### Known limitation
+
+`composeConsecutiveOperations` (internal optimization) rewrites noteOps rows
+and currently drops the identity fields on composed rows, which removes them
+from `clientAcks`. It has no callers on this branch; if it is ever scheduled,
+it must preserve identity first (or skip identity-bearing ops).
