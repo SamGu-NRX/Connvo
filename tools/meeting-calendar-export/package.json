@@ -1,0 +1,13 @@
+{
+  "name": "@connvo/meeting-calendar-export",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local, offline exporter from Connvo meeting records to RFC 5545 .ics — minimal, privacy-first projection. Zero dependencies.",
+  "engines": { "node": ">=18.13" },
+  "scripts": {
+    "test": "node --test test/",
+    "export": "node src/cli.js",
+    "preview": "node src/preview.js"
+  }
+}
