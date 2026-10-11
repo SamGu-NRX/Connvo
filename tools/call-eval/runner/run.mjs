@@ -9,7 +9,9 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { RunContext } from "./context.mjs";
-import { H_PASS_CONDITIONS, P_PASS_CONDITIONS } from "./contracts.mjs";
+import { loadContracts } from "./contracts.mjs";
+
+const CONTRACTS = loadContracts();
 
 const RUNNER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(RUNNER_DIR, "..", "out");
@@ -65,11 +67,13 @@ async function runOne(ctx, scenarioId, seed, log) {
     }
     ctx.newMeeting(scenarioId);
     const measurements = await fn(ctx, { seed, log });
-    const passCondition = ((scenarioId.startsWith("H") ? H_PASS_CONDITIONS : P_PASS_CONDITIONS) instanceof Map ? (scenarioId.startsWith("H") ? H_PASS_CONDITIONS : P_PASS_CONDITIONS).get(scenarioId) : (scenarioId.startsWith("H") ? H_PASS_CONDITIONS : P_PASS_CONDITIONS)[scenarioId]) ?? null;
+    const conds = scenarioId.startsWith("H") ? CONTRACTS.H_PASS_CONDITIONS : CONTRACTS.P_PASS_CONDITIONS;
+    const passCondition = (conds instanceof Map ? conds.get(scenarioId) : conds?.[scenarioId]) ?? null;
     return { scenario: scenarioId, transport: ctx.transport, seed, pass: true, passCondition, measurements, failure: null, ms: Date.now() - t0 };
   } catch (err) {
     log(`${scenarioId} seed ${seed} FAILED: ${err?.message}`);
-    const passCondition = ((scenarioId.startsWith("H") ? H_PASS_CONDITIONS : P_PASS_CONDITIONS) instanceof Map ? (scenarioId.startsWith("H") ? H_PASS_CONDITIONS : P_PASS_CONDITIONS).get(scenarioId) : (scenarioId.startsWith("H") ? H_PASS_CONDITIONS : P_PASS_CONDITIONS)[scenarioId]) ?? null;
+    const conds = scenarioId.startsWith("H") ? CONTRACTS.H_PASS_CONDITIONS : CONTRACTS.P_PASS_CONDITIONS;
+    const passCondition = (conds instanceof Map ? conds.get(scenarioId) : conds?.[scenarioId]) ?? null;
     return {
       scenario: scenarioId,
       transport: ctx.transport,
