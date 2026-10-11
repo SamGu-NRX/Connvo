@@ -131,6 +131,13 @@ export interface UseNotesLedgerResult {
     content: string;
     attempts: number;
   }>;
+  /**
+   * Words waiting in the edit buffer because a diff over the current
+   * composed view would be coordinate-unsound (live records make it
+   * speculative). Display-only: rendered as the unsaved list's "Unsent"
+   * row. Empty once records exist for every buffered word.
+   */
+  bufferedContent: string;
   isEditing: boolean;
   /** Call on every textarea change; debounces a flush internally. */
   onEdit(text: string): void;

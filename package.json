@@ -120,6 +120,7 @@
     "convex-test": "^0.0.38",
     "eslint": "^9.38.0",
     "eslint-config-next": "16.0.1",
+    "fast-check": "3.22.0",
     "jest-axe": "^11.0.0",
     "js-yaml": "^4.1.0",
     "jsdom": "^26.1.0",

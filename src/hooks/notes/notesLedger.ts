@@ -22,6 +22,7 @@
 
 import type { Id } from "@convex/_generated/dataModel";
 import { applyOperations, diffToSiblingOps } from "./notesDiff";
+import { transformOperationSequence } from "@convex/notes/operations";
 import type {
   BatchApplyNoteOperationsResponse,
   NotesBatchOp,
@@ -92,6 +93,8 @@ interface PersistedLedger {
   baseHeadSequence: number;
   buffer: string;
   bufferHoldsUnsentWords: boolean;
+  /** Older payloads omit this; restore reconstructs it when absent. */
+  bufferBasis?: string | null;
   records: PersistedRecord[];
   awaitingAdoptionVersion: number | null;
   transportOnline: boolean;
@@ -211,6 +214,13 @@ export class NotesLedger {
   private baseHeadSequence = 0;
   private buffer = "";
   private bufferHoldsUnsentWords = false;
+  /** The composed view the buffered words were typed against (null when the
+   * buffer holds nothing unsent). A remote snapshot landing mid-debounce
+   * moves the base; the flush must diff the LOCAL edit from THIS basis and
+   * transform it against the drift — diffing from the moved base instead
+   * would express the local edit as "delete the remote words" (the
+   * lost-remote-words defect). */
+  private bufferBasis: string | null = null;
   private awaitingAdoptionVersion: number | null = null;
   private batchInFlight = false;
   private flushRequested = false;
@@ -265,8 +275,13 @@ export class NotesLedger {
     // the first batch, so waiting for a defined ingest would deadlock the
     // recovery. The bootstrap flush diffs from empty content; a later fresh
     // read reconciles.
+    // bufferHoldsUnsentWords covers the unmount-inside-in-flight-batch case:
+    // destroy() kept those words in the buffer (flushRequested is not
+    // persisted, and in-flight records restore as unconfirmed, not pending),
+    // so without this check they would strand until the next keystroke.
     if (
       this.flushRequested ||
+      this.bufferHoldsUnsentWords ||
       [...this.records.values()].some((record) => record.state === "pending")
     ) {
       this.flushRequested = true;
@@ -286,9 +301,12 @@ export class NotesLedger {
     this.clearDebounce();
     const composed = this.composedText();
     if (this.buffer !== composed) {
-      if (this.batchInFlight) {
-        // Keep the words in the buffer; the remount re-diffs them against
-        // whatever the in-flight batch produced.
+      if ([...this.records.values()].some(isUnsaved)) {
+        // Words stay buffered: with live records the composed view is
+        // speculative, and ops diffed over it would carry effects above
+        // their stamped clientSequence — the server would re-transform
+        // them. The remount re-diffs from acked truth after resolution.
+        if (!this.bufferHoldsUnsentWords) this.bufferBasis = composed;
         this.bufferHoldsUnsentWords = true;
       } else {
         const ops = diffToSiblingOps(composed, this.buffer);
@@ -305,10 +323,16 @@ export class NotesLedger {
   /** Call on every textarea change; debounces a flush internally. */
   onEdit = (text: string): void => {
     if (this.destroyed) return;
+    // Capture the divergence basis: when the buffer was clean, the textarea
+    // displayed the composed view, so the user's edit applies to exactly
+    // that text. Later remote snapshots move the base; the local edit keeps
+    // THIS basis and the flush transforms it against the drift.
+    if (!this.bufferHoldsUnsentWords) this.bufferBasis = this.composedText();
     this.buffer = text;
     // Only "unsent" when the buffer differs from the composed view — a
     // no-op edit must not latch the updating state forever.
     this.bufferHoldsUnsentWords = text !== this.composedText();
+    if (!this.bufferHoldsUnsentWords) this.bufferBasis = null;
     this.scheduleDebounce();
     this.commit();
   };
@@ -327,6 +351,21 @@ export class NotesLedger {
     if (conflicted.length === 0) return;
     // Preserve the visible words in the buffer before dropping their records,
     // so the re-diff below can rebuild them from fresh server truth.
+    // Basis for the buffered words: the composed view WITHOUT the
+    // conflicted records' effects. Always recapture — the buffer may
+    // already hold user words typed on top of the refused effects, and
+    // those effects must leave the basis together with the records
+    // (otherwise the flush's transform would delete the refused words
+    // from the server truth instead of re-sending them).
+    const conflictedIds = new Set(
+      conflicted.map((record) => record.clientOpId),
+    );
+    this.bufferBasis = applyOperations(
+      this.baseContent,
+      [...this.records.values()]
+        .filter((record) => !conflictedIds.has(record.clientOpId))
+        .map((record) => record.op),
+    );
     if (!this.bufferHoldsUnsentWords) {
       this.buffer = this.composedText();
       this.bufferHoldsUnsentWords = true;
@@ -335,12 +374,20 @@ export class NotesLedger {
       this.records.delete(record.clientOpId);
     }
     this.rebaseIfSafe();
-    const ops = diffToSiblingOps(this.composedText(), this.buffer);
-    if (ops.length > 0) this.createRecords(ops);
-    // The buffer's words now live in ledger records (or were already
-    // composed) — mirror the keystroke-path handoff in flush(), otherwise
-    // the status latches on "updating" after a successful retry.
-    this.bufferHoldsUnsentWords = false;
+    if ([...this.records.values()].some(isUnsaved)) {
+      // Other live records remain: their effects are speculative, so the
+      // re-diff must wait until they resolve and the base rebases. The
+      // words stay buffered (they include the conflicted ops' effects).
+      this.flushRequested = true;
+      this.commit();
+      return;
+    }
+    // The flush's diff branch re-diffs from the captured basis and
+    // transforms against the drift — including the ops that conflicted —
+    // so retried words can never overwrite remote additions. It also
+    // clears the buffer flags when it hands the words to records (or the
+    // drift already carries them), mirroring the keystroke path.
+    this.flushRequested = true;
     this.flush();
     this.commit();
   };
@@ -361,6 +408,7 @@ export class NotesLedger {
     ) {
       // Idempotent redelivery — still fresh read evidence for demotion.
       this.mergeAcks(snapshot);
+      if (this.retireFromAcks(snapshot)) this.batchInFlight = false;
       this.demoteUnconfirmedWithoutAcks(snapshot);
       this.runRequestedFlush();
       return;
@@ -368,7 +416,7 @@ export class NotesLedger {
     if (snapshot.version <= this.serverVersion) return; // stale — never rewind
 
     this.mergeAcks(snapshot);
-    this.retireFromAcks(snapshot);
+    if (this.retireFromAcks(snapshot)) this.batchInFlight = false;
     this.demoteUnconfirmedWithoutAcks(snapshot);
     this.recomputeStalePendingOps(snapshot);
     this.advanceServerState(snapshot);
@@ -387,16 +435,23 @@ export class NotesLedger {
     }
   }
 
-  /** Retire records on per-op identity evidence from the server acks. */
-  private retireFromAcks(snapshot: NotesServerSnapshot): void {
+  /** Retire records on per-op identity evidence from the server acks.
+   * Returns true when a SENDING record was retired: the in-flight batch's
+   * response is then known-lost (a read, not the response, delivered the
+   * acknowledgement), so the caller releases the batch slot — otherwise a
+   * response that never settles would block every later flush forever. */
+  private retireFromAcks(snapshot: NotesServerSnapshot): boolean {
+    let retiredInFlight = false;
     for (const ack of snapshot.clientAcks) {
       if (typeof ack?.clientOpId !== "string") continue;
       const record = this.records.get(ack.clientOpId);
       if (!record || record.state === "saved") continue;
+      if (record.state === "sending") retiredInFlight = true;
       record.state = "saved";
       record.serverSequence = ack.serverSequence;
       record.failureReason = undefined;
     }
+    return retiredInFlight;
   }
 
   /**
@@ -432,13 +487,28 @@ export class NotesLedger {
     // — including one just demoted from unconfirmed — keeps its clientOpId:
     // its outcome must resolve on identity evidence, and the resend under
     // the same id is exactly what server dedupe makes safe.
-    const stale = [...this.records.values()].filter(
+    const live = [...this.records.values()].filter(isUnsaved);
+    const stale = live.filter(
       (record) =>
         record.state === "pending" &&
         record.attempts === 0 &&
         record.clientSequence < snapshot.headSequence,
     );
     if (stale.length === 0) return;
+    if (stale.length !== live.length) {
+      // Other live records were positioned using the stale ops' effects:
+      // dropping the stale records would misposition them in the composed
+      // fold (an out-of-range apply). Keep everything — the resend path
+      // re-sends the never-sent ops under their own ids and the server
+      // transforms them against the newer history.
+      return;
+    }
+    // Basis for the buffered words: the composed view WITHOUT the stale
+    // records' effects (here: the bare base — the stale records are the
+    // only live ones). Always recapture: the buffer may already hold user
+    // words typed on top of the stale effects, and those effects must
+    // leave the basis together with the records.
+    this.bufferBasis = this.baseContent;
     // Buffer-preservation guard: the words of dropped records must survive.
     // If the buffer is not holding newer user words, capture the composed
     // view (which includes those words) into it first.
@@ -508,15 +578,48 @@ export class NotesLedger {
       this.sendBatch(resendable);
       return;
     }
+    // A diff over the composed view is only sound when every record is
+    // saved — then the coordinates are relative to acked server truth and
+    // the op's clientSequence stamps exactly the state those coordinates
+    // assume. With unsaved records the composed view is speculative: its
+    // effects sit ABOVE the clientSequence a new op would stamp, so the
+    // server would transform the new ops against them and double-apply
+    // their shifts. Keep the words buffered; the resolution ingest rebases
+    // and the requested flush re-diffs from acked truth.
+    if ([...this.records.values()].some(isUnsaved)) {
+      this.flushRequested = true;
+      return;
+    }
     // Bootstrap/keystroke path: diff the buffer from the current base. With
     // no base yet (a meeting with no notes row), the diff runs from empty
     // content and the first batch creates the row server-side.
     const composed = this.composedText();
+    if (this.bufferHoldsUnsentWords && this.buffer === composed) {
+      // The drift resolved in the buffer's favor (a remote snapshot already
+      // carries the buffered words): nothing to send, nothing unsent.
+      this.bufferHoldsUnsentWords = false;
+      this.bufferBasis = null;
+    }
     if (this.bufferHoldsUnsentWords && this.buffer !== composed) {
-      const ops = diffToSiblingOps(composed, this.buffer);
+      // Diff the local edit from its ORIGINAL basis and transform it
+      // against everything that moved since — a remote snapshot that
+      // landed mid-debounce included. Diffing from the moved base instead
+      // would express the local edit as "delete the remote words" and
+      // lose them.
+      const basis = this.bufferBasis ?? composed;
+      const localOps = diffToSiblingOps(basis, this.buffer);
+      const remoteOps =
+        basis === composed ? [] : diffToSiblingOps(basis, composed);
+      const ops = transformOperationSequence(localOps, remoteOps).filter(
+        (op) =>
+          op.type === "insert"
+            ? (op.content ?? "") !== ""
+            : (op.length ?? 0) > 0,
+      );
       if (ops.length > 0) {
         const created = this.createRecords(ops);
         this.bufferHoldsUnsentWords = false;
+        this.bufferBasis = null;
         this.sendBatch(created);
         return;
       }
@@ -591,6 +694,9 @@ export class NotesLedger {
     }
     let savedCount = 0;
     for (const record of batch) {
+      // A fresh read may have retired this record first (a lost response
+      // whose acknowledgement arrived by identity): never downgrade it.
+      if (record.state === "saved") continue;
       const serverSequence = applied.get(record.clientOpId);
       if (serverSequence !== undefined) {
         record.state = "saved";
@@ -714,8 +820,9 @@ export class NotesLedger {
     } else {
       status = "synced";
     }
+    const composedNow = this.composedText();
     return {
-      content: this.composedText(),
+      content: composedNow,
       version: this.serverVersion,
       isLoading,
       status,
@@ -728,6 +835,18 @@ export class NotesLedger {
         content: record.content,
         attempts: record.attempts,
       })),
+      // Words waiting in the buffer because creating records over the
+      // composed view would stamp speculative coordinates (the guards in
+      // flush()/destroy()). Display-only: the "Unsent" row keeps the
+      // loss-proof promise (every not-yet-confirmed word stays visible
+      // with a state label) without sending a coordinate-unsound op.
+      bufferedContent:
+        this.bufferHoldsUnsentWords && this.buffer !== composedNow
+          ? diffToSiblingOps(composedNow, this.buffer)
+              .filter((op) => op.type === "insert")
+              .map((op) => op.content ?? "")
+              .join("")
+          : "",
       // "Editing" means un-retired local work exists: words still in the
       // debounce buffer, or ledger records the server has not confirmed.
       isEditing: this.bufferHoldsUnsentWords || live.length > 0,
@@ -785,6 +904,7 @@ export class NotesLedger {
       baseHeadSequence: this.baseHeadSequence,
       buffer: this.buffer,
       bufferHoldsUnsentWords: this.bufferHoldsUnsentWords,
+      bufferBasis: this.bufferBasis,
       records: [...this.records.values()].map((record) => ({
         clientOpId: record.clientOpId,
         op: record.op,
@@ -849,6 +969,16 @@ export class NotesLedger {
           normalizeRestoredRecord(record),
         ]),
     );
+    // The basis persists with the buffer; for older payloads without it,
+    // the composed view of the restored records is the best available
+    // reconstruction (the words were typed against that view unless a
+    // remote snapshot landed — which the flush's transform then absorbs).
+    this.bufferBasis =
+      typeof payload.bufferBasis === "string"
+        ? payload.bufferBasis
+        : payload.bufferHoldsUnsentWords
+          ? this.composedText()
+          : null;
   }
 }
 

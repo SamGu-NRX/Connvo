@@ -332,8 +332,11 @@ describe("MeetingNotesPanel honest state matrix", () => {
     fireEvent.blur(editor);
     await badgeShows("Unconfirmed (1)");
 
-    // Second batch parked mid-flight: its op is honestly sending. The list
-    // shows both truths side by side.
+    // Second batch: its words wait in the buffer — a diff over the composed
+    // view while the first record is unconfirmed would stamp speculative
+    // coordinates (the server re-transforms them and double-shifts; found by
+    // the M4 property). The loss-proof promise keeps them visible as the
+    // list's Unsent row instead of an unsound in-flight record.
     mounted.gate.faults = { holdBeforeApply: true };
     fireEvent.change(editor, {
       target: { value: SEED_CONTENT + "todo: send the recap and the metrics" },
@@ -341,7 +344,7 @@ describe("MeetingNotesPanel honest state matrix", () => {
     fireEvent.blur(editor);
     await waitFor(() =>
       expect(
-        within(screen.getByTestId("notes-unsaved-list")).getByText("Sending"),
+        within(screen.getByTestId("notes-unsaved-list")).getByText("Unsent"),
       ).toBeInTheDocument(),
     );
     await settleMotion();
@@ -352,7 +355,7 @@ describe("MeetingNotesPanel honest state matrix", () => {
     const list = screen.getByTestId("notes-unsaved-list");
     expect(list).toBeVisible();
     expect(within(list).getByText("Unconfirmed")).toBeInTheDocument();
-    expect(within(list).getByText("Sending")).toBeInTheDocument();
+    expect(within(list).getByText("Unsent")).toBeInTheDocument();
     // The quoted words are the exact inserted deltas the real ledger holds.
     expect(within(list).getByText("“todo: send the recap”")).toBeInTheDocument();
     expect(within(list).getByText("“ and the metrics”")).toBeInTheDocument();

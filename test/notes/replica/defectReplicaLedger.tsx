@@ -208,6 +208,9 @@ export function useDefectReplicaNotesLedger(
       }));
     })(),
     isEditing: state.current.inflight !== null || state.current.bufferHoldsWords,
+    // The defect replica predates the buffer semantics: it reports no
+    // buffered words (its D7 defect drops them entirely).
+    bufferedContent: "",
     onEdit: (text: string) => {
       const s = state.current;
       s.buffer = text;

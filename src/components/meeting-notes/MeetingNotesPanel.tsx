@@ -232,6 +232,26 @@ function MeetingNotesPanelBody({
                       )}
                     </li>
                   ))}
+                  {ledger.bufferedContent.length > 0 && (
+                    <li
+                      data-state="buffered"
+                      className="flex flex-wrap items-center gap-2 text-xs"
+                    >
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground"
+                      >
+                        Unsent
+                      </Badge>
+                      {/* The loss-proof promise covers words waiting in the
+                          buffer too: while live records make a new op's
+                          coordinates unsound, the words wait here — visible
+                          with a state label, never hidden. */}
+                      <span className="min-w-0 flex-1 whitespace-pre-wrap break-words">
+                        &ldquo;{ledger.bufferedContent}&rdquo;
+                      </span>
+                    </li>
+                  )}
                 </ul>
               </div>
             </FadeRise>

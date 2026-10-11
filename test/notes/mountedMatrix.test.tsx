@@ -160,7 +160,17 @@ describe("mounted fault matrix (real ledger over the fault transport)", () => {
     expect(sentId).toBeDefined();
     const ops = await backend.readNoteOps(a.meetingId);
     expect(ops.filter((row) => row.clientOpId === sentId)).toHaveLength(1);
-  });
+
+    // The repair must release the in-flight batch slot: a follow-up edit
+    // sends and converges (the stuck-batch regression — a response that
+    // never settles used to block every later flush forever).
+    hook.result.current.onEdit("hello world again");
+    await waitForServerText(backend, a.meetingId, "hello world again");
+    await waitForContent(hook, "hello world again");
+    await waitForStatus(hook, "synced");
+    expect(hook.result.current.unsavedRecords).toHaveLength(0);
+    expect(transport.sentBatches).toHaveLength(2);
+  }, 20_000);
 
   test("case 6: lost send before apply resends exactly once with the SAME clientOpId", async () => {
     const backend = new NotesBackend();
@@ -334,6 +344,43 @@ describe("mounted fault matrix (real ledger over the fault transport)", () => {
     const ops = await backend.readNoteOps(a.meetingId);
     expect(ops).toHaveLength(1); // recovered once, not duplicated
   });
+
+  test("case 13: remote snapshot mid-debounce transforms the local edit from its original basis", async () => {
+    const backend = new NotesBackend();
+    const a = await setupParticipant(backend, "case13");
+    await seedServerText(backend, a, "base");
+    const b = await backend.joinMeeting(a.meetingId, "case13-b");
+    // Long debounce: A's flush must not fire before the remote snapshot.
+    const clientA = mountNotesLedger(backend, a, "case13-a", 50_000);
+    const clientB = mountNotesLedger(backend, b, "case13-b", 0);
+    await waitForLoaded(clientA.hook);
+    await waitForLoaded(clientB.hook);
+
+    // A types against the v1 view (buffer holds the words, debounce parked).
+    clientA.hook.result.current.onEdit("base alpha");
+
+    // B applies 'base bravo' server-side; the push moves A's base while
+    // A's buffer still holds the older document.
+    clientB.hook.result.current.onEdit("base bravo");
+    await waitForServerText(backend, a.meetingId, "base bravo");
+    await waitFor(() =>
+      expect(clientA.hook.result.current.version).toBeGreaterThan(1),
+    );
+
+    // A's flush must diff its edit from the ORIGINAL basis ('base') and
+    // transform it against the drift — never diff from the moved base,
+    // which would send delete 'bravo' + insert 'alpha' and lose B's word.
+    clientA.hook.result.current.flushNow();
+    await waitForServerText(backend, a.meetingId, "base alpha bravo");
+    await waitForContent(clientA.hook, "base alpha bravo");
+    await waitForStatus(clientA.hook, "synced");
+    await waitForContent(clientB.hook, "base alpha bravo");
+    expect(clientA.hook.result.current.unsavedRecords).toHaveLength(0);
+
+    // Seeded op + B's op + A's transformed op — no deleted remote word.
+    const ops = await backend.readNoteOps(a.meetingId);
+    expect(ops).toHaveLength(3);
+  }, 20_000);
 
   test("case 12: two clients with concurrent batches converge with no lost or duplicated words (D5)", async () => {
     const backend = new NotesBackend();

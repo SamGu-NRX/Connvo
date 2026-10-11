@@ -502,10 +502,13 @@ describe("client ledger core (§3)", () => {
     await tick();
     const retry = transport.batches[1] as SentBatch;
     expect(retry.operations[0]?.clientOpId).not.toBe(firstId); // fresh identity
-    // A full replacement is a delete+insert SIBLING PAIR from the fresh base.
-    expect(retry.operations).toHaveLength(2);
-    expect(retry.operations[0]?.operation).toEqual({ type: "delete", position: 0, length: 5 });
-    expect(retry.operations[1]?.operation).toEqual({
+    // The local edit diffs from its ORIGINAL basis and transforms against
+    // the drift: the equal-position insert-vs-insert keeps the local op at
+    // position 0 (lexicographic tie-break), so the remote word 'other'
+    // survives NEXT to the retried words — a full-replacement delete from
+    // the fresh base would erase it (the lost-remote-words defect).
+    expect(retry.operations).toHaveLength(1);
+    expect(retry.operations[0]?.operation).toEqual({
       type: "insert",
       position: 0,
       content: "clashing words",
@@ -530,19 +533,20 @@ describe("client ledger core (§3)", () => {
     transport.enqueue(echoResponse(transport.batches[0] as SentBatch, 3));
     await tick();
     const batch = transport.batches[0] as SentBatch;
-    // Full replacement = delete+insert sibling pair from the fresh base.
+    // The local edit diffs from its ORIGINAL basis (the pre-remote view)
+    // and transforms against the drift — the remote words survive next to
+    // the buffered ones (a full-replacement delete would erase them).
     expect(batch.operations.map((op) => op.operation.type)).toEqual([
-      "delete",
       "insert",
     ]);
-    expect(batch.operations[0]?.operation).toEqual({ type: "delete", position: 0, length: 17 });
-    expect(batch.operations[1]?.operation).toEqual({
+    expect(batch.operations[0]?.operation).toEqual({
       type: "insert",
       position: 0,
       content: "buffer words",
     });
     expect(batch.operations[0]?.clientSequence).toBe(2); // fresh watermark
     expect(ledger.getSnapshot().content).toContain("buffer words");
+    expect(ledger.getSnapshot().content).toContain("remote a remote b");
   });
 });
 

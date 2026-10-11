@@ -1,4 +1,5 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
 const handleAuth = authkitMiddleware({
@@ -13,17 +14,33 @@ const handleAuth = authkitMiddleware({
   },
 });
 
+/**
+ * The /dev/notes-preview demo route bypasses sign-in ONLY under the local
+ * bench conditions: the bench flag is on and this is not a production
+ * deployment. Every other /dev path — and every /dev path in production —
+ * runs the WorkOS middleware normally. The matcher below keeps middleware
+ * enabled on all /dev paths; this gate is the only bypass.
+ */
+function isBenchPreview(request: NextRequest): boolean {
+  const { pathname } = request.nextUrl;
+  if (pathname !== "/dev/notes-preview" && !pathname.startsWith("/dev/notes-preview/")) {
+    return false;
+  }
+  return (
+    process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH === "1" &&
+    process.env.VERCEL_ENV !== "production"
+  );
+}
+
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (isBenchPreview(request)) {
+    return NextResponse.next();
+  }
   return handleAuth(request, event);
 }
 
 export const config = {
   matcher: [
-    // `dev` routes are excluded: the /dev/notes-preview demo route mounts an
-    // in-memory backend and has no auth surface, and the WorkOS middleware
-    // cannot complete its handshake from a sandboxed local environment.
-    // Production behavior is unchanged — the demo page itself refuses to
-    // render outside development (see src/app/dev/notes-preview/page.tsx).
-    "/((?!_next/static|_next/image|_next/data|favicon.ico|dev(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)",
+    "/((?!_next/static|_next/image|_next/data|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)",
   ],
 };

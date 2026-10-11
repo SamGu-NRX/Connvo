@@ -18,7 +18,9 @@ export function NotesTransportProvider({
   children,
 }: {
   transport: NotesTransport;
-  children: ReactNode;
+  /** Optional so createElement(type, props, children) resolves its
+   * overloads — the property-test harness builds the provider that way. */
+  children?: ReactNode;
 }) {
   return (
     <NotesTransportContext.Provider value={transport}>

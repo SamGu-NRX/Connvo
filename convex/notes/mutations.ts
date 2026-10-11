@@ -540,6 +540,7 @@ export const batchApplyNoteOperations = mutation({
 
     let processed = 0;
     let failed = 0;
+    let appliedNew = 0;
     const results: Array<{
       serverSequence: number;
       transformedOperation: Operation;
@@ -685,6 +686,7 @@ export const batchApplyNoteOperations = mutation({
 
         currentSequence++;
         processed++;
+        appliedNew++;
       } catch (error) {
         console.error("Failed to process operation:", error);
         failed++;
@@ -697,29 +699,36 @@ export const batchApplyNoteOperations = mutation({
       }
     }
 
-    // Update the materialized document
-    currentVersion++;
-    await ctx.db.patch(meetingNotes._id, {
-      content: currentContent,
-      version: currentVersion,
-      updatedAt: Date.now(),
-    });
+    // Update the materialized document — only when this batch actually
+    // applied something new. A fully-deduped retry (every operation already
+    // in the ledger) must not patch the document or bump its version: the
+    // version is the watermark fresh reads adopt, and a no-op bump would
+    // advance document history on every duplicate resend without any
+    // content change.
+    if (appliedNew > 0) {
+      currentVersion++;
+      await ctx.db.patch(meetingNotes._id, {
+        content: currentContent,
+        version: currentVersion,
+        updatedAt: Date.now(),
+      });
 
-    // Log batch operation
-    await ctx.db.insert("auditLogs", {
-      actorUserId: participant.userId,
-      resourceType: "meetingNotes",
-      resourceId: meetingId,
-      action: "batch_apply_operations",
-      metadata: {
-        totalOperations: operations.length,
-        processed,
-        failed,
-        newVersion: currentVersion,
-        contentLength: currentContent.length,
-      },
-      timestamp: Date.now(),
-    });
+      // Log batch operation
+      await ctx.db.insert("auditLogs", {
+        actorUserId: participant.userId,
+        resourceType: "meetingNotes",
+        resourceId: meetingId,
+        action: "batch_apply_operations",
+        metadata: {
+          totalOperations: operations.length,
+          processed,
+          failed,
+          newVersion: currentVersion,
+          contentLength: currentContent.length,
+        },
+        timestamp: Date.now(),
+      });
+    }
 
     return {
       success: processed > 0,
