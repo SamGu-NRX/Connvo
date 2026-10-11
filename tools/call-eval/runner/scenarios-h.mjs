@@ -158,9 +158,7 @@ export async function scenario_H_04(ctx) {
   await waitAttr(peerB, "A", "data-video-off", "true", 1000);
   const offFlipMs = Date.now() - t0;
 
-  const trackStates = await peerA.page.evaluate(
-    `() => [...(document.querySelector('[data-testid="local-video"]').srcObject?.getVideoTracks() ?? [])].map(t => t.readyState)`,
-  );
+  const trackStates = await peerA.page.evaluate(`(() => (window.__h11tracks ?? []).map(t => t.readyState))()`);
   if (!trackStates.includes("ended")) {
     throw new ScenarioError(`H-04: sender's capture track is not ended (${JSON.stringify(trackStates)})`);
   }
@@ -216,8 +214,8 @@ export async function scenario_H_06(ctx) {
       timeoutMs: 10000,
       describe: "actionable error to appear",
     });
-    const text = await peerA.page.evaluate(`() => document.querySelector('[data-testid="call-error"]').textContent`);
-    const retryVisible = await peerA.page.evaluate(`() => !document.querySelector('[data-testid="retry-media"]').hidden`);
+    const text = await peerA.page.evaluate(`(() => document.querySelector('[data-testid="call-error"]').textContent)()`);
+    const retryVisible = await peerA.page.evaluate(`(() => !document.querySelector('[data-testid="retry-media"]').hidden)()`);
     if (!retryVisible) throw new ScenarioError("H-06: retry-media button not offered", { text });
 
     await peerA.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
@@ -331,11 +329,17 @@ export async function scenario_H_10(ctx) {
 export async function scenario_H_11(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
+  // Capture the local tracks BEFORE leaving: the bench nulls the video
+  // element's srcObject on leave, so afterwards there is nothing to read —
+  // but pre-captured track objects still report their (ended) readyState.
+  await peerA.page.evaluate(`(() => {
+    window.__h11tracks = [...(document.querySelector('[data-testid="local-video"]')?.srcObject?.getTracks() ?? [])];
+  })()`);
+
   await click(peerA, "leave-call");
   await waitFor(peerA, phaseIs("left"), { timeoutMs: 5000, describe: "A's phase left" });
 
-  const trackStates = await peerA.page.evaluate(
-    `() => [...(document.querySelector('[data-testid="local-video"]').srcObject?.getTracks() ?? [])].map(t => t.readyState)`,
+  const trackStates = await peerA.page.evaluate(`(() => [...(document.querySelector('[data-testid="local-video"]').srcObject?.getTracks() ?? [])].map(t => t.readyState))()`,
   );
   if (trackStates.length === 0 || !trackStates.every((s) => s === "ended")) {
     throw new ScenarioError(`H-11: local tracks not ended (${JSON.stringify(trackStates)})`);
@@ -414,10 +418,10 @@ export async function scenario_H_14(ctx) {
       timeoutMs: 10000,
       describe: "named rejection to appear",
     });
-    const text = await peerO.page.evaluate(`() => document.querySelector('[data-testid="call-error"]').textContent`);
+    const text = await peerO.page.evaluate(`(() => document.querySelector('[data-testid="call-error"]').textContent)()`);
     const tiles = await peerO.page.evaluate(tileCountAll);
     if (tiles !== 0) throw new ScenarioError(`H-14: rejected peer has ${tiles} media tiles`, { text });
-    const phase = await peerO.page.evaluate(`() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase')`);
+    const phase = await peerO.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
     await waitForValue(peerB, tileCountAll, (n) => n === 1, { timeoutMs: 5000, describe: "no O tile on B" });
     return { rejection: text.slice(0, 140), phase, tiles };
   } finally {
@@ -441,7 +445,7 @@ export async function scenario_H_15(ctx) {
     }
     const stats = await collectRtpStatsWindow(peerB, "video", windowMs, { participantId: "A" });
     const fps = await measureFps(peerB, "A", 3000);
-    const phase = await peerB.page.evaluate(`() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase')`);
+    const phase = await peerB.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
     ctx.shaperFor("B").applyProfile({ lossPct: 0, delayMs: 0 });
     return { label, lossPct, delayMs, deltaLost: stats.deltaLost, rttMs: stats.rttMs, fps: fps.fps, phase };
   }

@@ -96,18 +96,16 @@ export async function scenario_P_03(ctx) {
   const peer = await openState(ctx, "connected");
   try {
     await peer.page.setViewportSize({ width: 1440, height: 900 });
-    const interactive = await peer.page.evaluate(
-      `() => [...document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    const interactive = await peer.page.evaluate(`(() => [...document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
         .filter(el => !el.disabled && el.offsetParent !== null)
-        .map(el => el.getAttribute('data-testid') || el.tagName.toLowerCase())`,
+        .map(el => el.getAttribute('data-testid') || el.tagName.toLowerCase()))()`,
     );
     if (!interactive.length) throw new ScenarioError("P-03: no interactive controls found");
 
     const focused = [];
     for (let i = 0; i < interactive.length + 3; i++) {
       await peer.page.keyboard.press("Tab");
-      const cur = await peer.page.evaluate(
-        `() => { const el = document.activeElement; return el ? (el.getAttribute('data-testid') || el.tagName.toLowerCase()) : null; }`,
+      const cur = await peer.page.evaluate(`(() => { const el = document.activeElement; return el ? (el.getAttribute('data-testid') || el.tagName.toLowerCase()) : null; })()`,
       );
       focused.push(cur);
       if (focused.filter(Boolean).length >= interactive.length) break;
@@ -117,7 +115,7 @@ export async function scenario_P_03(ctx) {
       throw new ScenarioError(`P-03: controls not reachable by keyboard: ${missing.join(", ")}`, { interactive, focused });
     }
 
-    const focusVisible = await peer.page.evaluate(`() => {
+    const focusVisible = await peer.page.evaluate(`(() => {
       const el = document.activeElement;
       if (!el || el === document.body) return { visible: false, reason: "no focused element" };
       const cs = getComputedStyle(el);
@@ -126,7 +124,7 @@ export async function scenario_P_03(ctx) {
       const el2 = el;
       const pseudo = getComputedStyle(el2, "::after");
       return { visible: outline || ring || pseudo.content !== "none", outline, ring };
-    }`);
+    })()`);
     if (!focusVisible.visible) {
       throw new ScenarioError("P-03: focused control has no visible focus indicator", focusVisible);
     }
@@ -180,8 +178,7 @@ export async function scenario_P_05(ctx) {
       const layout = await assertLayoutIntact({ width: 1440, height: 900 }, `P-05 ${c.label} lobby`)(peer.page);
       await waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: `P-05 ${c.label} connected` });
       const post = await assertLayoutIntact({ width: 1440, height: 900 }, `P-05 ${c.label} connected`)(peer.page);
-      const errorShown = await peer.page.evaluate(
-        `() => { const el = document.querySelector('[data-testid="call-error"]'); return !!el && !el.hidden && el.textContent.length > 0; }`,
+      const errorShown = await peer.page.evaluate(`(() => { const el = document.querySelector('[data-testid="call-error"]'); return !!el && !el.hidden && el.textContent.length > 0; })()`,
       );
       if (errorShown) throw new ScenarioError(`P-05 ${c.label}: error box appeared`, { errorShown });
       results.push({ label: c.label, lobby: layout, connected: post });
