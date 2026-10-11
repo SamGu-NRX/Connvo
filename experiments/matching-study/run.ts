@@ -548,10 +548,21 @@ export async function replay(
   // Prefer a manifest carried inside the recorded results dir (self-contained
   // recordings, incl. replay-falsifier fixtures); fall back to the repo copy.
   const manifestPath =
-    [nodePath.join(previousOutDir, prevSummary.manifest),
-     nodePath.join(repoRoot, "experiments", "matching-study", prevSummary.manifest)]
-      .find((p) => nodeFs.existsSync(p)) ??
-    nodePath.join(repoRoot, "experiments", "matching-study", prevSummary.manifest);
+    [
+      nodePath.join(previousOutDir, prevSummary.manifest),
+      nodePath.join(
+        repoRoot,
+        "experiments",
+        "matching-study",
+        prevSummary.manifest,
+      ),
+    ].find((p) => nodeFs.existsSync(p)) ??
+    nodePath.join(
+      repoRoot,
+      "experiments",
+      "matching-study",
+      prevSummary.manifest,
+    );
   const manifestHashNow = sha256File(manifestPath);
   const sourceHashesNow = hashStudySources(repoRoot);
 
