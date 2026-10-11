@@ -105,9 +105,24 @@ export const meetingTables = {
     }),
     timestamp: v.number(),
     applied: v.boolean(),
+    // Additive operation identity (notes-ledger F1). Written in the same
+    // transaction as the text change so an ack can be trusted (persist-before-ack).
+    // Legacy rows and legacy callers leave these fields absent.
+    // `clientSequence` is the OT basis (the server-history watermark the client
+    // had incorporated when the op was created), not a per-client counter.
+    clientId: v.optional(v.string()),
+    clientOpId: v.optional(v.string()),
+    clientSequence: v.optional(v.number()),
   })
     .index("by_meeting_sequence", ["meetingId", "sequence"])
-    .index("by_meeting_timestamp", ["meetingId", "timestamp"]),
+    .index("by_meeting_timestamp", ["meetingId", "timestamp"])
+    // Identity lookup for acks: a client's ops in sequence order. Rows without
+    // identity are excluded from this index automatically by Convex.
+    .index("by_meeting_client", ["meetingId", "clientId", "sequence"])
+    // Dedupe identity. Uniqueness of (meetingId, clientId, clientOpId) is
+    // enforced transactionally by the check-then-insert in notes/mutations.ts
+    // (Convex serializes mutations, so the check cannot race).
+    .index("by_meeting_client_op", ["meetingId", "clientId", "clientOpId"]),
 
   // Per-meeting atomic counters (e.g., transcript sequence allocation)
   meetingCounters: defineTable({
