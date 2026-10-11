@@ -17,7 +17,6 @@ const SENTINEL_RIGHT_X1 = 184;
 const BIT_START_X = 24;
 const BIT_WIDTH = 12;
 const BIT_COUNT = 12;
-const COUNTER_MOD = 4096;
 
 // Band colors are pinned black rgb(20,20,20) on white rgb(235,235,235);
 // 128 is the Rec.601 luma midpoint between them.
@@ -170,9 +169,13 @@ export function decodeFrameCounter(imageData) {
 
 // Frame rate from samples of a remote video: Array<{ t, counter }> where t is
 // in MILLISECONDS (performance.now convention) and counter is the decoded
-// frame counter (mod 4096). Handles the mod-4096 wrap; duplicate counters
-// (repeated frames) advance by 0 and skipped counters advance by their gap, so
-// both dropped frames and stalls lower the computed fps.
+// frame counter (mod 4096). Counts OBSERVED advances: a sample advances only
+// when its counter differs from the previous sample's, and fps is the advance
+// count over the elapsed window. Duplicate counters (repeated frames) count 0,
+// the mod-4096 wrap (4095 -> 0) counts as one advance like any other counter
+// change — no wrap special-casing — and skipped counters are NOT summed as
+// gaps: a dropped frame LOWERS the observed rate, because the receiver never
+// saw it.
 /**
  * @param {FpsSample[]} samples
  * @returns {number}
@@ -187,16 +190,14 @@ export function computeFps(samples) {
     }
   }
   if (samples.length < 2) return 0;
-  const dtMs = samples[samples.length - 1].t - samples[0].t;
-  if (dtMs <= 0) return 0;
+  const elapsedMs = samples[samples.length - 1].t - samples[0].t;
+  if (elapsedMs <= 0) return 0;
   let advances = 0;
-  let last = samples[0].counter;
   for (let i = 1; i < samples.length; i++) {
-    const c = samples[i].counter;
-    advances += (((c - last) % COUNTER_MOD) + COUNTER_MOD) % COUNTER_MOD;
-    last = c;
+    if (samples[i].counter !== samples[i - 1].counter) advances++;
   }
-  return advances / (dtMs / 1000);
+  if (advances === 0) return 0;
+  return (advances / elapsedMs) * 1000;
 }
 
 // Spectral peak of a mono buffer (Goertzel): coarse 1 Hz scan over 50..2000 Hz
