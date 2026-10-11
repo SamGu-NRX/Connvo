@@ -58,7 +58,7 @@ function gitSha(): string {
   }
 }
 
-function nodeFactory(): RuntimeFactory {
+export function nodeFactory(): RuntimeFactory {
   return {
     async create(startMs: number): Promise<RuntimeHandle> {
       const runtime = createStudyRuntime(startMs, {
@@ -107,6 +107,9 @@ function compactDecisions(result: ScenarioResult): object {
     seed: result.seed,
     decisionCount: result.decisions.length,
     decisions: result.decisions.slice(0, 400),
+    // Complete plan insertion order: the matched-pair receipt maps participant
+    // ids to indices in THIS list (population-level), so it must be full.
+    userIds: result.userIds,
     shardMembership: result.shardMembership,
     waitingRecords: result.waitingRecords.slice(0, 400),
     failures: result.failures,
@@ -236,12 +239,15 @@ async function runManifest(
       "decisions",
       `${spec.name}.json`,
     );
-    // Keep big pools compact: full dumps only for small populations.
+    // Keep big pools compact: full dumps only for small populations. The
+    // plan-order userIds are always full — the pair receipt maps ids to
+    // population-level indices and needs the complete creation order.
     const keepFull = result.params.count <= 100;
     writeJson(decisionsFile, {
       scenario: result.scenario,
       seed: result.seed,
       decisionCount: result.decisions.length,
+      userIds: result.userIds,
       decisions: keepFull ? result.decisions : result.decisions.slice(0, 100),
       shardMembership: keepFull ? result.shardMembership : sampleShards(result),
       waitingRecords: keepFull
@@ -366,37 +372,81 @@ interface ReceiptCheck {
   detail: string;
 }
 
-/** Numeric ordinal of a convex-test document id like "10088;users" — ids are
- * allocated in creation order, so ranking ids gives plan insertion order
- * without assuming identical id strings across runs. */
-function idOrdinal(id: string): number | null {
-  const m = /^(\d+);/.exec(id);
-  return m ? Number(m[1]) : null;
+/**
+ * Matched-pair decision receipt as a sorted multiset of pairs of PLAN-LEVEL
+ * indices: each participant id is mapped to its index in that side's COMPLETE
+ * population plan insertion order (the deterministic per-seed creation order
+ * of all planned entries), not to a rank compressed over the matched subset.
+ *
+ * A per-matching subset rank (the pre-fix normalizer) mapped any changed
+ * matched subset with preserved relative order to the identical rank
+ * structure — e.g. recorded pair 0-1 vs replayed pair 2-3 both compressed to
+ * "0-1" and passed. Population-level indices make any change in WHICH users
+ * matched break agreement.
+ *
+ * Pure function, shared by the replay path and the replay-falsifier test.
+ */
+export function matchedPairsReceipt(input: {
+  committed: Array<{ user1: string; user2: string }>;
+  committedPlanOrder: string[];
+  totalOriginal: number;
+  fresh: Array<{ user1: string; user2: string }>;
+  freshPlanOrder: string[];
+}): { receipt: string; agrees: boolean; detail: string } {
+  const {
+    committed,
+    committedPlanOrder,
+    totalOriginal,
+    fresh,
+    freshPlanOrder,
+  } = input;
+  // Fail closed: without the recorded plan order the population-level index
+  // mapping cannot be built, so the receipt cannot verify pair structure.
+  if (!committedPlanOrder || committedPlanOrder.length === 0) {
+    return {
+      receipt: "matched-pair decisions",
+      agrees: false,
+      detail:
+        "recorded decisions artifact lacks plan-order userIds — pair structure cannot be verified",
+    };
+  }
+  // Big pools store only the first-100 committed-order prefix (the keepFull
+  // cap in the manifest writer); compare the same-length prefix of the fresh
+  // side plus the total count so the cap cannot fake drift.
+  const capped = totalOriginal > committed.length;
+  const freshCmp = capped ? fresh.slice(0, committed.length) : fresh;
+  const sigA = decisionPairSignature(committed, committedPlanOrder);
+  const sigB = decisionPairSignature(freshCmp, freshPlanOrder);
+  const same =
+    totalOriginal === fresh.length &&
+    sigA.length === sigB.length &&
+    sigA.every((v, i) => v === sigB[i]);
+  return {
+    receipt: "matched-pair decisions",
+    agrees: same,
+    detail: same
+      ? capped
+        ? `first ${committed.length} of ${totalOriginal} committed pairs match by population plan index (capped artifact: prefix + total compared)`
+        : `${sigA.length} committed pairs match by population plan index`
+      : `pair structure drift: original ${committed.length}${capped ? ` of ${totalOriginal}` : ""} vs replayed ${fresh.length} pairs`,
+  };
 }
 
-/** Matched-pair decision structure as a sorted multiset of plan-index pairs.
- * Fresh Convex ids differ per run, so pairs are compared by the numeric rank
- * of each user id (creation order) rather than by id strings. */
+/** Matched-pair decision structure as a sorted multiset of pairs of indices
+ * into `planOrder` (the complete population's plan insertion order). Fresh
+ * Convex ids differ per run, so pairs are compared by plan position, not id
+ * strings. A participant id missing from planOrder yields a deterministic
+ * unranked marker that breaks agreement. */
 function decisionPairSignature(
   decisions: Array<{ user1: string; user2: string }>,
+  planOrder: string[],
 ): string[] {
-  const ids = new Set<string>();
-  for (const d of decisions) {
-    ids.add(d.user1);
-    ids.add(d.user2);
-  }
   const ranked = new Map<string, number>();
-  [...ids]
-    .map((id) => ({ id, ord: idOrdinal(id) }))
-    .sort(
-      (a, b) =>
-        (a.ord ?? Number.MAX_SAFE_INTEGER) - (b.ord ?? Number.MAX_SAFE_INTEGER),
-    )
-    .forEach(({ id }, i) => ranked.set(id, i));
-  const pairs = decisions.map((d) => {
+  planOrder.forEach((id, i) => ranked.set(id, i));
+  const pairs = decisions.map((d, di) => {
     const a = ranked.get(d.user1);
     const b = ranked.get(d.user2);
-    if (a === undefined || b === undefined) return "unranked";
+    if (a === undefined || b === undefined) return `unranked-${di}`;
     return a < b ? `${a}-${b}` : `${b}-${a}`;
   });
   return pairs.sort();
@@ -487,18 +537,21 @@ function waitingReceiptCheck(
  * any source-hash mismatch, receipt drift, or agreement failure — a replay that
  * cannot fail must not pass.
  */
-async function replay(previousOutDir: string): Promise<ReplayComparison> {
+export async function replay(
+  previousOutDir: string,
+): Promise<ReplayComparison> {
   const repoRoot = nodeProcess.cwd();
   const prevSummaryPath = nodePath.join(previousOutDir, "run-summary.json");
   const prevSummary = JSON.parse(
     nodeFs.readFileSync(prevSummaryPath, "utf8"),
   ) as RunSummary;
-  const manifestPath = nodePath.join(
-    repoRoot,
-    "experiments",
-    "matching-study",
-    prevSummary.manifest,
-  );
+  // Prefer a manifest carried inside the recorded results dir (self-contained
+  // recordings, incl. replay-falsifier fixtures); fall back to the repo copy.
+  const manifestPath =
+    [nodePath.join(previousOutDir, prevSummary.manifest),
+     nodePath.join(repoRoot, "experiments", "matching-study", prevSummary.manifest)]
+      .find((p) => nodeFs.existsSync(p)) ??
+    nodePath.join(repoRoot, "experiments", "matching-study", prevSummary.manifest);
   const manifestHashNow = sha256File(manifestPath);
   const sourceHashesNow = hashStudySources(repoRoot);
 
@@ -624,34 +677,21 @@ async function replay(previousOutDir: string): Promise<ReplayComparison> {
         nodeFs.readFileSync(origDecisionsPath, "utf8"),
       ) as {
         decisionCount?: number;
+        userIds?: string[];
         decisions: Array<{ user1: string; user2: string }>;
       };
-      const committed = origDecisions.decisions;
-      const totalOriginal = origDecisions.decisionCount ?? committed.length;
-      // Big pools store only the first-100 committed-order prefix (the
-      // keepFull cap in the manifest writer); compare the same-length prefix
-      // of the fresh side plus the total count so the cap cannot fake drift.
-      const capped = totalOriginal > committed.length;
-      const freshAll = result.decisions.map((d) => ({
-        user1: d.user1,
-        user2: d.user2,
-      }));
-      const freshCmp = capped ? freshAll.slice(0, committed.length) : freshAll;
-      const sigA = decisionPairSignature(committed);
-      const sigB = decisionPairSignature(freshCmp);
-      const same =
-        totalOriginal === freshAll.length &&
-        sigA.length === sigB.length &&
-        sigA.every((v, i) => v === sigB[i]);
-      receipts.push({
-        receipt: "matched-pair decisions",
-        agrees: same,
-        detail: same
-          ? capped
-            ? `first ${committed.length} of ${totalOriginal} committed pairs match by plan rank (capped artifact: prefix + total compared)`
-            : `${sigA.length} committed pairs match by plan rank`
-          : `pair structure drift: original ${committed.length}${capped ? ` of ${totalOriginal}` : ""} vs replayed ${freshAll.length} pairs`,
+      const receipt = matchedPairsReceipt({
+        committed: origDecisions.decisions,
+        committedPlanOrder: origDecisions.userIds ?? [],
+        totalOriginal:
+          origDecisions.decisionCount ?? origDecisions.decisions.length,
+        fresh: result.decisions.map((d) => ({
+          user1: d.user1,
+          user2: d.user2,
+        })),
+        freshPlanOrder: result.userIds,
       });
+      receipts.push(receipt);
     } else {
       receipts.push({
         receipt: "matched-pair decisions",
@@ -684,25 +724,25 @@ async function replay(previousOutDir: string): Promise<ReplayComparison> {
         agrees: exactOk && baselinesOk,
         detail: `exact ${e.maxCardinality}/${e.maxWeight.toFixed(6)} vs original ${oe.maxCardinality}/${oe.maxWeight.toFixed(6)}; baselines ${baselinesOk ? "agree" : "DRIFT"}`,
       });
-      // Engine objective is id-dependent when sharding splits the pool, so it
-      // gates only for single-shard quality scenarios; otherwise it is a note.
-      if (result.quality.shardCount === 1) {
-        receipts.push({
-          receipt: "engine objective (shardCount=1)",
-          agrees:
-            result.quality.engine.cardinality ===
-              origQuality.engine.cardinality &&
-            floatEq(
-              result.quality.engine.totalWeight,
-              origQuality.engine.totalWeight,
-            ),
-          detail: `engine ${result.quality.engine.cardinality}/${result.quality.engine.totalWeight.toFixed(6)} vs original ${origQuality.engine.cardinality}/${origQuality.engine.totalWeight.toFixed(6)}`,
-        });
-      } else {
-        notes.push(
-          `engine objective at shardCount=${result.quality.shardCount} is id-dependent (informational: original ${origQuality.engine.cardinality}, replayed ${result.quality.engine.cardinality})`,
-        );
-      }
+      // Engine objective LOCKED for all shard counts. convex-test mints ids
+      // deterministically per plan insertion order, so hash-shard membership
+      // and the engine's allocation reproduce across independent runs —
+      // verified: three independent full manifest runs produced identical
+      // engine cardinality/weight for every quality scenario, including
+      // shardCount=4, and the hardened replay's informational notes recorded
+      // original == replayed for each. A receipt failure now means real
+      // allocation drift, not id noise.
+      receipts.push({
+        receipt: `engine objective (shardCount=${result.quality.shardCount})`,
+        agrees:
+          result.quality.engine.cardinality ===
+            origQuality.engine.cardinality &&
+          floatEq(
+            result.quality.engine.totalWeight,
+            origQuality.engine.totalWeight,
+          ),
+        detail: `engine ${result.quality.engine.cardinality}/${result.quality.engine.totalWeight.toFixed(6)} vs original ${origQuality.engine.cardinality}/${origQuality.engine.totalWeight.toFixed(6)} at shardCount=${result.quality.shardCount}`,
+      });
     }
 
     // Waiting-entry receipt (load scenarios): logical-ms percentile tuples.
@@ -759,6 +799,19 @@ async function replay(previousOutDir: string): Promise<ReplayComparison> {
   return comparison;
 }
 
+/** Fail-closed replay verdict — the exact predicate the CLI exit path uses,
+ * exported so the replay-falsifier test exercises the same acceptance rule. */
+export function replayPasses(c: ReplayComparison): boolean {
+  return (
+    c.sourceHashesMatch &&
+    c.invariantsPassCountAgrees &&
+    c.invariantsReplayed.failed === 0 &&
+    c.receiptFailureCount === 0 &&
+    c.scenarios.length > 0 &&
+    c.scenarios.every((s) => s.agreesAll === true)
+  );
+}
+
 function scriptDir(): string {
   // process.argv[1] is the executed script path under node and tsx in both
   // CJS and ESM; import.meta.dirname is undefined under tsx's CJS loader.
@@ -805,14 +858,7 @@ async function main(): Promise<void> {
     }
     // Fail closed: any source-hash mismatch, receipt drift, agreement failure,
     // or replayed invariant failure makes the replay command fail.
-    const replayPassed =
-      c.sourceHashesMatch &&
-      c.invariantsPassCountAgrees &&
-      c.invariantsReplayed.failed === 0 &&
-      c.receiptFailureCount === 0 &&
-      c.scenarios.length > 0 &&
-      c.scenarios.every((s) => s.agreesAll === true);
-    if (!replayPassed) {
+    if (!replayPasses(c)) {
       console.error(
         "replay FAILED: receipts or hashes do not agree with the recorded run",
       );
@@ -827,8 +873,12 @@ async function main(): Promise<void> {
   process.exitCode = 2;
 }
 
-main().catch((err) => {
-  console.error(err);
-  // process.exitCode alone is unreliable under tsx; force the non-zero exit.
-  process.exit(1);
-});
+// Run the CLI only when this file is the executed script (tsx); importing
+// run.ts from vitest must not trigger a run.
+if (nodePath.basename(nodeProcess.argv[1] ?? "") === "run.ts") {
+  main().catch((err) => {
+    console.error(err);
+    // process.exitCode alone is unreliable under tsx; force the non-zero exit.
+    process.exit(1);
+  });
+}
