@@ -21,7 +21,12 @@ const FIXTURES = {
   B: { video: "peer-B.y4m", audio: "peer-B.wav" },
   C: { video: "peer-C.y4m", audio: "peer-C.wav" },
 };
-const SHAPER_BASE_PORT = 3479; // coturn owns 3478; shapers forward to it
+// coturn owns 3478; shapers forward to it. Two eval runs on one shared box
+// cannot share those ports — the second run's coturn fails to bind and the
+// liveness probe would spuriously answer against the first run's server. Env
+// overrides keep concurrent runs on disjoint port ranges (defaults unchanged).
+const TURN_PORT = Number(process.env.CONNVO_EVAL_TURN_PORT) || 3478;
+const SHAPER_BASE_PORT = Number(process.env.CONNVO_EVAL_SHAPER_BASE_PORT) || 3479;
 
 /**
  * Mock runs navigate the bundled mock bench page; integration runs
@@ -92,7 +97,7 @@ export class RunContext {
         "coturn (turnserver) is not installed — the H-07/H-15 fault path requires it. Install coturn or report the fault scenarios as blocked.",
       );
     }
-    this.turn = await createTurn({ port: 3478 });
+    this.turn = await createTurn({ port: TURN_PORT });
     return this.turn;
   }
 
