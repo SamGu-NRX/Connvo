@@ -1,0 +1,41 @@
+{
+  "scenario": "production/lifecycle-create-duplicate",
+  "layer": "production-handler",
+  "handler": "meetings/lifecycle.ts: createMeeting",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "outcome": "accepted",
+      "result": {
+        "meetingId": "<generated>",
+        "webrtcReady": true,
+        "videoProvider": "webrtc"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingStates": [
+          "scheduled"
+        ],
+        "meetingsCount": 1
+      }
+    },
+    {
+      "attempt": 2,
+      "outcome": "accepted",
+      "result": {
+        "meetingId": "<generated>",
+        "webrtcReady": true,
+        "videoProvider": "webrtc"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingStates": [
+          "scheduled",
+          "scheduled"
+        ],
+        "meetingsCount": 2
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "duplicate ACCEPTED again — two separate meeting documents created (retry after a lost create ack duplicates the meeting)"
+}

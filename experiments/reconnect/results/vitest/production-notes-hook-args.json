@@ -1,0 +1,21 @@
+{
+  "scenario": "production/notes-hook-args",
+  "layer": "production-handler",
+  "handler": "notes/mutations.ts: applyNoteOperation",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "sentArgs": {
+        "operation": "insert@0 'hello world'",
+        "clientTimestamp": "<hook sends this>",
+        "clientSequence": "(absent)"
+      },
+      "outcome": "rejected",
+      "error": {
+        "code": "ERROR",
+        "message": "Validator error: Missing required field `clientSequence` in object"
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "n/a — single delivery; confirms hook↔validator arg mismatch"
+}

@@ -1,0 +1,151 @@
+{
+  "scenario": "production/offline-retry-duplicate",
+  "layer": "production-handler",
+  "handler": "notes/offline.ts: retryFailedOperations",
+  "harnessNote": "convex-test 0.0.38 does not propagate caller identity into nested ctx.runMutation (get-convex/convex-test#50, open), so a retry whose row-set is non-empty rejects UNAUTHORIZED before the nested sync can run; the post-reset sync behavior is not observable through this harness. Recorded as observed.",
+  "setupSync": {
+    "outcome": "accepted",
+    "result": {
+      "conflicts": 0,
+      "errors": [
+        "Operation op_client_bad: Invalid delete position: 999"
+      ],
+      "failed": 1,
+      "newVersion": 0,
+      "remainingInQueue": 0,
+      "success": false,
+      "synced": 0
+    }
+  },
+  "deliveries": [
+    {
+      "attempt": 1,
+      "clientId": "c1",
+      "outcome": "rejected",
+      "error": {
+        "code": "UNAUTHORIZED",
+        "message": "Authentication required"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": [
+          {
+            "attempts": 1,
+            "clientSequence": 1,
+            "operationId": "op_client_bad",
+            "status": "failed"
+          },
+          {
+            "attempts": 3,
+            "clientSequence": 2,
+            "operationId": "op_client_exhausted",
+            "status": "failed"
+          }
+        ]
+      }
+    },
+    {
+      "attempt": 2,
+      "clientId": "c1",
+      "outcome": "rejected",
+      "error": {
+        "code": "UNAUTHORIZED",
+        "message": "Authentication required"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": [
+          {
+            "attempts": 1,
+            "clientSequence": 1,
+            "operationId": "op_client_bad",
+            "status": "failed"
+          },
+          {
+            "attempts": 3,
+            "clientSequence": 2,
+            "operationId": "op_client_exhausted",
+            "status": "failed"
+          }
+        ]
+      }
+    },
+    {
+      "attempt": 3,
+      "clientId": "c2",
+      "outcome": "deduped",
+      "result": {
+        "retriedCount": 0,
+        "successCount": 0
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": [
+          {
+            "attempts": 1,
+            "clientSequence": 1,
+            "operationId": "op_client_bad",
+            "status": "failed"
+          },
+          {
+            "attempts": 3,
+            "clientSequence": 2,
+            "operationId": "op_client_exhausted",
+            "status": "failed"
+          }
+        ]
+      }
+    },
+    {
+      "attempt": 4,
+      "clientId": "c2",
+      "outcome": "deduped",
+      "result": {
+        "retriedCount": 0,
+        "successCount": 0
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": [
+          {
+            "attempts": 1,
+            "clientSequence": 1,
+            "operationId": "op_client_bad",
+            "status": "failed"
+          },
+          {
+            "attempts": 3,
+            "clientSequence": 2,
+            "operationId": "op_client_exhausted",
+            "status": "failed"
+          }
+        ]
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "duplicate retries reject deterministically (UNAUTHORIZED 'Authentication required' — nested sync loses caller identity under convex-test, a harness artifact; transaction rolls back, row untouched); retries on an exhausted row (attempts >= maxRetries) are zero-delta no-ops (retriedCount 0) — silently, with no surfaced error"
+}

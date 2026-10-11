@@ -1,0 +1,119 @@
+{
+  "scenario": "production/notes-apply-duplicate",
+  "layer": "production-handler",
+  "handler": "notes/mutations.ts: applyNoteOperation",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "sentArgs": {
+        "clientSequence": 1,
+        "expectedVersion": 0,
+        "operation": {
+          "type": "insert",
+          "position": 0,
+          "content": "hello world"
+        }
+      },
+      "outcome": "accepted",
+      "result": {
+        "conflicts": [],
+        "newVersion": 1,
+        "serverSequence": 1,
+        "success": true,
+        "transformedOperation": {
+          "content": "hello world",
+          "position": 0,
+          "type": "insert"
+        }
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 1,
+        "noteOpsSequences": [
+          1
+        ],
+        "notes": {
+          "content": "hello world",
+          "version": 1
+        },
+        "queueRows": []
+      }
+    },
+    {
+      "attempt": 2,
+      "sentArgs": {
+        "clientSequence": 1,
+        "expectedVersion": 0,
+        "operation": {
+          "type": "insert",
+          "position": 0,
+          "content": "hello world"
+        }
+      },
+      "outcome": "rejected",
+      "error": {
+        "code": "CONFLICT",
+        "message": "Version mismatch: expected 0, got 1"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 1,
+        "noteOpsSequences": [
+          1
+        ],
+        "notes": {
+          "content": "hello world",
+          "version": 1
+        },
+        "queueRows": []
+      }
+    },
+    {
+      "attempt": 3,
+      "sentArgs": {
+        "clientSequence": 1,
+        "expectedVersion": 1,
+        "operation": {
+          "type": "insert",
+          "position": 0,
+          "content": "hello world"
+        }
+      },
+      "outcome": "accepted",
+      "result": {
+        "conflicts": [],
+        "newVersion": 2,
+        "serverSequence": 2,
+        "success": true,
+        "transformedOperation": {
+          "content": "hello world",
+          "position": 0,
+          "type": "insert"
+        }
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 2,
+        "noteOpsSequences": [
+          1,
+          2
+        ],
+        "notes": {
+          "content": "hello worldhello world",
+          "version": 2
+        },
+        "queueRows": []
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "verbatim duplicate (stale expectedVersion) REJECTED by the expectedVersion guard; a re-based duplicate (same clientSequence) is ACCEPTED and applied a second time — clientSequence dedupes nothing, content doubled"
+}

@@ -1,0 +1,43 @@
+{
+  "scenario": "production/lifecycle-start-duplicate",
+  "layer": "production-handler",
+  "handler": "meetings/lifecycle.ts: startMeeting",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "outcome": "accepted",
+      "result": {
+        "success": true
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": true,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": []
+      }
+    },
+    {
+      "attempt": 2,
+      "outcome": "rejected",
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Meeting is already active"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": true,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": []
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "duplicate REJECTED by the state guard ('Meeting is already active') — protection is incidental state-machine ordering, not idempotency (idempotencyKeys rows: 0)"
+}

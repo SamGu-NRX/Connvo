@@ -1,0 +1,78 @@
+{
+  "scenario": "production/offline-sync-duplicate",
+  "layer": "production-handler",
+  "handler": "notes/offline.ts: syncOfflineOperations",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "outcome": "accepted",
+      "result": {
+        "conflicts": 0,
+        "errors": [],
+        "failed": 0,
+        "newVersion": 1,
+        "remainingInQueue": 0,
+        "success": true,
+        "synced": 1
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 1,
+        "noteOpsSequences": [
+          1
+        ],
+        "notes": {
+          "content": "offline edit",
+          "version": 1
+        },
+        "queueRows": [
+          {
+            "attempts": 1,
+            "clientSequence": 1,
+            "operationId": "op_client_1",
+            "status": "synced"
+          }
+        ]
+      }
+    },
+    {
+      "attempt": 2,
+      "outcome": "deduped",
+      "result": {
+        "conflicts": 0,
+        "errors": [],
+        "failed": 0,
+        "newVersion": 0,
+        "remainingInQueue": 0,
+        "success": true,
+        "synced": 0
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 1,
+        "noteOpsSequences": [
+          1
+        ],
+        "notes": {
+          "content": "offline edit",
+          "version": 1
+        },
+        "queueRows": [
+          {
+            "attempts": 1,
+            "clientSequence": 1,
+            "operationId": "op_client_1",
+            "status": "synced"
+          }
+        ]
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "duplicate DEDUPED by the pending->synced status transition (second sync is a no-op); content applied once"
+}
