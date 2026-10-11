@@ -150,7 +150,7 @@ const t0 = process.hrtime.bigint();
 try {
   await import(pathToFileURL(file).href);
 } catch (e) {
-  console.error("IMPORT_ERROR: " + ((e && e.message) || String(e)));
+  console.error("IMPORT_ERROR: " + (e instanceof Error ? e.message : String(e)));
   process.exit(3);
 }
 const t1 = process.hrtime.bigint();
