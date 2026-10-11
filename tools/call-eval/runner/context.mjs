@@ -43,7 +43,7 @@ export class RunContext {
     this.turn = null;
     this.shapers = new Map(); // participant -> shaper handle
     this.meetingId = null;
-    this.benchPath = "/mock/mock-bench.html"; // integration mode points the same navigation at the real bench route
+    this.benchPath = "/mock-bench.html"; // integration mode points the same navigation at the real bench route
     this._relayConfigCache = new Map(); // participant -> RTCConfiguration|null
     this._relayEnabled = false; // H-07/H-15 flip this on
     this._peers = new Set(); // live peer records - stop() closes them so failed scenarios never leak browsers
