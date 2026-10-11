@@ -37,7 +37,6 @@ import {
 import { newSimState, simulatePair, decayFatigue } from "./outcomes";
 import { Rng } from "./rng";
 import type { EvalProfile, Matcher, FeatureKey } from "./types";
-import process from "node:process";
 
 /**
  * Frozen pass bars (README §bars): set from the calibration run, they
@@ -201,8 +200,12 @@ async function runDirection(
 }
 
 async function main(): Promise<void> {
-  const seedsArg = process.argv.find((a) => /^--seeds=\d+$/.test(a));
-  const roundsArg = process.argv.find((a) => /^--rounds=\d+$/.test(a));
+  // The repo tsconfig excludes node's ambient types; read argv through
+  // a guarded global instead of importing node:process.
+  const argv: string[] =
+    (globalThis as unknown as { process?: { argv?: string[] } }).process?.argv ?? [];
+  const seedsArg = argv.find((a) => /^--seeds=\d+$/.test(a));
+  const roundsArg = argv.find((a) => /^--rounds=\d+$/.test(a));
   const seeds = Number(seedsArg?.slice("--seeds=".length) ?? 5) || 5;
   const rounds = Number(roundsArg?.slice("--rounds=".length) ?? 12) || 12;
 
@@ -281,5 +284,5 @@ async function main(): Promise<void> {
 
 main().catch((e) => {
   console.error(e);
-  process.exit(1);
+  throw e;
 });
