@@ -11,15 +11,14 @@
 
 export const EMBEDDING_DIM = 384;
 
-/** Declared model served by this provider (fastembed dep in package.json). */
-export const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
+/** Declared model served by this provider (fastembed dep in package.json).
+ *  fastembed 3.0.0's supported id is the enum value
+ *  EmbeddingModel.AllMiniLML6V2 = "fast-all-MiniLM-L6-v2". The HuggingFace
+ *  repo name "Xenova/all-MiniLM-L6-v2" is NOT a supported init id in v3. */
+export const EMBEDDING_MODEL = "fast-all-MiniLM-L6-v2";
 
-type FastembedEmbedFn = (
-  input: string[],
-  isQuery?: boolean,
-) => AsyncIterable<number[]> | Array<AsyncIterable<number[]>>;
-
-type FastembedEmbedder = { embed: FastembedEmbedFn };
+type FastembedModule = typeof import("fastembed");
+type FastembedEmbedder = InstanceType<FastembedModule["FlagEmbedding"]>;
 
 let loader: Promise<FastembedEmbedder> | null = null;
 
@@ -28,17 +27,17 @@ async function loadEmbedder(): Promise<FastembedEmbedder> {
     loader = (async () => {
       // Fails loud when the declared dependency is missing or the model
       // cannot be loaded. Never falls back to a surrogate embedding.
-      const mod = (await import("fastembed")) as unknown as {
-        FlagEmbedding: {
-          init: (opts?: { model?: string }) => Promise<FastembedEmbedder>;
-        };
-      };
-      if (!mod?.FlagEmbedding?.init) {
+      const mod = (await import("fastembed")) as FastembedModule;
+      if (!mod?.FlagEmbedding?.init || !mod?.EmbeddingModel) {
         throw new Error(
-          "fastembed did not expose FlagEmbedding.init — cannot embed honestly",
+          "fastembed did not expose FlagEmbedding/EmbeddingModel — cannot embed honestly",
         );
       }
-      const embedder = await mod.FlagEmbedding.init({ model: EMBEDDING_MODEL });
+      // fastembed 3.0.0 contract: init takes { model: EmbeddingModel };
+      // enum members carry the supported ids ("fast-all-MiniLM-L6-v2").
+      const embedder = await mod.FlagEmbedding.init({
+        model: mod.EmbeddingModel.AllMiniLML6V2,
+      });
       if (typeof embedder?.embed !== "function") {
         throw new Error(
           "fastembed loaded but embed() is missing — cannot embed honestly",
@@ -70,14 +69,21 @@ export async function deriveEmbedding(
   isQuery = false,
 ): Promise<number[]> {
   const embedder = await loadEmbedder();
-  const iterables = await embedder.embed([text], isQuery);
-  const first: AsyncIterable<number[]> = Array.isArray(iterables)
-    ? iterables[0]
-    : iterables;
-  if (!first) {
-    throw new Error("fastembed returned no embedding stream for the input");
+  if (isQuery) {
+    // fastembed 3.0.0: queryEmbed(query: string) => Promise<number[]>
+    const vec = await embedder.queryEmbed(text);
+    if (!vec || vec.length === 0 || !vec.every(Number.isFinite)) {
+      throw new Error("fastembed queryEmbed produced an empty or non-finite vector");
+    }
+    return l2Normalize(vec);
   }
-  for await (const vec of first) {
+  // fastembed 3.0.0: embed(texts, batchSize?) yields BATCHES of vectors
+  // (AsyncGenerator<number[][]) — take the first vector of the first batch.
+  for await (const batchVectors of embedder.embed([text], 1)) {
+    const vec = batchVectors[0];
+    if (!vec || vec.length === 0 || !vec.every(Number.isFinite)) {
+      throw new Error("fastembed produced an empty or non-finite vector");
+    }
     return l2Normalize(vec);
   }
   throw new Error("fastembed embedding stream was empty");
