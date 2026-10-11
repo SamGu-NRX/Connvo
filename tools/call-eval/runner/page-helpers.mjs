@@ -14,9 +14,18 @@ import { loadContracts } from "./contracts.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 let bundle = null;
 
-/** The pinned decoder module as one bundle string (import-free by contract). */
+/**
+ * The pinned decoder module as one bundle string, with its ESM `export`
+ * keywords stripped so both new Function() (Node) and in-page evaluation can
+ * parse it. The module is import-free by contract, so there is nothing else
+ * to rewrite.
+ */
 export function decoderBundle() {
-  if (!bundle) bundle = fs.readFileSync(path.join(ROOT, "tools/call-eval/lib/decoders.mjs"), "utf8");
+  if (!bundle) {
+    bundle = fs
+      .readFileSync(path.join(ROOT, "tools/call-eval/lib/decoders.mjs"), "utf8")
+      .replace(/^export\s+(?=(const|function|class)\b)/gm, "");
+  }
   return bundle;
 }
 
