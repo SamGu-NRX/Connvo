@@ -383,7 +383,7 @@ export const getUserScoringData = internalQuery({
 /**
  * Calculate all compatibility features between two users
  */
-async export function calculateCompatibilityFeatures(
+export async function calculateCompatibilityFeatures(
   ctx: any, // Convex action context - keeping as any for simplicity
   user1Data: UserScoringData,
   user2Data: UserScoringData,
