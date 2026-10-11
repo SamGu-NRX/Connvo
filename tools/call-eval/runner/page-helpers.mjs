@@ -151,10 +151,13 @@ export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
 }
 
 /**
- * Remote video fps from consecutive counter reads. computeFps interprets
- * counters modulo 4096; a lost/late decode's backward transition reads as a
- * near-full-cycle advance (an H-15 run reported ~1345 fps this way), so
- * implausible results fall back to the median of plausible per-step rates.
+ * Remote video fps from consecutive counter reads. computeFps counts OBSERVED
+ * counter advances (a duplicate frame advances nothing; a 4095->0 wrap is
+ * just another change), so a lost/late decode LOWERS the rate instead of
+ * inflating it — the old gap-sum interpretation read a backward transition
+ * as a near-full-cycle jump, which is how an H-15 run reported ~1345 fps.
+ * Implausible results still fall back to the median of plausible per-step
+ * rates (robustFps below, which keeps its own wrap-aware step filter).
  */
 export async function measureFps(peer, participantId, ms = 5000, { stepMs = 250 } = {}) {
   const samples = [];
