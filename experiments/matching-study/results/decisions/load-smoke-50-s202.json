@@ -1,0 +1,860 @@
+{
+  "scenario": "load-smoke-50-s202",
+  "seed": 202,
+  "decisionCount": 22,
+  "userIds": [
+    "10000;users",
+    "10005;users",
+    "10012;users",
+    "10017;users",
+    "10023;users",
+    "10031;users",
+    "10037;users",
+    "10042;users",
+    "10047;users",
+    "10053;users",
+    "10060;users",
+    "10067;users",
+    "10073;users",
+    "10078;users",
+    "10084;users",
+    "10089;users",
+    "10096;users",
+    "10102;users",
+    "10107;users",
+    "10112;users",
+    "10118;users",
+    "10123;users",
+    "10128;users",
+    "10134;users",
+    "10139;users",
+    "10145;users",
+    "10152;users",
+    "10157;users",
+    "10163;users",
+    "10169;users",
+    "10176;users",
+    "10183;users",
+    "10187;users",
+    "10193;users",
+    "10199;users",
+    "10204;users",
+    "10210;users",
+    "10216;users",
+    "10221;users",
+    "10227;users",
+    "10234;users",
+    "10241;users",
+    "10247;users",
+    "10252;users",
+    "10258;users",
+    "10264;users",
+    "10269;users",
+    "10276;users",
+    "10282;users",
+    "10288;users"
+  ],
+  "decisions": [
+    {
+      "user1": "10000;users",
+      "user2": "10183;users",
+      "queue1": "10294;matchingQueue",
+      "queue2": "10356;matchingQueue",
+      "score": null,
+      "shard": 2
+    },
+    {
+      "user1": "10005;users",
+      "user2": "10234;users",
+      "queue1": "10296;matchingQueue",
+      "queue2": "10374;matchingQueue",
+      "score": null,
+      "shard": 1
+    },
+    {
+      "user1": "10017;users",
+      "user2": "10053;users",
+      "queue1": "10300;matchingQueue",
+      "queue2": "10312;matchingQueue",
+      "score": null,
+      "shard": 0
+    },
+    {
+      "user1": "10023;users",
+      "user2": "10199;users",
+      "queue1": "10302;matchingQueue",
+      "queue2": "10362;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10042;users",
+      "user2": "10145;users",
+      "queue1": "10308;matchingQueue",
+      "queue2": "10344;matchingQueue",
+      "score": null,
+      "shard": 0
+    },
+    {
+      "user1": "10047;users",
+      "user2": "10241;users",
+      "queue1": "10310;matchingQueue",
+      "queue2": "10376;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10060;users",
+      "user2": "10112;users",
+      "queue1": "10314;matchingQueue",
+      "queue2": "10332;matchingQueue",
+      "score": null,
+      "shard": 0
+    },
+    {
+      "user1": "10073;users",
+      "user2": "10264;users",
+      "queue1": "10318;matchingQueue",
+      "queue2": "10384;matchingQueue",
+      "score": null,
+      "shard": 2
+    },
+    {
+      "user1": "10078;users",
+      "user2": "10269;users",
+      "queue1": "10320;matchingQueue",
+      "queue2": "10386;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10084;users",
+      "user2": "10169;users",
+      "queue1": "10322;matchingQueue",
+      "queue2": "10352;matchingQueue",
+      "score": null,
+      "shard": 2
+    },
+    {
+      "user1": "10089;users",
+      "user2": "10193;users",
+      "queue1": "10324;matchingQueue",
+      "queue2": "10360;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10096;users",
+      "user2": "10227;users",
+      "queue1": "10326;matchingQueue",
+      "queue2": "10372;matchingQueue",
+      "score": null,
+      "shard": 1
+    },
+    {
+      "user1": "10102;users",
+      "user2": "10276;users",
+      "queue1": "10328;matchingQueue",
+      "queue2": "10388;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10123;users",
+      "user2": "10288;users",
+      "queue1": "10336;matchingQueue",
+      "queue2": "10392;matchingQueue",
+      "score": null,
+      "shard": 0
+    },
+    {
+      "user1": "10128;users",
+      "user2": "10216;users",
+      "queue1": "10338;matchingQueue",
+      "queue2": "10368;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10134;users",
+      "user2": "10204;users",
+      "queue1": "10340;matchingQueue",
+      "queue2": "10364;matchingQueue",
+      "score": null,
+      "shard": 0
+    },
+    {
+      "user1": "10139;users",
+      "user2": "10247;users",
+      "queue1": "10342;matchingQueue",
+      "queue2": "10378;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10157;users",
+      "user2": "10252;users",
+      "queue1": "10348;matchingQueue",
+      "queue2": "10380;matchingQueue",
+      "score": null,
+      "shard": 3
+    },
+    {
+      "user1": "10176;users",
+      "user2": "10282;users",
+      "queue1": "10354;matchingQueue",
+      "queue2": "10390;matchingQueue",
+      "score": null,
+      "shard": 2
+    },
+    {
+      "user1": "10067;users",
+      "user2": "10258;users",
+      "queue1": "10316;matchingQueue",
+      "queue2": "10382;matchingQueue",
+      "score": null,
+      "shard": 1
+    },
+    {
+      "user1": "10031;users",
+      "user2": "10152;users",
+      "queue1": "10304;matchingQueue",
+      "queue2": "10346;matchingQueue",
+      "score": null,
+      "shard": 0
+    },
+    {
+      "user1": "10037;users",
+      "user2": "10107;users",
+      "queue1": "10306;matchingQueue",
+      "queue2": "10330;matchingQueue",
+      "score": null,
+      "shard": 2
+    }
+  ],
+  "shardMembership": {
+    "10000;users": 2,
+    "10005;users": 1,
+    "10012;users": 1,
+    "10017;users": 0,
+    "10023;users": 3,
+    "10031;users": 0,
+    "10037;users": 2,
+    "10042;users": 0,
+    "10047;users": 3,
+    "10053;users": 0,
+    "10060;users": 0,
+    "10067;users": 1,
+    "10073;users": 2,
+    "10078;users": 3,
+    "10084;users": 2,
+    "10089;users": 3,
+    "10096;users": 1,
+    "10102;users": 3,
+    "10107;users": 2,
+    "10112;users": 0,
+    "10118;users": 2,
+    "10123;users": 0,
+    "10128;users": 3,
+    "10134;users": 0,
+    "10139;users": 3,
+    "10145;users": 0,
+    "10152;users": 0,
+    "10157;users": 3,
+    "10163;users": 0,
+    "10169;users": 2,
+    "10176;users": 2,
+    "10183;users": 2,
+    "10187;users": 2,
+    "10193;users": 3,
+    "10199;users": 3,
+    "10204;users": 0,
+    "10210;users": 3,
+    "10216;users": 3,
+    "10221;users": 3,
+    "10227;users": 1,
+    "10234;users": 1,
+    "10241;users": 3,
+    "10247;users": 3,
+    "10252;users": 3,
+    "10258;users": 1,
+    "10264;users": 2,
+    "10269;users": 3,
+    "10276;users": 3,
+    "10282;users": 2,
+    "10288;users": 0
+  },
+  "waitingRecords": [
+    {
+      "userId": "10000;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10005;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10012;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750086403000,
+      "outcome": "expired",
+      "waitMs": 86401000
+    },
+    {
+      "userId": "10017;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10023;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10031;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750003603000,
+      "outcome": "matched",
+      "waitMs": 3601000
+    },
+    {
+      "userId": "10037;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750003603000,
+      "outcome": "matched",
+      "waitMs": 3603000
+    },
+    {
+      "userId": "10042;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10047;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10053;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10060;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10067;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000003000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10073;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10078;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10084;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10089;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10096;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10102;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10107;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750003603000,
+      "outcome": "matched",
+      "waitMs": 3603000
+    },
+    {
+      "userId": "10112;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10118;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750007201000,
+      "outcome": "expired",
+      "waitMs": 7199000
+    },
+    {
+      "userId": "10123;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10128;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10134;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10139;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10145;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10152;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750003603000,
+      "outcome": "matched",
+      "waitMs": 3601000
+    },
+    {
+      "userId": "10157;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10163;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750039603000,
+      "outcome": "expired",
+      "waitMs": 39602000
+    },
+    {
+      "userId": "10169;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10176;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10183;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10187;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750036002000,
+      "outcome": "expired",
+      "waitMs": 36000000
+    },
+    {
+      "userId": "10193;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10199;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10204;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10210;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750032403000,
+      "outcome": "expired",
+      "waitMs": 32403000
+    },
+    {
+      "userId": "10216;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10221;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    },
+    {
+      "userId": "10227;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10234;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10241;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10247;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10252;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10258;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000003000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10264;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10269;users",
+      "availabilityClass": "short",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    },
+    {
+      "userId": "10276;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000002000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 0
+    },
+    {
+      "userId": "10282;users",
+      "availabilityClass": "daytime",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 2000
+    },
+    {
+      "userId": "10288;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000001000,
+      "resolvedAt": 1750000002000,
+      "outcome": "matched",
+      "waitMs": 1000
+    }
+  ],
+  "failures": [],
+  "load": {
+    "population": 50,
+    "cyclesRun": 12,
+    "matchedTotal": 44,
+    "expiredTotal": 5,
+    "stillWaitingAtEnd": 1,
+    "coverageMatchedBeforeExpiry": 0.88,
+    "waitingByClass": {
+      "always_on": {
+        "p50": 1000,
+        "p90": 2000,
+        "p99": 2000,
+        "max": 2000,
+        "count": 21
+      },
+      "daytime": {
+        "p50": 2000,
+        "p90": 39602000,
+        "p99": 86401000,
+        "max": 86401000,
+        "count": 20
+      },
+      "short": {
+        "p50": 2000,
+        "p90": 2000,
+        "p99": 2000,
+        "max": 2000,
+        "count": 8
+      }
+    },
+    "waitingOverall": {
+      "p50": 1000,
+      "p90": 7199000,
+      "p99": 86401000,
+      "max": 86401000,
+      "count": 49
+    },
+    "wallPerCycle": {
+      "p50": 10.074022000000241,
+      "p90": 31.610939000000144,
+      "p99": 405.03992500000004,
+      "max": 405.03992500000004,
+      "count": 12
+    },
+    "scoredPairsTotal": 127,
+    "committedMatchesTotal": 22,
+    "heapDeltaBytes": 10146432,
+    "perCycle": [
+      {
+        "cycle": 1,
+        "nowMs": 1750000002000,
+        "waitingBefore": 50,
+        "totalMatches": 19,
+        "averageScore": 0.8071481025245022,
+        "expiredThisCycle": 0,
+        "wallMs": 405.03992500000004,
+        "scoredPairs": 115
+      },
+      {
+        "cycle": 2,
+        "nowMs": 1750000003000,
+        "waitingBefore": 12,
+        "totalMatches": 1,
+        "averageScore": 0.7311220312394758,
+        "expiredThisCycle": 0,
+        "wallMs": 11.917504999999892,
+        "scoredPairs": 2
+      },
+      {
+        "cycle": 3,
+        "nowMs": 1750003603000,
+        "waitingBefore": 10,
+        "totalMatches": 2,
+        "averageScore": 0.806608221450784,
+        "expiredThisCycle": 0,
+        "wallMs": 31.610939000000144,
+        "scoredPairs": 6
+      },
+      {
+        "cycle": 4,
+        "nowMs": 1750003633000,
+        "waitingBefore": 6,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 0,
+        "wallMs": 10.194727000000057,
+        "scoredPairs": 1
+      },
+      {
+        "cycle": 5,
+        "nowMs": 1750007201000,
+        "waitingBefore": 5,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 1,
+        "wallMs": 10.074022000000241,
+        "scoredPairs": 1
+      },
+      {
+        "cycle": 6,
+        "nowMs": 1750007202000,
+        "waitingBefore": 5,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 0,
+        "wallMs": 10.376495999999861,
+        "scoredPairs": 1
+      },
+      {
+        "cycle": 7,
+        "nowMs": 1750007203000,
+        "waitingBefore": 5,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 0,
+        "wallMs": 8.87886299999991,
+        "scoredPairs": 1
+      },
+      {
+        "cycle": 8,
+        "nowMs": 1750028801000,
+        "waitingBefore": 5,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 0,
+        "wallMs": 5.371224999999868,
+        "scoredPairs": 0
+      },
+      {
+        "cycle": 9,
+        "nowMs": 1750032403000,
+        "waitingBefore": 4,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 1,
+        "wallMs": 7.27696399999968,
+        "scoredPairs": 0
+      },
+      {
+        "cycle": 10,
+        "nowMs": 1750036002000,
+        "waitingBefore": 3,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 1,
+        "wallMs": 7.536717999999837,
+        "scoredPairs": 0
+      },
+      {
+        "cycle": 11,
+        "nowMs": 1750039603000,
+        "waitingBefore": 2,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 1,
+        "wallMs": 4.8396819999998115,
+        "scoredPairs": 0
+      },
+      {
+        "cycle": 12,
+        "nowMs": 1750086403000,
+        "waitingBefore": 1,
+        "totalMatches": 0,
+        "averageScore": 0,
+        "expiredThisCycle": 1,
+        "wallMs": 5.7209710000001905,
+        "scoredPairs": 0
+      }
+    ]
+  }
+}

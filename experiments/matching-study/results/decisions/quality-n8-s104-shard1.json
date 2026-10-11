@@ -1,0 +1,126 @@
+{
+  "scenario": "quality-n8-s104-shard1",
+  "seed": 104,
+  "decisionCount": 4,
+  "decisions": [
+    {
+      "user1": "10000;users",
+      "user2": "10013;users",
+      "queue1": "10046;matchingQueue",
+      "queue2": "10050;matchingQueue",
+      "score": 0.767099062642806,
+      "shard": 0
+    },
+    {
+      "user1": "10007;users",
+      "user2": "10029;users",
+      "queue1": "10048;matchingQueue",
+      "queue2": "10056;matchingQueue",
+      "score": 0.8298331326549365,
+      "shard": 0
+    },
+    {
+      "user1": "10019;users",
+      "user2": "10040;users",
+      "queue1": "10052;matchingQueue",
+      "queue2": "10060;matchingQueue",
+      "score": 0.9005523096544295,
+      "shard": 0
+    },
+    {
+      "user1": "10024;users",
+      "user2": "10035;users",
+      "queue1": "10054;matchingQueue",
+      "queue2": "10058;matchingQueue",
+      "score": 0.7398336056921876,
+      "shard": 0
+    }
+  ],
+  "userIds": [
+    "10000;users",
+    "10007;users",
+    "10013;users",
+    "10019;users",
+    "10024;users",
+    "10029;users",
+    "10035;users",
+    "10040;users"
+  ],
+  "shardMembership": {
+    "10000;users": 0,
+    "10007;users": 0,
+    "10013;users": 0,
+    "10019;users": 0,
+    "10024;users": 0,
+    "10029;users": 0,
+    "10035;users": 0,
+    "10040;users": 0
+  },
+  "waitingRecords": [
+    {
+      "userId": "10000;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 6301000
+    },
+    {
+      "userId": "10007;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000900000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 5401000
+    },
+    {
+      "userId": "10013;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750001800000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 4501000
+    },
+    {
+      "userId": "10019;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750002700000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 3601000
+    },
+    {
+      "userId": "10024;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750003600000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 2701000
+    },
+    {
+      "userId": "10029;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750004500000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 1801000
+    },
+    {
+      "userId": "10035;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750005400000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 901000
+    },
+    {
+      "userId": "10040;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750006300000,
+      "resolvedAt": 1750006301000,
+      "outcome": "matched",
+      "waitMs": 1000
+    }
+  ],
+  "failures": []
+}

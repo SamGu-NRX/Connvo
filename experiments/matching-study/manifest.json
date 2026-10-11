@@ -1,0 +1,120 @@
+{
+  "name": "connvo-matching-study",
+  "description": "Behavioral study of Connvo's matching engine: eligibility/pairing invariants, allocation quality vs an independent exact reference, and load degradation. Synthetic preferences are DECLARED OBJECTIVES for measurement, never social-quality ground truth.",
+  "version": 1,
+  "defaults": {
+    "minScore": 0.6,
+    "maxMatches": 50,
+    "shardCount": 4,
+    "startClockMs": 1750000000000
+  },
+  "invariants": {
+    "suite": "bespoke",
+    "runsInVitest": true
+  },
+  "quality": [
+    {
+      "name": "quality-n4-s101",
+      "family": "quality",
+      "seed": 101,
+      "quality": true,
+      "maxCycles": 1,
+      "params": {
+        "count": 4,
+        "availabilityMix": { "always_on": 1, "daytime": 0, "short": 0 },
+        "cohortCount": 2
+      }
+    },
+    {
+      "name": "quality-n6-s102",
+      "family": "quality",
+      "seed": 102,
+      "quality": true,
+      "maxCycles": 1,
+      "params": {
+        "count": 6,
+        "availabilityMix": { "always_on": 1, "daytime": 0, "short": 0 },
+        "cohortCount": 2
+      }
+    },
+    {
+      "name": "quality-n8-s103",
+      "family": "quality",
+      "seed": 103,
+      "quality": true,
+      "maxCycles": 1,
+      "params": {
+        "count": 8,
+        "availabilityMix": { "always_on": 1, "daytime": 0, "short": 0 },
+        "cohortCount": 2
+      }
+    },
+    {
+      "name": "quality-n8-s104-shard1",
+      "family": "quality",
+      "seed": 104,
+      "quality": true,
+      "maxCycles": 1,
+      "engineOverrides": { "shardCount": 1 },
+      "params": {
+        "count": 8,
+        "availabilityMix": { "always_on": 1, "daytime": 0, "short": 0 },
+        "cohortCount": 2
+      }
+    }
+  ],
+  "loadSmoke": [
+    {
+      "name": "load-smoke-25-s201",
+      "family": "load",
+      "seed": 201,
+      "maxCycles": 40,
+      "params": { "count": 25 }
+    },
+    {
+      "name": "load-smoke-50-s202",
+      "family": "load",
+      "seed": 202,
+      "maxCycles": 40,
+      "params": { "count": 50, "arrivalProfile": "burst" }
+    },
+    {
+      "name": "load-smoke-100-s203",
+      "family": "load",
+      "seed": 203,
+      "maxCycles": 40,
+      "params": { "count": 100, "staleFraction": 0.2 }
+    }
+  ],
+  "loadFull": [
+    {
+      "name": "load-full-250-s301",
+      "family": "load",
+      "seed": 301,
+      "maxCycles": 60,
+      "tier": "full",
+      "params": { "count": 250, "staleFraction": 0.15, "rejoinFraction": 0.1 }
+    },
+    {
+      "name": "load-full-500-s302",
+      "family": "load",
+      "seed": 302,
+      "maxCycles": 80,
+      "tier": "full",
+      "params": { "count": 500, "staleFraction": 0.15, "rejoinFraction": 0.1 }
+    },
+    {
+      "name": "load-full-1000-s303",
+      "family": "load",
+      "seed": 303,
+      "maxCycles": 100,
+      "tier": "full",
+      "params": { "count": 1000, "staleFraction": 0.1, "rejoinFraction": 0.05 }
+    }
+  ],
+  "notes": [
+    "Seeds are frozen; results artifacts record the sha256 of every study source file alongside them.",
+    "loadFull runs only via run.ts (never in the vitest suite).",
+    "engineOverrides feed runMatchingCycle args directly (minScore, maxMatches, shardCount)."
+  ]
+}
