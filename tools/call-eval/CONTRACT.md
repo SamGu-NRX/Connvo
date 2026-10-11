@@ -1,3 +1,4 @@
+
 # S0 harness contract (task `connvo-call-harness-f1`)
 
 This file is the join point for the S0 sub-threads. Everything here is quoted or
@@ -162,6 +163,40 @@ Pinned fixture spec (generator + decoders must match):
   pre-existing errors recorded in the PR) and `pnpm test:run` (baseline 240
   passing + one pre-existing unhandled error in `convex/matching/matching.test.ts`;
   no new failures). Sandboxes die — push after every verified step.
+
+## Decoder API (pinned; consumed by runner, unit-tested in fixtures thread)
+
+`tools/call-eval/lib/decoders.mjs` exports pure functions (no DOM access; they
+operate on plain inputs so vitest can unit-test them and the runner can
+serialize them into the page):
+
+- `decodeBarcodeColor(imageData) -> { r, g, b }` — dominant color of the frame
+  region above the barcode band.
+- `decodeFrameCounter(imageData) -> { counter: number, ok: boolean }` — parses
+  the pinned barcode; `ok=false` when sentinels are missing/corrupt.
+- `computeFps(samples) -> number` — from `Array<{ t: number, counter: number }>`,
+  handling the mod-4096 wrap.
+- `decodeToneHz(samples: Float32Array, sampleRate: number) -> { peakHz: number, rms: number }`
+  — spectral peak over the buffer (Goertzel or FFT).
+
+## Reference signaling server CLI (pinned; consumed by runner)
+
+`node tools/call-eval/reference/signaling-server.mjs --port=<9301..9310> --variant=<reference|no-audio|never-close|no-reconnect|outsider-allowed> [--jwks-file=<path>]`
+— binds, prints exactly one JSON line `{"ok":true,"port":<p>,"variant":"..."}` to
+stdout when ready. JWKS from `--jwks-file` or `CONNVO_LOCAL_TEST_JWKS_FILE`.
+Verifies the RS256 bearer token (issuer `https://connvo-local-test.invalid`) and
+meeting membership; fails closed. The `outsider-allowed` variant skips that
+check (H-14 broken variant).
+
+## Scenario fault mechanisms (pinned)
+
+- H-07 network drop and H-15 lossy link both force all media through the
+  harness-controlled path: the probe wrapper overrides `RTCConfiguration` with
+  `{ iceServers: [<local TURN behind the shaper>], iceTransportPolicy: "relay" }`.
+  H-07 then drops 100% (plus closes the peer's signaling socket); H-15 applies
+  5% / 15% loss with 300 ms delay. One mechanism, transport-agnostic.
+- If forcing relay proves impossible for a transport under test, that failure
+  is reported as a blocked measurement — never faked.
 
 ## Baseline at alpha `ddc94d4` (2026-10-11)
 
