@@ -37,18 +37,55 @@ function initDecodersInNode(bundleSrc) {
 /** Node-side tolerant color classification (y4m round-trip shifts ~±13/ch). */
 export function matchPeerColor(rgb) {
   const { PEER_COLORS, SECOND_CAMERA_COLOR, COLOR_TOLERANCE } = loadContracts();
-  const candidates = [
-    ["A", PEER_COLORS.A],
-    ["B", PEER_COLORS.B],
-    ["C", PEER_COLORS.C],
-    ["second-camera", SECOND_CAMERA_COLOR],
-  ];
+  return classifyRemoteColor(rgb, [PEER_COLORS.A, PEER_COLORS.B, PEER_COLORS.C, SECOND_CAMERA_COLOR], COLOR_TOLERANCE);
+}
+
+/**
+ * Tolerant palette classification, pure so the page-side color hook can
+ * embed it verbatim (colorHookExpression stringifies it): nearest palette
+ * entry by max per-channel distance; ok only within tolerance.
+ * @param {{ r: number, g: number, b: number }} rgb
+ * @param {Array<[string, [number, number, number]]>} palette label -> rgb triple
+ * @param {number} tolerance
+ */
+export function classifyRemoteColor(rgb, palette, tolerance) {
   let best = null;
-  for (const [label, ref] of candidates) {
+  for (const [label, ref] of palette) {
     const d = Math.max(Math.abs(rgb.r - ref[0]), Math.abs(rgb.g - ref[1]), Math.abs(rgb.b - ref[2]));
     if (!best || d < best.distance) best = { label, distance: d };
   }
-  return { ...best, ok: best.distance <= COLOR_TOLERANCE };
+  return { ...best, ok: best.distance <= tolerance };
+}
+
+/**
+ * True when a sampleRemoteTone result carries the expected tone: decodeToneHz
+ * returns { peakHz, rms } — the reviewed H-02/H-03 bug did arithmetic on the
+ * OBJECT (NaN peak), so the predicate reads peakHz explicitly.
+ * @param {{ peakHz?: number, rms?: number } | null | undefined} decoded
+ * @param {number} expectedHz
+ * @param {number} [tolerance]
+ * @returns {boolean}
+ */
+export function toneMatches(decoded, expectedHz, tolerance = 10) {
+  const peak = decoded?.peakHz;
+  if (typeof peak !== "number" || !Number.isFinite(peak)) return false;
+  return Math.abs(peak - expectedHz) <= tolerance;
+}
+
+/**
+ * True when nothing audible was received: no sample at all (null — no track
+ * or no stream), digital silence (decodeToneHz yields peakHz 0 at rms < 1e-6),
+ * or sub-floor energy. The floor counts near-silent noise as muted: the
+ * reviewed H-03 bug compared the decode OBJECT to 0 and threw on every
+ * healthy muted call. Pure digital silence must always count as muted.
+ * @param {{ peakHz?: number, rms?: number } | null | undefined} decoded
+ * @param {{ rmsFloor?: number }} [opts]
+ * @returns {boolean}
+ */
+export function toneIsSilent(decoded, { rmsFloor = 0.01 } = {}) {
+  if (!decoded || typeof decoded !== "object") return true;
+  if (decoded.peakHz === 0) return true;
+  return Number(decoded.rms) < rmsFloor;
 }
 
 /** Sample the pinned counter band; classification stays Node-side. */
@@ -158,8 +195,16 @@ export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
  * as a near-full-cycle jump, which is how an H-15 run reported ~1345 fps.
  * Implausible results still fall back to the median of plausible per-step
  * rates (robustFps below, which keeps its own wrap-aware step filter).
+ *
+ * The step default is 20 ms: computeFps counts ONE advance per sample step,
+ * so the step caps the measurable rate at 1000/stepMs fps. The reviewed bug
+ * sampled every 250 ms, topping out near 4 fps and failing H-01's 15 fps bar
+ * on a healthy 30 fps stream. (Per-frame sampling via requestVideoFrameCallback
+ * would be the next refinement; 20 ms resolves rates up to 50 fps.) Fps
+ * windows are short (the plan's checks use 1.5-5 s windows), so the extra
+ * canvas reads at 20 ms stay bounded.
  */
-export async function measureFps(peer, participantId, ms = 5000, { stepMs = 250 } = {}) {
+export async function measureFps(peer, participantId, ms = 5000, { stepMs = 20 } = {}) {
   const samples = [];
   const deadline = Date.now() + ms;
   while (Date.now() < deadline) {

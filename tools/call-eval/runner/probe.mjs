@@ -44,6 +44,9 @@ export const probeInit = String.raw`
       connectionState: pc.connectionState,
       iceConnectionState: pc.iceConnectionState,
       signalingState: pc.signalingState,
+      // H-11 asserts on closed directly; the reviewed bug never recorded it,
+      // so every record read as not-closed regardless of the real state.
+      closed: pc.connectionState === 'closed',
       everConnected: false,
     };
     probe.pcs.push(rec);
@@ -51,6 +54,7 @@ export const probeInit = String.raw`
       rec.connectionState = pc.connectionState;
       rec.iceConnectionState = pc.iceConnectionState;
       rec.signalingState = pc.signalingState;
+      rec.closed = pc.connectionState === 'closed';
       if (pc.connectionState === 'connected') rec.everConnected = true;
       recount();
     };
@@ -75,6 +79,20 @@ export const probeInit = String.raw`
     }
   }
   window.RTCPeerConnection = WrappedPC;
+
+  // H-08's contract mechanism is a forced ICE restart on the live PCs, not
+  // socket killing (that was the mock relay's approximation and it broke
+  // real transports). Returns one boolean per wrapped pc so the scenario
+  // can assert the restart was actually attempted on every connection.
+  window.__probeRestartIce = () => (window.__wrappedPcs || []).map((pc) => {
+    try {
+      if (typeof pc.restartIce !== 'function') return false;
+      pc.restartIce();
+      return true;
+    } catch {
+      return false;
+    }
+  });
 
   if (NativeGUM) {
     navigator.mediaDevices.getUserMedia = async (constraints) => {

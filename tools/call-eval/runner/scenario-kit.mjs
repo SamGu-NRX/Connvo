@@ -71,11 +71,18 @@ export async function click(peer, testId) {
 }
 
 /**
- * Join A and B against ctx.url with optional query params and a relay-only
- * RTCConfiguration override (applied to BOTH peers — the H-07 debug proved
- * host/relay asymmetry stalls candidates).
+ * Join A and B against ctx.url with optional query params. The rtcConfig
+ * parameter stays undefined unless a caller pins one: when the context has
+ * relay enabled (H-07/H-15), ctx.launchPeer then resolves each peer's own
+ * relay-only RTCConfiguration through that peer's shaper, so media flows the
+ * harness-controlled path. Passing null explicitly also resolves from the
+ * context (launchPeer treats null as "no explicit config").
  */
-export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = {}, rtcConfig = null, timeoutMs = 30000 } = {}) {
+/**
+ * @param {import('./context.mjs').RunContext} ctx
+ * @param {{ a?: string, b?: string, paramsA?: object, paramsB?: object, rtcConfig?: object | null, timeoutMs?: number }} [opts]
+ */
+export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = {}, rtcConfig, timeoutMs = 30000 } = {}) {
   const t0 = Date.now();
   const [peerA, peerB] = await Promise.all([
     ctx.launchPeer(a, paramsA, rtcConfig),
@@ -92,8 +99,8 @@ export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = 
  * H-01's time-to-first-remote-frame: ms from `since` until the first decoded
  * remote frame whose counter parses.
  */
-export async function timeToFirstRemoteFrame(peer, participantId, since) {
-  const deadline = Date.now() + 20000;
+export async function timeToFirstRemoteFrame(peer, participantId, since, deadlineMs = 20000) {
+  const deadline = Date.now() + deadlineMs;
   for (;;) {
     const frame = await decodeRemoteFrame(peer, participantId);
     if (frame.present && frame.counter?.ok) {

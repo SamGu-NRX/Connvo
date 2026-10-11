@@ -331,4 +331,86 @@ describe("reference signaling server", () => {
     expect(errLine.ok).toBe(false);
     expect(errLine.error).toContain("fail closed");
   }, 15000);
+
+  it("records client-initiated departures as 'left', network deaths as 'disconnected', and serves the log over HTTP", async () => {
+    // H-10/H-11 evidence path (the mock relay's sessionEvents equivalent).
+    // The old server never called recordDeparture, always broadcast reason
+    // "disconnected", and exposed no events route — this test fails there.
+    const child = spawnOnPort(9309);
+    const ready = await waitForReady(child);
+    const base = `http://127.0.0.1:${ready.port}`;
+
+    const a = new WsClient("ws://127.0.0.1:9309");
+    await a.opened;
+    a.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a"), meetingId: MEETING });
+    expect((await a.next())?.type).toBe("welcome");
+
+    const b = new WsClient("ws://127.0.0.1:9309");
+    await b.opened;
+    b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
+    expect((await b.next())?.type).toBe("welcome");
+
+    // A leaves via bye: the server must close 4002, tell B the departure is
+    // client-initiated ("left"), and record it.
+    a.send({ type: "bye" });
+    await a.closed;
+    expect(a.closedCode).toBe(4002);
+    const leftMsg = await b.nextOrFail(2000, (m) => m.type === "peer-left" && m.participantId === "local-test-a");
+    expect(leftMsg?.reason).toBe("left");
+
+    // B's socket dies without a bye: a network death ("disconnected").
+    b.close();
+    await b.closed;
+
+    // The events log must show both departures with the right reasons.
+    const poll = async () => (await (await fetch(`${base}/?events=1`)).json()).sessionEvents ?? [];
+    let events = [];
+    const deadline = Date.now() + 3000;
+    do {
+      events = await poll();
+      if (events.length >= 2) break;
+      await new Promise((r) => setTimeout(r, 200));
+    } while (Date.now() < deadline);
+    expect(events).toContainEqual(expect.objectContaining({ participant: "local-test-a", reason: "left" }));
+    expect(events).toContainEqual(expect.objectContaining({ participant: "local-test-b", reason: "disconnected" }));
+
+    // The plain health probe stays shaped as before (no events key).
+    const health = await (await fetch(base)).json();
+    expect(health).toEqual({ ok: true, variant: "reference", port: ready.port });
+
+    child.kill();
+  }, 15000);
+
+  it("terminates a participant's socket on POST /drop without a bye (reference killPeerSocket hook)", async () => {
+    const child = spawnOnPort(9302);
+    await waitForReady(child);
+
+    const b = new WsClient("ws://127.0.0.1:9302");
+    await b.opened;
+    b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
+    expect((await b.next())?.type).toBe("welcome");
+
+    const res = await fetch("http://127.0.0.1:9302/drop?participant=local-test-b", { method: "POST" });
+    expect(res.status).toBe(200);
+
+    await b.closed;
+    // terminate() is abrupt: no 4002 bye code, and the log records a network
+    // death — the old server had no route, so this fails there.
+    expect(b.closedCode).not.toBe(4002);
+
+    const deadline = Date.now() + 3000;
+    let events = [];
+    do {
+      events = (await (await fetch("http://127.0.0.1:9302/?events=1")).json()).sessionEvents ?? [];
+      if (events.length > 0) break;
+      await new Promise((r) => setTimeout(r, 200));
+    } while (Date.now() < deadline);
+    expect(events).toContainEqual(expect.objectContaining({ participant: "local-test-b", reason: "disconnected" }));
+
+    // Unknown participants fail with a named 404.
+    const missing = await fetch("http://127.0.0.1:9302/drop?participant=nobody", { method: "POST" });
+    expect(missing.status).toBe(404);
+
+    child.kill();
+  }, 15000);
 });

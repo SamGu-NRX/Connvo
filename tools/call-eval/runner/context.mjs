@@ -21,7 +21,12 @@ const FIXTURES = {
   B: { video: "peer-B.y4m", audio: "peer-B.wav" },
   C: { video: "peer-C.y4m", audio: "peer-C.wav" },
 };
-const SHAPER_BASE_PORT = 3479; // coturn owns 3478; shapers forward to it
+// coturn owns 3478; shapers forward to it. Two eval runs on one shared box
+// cannot share those ports — the second run's coturn fails to bind and the
+// liveness probe would spuriously answer against the first run's server. Env
+// overrides keep concurrent runs on disjoint port ranges (defaults unchanged).
+const TURN_PORT = Number(process.env.CONNVO_EVAL_TURN_PORT) || 3478;
+const SHAPER_BASE_PORT = Number(process.env.CONNVO_EVAL_SHAPER_BASE_PORT) || 3479;
 
 /**
  * Mock runs navigate the bundled mock bench page; integration runs
@@ -92,7 +97,7 @@ export class RunContext {
         "coturn (turnserver) is not installed — the H-07/H-15 fault path requires it. Install coturn or report the fault scenarios as blocked.",
       );
     }
-    this.turn = await createTurn({ port: 3478 });
+    this.turn = await createTurn({ port: TURN_PORT });
     return this.turn;
   }
 
@@ -146,6 +151,23 @@ export class RunContext {
     this._relayEnabled = true;
   }
 
+  /**
+   * Per-scenario-seed determinism: shaper loss patterns derive from the seed
+   * PRNG, so a new seed must re-create the shapers (the reviewed bug kept the
+   * constructor seed for every run of the matrix). Live shapers are stopped
+   * and the relay-config cache dropped — re-created shapers rebind the same
+   * per-participant ports.
+   */
+  /** @param {number} seed */
+  setSeed(seed) {
+    this.seed = seed;
+    if (this.shapers.size > 0) {
+      for (const shaper of this.shapers.values()) shaper.stop();
+      this.shapers.clear();
+      this._relayConfigCache.clear();
+    }
+  }
+
   shaperFor(participant) {
     let shaper = this.shapers.get(participant);
     if (!shaper) {
@@ -174,12 +196,13 @@ export class RunContext {
   }
 
   /**
-   * Launch one peer page. `rtcConfig` overrides the participant-specific
-   * default (joinPair passes a single config for both peers unless given
-   * per-participant overrides).
+   * Launch one peer page. `rtcConfig` overrides the per-participant default;
+   * null or undefined both mean "no explicit config" — the context then
+   * resolves the relay-only config itself (H-07/H-15 route media through the
+   * participant's shaper). joinPair deliberately passes neither.
    */
   async launchPeer(participant, params = {}, rtcConfig) {
-    const config = rtcConfig !== undefined ? rtcConfig : await this.rtcConfigFor(participant);
+    const config = rtcConfig ?? (await this.rtcConfigFor(participant));
     const { video, audio } = this.fixturePaths(participant);
     const { launchPeer: launch } = await import("./peers.mjs");
     const query = new URLSearchParams({ as: participant, meeting: this.meetingId ?? "bench-meeting", ...params });
@@ -205,14 +228,20 @@ export class RunContext {
 
   // Fault hooks (mock relay only; integration mode reports absence).
   killPeerSocket(participant) {
-    if (!this.relay) {
-      throw new Error(`killPeerSocket unavailable for transport "${this.transport}" — H-07's signaling drop needs the harness relay`);
-    }
-    return this.relay.killPeerSocket(participant);
+    if (this.relay) return this.relay.killPeerSocket(participant);
+    // Reference transports: the signaling server exposes the same fault
+    // hook (POST /drop) — the peer's socket dies without a bye, exactly
+    // like the mock relay's socket kill.
+    if (this.signaling?.dropParticipant) return this.signaling.dropParticipant(participant);
+    throw new Error(`killPeerSocket unavailable for transport "${this.transport}" — no relay and no reference signaling handle`);
   }
 
   sessionEvents() {
-    return this.relay ? this.relay.sessionEvents() : [];
+    // Mock relay keeps the log in-process; the reference transports' log
+    // lives in the spawned signaling server (GET /?events=1). Neither → [].
+    if (this.relay) return this.relay.sessionEvents();
+    if (this.signaling) return this.signaling.sessionEvents();
+    return [];
   }
 
   async stop() {
