@@ -64,6 +64,10 @@ export const probeInit = String.raw`
     constructor(cfg) {
       super(window.__probeRtcConfig || cfg);
       this.__probe = record(this);
+      // Registry of the real pc instances (probe.pcs holds records only):
+      // the runner reads receivers/getStats through these, which also keeps
+      // getStatsCalls honest (H-11 counts deltas, not absolutes).
+      (window.__wrappedPcs = window.__wrappedPcs || []).push(this);
     }
     getStats(...args) {
       probe.getStatsCalls++;
