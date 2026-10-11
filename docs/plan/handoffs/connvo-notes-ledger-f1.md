@@ -2,7 +2,7 @@
 
 **Branch** `obv/connvo-notes-ledger-f1` → `alpha` · **Draft PR #31** (opened from the host at `76d296d`)
 **This doc is the PR body's source of truth.** The sandbox cannot reach `api.github.com` (egress proxy blocks the host), so nothing in this workspace edits the PR: the lead copies this file into the PR body at review. Keep this file current with every push — update the SHA line, the Proof log and the Handoff in the same commit as each milestone.
-**Last updated at:** `04f9454` (M1 + M3 + M2 merged)
+**Last updated at:** `7293ceb` (M1 + M3 + M2 + M4 checkpoint)
 
 ---
 
@@ -25,7 +25,7 @@ Step S1 of `docs/plan/CALL-PLAN.md` (base `alpha` @ `ddc94d4`): rebuild #24's no
 - [x] M1 — server identity/watermark fields + convex-test suite (merged at `0152a44`)
 - [x] M2 — ledger + hook + outcome matrix (failing-before receipts for every #24 defect; merged at `04f9454`)
 - [x] M3 — panel + axe + keyboard + reduced-motion (mounted matrix landed; real-browser screenshots deferred to the M2/M3 join)
-- [ ] M4 — property run clean at recorded seed (10k) + final Proof / Handoff
+- [~] M4 — property suite + review fixes checkpointed at `7293ceb` (25-run bar green, type-check at baseline); open: 10k seeded run, default-provider/remount mounted proof, committed 1440/390 screenshots, final Proof/Handoff polish
 
 ### Baseline @ `ddc94d4` (`docs/notes-ledger-f1/baseline.md`)
 
@@ -77,11 +77,25 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 - Bar on merged tree: `pnpm type-check` → `32` (holds); `pnpm vitest run test/in-call` → exit 0, **32/32 passed**; M1 suite still 11/11; full `pnpm test:run` clean in this run (282 passed, 0 failed) with the two documented pre-existing tests remaining intermittent.
 - Known M3 debts for the M2/M3 join (documented in code): the M0 placeholder's zero-arg `useNotesLedger` is signature-aligned via a typed cast (collapses at the join); a11y tests mock `@/hooks/notes` — swap in the real hook; jest-axe page-has-heading-one disabled (page shells own the h1); **real-browser responsive/color-contrast/focus-visibility checks at 1440×900 and 390×844 deferred to the join**.
 
+### M4 checkpoint @ `7293ceb` (property suite + independent-review fixes)
+
+- Scope: `test/in-call/property/notesLedger.property.test.ts` (new, fast-check 3.22.0), `src/hooks/notes/notesLedger.ts`, `src/hooks/notes/notesTransport.tsx`, `src/hooks/notes/types.ts`, `src/components/meeting-notes/MeetingNotesPanel.tsx`, `convex/notes/operations.ts`, `convex/notes/mutations.ts`, `src/proxy.ts`, `test/notes/mountedMatrix.test.tsx`, `test/notes/notesLedger.test.ts`, `test/notes/replica/defectReplicaLedger.tsx`, `test/in-call/meetingNotesPanel.a11y.test.tsx`, `package.json`/`pnpm-lock.yaml`. No forbidden paths; author `Sam Gu` + `Co-authored-by: obvious-autobuild[bot]` verified pre-push.
+- Property proof (25-run bar): P1 single-client and P2 two-client random-edits-x-faults scenarios → exact server convergence + ≤2 identical sends; recorded mounted counterexample replay (seed 20261011); 200 mounted runs through the real hook.
+- Fixes from the independent review, each with a failing-before receipt where applicable:
+  1. **Lost remote words mid-debounce**: buffered words now keep their original basis (`bufferBasis`); the flush diffs the local edit from that basis and transforms it against the drift — `mountedMatrix` case 13 fails on the pre-fix ledger, passes after (server text `base alpha bravo`, both words survive).
+  2. **Stuck batch after a lost response**: identity-ack retirement releases `batchInFlight`; a late response never downgrades a saved record — case 5's follow-up-edit extension fails before, passes after.
+  3. **Mixed-frame OT transform**: `transformOperationSequence` now carries the against-ops through each local op's effect (the diamond); `transformAgainst` delete-vs-delete maps an overlapping delete's survivor to the deletion boundary (`opB.position`), not `bEnd` (an original-frame coordinate). Found by property counterexample seed 20261011 path 23 ("Invalid delete range: 40..43"), which failed under the naive transform and passes after both fixes.
+  4. **Duplicate-only batch**: a fully-deduped batch no longer patches the document, bumps its version or writes an audit log — version advances only when new ops actually apply.
+  5. **Middleware**: WorkOS runs on every `/dev` path again; the `/dev/notes-preview` bypass requires `NEXT_PUBLIC_CONNVO_CALL_BENCH=1` and a non-production environment.
+  6. **Type-check reconciled to 32** (the baseline): the 33rd error was the defect replica missing the new `bufferedContent` field — fixed in the replica.
+- Verification on this tree: notes project **49/49** (matrix 13/13, failing-before replica 7/7, store core, diff, smoke), in-call **36/36** incl. the a11y suite, property **4/4 at 25 runs**, full suite **335/336** (the one failure is the documented pre-existing intermittent time-bucketed sharding test), `pnpm type-check` **32 errors = baseline**, none in touched files.
+- Continuation note: this checkpoint is a fast-forward commit on `obv/connvo-notes-ledger-f1` (parent `4bd4261`); `obv/connvo-notes-f1-m4-property` carries the same tree. A continuation that starts from `4bd4261` should take `7293ceb` (or re-run the bar on it) rather than re-deriving the fixes.
+
 ---
 
 ## Handoff
 
-*(at `76d296d`)*
+*(at `7293ceb`)*
 
 **Done**
 
@@ -114,12 +128,12 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 
 **In flight**
 
-- **M2 landed** (merged at `04f9454`, independently verified — see the M2 receipt above). **M2/M3 join landed** at `57b95ce` (lead-owned; receipt and real-browser evidence below). Remaining: **M4 only** — a11y real-hook swap landed at `986fdfb` (worker branch at `c351459`, merged `--no-ff` after lead re-verification; receipt in Left), so M4 dispatches on this post-merge tree.
+- **M1+M2+M3 landed and joined** (`0152a44`, `04f9454`, `622cbb8`, join `57b95ce`, a11y swap `986fdfb` — receipts above/below). **M4 checkpointed at `7293ceb`** on this branch: the property suite (P1/P2, replay, 200 mounted runs at 25 runs) plus all six independent-review fixes, verified (numbers in the M4 receipt above). Continuation is owned by task `connvo-notes-ledger-r2` on branch `obv/connvo-notes-ledger-r2` (that branch starts from `4bd4261` — take `7293ceb` from here first).
 - **Incident record (2026-10-11):** a shared-sandbox session reset destroyed M2's local-only milestone commit (`5dc0d39`), and its replacement worker died terminally after 5 rebirth attempts. Recovery preserved the surviving tree as checkpoint `7e810db` and the relaunched task completed the milestone from it. Lesson for every milestone on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
 
 **Left**
 
-- M4 as listed under Milestones; merge each remaining milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push. M4 runs on the post-join tree.
+- **M4 remainder** (on `obv/connvo-notes-ledger-r2`, taking `7293ceb` first): 10,000-case seeded property run at the recorded seed; a mounted proof that the default `NotesConvexTransportProvider` path recovers across a real remount; committed 1440×900 / 390×844 screenshots as PR evidence; final Proof/Handoff polish for the PR body copy. Merge remaining milestones with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push.
 - ~~A11y real-hook swap~~ **Landed**: worker branch `obv/connvo-notes-f1-a11y-real` at `c351459` (base exactly `57b95ce`, scope strictly `test/in-call/**`, Sam Gu author + trailer verified by the lead), merged `--no-ff` at `986fdfb` after independent re-verification on the merged tree: in-call 32/32, type-check = exactly 32 errors, full `test:run` 331/331 exit 0. Worker root-cause worth keeping: convex-test environment ids repeat per environment while `useStableNotesClientId` is session-scoped, so recovery keys collided across tests — the new helper `test/in-call/helpers/realLedgerPanel.tsx` clears sessionStorage per mount and adds `ReadGateTransport` to observe pre-first-read loading.
 - ~~M2/M3 join~~ **Done at `57b95ce`** (was: un-mock a11y signature cast, wire Convex transport, stable client identity, dev-route middleware exclusion, deferred browser checks — all landed; browser checks below).
 
