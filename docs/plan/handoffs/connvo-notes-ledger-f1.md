@@ -120,7 +120,7 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 **Left**
 
 - M4 as listed under Milestones; merge each remaining milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push. M4 runs on the post-join tree.
-- A11y real-hook swap (worker in flight, `obv/connvo-notes-f1-a11y-real` off `57b95ce`): drive the panel a11y matrix's seven states through the real `useNotesLedger` + M2 harness instead of the `@/hooks/notes` mock, preserving every user-observable assertion (jest-axe per state, keyboard walkthrough, reduced motion, retry semantics asserted as real recovery). Merge into this branch with `--no-ff` when green.
+- ~~A11y real-hook swap~~ **Landed**: worker branch `obv/connvo-notes-f1-a11y-real` at `c351459` (base exactly `57b95ce`, scope strictly `test/in-call/**`, Sam Gu author + trailer verified by the lead), merged `--no-ff` at `986fdfb` after independent re-verification on the merged tree: in-call 32/32, type-check = exactly 32 errors, full `test:run` 331/331 exit 0. Worker root-cause worth keeping: convex-test environment ids repeat per environment while `useStableNotesClientId` is session-scoped, so recovery keys collided across tests — the new helper `test/in-call/helpers/realLedgerPanel.tsx` clears sessionStorage per mount and adds `ReadGateTransport` to observe pre-first-read loading.
 - ~~M2/M3 join~~ **Done at `57b95ce`** (was: un-mock a11y signature cast, wire Convex transport, stable client identity, dev-route middleware exclusion, deferred browser checks — all landed; browser checks below).
 
 **How to continue**
