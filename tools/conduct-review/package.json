@@ -1,0 +1,12 @@
+{
+  "name": "@connvo/conduct-review",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline conduct-review proposal: policy engine, exact disclosure views, redacted export, deterministic demo page. Synthetic data only.",
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "build": "node build.mjs"
+  }
+}
