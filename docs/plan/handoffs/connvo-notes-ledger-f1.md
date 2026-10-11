@@ -90,16 +90,38 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 - Draft PR #31 open, maintained by the lead from the host; sandbox never touches `api.github.com`.
 - **M1 merged at `0152a44`**: additive `clientId`/`clientOpId`/`clientSequence` on `noteOps` + `by_meeting_client`/`by_meeting_client_op` indexes; idempotent dedupe with original-sequence return; per-op echo + `failedOps`; `getMeetingNotes` watermark/acks; protocol documented in `convex/notes/README.md` (deviations recorded there: identity triple persisted only when `clientOpId` present; `clientSequence` always echoed; `failedOps` absent when empty).
 - **M3 merged at `622cbb8`**: MeetingNotesPanel (seven-state honest status, unsaved-word visibility, retry only for conflict/rejected), FadeRise reduced-motion animation, `notesStatus` helpers, in-memory demo backend with fault toggles, `/dev/notes-preview` demo route, additive `in-call` vitest project with 32 mounted a11y/behavior tests.
+- **M2/M3 join landed at `57b95ce`** (lead-owned): removed the panel's temporary signature-alignment cast; wired the real `useNotesLedger` to `NotesConvexTransportProvider` (replacing the placeholder default transport); added `src/hooks/notes/stableClientId.ts` (`stableNotesClientId`/`useStableNotesClientId` — UUID stable per tab per meeting via sessionStorage, shared by hook and transport); dev-only `/dev/notes-preview` (notFound outside development) with the `dev` path exclusion in `src/proxy.ts`'s middleware matcher so the local demo avoids the blocked WorkOS handshake. Verified on the joined tree: `pnpm type-check` = 32 errors (documented baseline, none in notes files); in-call suite 32/32. `pnpm lint` is **not runnable** in this repo state (the script invokes `next lint`, which this installed Next CLI misparses as a project directory) — pre-existing, not caused by the join; type-check + suites remain the enforced gates.
+
+**Real-browser evidence (2026-10-11, joined tree, `/dev/notes-preview` with `NEXT_PUBLIC_CONVEX_URL=https://demo-placeholder.convex.cloud` — the layout's Convex client validates the env at init and the demo route never subscribes; captures in `/home/user/work/evidence/`, to be attached to PR #31 by the lead):**
+
+| Capture | Shows |
+|---|---|
+| `tc-1-desktop-synced.png` | 1440×900: panel with Synced badge, seed content, word/char metrics, fault controls |
+| `tc-2-after-synced.png` | Typed text appended via real keyboard events, flush settled, Synced |
+| `tc-3-words-survive-reload.png` | After a **full page reload**: typed words restored (sessionStorage recovery), Synced |
+| `tc-4-offline-queued-words.png` | Offline toggle on: Offline badge, editor enabled, queued words visible |
+| `tc-5-mobile-390.png` | 390×844: single-column layout, no overflow, offline state + Unsaved changes list |
+| `tc-6-focus-editor.png` | Keyboard Tab walk: visible focus ring on "Retry unsaved changes" (conflict state rendered) |
+| `tc-7-conflict-rejected.png` | Conflict badge, Rejected chip with quoted words, attempt counter, retry affordance |
+| `tc-8-retry-synced.png` | Retry **after the demo's Reset**: stays conflicted (demo-reset divergence, see known issues) |
+| `tc-9a-offline-queued.png` / `tc-9b-reconnect-synced.png` | Offline queue → fault cleared: Pending stays visible; resend is flush/retry-driven per the M2 contract, not automatic on reconnect |
+
+**Known issues (recorded, none block the join):**
+
+- **Intermittent dev-only hydration warning** ("Recoverable Error: Hydration failed", dev overlay) observed 2 of ~7 loads **with stored recovery content present**, never on clean loads; 5× stress loop clean; component stack points inside `<MeetingNotesPanel>`. Suspect: recovery content available synchronously to the first client render while the server render has none. Suggested fix for M4 or a follow-up: apply sessionStorage recovery strictly after hydration (in `start()`), keeping the matrix's remount-recovery semantics.
+- **Demo Reset divergence:** the demo page's Reset rewinds the backend document; the real ledger correctly refuses to resync against rewound server state (retry stays conflicted, `tc-8`/`tc-10`). A real Convex backend never rewinds; the coherent-backend retry→synced path is covered deterministically by the suite.
+- The dev overlay also counts the failed Convex WebSocket connection to the placeholder URL (demo-env artifact of the placeholder env above).
 
 **In flight**
 
-- **M2 landed** (merged at `04f9454`, independently verified — see the M2 receipt above). Remaining: the M2/M3 join (lead-owned, below) and M4 (property run at recorded seed + final proof), which starts on the post-join tree.
+- **M2 landed** (merged at `04f9454`, independently verified — see the M2 receipt above). **M2/M3 join landed** at `57b95ce` (lead-owned; receipt and real-browser evidence below). Remaining: the a11y suite's real-hook swap (worker in flight on `obv/connvo-notes-f1-a11y-real`, branched from `57b95ce`) and M4 (property run at recorded seed + final proof), which starts on the post-join tree.
 - **Incident record (2026-10-11):** a shared-sandbox session reset destroyed M2's local-only milestone commit (`5dc0d39`), and its replacement worker died terminally after 5 rebirth attempts. Recovery preserved the surviving tree as checkpoint `7e810db` and the relaunched task completed the milestone from it. Lesson for every milestone on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
 
 **Left**
 
 - M4 as listed under Milestones; merge each remaining milestone into this branch with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push. M4 runs on the post-join tree.
-- M2/M3 join (after M2 lands): replace the a11y tests' `@/hooks/notes` mock with the real hook; collapse M3's signature-alignment cast; swap `defaultNotesTransport`'s placeholder for the M2 Convex wiring (the marked one-liner); then run the deferred real-browser checks at 1440×900 and 390×844 (responsive, color-contrast, focus-visibility) and attach screenshots to the PR body copy. **Browser-evidence blocker found and fix sketched (unverified, lead-owned):** `/dev/notes-preview` is unreachable locally — the WorkOS AuthKit middleware in `src/proxy.ts` throws without `WORKOS_REDIRECT_URI`/`NEXT_PUBLIC_WORKOS_REDIRECT_URI` (the installed authkit reads the `NEXT_PUBLIC_` name), and with dummy env it hangs on the middlewareAuth handshake to api.workos.com, which the egress proxy blocks. Sketch: exclude `dev` paths from the middleware matcher (the demo route has no auth surface). Re-apply the exact edit at the join and verify before re-running browser checks.
+- A11y real-hook swap (worker in flight, `obv/connvo-notes-f1-a11y-real` off `57b95ce`): drive the panel a11y matrix's seven states through the real `useNotesLedger` + M2 harness instead of the `@/hooks/notes` mock, preserving every user-observable assertion (jest-axe per state, keyboard walkthrough, reduced motion, retry semantics asserted as real recovery). Merge into this branch with `--no-ff` when green.
+- ~~M2/M3 join~~ **Done at `57b95ce`** (was: un-mock a11y signature cast, wire Convex transport, stable client identity, dev-route middleware exclusion, deferred browser checks — all landed; browser checks below).
 
 **How to continue**
 
