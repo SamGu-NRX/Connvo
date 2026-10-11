@@ -45,7 +45,7 @@ const scoringWeightsV = v.object({
 /**
  * Default scoring weights (can be adjusted based on analytics)
  */
-const DEFAULT_WEIGHTS: CompatibilityFeatures = {
+export const DEFAULT_WEIGHTS: CompatibilityFeatures = {
   interestOverlap: 0.25,
   experienceGap: 0.15,
   industryMatch: 0.1,
@@ -383,7 +383,7 @@ export const getUserScoringData = internalQuery({
 /**
  * Calculate all compatibility features between two users
  */
-async function calculateCompatibilityFeatures(
+async export function calculateCompatibilityFeatures(
   ctx: any, // Convex action context - keeping as any for simplicity
   user1Data: UserScoringData,
   user2Data: UserScoringData,
@@ -475,7 +475,7 @@ async function calculateCompatibilityFeatures(
 /**
  * Calculate interest overlap score
  */
-function calculateInterestOverlap(
+export function calculateInterestOverlap(
   user1Interests: string[],
   user2Interests: string[],
   user1ConstraintInterests: string[],
@@ -518,7 +518,7 @@ function calculateInterestOverlap(
 /**
  * Calculate experience gap score (complementary experience is good)
  */
-function calculateExperienceGap(
+export function calculateExperienceGap(
   experience1?: string,
   experience2?: string,
 ): number {
@@ -549,7 +549,7 @@ function calculateExperienceGap(
 /**
  * Calculate industry/field match score
  */
-function calculateIndustryMatch(
+export function calculateIndustryMatch(
   field1?: string,
   field2?: string,
   company1?: string,
@@ -591,7 +591,7 @@ function calculateIndustryMatch(
 /**
  * Calculate language overlap score
  */
-function calculateLanguageOverlap(
+export function calculateLanguageOverlap(
   languages1: string[],
   languages2: string[],
 ): number {
@@ -606,7 +606,7 @@ function calculateLanguageOverlap(
 /**
  * Calculate role complementarity score
  */
-function calculateRoleComplementarity(
+export function calculateRoleComplementarity(
   roles1: string[],
   roles2: string[],
 ): number {
@@ -640,7 +640,7 @@ function calculateRoleComplementarity(
 /**
  * Calculate org constraint match score
  */
-function calculateOrgConstraintMatch(
+export function calculateOrgConstraintMatch(
   orgId1?: string,
   orgId2?: string,
   constraint1?: string,
@@ -670,7 +670,7 @@ function calculateOrgConstraintMatch(
 /**
  * Calculate weighted final score
  */
-function calculateWeightedScore(
+export function calculateWeightedScore(
   features: CompatibilityFeatures,
   weights: CompatibilityFeatures,
 ): number {
