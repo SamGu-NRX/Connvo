@@ -80,6 +80,20 @@ export const probeInit = String.raw`
   }
   window.RTCPeerConnection = WrappedPC;
 
+  // H-08's contract mechanism is a forced ICE restart on the live PCs, not
+  // socket killing (that was the mock relay's approximation and it broke
+  // real transports). Returns one boolean per wrapped pc so the scenario
+  // can assert the restart was actually attempted on every connection.
+  window.__probeRestartIce = () => (window.__wrappedPcs || []).map((pc) => {
+    try {
+      if (typeof pc.restartIce !== 'function') return false;
+      pc.restartIce();
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
   if (NativeGUM) {
     navigator.mediaDevices.getUserMedia = async (constraints) => {
       const stream = await NativeGUM(constraints);

@@ -143,6 +143,8 @@ const rooms = new Map();
 const sessionEvents = [];
 /** @type {WeakMap<object, string>} */
 const leaveReasonBySocket = new WeakMap();
+/** participant id -> its live socket; the reference killPeerSocket hook uses this. */
+const socketsByParticipant = new Map();
 
 /** @param {string} participant @param {string} reason */
 function recordDeparture(participant, reason) {
@@ -164,6 +166,22 @@ const server = http.createServer((req, res) => {
   // for the reference transports — the in-memory mock relay's equivalent).
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   const addr = /** @type {import('node:net').AddressInfo} */ (server.address());
+  // Fault hook, transport-uniform with the mock relay's killPeerSocket:
+  // terminates the participant's socket WITHOUT a bye, so the close handler
+  // records a network death ("disconnected") exactly as a tab kill would.
+  if (req.method === "POST" && url.pathname === "/drop") {
+    const who = url.searchParams.get("participant");
+    const sock = who ? socketsByParticipant.get(who) : null;
+    if (!sock) {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ ok: false, error: `no live socket for participant ${who ?? "?"}` }));
+      return;
+    }
+    sock.terminate();
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: true, dropped: who }));
+    return;
+  }
   if (url.searchParams.get("events")) {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true, variant, port: addr.port, sessionEvents }));
@@ -278,6 +296,7 @@ wss.on("connection", (socket) => {
     }
     self = verdict.subject;
     room.set(self, socket);
+    socketsByParticipant.set(self, socket);
 
     const peers = [...room.keys()].filter((id) => id !== self);
     socket.send(JSON.stringify({ type: "welcome", selfId: self, peers }));

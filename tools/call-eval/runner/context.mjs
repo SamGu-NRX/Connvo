@@ -228,10 +228,12 @@ export class RunContext {
 
   // Fault hooks (mock relay only; integration mode reports absence).
   killPeerSocket(participant) {
-    if (!this.relay) {
-      throw new Error(`killPeerSocket unavailable for transport "${this.transport}" — H-07's signaling drop needs the harness relay`);
-    }
-    return this.relay.killPeerSocket(participant);
+    if (this.relay) return this.relay.killPeerSocket(participant);
+    // Reference transports: the signaling server exposes the same fault
+    // hook (POST /drop) — the peer's socket dies without a bye, exactly
+    // like the mock relay's socket kill.
+    if (this.signaling?.dropParticipant) return this.signaling.dropParticipant(participant);
+    throw new Error(`killPeerSocket unavailable for transport "${this.transport}" — no relay and no reference signaling handle`);
   }
 
   sessionEvents() {

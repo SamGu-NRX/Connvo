@@ -42,6 +42,9 @@ class FakePC {
   getReceivers() {
     return [];
   }
+  restartIce() {
+    this.__restarted = (this.__restarted ?? 0) + 1;
+  }
 }
 
 function fakeTrack() {
@@ -112,6 +115,18 @@ describe("probe connection records", () => {
     await pc.getStats();
     expect(probe.getStatsCalls).toBe(1);
     expect(windowObj.__wrappedPcs).toContain(pc);
+  });
+
+  it("exposes __probeRestartIce over every wrapped pc (H-08's mechanism)", () => {
+    const { windowObj } = boot();
+    expect(typeof windowObj.__probeRestartIce).toBe("function"); // old probe: undefined
+    windowObj.__wrappedPcs = []; // reset: boot() itself may have created none
+    const pc1 = new windowObj.RTCPeerConnection();
+    const pc2 = new windowObj.RTCPeerConnection();
+    const result = windowObj.__probeRestartIce();
+    expect(result).toEqual([true, true]);
+    expect(pc1.__restarted).toBe(1);
+    expect(pc2.__restarted).toBe(1);
   });
 
   it("counts live tracks through the wrapped getUserMedia", async () => {

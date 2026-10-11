@@ -99,8 +99,8 @@ export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = 
  * H-01's time-to-first-remote-frame: ms from `since` until the first decoded
  * remote frame whose counter parses.
  */
-export async function timeToFirstRemoteFrame(peer, participantId, since) {
-  const deadline = Date.now() + 20000;
+export async function timeToFirstRemoteFrame(peer, participantId, since, deadlineMs = 20000) {
+  const deadline = Date.now() + deadlineMs;
   for (;;) {
     const frame = await decodeRemoteFrame(peer, participantId);
     if (frame.present && frame.counter?.ok) {

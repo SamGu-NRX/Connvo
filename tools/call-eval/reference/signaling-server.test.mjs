@@ -380,4 +380,37 @@ describe("reference signaling server", () => {
 
     child.kill();
   }, 15000);
+
+  it("terminates a participant's socket on POST /drop without a bye (reference killPeerSocket hook)", async () => {
+    const child = spawnOnPort(9302);
+    await waitForReady(child);
+
+    const b = new WsClient("ws://127.0.0.1:9302");
+    await b.opened;
+    b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
+    expect((await b.next())?.type).toBe("welcome");
+
+    const res = await fetch("http://127.0.0.1:9302/drop?participant=local-test-b", { method: "POST" });
+    expect(res.status).toBe(200);
+
+    await b.closed;
+    // terminate() is abrupt: no 4002 bye code, and the log records a network
+    // death — the old server had no route, so this fails there.
+    expect(b.closedCode).not.toBe(4002);
+
+    const deadline = Date.now() + 3000;
+    let events = [];
+    do {
+      events = (await (await fetch("http://127.0.0.1:9302/?events=1")).json()).sessionEvents ?? [];
+      if (events.length > 0) break;
+      await new Promise((r) => setTimeout(r, 200));
+    } while (Date.now() < deadline);
+    expect(events).toContainEqual(expect.objectContaining({ participant: "local-test-b", reason: "disconnected" }));
+
+    // Unknown participants fail with a named 404.
+    const missing = await fetch("http://127.0.0.1:9302/drop?participant=nobody", { method: "POST" });
+    expect(missing.status).toBe(404);
+
+    child.kill();
+  }, 15000);
 });

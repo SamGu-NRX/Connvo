@@ -187,6 +187,7 @@ function waitForReady(child, timeoutMs) {
  *   port: number, variant: string, signalUrl: string,
  *   membersPath: string, jwksPath: string, stop: () => void,
  *   sessionEvents: () => Promise<Array<{ participant: string, reason: string, at: number }>>,
+ *   dropParticipant: (participantId: string) => Promise<void>,
  * }>}
  */
 export async function startReferenceSignaling({
@@ -241,6 +242,12 @@ export async function startReferenceSignaling({
         // H-10/H-11 evidence: the server's GET /?events=1 returns its
         // in-memory departure log (the mock relay's sessionEvents
         // equivalent).
+        // Fault hook, transport-uniform with the mock relay's
+        // killPeerSocket (H-07's signaling drop on reference transports).
+        dropParticipant: async (participantId) => {
+          const res = await fetch(`http://127.0.0.1:${ready.port}/drop?participant=${encodeURIComponent(participantId)}`, { method: "POST" });
+          if (!res.ok) throw new Error(`drop ${participantId}: HTTP ${res.status}`);
+        },
         sessionEvents: async () => {
           const res = await fetch(`http://127.0.0.1:${ready.port}/?events=1`);
           const body = /** @type {{ sessionEvents?: Array<{ participant: string, reason: string, at: number }> }} */ (

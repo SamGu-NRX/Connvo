@@ -25,6 +25,19 @@ const HEADLESS_SHELL_ARGS = (videoFixture, audioFixture) => [
 export { HEADLESS_SHELL_ARGS as chromiumLaunchArgs };
 
 /**
+ * Launch args for a peer. The full chromium build drops the fake-UI flag:
+ * it auto-grants every permission prompt, which would stop H-06 from ever
+ * testing real denial (headless chromium denies by default; the scenario
+ * grants explicitly for its retry step).
+ * @param {{ fullChromium?: boolean, fixtureVideo: string, fixtureAudio: string }} opts
+ * @returns {string[]}
+ */
+export function peerLaunchArgs({ fullChromium = false, fixtureVideo, fixtureAudio }) {
+  const args = HEADLESS_SHELL_ARGS(fixtureVideo, fixtureAudio);
+  return fullChromium ? args.filter((a) => a !== "--use-fake-ui-for-media-stream") : args;
+}
+
+/**
  * @param {object} opts
  * @param {string} opts.fixtureVideo y4m for the fake camera
  * @param {string} opts.fixtureAudio wav for the fake mic
@@ -45,7 +58,7 @@ export async function launchPeer({
 } = {}) {
   const launchOpts = {
     headless: true,
-    args: HEADLESS_SHELL_ARGS(fixtureVideo, fixtureAudio),
+    args: peerLaunchArgs({ fullChromium, fixtureVideo, fixtureAudio }),
   };
   if (fullChromium) launchOpts.channel = "chromium"; // full build, not the shell
   const browser = await chromium.launch(launchOpts);

@@ -16,7 +16,9 @@ import {
   assertProbePresent,
 } from "./scenario-kit.mjs";
 import { killPeerTab } from "./peers.mjs";
+import { loadContracts } from "./contracts.mjs";
 import {
+  classifyRemoteColor,
   decodeRemoteFrame,
   matchPeerColor,
   sampleRemoteTone,
@@ -39,36 +41,55 @@ const tileCountAll = `() => document.querySelectorAll('[data-testid="remote-medi
 // decoder bundle; tolerant classification per the S0b cross-thread note.
 async function installColorHook(peer) {
   const bundleSrc = await decoderBundle();
-  await peer.page.evaluate(`(bundleSrc => {
-    if (!window.__decodeRemoteColor) {
-      window.__decodeRemoteColor = async (participantId) => {
-        const decoders = new Function(bundleSrc + "\\nreturn { decodeBarcodeColor };")();
-        const tile = document.querySelector('[data-testid="remote-media"][data-participant-id="' + participantId + '"]');
-        const video = tile?.querySelector("video");
-        if (!video || !video.videoWidth) return { ok: false, label: "none", distance: 999 };
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const data = ctx.getImageData(0, 0, canvas.width, Math.min(200, canvas.height));
-        return decoders.decodeBarcodeColor(data);
-      };
-    }
-  })(${JSON.stringify(bundleSrc)})`);
+  const { PEER_COLORS, SECOND_CAMERA_COLOR, COLOR_TOLERANCE } = loadContracts();
+  // The hook classifies against the peer palette with the contract tolerance
+  // and returns { ok, label, distance } (plus the raw color for evidence):
+  // the reviewed bug returned the raw decoder RGB, so H-05's `c.ok &&
+  // c.label === "second-camera"` could never see the expected shape.
+  const palette = [
+    ["A", PEER_COLORS.A],
+    ["B", PEER_COLORS.B],
+    ["C", PEER_COLORS.C],
+    ["second-camera", SECOND_CAMERA_COLOR],
+  ];
+  await peer.page.evaluate(`((bundleSrc, palette, tolerance, classifySrc) => {
+    if (window.__decodeRemoteColor) return;
+    const classify = new Function('return ' + classifySrc)();
+    window.__decodeRemoteColor = async (participantId) => {
+      const decoders = new Function(bundleSrc + "\\nreturn { decodeBarcodeColor };")();
+      const tile = document.querySelector('[data-testid="remote-media"][data-participant-id="' + participantId + '"]');
+      const video = tile?.querySelector("video");
+      if (!video || !video.videoWidth) return { ok: false, label: "none", distance: 999 };
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const data = ctx.getImageData(0, 0, canvas.width, Math.min(200, canvas.height));
+      const color = decoders.decodeBarcodeColor(data);
+      return { ...classify(color, palette, tolerance), color };
+    };
+  })(${JSON.stringify(bundleSrc)}, ${JSON.stringify(palette)}, ${COLOR_TOLERANCE}, ${JSON.stringify(classifyRemoteColor.toString())})`);
 }
 
 /** H-01 — each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s */
 export async function scenario_H_01(ctx, { log }) {
+  // The contract's 5 s bar runs from the moment joining begins (the join
+  // click; auto-join fires at page mount) — the reviewed bug started the
+  // clock after both peers were already connected and never enforced the
+  // deadline at all.
+  const t0 = Date.now();
   const { peerA, peerB, tJoinMs } = await joinPair(ctx);
   await assertProbePresent(peerA);
   await assertProbePresent(peerB);
   await installColorHook(peerA);
   await installColorHook(peerB);
 
-  const t0 = Date.now();
-  const aSeesB = await timeToFirstRemoteFrame(peerA, "B", t0);
-  const bSeesA = await timeToFirstRemoteFrame(peerB, "A", t0);
+  const aSeesB = await timeToFirstRemoteFrame(peerA, "B", t0, 5000);
+  const bSeesA = await timeToFirstRemoteFrame(peerB, "A", t0, 5000);
+  if (aSeesB.ms > 5000 || bSeesA.ms > 5000) {
+    throw new ScenarioError(`H-01: time to first remote frame exceeded the 5 s bar (A ${aSeesB.ms} ms, B ${bSeesA.ms} ms)`, { aSeesB, bSeesA });
+  }
 
   const colorA = await decodeRemoteFrame(peerA, "B");
   const colorB = await decodeRemoteFrame(peerB, "A");
@@ -251,6 +272,7 @@ export async function scenario_H_07(ctx, { seed }) {
   ctx.enableRelay();
   await ctx.shaperFor("B").ready; // B's own shaper; A stays on host candidates
   const { peerA, peerB } = await joinPair(ctx);
+  await installColorHook(peerB); // the media-resume check decodes through the hook
 
   const recoveries = [];
   for (const durationS of [3, 10, 30]) {
@@ -291,25 +313,41 @@ export async function scenario_H_07(ctx, { seed }) {
 /** H-08 — recovers within 10 s (signaling outage mid-call: both sockets die at once) */
 export async function scenario_H_08(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
+  await installColorHook(peerA);
+  await installColorHook(peerB);
 
-  ctx.killPeerSocket("A"); // relay-outage observable: all sockets die at once
-  ctx.killPeerSocket("B");
-  await waitFor(peerA, phaseIs("reconnecting"), { timeoutMs: 15000, describe: "A reconnecting" });
-  await waitFor(peerB, phaseIs("reconnecting"), { timeoutMs: 15000, describe: "B reconnecting" });
+  // The contract's mechanism is a FORCED ICE RESTART on the live PCs, not
+  // killing signaling sockets (that was the mock relay's approximation and
+  // it never exercised the recovery path the contract names). The probe
+  // helper returns one boolean per wrapped pc, so the scenario asserts the
+  // restart was actually attempted on every connection.
+  const restartedA = await peerA.page.evaluate(`(() => window.__probeRestartIce())()`);
+  const restartedB = await peerB.page.evaluate(`(() => window.__probeRestartIce())()`);
+  if (!Array.isArray(restartedA) || restartedA.length === 0 || !restartedA.every(Boolean)) {
+    throw new ScenarioError(`H-08: ICE restart not attempted on A's connections (${JSON.stringify(restartedA)})`);
+  }
+  if (!Array.isArray(restartedB) || restartedB.length === 0 || !restartedB.every(Boolean)) {
+    throw new ScenarioError(`H-08: ICE restart not attempted on B's connections (${JSON.stringify(restartedB)})`);
+  }
 
   const t0 = Date.now();
-  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "A recovered within 10 s" });
-  await waitFor(peerB, phaseIs("connected"), { timeoutMs: 10000, describe: "B recovered within 10 s" });
   await waitForValue(peerA, `async () => { const c = await window.__decodeRemoteColor("B"); return { ok: c?.ok }; }`, (c) => c.ok, {
     timeoutMs: 10000,
-    describe: "frames resumed",
+    describe: "A sees B's frames within 10 s of the restart",
   });
-  return { recoveryMs: Date.now() - t0 };
+  await waitForValue(peerB, `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok }; }`, (c) => c.ok, {
+    timeoutMs: 10000,
+    describe: "B sees A's frames within 10 s of the restart",
+  });
+  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "A phase connected within 10 s" });
+  await waitFor(peerB, phaseIs("connected"), { timeoutMs: 10000, describe: "B phase connected within 10 s" });
+  return { recoveryMs: Date.now() - t0, restartedPcs: restartedA.length + restartedB.length };
 }
 
 /** H-09 — reloaded peer rejoins; no ghost participant after 10 s */
 export async function scenario_H_09(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
+  await installColorHook(peerB); // the no-ghost media check decodes through the hook
 
   await peerA.page.reload({ waitUntil: "domcontentloaded" }); // same URL: auto-rejoin
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000, describe: "reloaded A reconnected" });
@@ -409,15 +447,16 @@ export async function scenario_H_12(ctx, { seed }) {
 
 /** H-13 — five leave/rejoin cycles: live connection and track counts return to baseline */
 export async function scenario_H_13(ctx) {
-  let { peerA, peerB } = await joinPair(ctx);
+  const { peerA, peerB } = await joinPair(ctx);
   const baseline = await probeState(peerA);
 
+  // ONE page for all five cycles: relaunching per cycle hid leaks the way
+  // the reviewed bug did — a fresh page forgets the old page's connections
+  // and tracks, so accumulated live state never showed in the probe.
   for (let cycle = 1; cycle <= 5; cycle++) {
     await click(peerA, "leave-call");
     await waitFor(peerA, phaseIs("left"), { timeoutMs: 5000, describe: `cycle ${cycle}: left` });
-    await peerA.close();
-    // A rejoins on a fresh page; B never leaves.
-    peerA = await ctx.launchPeer("A");
+    await click(peerA, "join-call"); // same page re-joins; B never leaves
     await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000, describe: `cycle ${cycle}: A rejoined` });
   }
 

@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ScenarioError, waitFor, phaseIs } from "./scenario-kit.mjs";
+import { ScenarioError, waitFor, phaseIs, click } from "./scenario-kit.mjs";
 
 const OUT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "out");
 const SCREENSHOTS_DIR = path.join(OUT_DIR, "screenshots");
@@ -176,6 +176,7 @@ export async function scenario_P_05(ctx) {
     try {
       await peer.page.setViewportSize({ width: 1440, height: 900 });
       const layout = await assertLayoutIntact({ width: 1440, height: 900 }, `P-05 ${c.label} lobby`)(peer.page);
+      await click(peer, "join-call"); // lobby has autojoin=0: the reviewed bug never joined at all
       await waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: `P-05 ${c.label} connected` });
       const post = await assertLayoutIntact({ width: 1440, height: 900 }, `P-05 ${c.label} connected`)(peer.page);
       const errorShown = await peer.page.evaluate(`(() => { const el = document.querySelector('[data-testid="call-error"]'); return !!el && !el.hidden && el.textContent.length > 0; })()`,

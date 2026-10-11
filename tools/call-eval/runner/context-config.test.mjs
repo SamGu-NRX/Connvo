@@ -95,6 +95,19 @@ describe("RunContext.setSeed shaper re-creation", () => {
     expect(ctx.shapers.get("A")).not.toBe(first);
   });
 
+  it("killPeerSocket falls back to the reference signaling drop", async () => {
+    const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3311" });
+    const dropParticipant = vi.fn(async () => {});
+    ctx.signaling = /** @type {any} */ ({ dropParticipant }); // partial handle: the fallback contract
+    await ctx.killPeerSocket("B");
+    expect(dropParticipant).toHaveBeenCalledWith("B");
+  });
+
+  it("killPeerSocket fails loudly when neither relay nor reference handle exists", async () => {
+    const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3311" });
+    expect(() => ctx.killPeerSocket("B")).toThrow(/no relay and no reference signaling handle/); // sync throw
+  });
+
   it("recreates shapers with the new seed but keeps port assignment stable", async () => {
     const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3311" });
     ctx._relayEnabled = true;
