@@ -5,21 +5,35 @@
  *
  * Usage:
  *   node tools/call-eval/scripts/run-eval.mjs \
- *     [--transport=mock,bench] \
+ *     [--transport=mock | reference | reference-<variant>] \
  *     [--scenarios=all | H-01,H-02 | H-01..H-16] \
  *     [--seeds=1,2 | 1..20] \
  *     [--suite=H|P|all] \
  *     [--base-url=https://<origin>] \
  *     [--list]
  *
- * Without --base-url each transport name maps to the bundled mock bench page
- * served by the harness relay; pass --base-url to point scenarios at the real
- * bench route (e.g. http://localhost:3000 — the URL must serve the DOM
- * contract at /dev/call-bench/[transport], which --base-url+benchPath selects).
+ * Transport resolution:
+ * - Without --base-url every transport name maps to the bundled mock bench
+ *   page served by the harness relay (the name is then a reporting label).
+ * - With --base-url, scenarios navigate the real bench route
+ *   <base-url>/dev/call-bench/<transport>, which must serve the DOM contract
+ *   (tools/call-eval/CONTRACT.md). Reference transports additionally get a
+ *   runner-spawned signaling server fed --jwks-file / --members-file per the
+ *   H-14 design note (docs/plan/handoffs/connvo-call-harness-f1.md), and its
+ *   ws:// address is passed to the page additively as ?signal=.
+ *
+ * Suite wiring: H-14 is excluded from the default/all suite of this shard
+ * (its verification machinery ships; the scenario itself needs a live local
+ * backend) — name it explicitly via --scenarios=H-14 to run it anyway.
  * Exit code 0 only when every executed run passed.
  */
-import { runScenarios, H_IDS, P_IDS, ALL_SCENARIOS } from "../runner/run.mjs";
+import { runScenarios, H_IDS, P_IDS, ALL_SCENARIOS, wiredScenarioIds } from "../runner/run.mjs";
 
+/**
+ * @param {string} raw comma list, a..b range, "all", or empty
+ * @param {string[]} universe ids ranges resolve against
+ * @returns {string[]}
+ */
 function parseListRange(raw, universe) {
   if (!raw || raw === "all") return [...universe];
   if (raw.includes("..")) {
@@ -33,6 +47,10 @@ function parseListRange(raw, universe) {
   return raw.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+/**
+ * @param {string} raw seed list or range
+ * @returns {number[]}
+ */
 function parseSeeds(raw) {
   if (!raw) return [1];
   if (raw.includes("..")) {
@@ -45,7 +63,9 @@ function parseSeeds(raw) {
   return raw.split(",").map((s) => Number(s.trim())).filter((n) => Number.isInteger(n));
 }
 
-const args = process.argv.slice(2);
+// pnpm forwards `pnpm call-eval -- --flag=x` with a literal `--` separator
+// before the flags; the CLI is all-flag so separator tokens never matter.
+const args = process.argv.slice(2).filter((a) => a !== "--");
 if (args.includes("--help") || args.includes("-h")) {
   console.log((await import("node:fs")).readFileSync(new URL(import.meta.url), "utf8").match(/\/\*\*[\s\S]*?\*\//)?.[0]?.replace(/^\*\*[ \t]*/gm, "") ?? "");
   process.exit(0);
@@ -65,8 +85,28 @@ for (const arg of args) {
 
 const suite = (flags.suite ?? "H").toUpperCase();
 if (!["H", "P", "ALL"].includes(suite)) throw new Error(`--suite must be H, P or ALL (got "${flags.suite}")`);
-const universe = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
-const scenarios = parseListRange(flags.scenarios, universe);
+// Defaults (no --scenarios / "all" / ranges) select the WIRED suite of this
+// shard; explicitly NAMED scenarios run as requested — the escape hatch.
+const fullUniverse = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
+const wired = new Set(wiredScenarioIds(suite));
+const rawScenarios = flags.scenarios;
+let scenarios;
+if (rawScenarios && !rawScenarios.includes("..") && rawScenarios !== "all") {
+  scenarios = rawScenarios.split(",").map((s) => s.trim()).filter(Boolean);
+  for (const id of scenarios) {
+    if (!wired.has(id)) {
+      console.log(`call-eval: WARNING ${id} is outside the wired ${suite} suite — running because it was named explicitly (needs a live local backend)`);
+    }
+  }
+} else if (rawScenarios && rawScenarios.includes("..")) {
+  scenarios = parseListRange(rawScenarios, fullUniverse).filter((id) => {
+    if (wired.has(id)) return true;
+    console.log(`call-eval: skipping ${id} — not wired (name it explicitly to run)`);
+    return false;
+  });
+} else {
+  scenarios = [...wired];
+}
 const seeds = parseSeeds(flags.seeds);
 const transports = (flags.transport ?? "mock").split(",").map((s) => s.trim()).filter(Boolean);
 const baseUrl = flags["base-url"] ?? null;

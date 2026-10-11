@@ -18,11 +18,20 @@ Transport-agnostic two-peer call harness for scoring call transports
   Not committed except where the plan requires a committed matrix
   (`self-proof/`).
 
-Run:
+Run (the `call-eval` package script invokes `tools/call-eval/scripts/run-eval.mjs`):
 
 ```sh
-pnpm call-eval:backend   # local Convex + seeded identities + next dev
-pnpm call-eval -- --transport=reference --suite=all --seeds=20
+pnpm call-eval -- --transport=mock --suite=all --seeds=1   # bundled mock bench page — no backend needed
+pnpm call-eval:backend                                     # once, for bench-route runs: local Convex + seeded identities + next dev
+pnpm call-eval -- --transport=reference --suite=all --seeds=20 --base-url=http://localhost:3000
 ```
+
+What works: the mock transport runs the full wired suite against the bundled
+mock bench page with no backend. Bench-route runs (`--base-url`) navigate
+`/dev/call-bench/<transport>`; reference transports get a runner-spawned
+signaling server fed `--jwks-file` / `--members-file` per the H-14 design note
+(`docs/plan/handoffs/connvo-call-harness-f1.md`). The wired suite is every H
+scenario except H-14 (name `--scenarios=H-14` to run it against a live local
+backend) plus P-01..P-05.
 
 More detail lives in `CONTRACT.md`; the plan is authoritative where they differ.

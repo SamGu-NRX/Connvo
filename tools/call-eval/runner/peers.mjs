@@ -11,12 +11,18 @@ import { probeInit, probeConfigInit } from "./probe.mjs";
 const HEADLESS_SHELL_ARGS = (videoFixture, audioFixture) => [
   "--use-fake-device-for-media-stream",
   "--use-fake-ui-for-media-stream",
+  // Shared-box hygiene: /dev/shm is small and there is no GPU on the eval
+  // host — without these, tabs crash under memory pressure and GL init.
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
   `--use-file-for-fake-video-capture=${videoFixture}`,
   `--use-file-for-fake-audio-capture=${audioFixture}`,
   "--autoplay-policy=no-user-gesture-required",
   "--disable-renderer-backgrounding",
   "--mute-audio", // analysis taps the track, not the speaker
 ];
+
+export { HEADLESS_SHELL_ARGS as chromiumLaunchArgs };
 
 /**
  * @param {object} opts

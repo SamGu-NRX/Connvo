@@ -20,6 +20,19 @@ export const H_IDS = Array.from({ length: 16 }, (_, i) => `H-${String(i + 1).pad
 export const P_IDS = Array.from({ length: 5 }, (_, i) => `P-0${i + 1}`);
 export const ALL_SCENARIOS = [...H_IDS, ...P_IDS];
 
+/**
+ * H-14 stays out of scope for this shard: its membership/auth VERIFICATION
+ * machinery ships (reference-signaling.mjs --jwks-file/--members-file), but
+ * the scenario itself only runs when explicitly requested via
+ * --scenarios=H-14 (it needs a live local backend to mint tokens).
+ */
+const UNWIRED_SCENARIOS = new Set(["H-14"]);
+
+export function wiredScenarioIds(suite = "ALL") {
+  const ids = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
+  return ids.filter((id) => !UNWIRED_SCENARIOS.has(id));
+}
+
 const H_15_METHOD = {
   method:
     "Local coturn TURN with all media forced relay-only through a per-participant user-space UDP shaper (seeded Node dgram proxy adding loss/delay)",

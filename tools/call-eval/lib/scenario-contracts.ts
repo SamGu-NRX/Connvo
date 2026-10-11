@@ -1,8 +1,10 @@
 /**
- * Verbatim pass conditions from docs/plan/CALL-PLAN.md (mirrored in
- * tools/call-eval/CONTRACT.md). These strings are the contract: scenarios must
- * not paraphrase them. contracts.mjs extracts them at runtime for results and
- * summary output because the runner runs on plain Node (no TS import).
+ * Verbatim pass conditions from docs/plan/CALL-PLAN.md — the H table under
+ * "## Evals: the two-peer harness (H)" and the "Polish checks (P)" list
+ * (mirrored in tools/call-eval/CONTRACT.md). These strings are the contract:
+ * scenarios must not paraphrase them. contracts.mjs extracts them at runtime
+ * for results and summary output because the runner runs on plain Node (no
+ * TS import).
  */
 
 export const H_PASS_CONDITIONS = {
