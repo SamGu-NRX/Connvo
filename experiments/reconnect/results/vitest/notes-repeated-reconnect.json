@@ -1,0 +1,12 @@
+{
+  "scenario": "notes/repeated-reconnect",
+  "sources": [
+    "src/hooks/useCollaborativeNotes.ts"
+  ],
+  "counts": {
+    "cycles": 4,
+    "ops": 4,
+    "duplicatedOps": 4,
+    "finalServerContent": "hello!!!!!!!!"
+  }
+}

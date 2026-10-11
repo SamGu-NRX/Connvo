@@ -1,0 +1,147 @@
+{
+  "scenario": "production/notes-batch-duplicate",
+  "layer": "production-handler",
+  "handler": "notes/mutations.ts: batchApplyNoteOperations",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "sentArgs": {
+        "clientSequences": [
+          1,
+          2
+        ],
+        "expectedVersion": 0
+      },
+      "outcome": "accepted",
+      "result": {
+        "failed": 0,
+        "newVersion": 1,
+        "processed": 2,
+        "results": [
+          {
+            "conflicts": [],
+            "serverSequence": 1,
+            "transformedOperation": {
+              "content": "AA",
+              "position": 0,
+              "type": "insert"
+            }
+          },
+          {
+            "conflicts": [],
+            "serverSequence": 2,
+            "transformedOperation": {
+              "content": "BB",
+              "position": 2,
+              "type": "insert"
+            }
+          }
+        ],
+        "success": true
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 2,
+        "noteOpsSequences": [
+          1,
+          2
+        ],
+        "notes": {
+          "content": "AABB",
+          "version": 1
+        },
+        "queueRows": []
+      }
+    },
+    {
+      "attempt": 2,
+      "sentArgs": {
+        "clientSequences": [
+          1,
+          2
+        ],
+        "expectedVersion": 0
+      },
+      "outcome": "rejected",
+      "error": {
+        "code": "CONFLICT",
+        "message": "Version mismatch: expected 0, got 1"
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 2,
+        "noteOpsSequences": [
+          1,
+          2
+        ],
+        "notes": {
+          "content": "AABB",
+          "version": 1
+        },
+        "queueRows": []
+      }
+    },
+    {
+      "attempt": 3,
+      "sentArgs": {
+        "clientSequences": [
+          1,
+          2
+        ],
+        "expectedVersion": 1
+      },
+      "outcome": "accepted",
+      "result": {
+        "failed": 0,
+        "newVersion": 2,
+        "processed": 2,
+        "results": [
+          {
+            "conflicts": [],
+            "serverSequence": 3,
+            "transformedOperation": {
+              "content": "AA",
+              "position": 0,
+              "type": "insert"
+            }
+          },
+          {
+            "conflicts": [],
+            "serverSequence": 4,
+            "transformedOperation": {
+              "content": "BB",
+              "position": 4,
+              "type": "insert"
+            }
+          }
+        ],
+        "success": true
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 4,
+        "noteOpsSequences": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "notes": {
+          "content": "AAAABBBB",
+          "version": 2
+        },
+        "queueRows": []
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "stale duplicate REJECTED by the expectedVersion guard (seen as CONFLICT after the first batch bumped the version); a re-based duplicate (same clientSequences) is ACCEPTED and re-applies every op with positions transformed server-side — sequence numbers dedupe nothing"
+}

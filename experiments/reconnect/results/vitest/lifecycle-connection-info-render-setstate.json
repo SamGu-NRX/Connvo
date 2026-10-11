@@ -1,0 +1,10 @@
+{
+  "scenario": "lifecycle/connection-info-render-setstate",
+  "sources": [
+    "src/hooks/useMeetingLifecycle.ts"
+  ],
+  "counts": {
+    "renderLoopCapped": true,
+    "antiPattern": "setCurrentMeetingId called inside getConnectionInfo during render"
+  }
+}

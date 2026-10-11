@@ -1,0 +1,12 @@
+{
+  "scenario": "lifecycle/start-ack-lost",
+  "sources": [
+    "src/hooks/useMeetingLifecycle.ts"
+  ],
+  "counts": {
+    "ops": 1,
+    "duplicatedOps": 1,
+    "startAcceptances": 2,
+    "finalState": "active"
+  }
+}

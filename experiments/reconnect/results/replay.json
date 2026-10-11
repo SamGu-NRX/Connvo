@@ -1,0 +1,151 @@
+{
+  "comparedRuns": "results/counts.prev.json",
+  "allScenariosAgree": true,
+  "perScenario": [
+    {
+      "id": "notes/control",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "notes/join-offline",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "notes/edit-ack-lost",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "notes/edit-request-lost",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "notes/edit-removed",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "notes/no-ack-control",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "notes/repeated-reconnect",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/control",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/start-ack-lost",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/start-request-lost",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/end-request-lost",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/end-ack-lost",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/prompts-action-offline",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "lifecycle/connection-info-render-setstate",
+      "layer": "simulated-transport",
+      "agrees": true
+    },
+    {
+      "id": "production/notes-apply-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/notes-hook-args",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/notes-batch-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/offline-queue-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/offline-sync-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/offline-retry-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/lifecycle-start-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/lifecycle-end-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production/lifecycle-create-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/notes-first-delivery",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/notes-duplicate-identical-args",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/notes-duplicate-version-aware",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/lifecycle-start-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/lifecycle-end-duplicate",
+      "layer": "production-handler",
+      "agrees": true
+    },
+    {
+      "id": "production-handlers/webhook-duplicate-redelivery",
+      "layer": "production-handler",
+      "agrees": true
+    }
+  ]
+}

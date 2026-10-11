@@ -1,0 +1,44 @@
+{
+  "scenario": "notes/edit-ack-lost",
+  "sources": [
+    "src/hooks/useCollaborativeNotes.ts"
+  ],
+  "counts": {
+    "ops": 1,
+    "duplicatedOps": 1,
+    "serverContent": "hello world world",
+    "uiContentAfterRestore": "hello world world"
+  },
+  "trace": [
+    {
+      "step": "edit-sent+cut",
+      "ui": {
+        "content": "hello",
+        "version": 3,
+        "isSyncing": true,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "server": {
+        "content": "hello world",
+        "version": 4
+      },
+      "acceptedNoteOps": 1
+    },
+    {
+      "step": "restored+acked",
+      "ui": {
+        "content": "hello world world",
+        "version": 5,
+        "isSyncing": false,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "server": {
+        "content": "hello world world",
+        "version": 5
+      },
+      "acceptedNoteOps": 2
+    }
+  ]
+}

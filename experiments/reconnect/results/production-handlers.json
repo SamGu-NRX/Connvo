@@ -1,0 +1,137 @@
+{
+  "label": "PRODUCTION-OBSERVED: real registered handlers under duplicate delivery, exercised through convex-test with the real schema and auth guards. No fake-transport code decides any outcome below.",
+  "handlers": [
+    "convex/notes/mutations.ts:applyNoteOperation",
+    "convex/meetings/lifecycle.ts:startMeeting",
+    "convex/meetings/lifecycle.ts:endMeeting",
+    "convex/meetings/stream/streamHandlers.ts:dispatchWebhook"
+  ],
+  "observations": [
+    {
+      "id": "notes/first-delivery",
+      "handler": "notes.applyNoteOperation",
+      "delivery": "op insert 'hello' @0, clientSequence 0, expectedVersion 0",
+      "observed": "accepted",
+      "evidence": {
+        "result": {
+          "conflicts": [],
+          "newVersion": 1,
+          "serverSequence": 1,
+          "success": true,
+          "transformedOperation": {
+            "content": "hello",
+            "position": 0,
+            "type": "insert"
+          }
+        }
+      }
+    },
+    {
+      "id": "notes/duplicate-identical-args",
+      "handler": "notes.applyNoteOperation",
+      "delivery": "exact redelivery: same op, same clientSequence 0, same expectedVersion 0",
+      "observed": "rejected",
+      "evidence": {
+        "error": {
+          "message": "{\"code\":\"CONFLICT\",\"message\":\"Version mismatch: expected 0, got 1\",\"statusCode\":409,\"metadata\":\"undefined\"}",
+          "data": "\"{\\\"code\\\":\\\"CONFLICT\\\",\\\"message\\\":\\\"Version mismatch: expected 0, got 1\\\",\\\"statusCode\\\":409}\""
+        },
+        "notesAfter": {
+          "content": "hello",
+          "version": 1
+        },
+        "noteOpsCount": 1
+      }
+    },
+    {
+      "id": "notes/duplicate-version-aware",
+      "handler": "notes.applyNoteOperation",
+      "delivery": "same op + clientSequence 0, expectedVersion bumped to current",
+      "observed": "accepted",
+      "evidence": {
+        "result": {
+          "conflicts": [],
+          "newVersion": 2,
+          "serverSequence": 2,
+          "success": true,
+          "transformedOperation": {
+            "content": "hello",
+            "position": 0,
+            "type": "insert"
+          }
+        },
+        "notesAfter": {
+          "content": "hellohello",
+          "version": 2
+        },
+        "noteOpsCount": 2,
+        "duplicateContentApplied": true
+      }
+    },
+    {
+      "id": "lifecycle/start-duplicate",
+      "handler": "meetings.lifecycle.startMeeting",
+      "delivery": "start twice (first accepted, ack-lost retry simulated by immediate resend)",
+      "observed": "rejected",
+      "evidence": {
+        "first": {
+          "roomInfo": {
+            "iceServers": [
+              {
+                "urls": "stun:stun.l.google.com:19302"
+              },
+              {
+                "urls": "stun:stun1.l.google.com:19302"
+              }
+            ]
+          },
+          "success": true,
+          "videoProvider": "webrtc",
+          "webrtcReady": true
+        },
+        "duplicate": {
+          "message": "{\"code\":\"VALIDATION_ERROR\",\"message\":\"Meeting is already active\",\"statusCode\":400,\"metadata\":{\"field\":\"undefined\"}}",
+          "data": "\"{\\\"code\\\":\\\"VALIDATION_ERROR\\\",\\\"message\\\":\\\"Meeting is already active\\\",\\\"metadata\\\":{},\\\"statusCode\\\":400}\""
+        },
+        "meetingStateAfter": "active"
+      }
+    },
+    {
+      "id": "lifecycle/end-duplicate",
+      "handler": "meetings.lifecycle.endMeeting",
+      "delivery": "end twice after a successful start (second send = ack-lost retry)",
+      "observed": "rejected",
+      "evidence": {
+        "first": {
+          "success": true
+        },
+        "duplicate": {
+          "message": "{\"code\":\"VALIDATION_ERROR\",\"message\":\"Can only end active meetings\",\"statusCode\":400,\"metadata\":{\"field\":\"undefined\"}}",
+          "data": "\"{\\\"code\\\":\\\"VALIDATION_ERROR\\\",\\\"message\\\":\\\"Can only end active meetings\\\",\\\"metadata\\\":{},\\\"statusCode\\\":400}\""
+        },
+        "meetingStateAfter": "concluded",
+        "note": "The guard rejects the duplicate, but the client cannot distinguish this rejection from 'my first end never landed'."
+      }
+    },
+    {
+      "id": "webhook/duplicate-redelivery",
+      "handler": "meetings.stream.streamHandlers.dispatchWebhook",
+      "delivery": "same webhook payload delivered twice (Stream-style retry)",
+      "observed": "deduped",
+      "evidence": {
+        "first": {
+          "success": true
+        },
+        "duplicate": {
+          "success": true
+        },
+        "idempotencyKeys": {
+          "before": 0,
+          "afterFirst": 1,
+          "afterDuplicate": 1
+        },
+        "note": "withIdempotency records the key in the same transaction; the redelivery replays the stored result / previousError instead of re-executing."
+      }
+    }
+  ]
+}

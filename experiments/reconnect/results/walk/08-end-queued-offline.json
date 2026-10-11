@@ -1,0 +1,23 @@
+{
+  "step": "end-queued-offline",
+  "mechanism": "shortcut-key",
+  "focus": "btn-restore",
+  "focusOutline": "solid 3px rgb(110, 168, 255)",
+  "state": {
+    "conn": "status: offline",
+    "inflight": "unacked/queued mutations: 1",
+    "ackArmed": "ack loss armed: false",
+    "isLoading": "isLoading: false",
+    "isSyncing": "isSyncing: false",
+    "saved": "saved (query cache): h! @v27",
+    "serverTruth": "server truth: h! @v27",
+    "duplicates": "duplicate acceptances: 1",
+    "meetingState": "server meeting state: active",
+    "isStarting": "isStarting: false",
+    "isEnding": "isEnding: true",
+    "error": "error: null",
+    "keyboardLegend": true,
+    "focus": "btn-restore",
+    "focusOutline": "solid 3px rgb(110, 168, 255)"
+  }
+}

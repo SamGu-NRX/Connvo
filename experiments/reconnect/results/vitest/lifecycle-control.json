@@ -1,0 +1,12 @@
+{
+  "scenario": "lifecycle/control",
+  "sources": [
+    "src/hooks/useMeetingLifecycle.ts"
+  ],
+  "counts": {
+    "startAcceptances": 1,
+    "endAcceptances": 1,
+    "duplicatedOps": 0,
+    "finalState": "concluded"
+  }
+}

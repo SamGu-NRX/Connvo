@@ -1,0 +1,11 @@
+{
+  "scenario": "notes/join-offline",
+  "sources": [
+    "src/hooks/useCollaborativeNotes.ts"
+  ],
+  "counts": {
+    "joinedWhileOffline": true,
+    "isLoadingStuckTicks": 1,
+    "recoveredOnReconnect": true
+  }
+}

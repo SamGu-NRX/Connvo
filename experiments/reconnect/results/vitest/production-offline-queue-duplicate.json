@@ -1,0 +1,64 @@
+{
+  "scenario": "production/offline-queue-duplicate",
+  "layer": "production-handler",
+  "handler": "notes/offline.ts: queueOfflineOperations",
+  "deliveries": [
+    {
+      "attempt": 1,
+      "outcome": "accepted",
+      "result": {
+        "success": true,
+        "queued": 1
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": [
+          {
+            "attempts": 0,
+            "clientSequence": 1,
+            "operationId": "op_client_1",
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    {
+      "attempt": 2,
+      "outcome": "accepted",
+      "result": {
+        "success": true,
+        "queued": 1
+      },
+      "stateAfter": {
+        "idempotencyKeysCount": 0,
+        "meetingState": "active",
+        "meetingStateRowActive": null,
+        "meetingsCount": 1,
+        "noteOpsCount": 0,
+        "noteOpsSequences": [],
+        "notes": null,
+        "queueRows": [
+          {
+            "attempts": 0,
+            "clientSequence": 1,
+            "operationId": "op_client_1",
+            "status": "pending"
+          },
+          {
+            "attempts": 0,
+            "clientSequence": 1,
+            "operationId": "op_client_1",
+            "status": "pending"
+          }
+        ]
+      }
+    }
+  ],
+  "observedDuplicateVerdict": "duplicate ACCEPTED again — two queue rows for the same operationId (no dedupe; queueIds differ per call)"
+}

@@ -1,0 +1,44 @@
+{
+  "scenario": "notes/edit-removed",
+  "sources": [
+    "src/hooks/useCollaborativeNotes.ts"
+  ],
+  "counts": {
+    "ops": 1,
+    "lostOps": 1,
+    "duplicatedOps": 0,
+    "falselySavedTicks": 1
+  },
+  "trace": [
+    {
+      "step": "edit-queued-offline+removed",
+      "ui": {
+        "content": "hello",
+        "version": 3,
+        "isSyncing": true,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "server": {
+        "content": "",
+        "version": 4
+      },
+      "acceptedNoteOps": 0
+    },
+    {
+      "step": "restored+rejected",
+      "ui": {
+        "content": "",
+        "version": 4,
+        "isSyncing": false,
+        "isLoading": false,
+        "consumerLocalContent": "hello world"
+      },
+      "server": {
+        "content": "",
+        "version": 4
+      },
+      "acceptedNoteOps": 0
+    }
+  ]
+}

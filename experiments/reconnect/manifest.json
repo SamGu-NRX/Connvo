@@ -1,0 +1,247 @@
+{
+  "study": "reconnect",
+  "question": "What happens to unsent, unacknowledged, and re-sent note operations and meeting lifecycle mutations across connection cuts in the real hooks?",
+  "subject": {
+    "hooks": [
+      "src/hooks/useCollaborativeNotes.ts",
+      "src/hooks/useMeetingLifecycle.ts"
+    ],
+    "replaced": [
+      "convex/react (fake client with the same React binding surface)"
+    ],
+    "unmodified": [
+      "src/hooks/*",
+      "convex/*"
+    ]
+  },
+  "suites": [
+    {
+      "id": "notes/control",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "online end to end",
+      "expectation": "baseline: one edit, one acceptance, no duplicates, no divergence",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "notes/join-offline",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "cold join with the connection cut before the first query",
+      "expectation": "isLoading unresolved and content empty until restore",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "notes/edit-ack-lost",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "server accepted the op; its ack was lost; connection restored",
+      "expectation": "at-least-once re-send DUPLICATES the op on the server and in the reconciled UI",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "notes/edit-request-lost",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "op queued while offline; connection restored before any server contact",
+      "expectation": "optimistic (consumer) state diverges from saved state while queued; replays exactly once",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "notes/edit-removed",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "participant removed server-side while the consumer is offline",
+      "expectation": "op rejected; consumer keeps the optimistic text with no saved/unsaved signal",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "notes/no-ack-control",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "two worlds differing ONLY in server acceptance, compared on the hook's visible state",
+      "expectation": "the hook's visible state is byte-for-byte identical in both worlds",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "notes/repeated-reconnect",
+      "file": "experiments/reconnect/scenarios/notesHook.test.ts",
+      "world": "four consecutive cut/restore cycles, one edit per cycle",
+      "expectation": "duplicates accumulate: every edit is applied twice on the server",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/control",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "online end to end",
+      "expectation": "baseline: start and end each accepted exactly once",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/start-ack-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "server started the meeting; ack lost; connection restored",
+      "expectation": "isStarting stays true until the late path; re-send duplicates the start acceptance",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/start-request-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "start queued while offline, then navigation away",
+      "expectation": "meeting never starts; the UI believed it did",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/end-request-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "end queued while offline, then navigation away",
+      "expectation": "meeting stays active while the user believed it ended; post-call processing never triggered",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/end-ack-lost",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "server ended the meeting; ack lost; connection restored",
+      "expectation": "re-send duplicates the end acceptance",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/prompts-action-offline",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "prompt-generation action fires while the connection is down",
+      "expectation": "action is not replayed; failure is swallowed (console.warn only, error state null)",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "lifecycle/connection-info-render-setstate",
+      "file": "experiments/reconnect/scenarios/lifecycleHook.test.ts",
+      "world": "getConnectionInfo called during render with a changing meetingId",
+      "expectation": "render-phase state update loop, capped by React",
+      "layer": "simulated-transport"
+    },
+    {
+      "id": "production/notes-apply-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (notes/mutations.ts: applyNoteOperation)",
+      "expectation": "verbatim duplicate (stale expectedVersion) rejected; a re-based duplicate re-applies \u2014 clientSequence dedupes nothing [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 1
+    },
+    {
+      "id": "production/notes-hook-args",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (notes/mutations.ts: applyNoteOperation)",
+      "expectation": "the hook's clientTimestamp shape is rejected by the validator (clientSequence required) [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 2
+    },
+    {
+      "id": "production/notes-batch-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (notes/mutations.ts: batchApplyNoteOperations)",
+      "expectation": "stale duplicate rejected; re-based duplicate re-applies with server-side position transformation [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 3
+    },
+    {
+      "id": "production/offline-queue-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (notes/offline.ts: queueOfflineOperations)",
+      "expectation": "duplicate accepted: two queue rows for the same operationId, distinct server queueIds [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 4
+    },
+    {
+      "id": "production/offline-sync-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (notes/offline.ts: syncOfflineOperations)",
+      "expectation": "duplicate deduped by the pending->synced status transition; content applied once [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 5
+    },
+    {
+      "id": "production/offline-retry-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (notes/offline.ts: retryFailedOperations)",
+      "expectation": "duplicate retries reject deterministically (nested-sync identity loss under convex-test \u2014 harness artifact); exhausted rows excluded silently [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 6
+    },
+    {
+      "id": "production/lifecycle-start-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (meetings/lifecycle.ts: startMeeting)",
+      "expectation": "duplicate rejected by the state guard; no idempotency keys engaged [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 7
+    },
+    {
+      "id": "production/lifecycle-end-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (meetings/lifecycle.ts: endMeeting)",
+      "expectation": "duplicate rejected by the state guard [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 8
+    },
+    {
+      "id": "production/lifecycle-create-duplicate",
+      "file": "experiments/reconnect/scenarios/productionHandlers.test.ts",
+      "layer": "production-handler",
+      "world": "registered production handler under convex-test (meetings/lifecycle.ts: createMeeting)",
+      "expectation": "duplicate accepted: two separate meeting documents created [OBSERVED \u2014 see results/vitest receipt]",
+      "order": 9
+    },
+    {
+      "id": "production-handlers/notes-first-delivery",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "first delivery of insert 'hello' @expectedVersion 0 is accepted by notes.applyNoteOperation",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "notes/first-delivery"
+    },
+    {
+      "id": "production-handlers/notes-duplicate-identical-args",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a blind re-send (same args) is REJECTED: CONFLICT 409 Version mismatch; op applied exactly once",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "notes/duplicate-identical-args"
+    },
+    {
+      "id": "production-handlers/notes-duplicate-version-aware",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a re-based duplicate (same clientSequence, refetched expectedVersion) is ACCEPTED and applied again \u2014 content duplicated",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "notes/duplicate-version-aware"
+    },
+    {
+      "id": "production-handlers/lifecycle-start-duplicate",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a duplicate startMeeting is REJECTED: Meeting is already active (state guard; no idempotency key consulted)",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "lifecycle/start-duplicate"
+    },
+    {
+      "id": "production-handlers/lifecycle-end-duplicate",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a duplicate endMeeting is REJECTED: Can only end active meetings (VALIDATION_ERROR 400)",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "lifecycle/end-duplicate"
+    },
+    {
+      "id": "production-handlers/webhook-duplicate-redelivery",
+      "file": "experiments/reconnect/production-handlers.test.ts",
+      "world": "registered production handler under convex-test (real schema + validators + auth guards)",
+      "expectation": "a redelivered GetStream webhook is DEDUPED by withIdempotency (keys 0->1->1, first result replayed)",
+      "layer": "production-handler",
+      "receipt": "experiments/reconnect/results/production-handlers.json",
+      "observationsId": "webhook/duplicate-redelivery"
+    }
+  ],
+  "layers": {
+    "simulated-transport": "the owned fake Convex client fronts the REAL hooks; claims describe the fake's modeled at-least-once delivery",
+    "production-handler": "registered Convex handlers invoked via convex-test against the real schema, validators, and auth guards; verdicts are observed handler behavior"
+  }
+}

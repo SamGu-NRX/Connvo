@@ -1,0 +1,23 @@
+{
+  "step": "offline-edit-queued",
+  "mechanism": "shortcut-key + keyboard-typing",
+  "focus": "editor",
+  "focusOutline": "solid 3px rgb(110, 168, 255)",
+  "state": {
+    "conn": "status: offline",
+    "inflight": "unacked/queued mutations: 11",
+    "ackArmed": "ack loss armed: false",
+    "isLoading": "isLoading: false",
+    "isSyncing": "isSyncing: true",
+    "saved": "saved (query cache): hello @v3",
+    "serverTruth": "server truth: hello @v3",
+    "duplicates": "duplicate acceptances: 0",
+    "meetingState": "server meeting state: scheduled",
+    "isStarting": "isStarting: false",
+    "isEnding": "isEnding: false",
+    "error": "error: null",
+    "keyboardLegend": true,
+    "focus": "editor",
+    "focusOutline": "solid 3px rgb(110, 168, 255)"
+  }
+}
