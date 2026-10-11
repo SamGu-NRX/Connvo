@@ -2,7 +2,7 @@
 
 **Branch** `obv/connvo-notes-ledger-f1` → `alpha` · **Draft PR #31** (opened from the host at `76d296d`)
 **This doc is the PR body's source of truth.** The sandbox cannot reach `api.github.com` (egress proxy blocks the host), so nothing in this workspace edits the PR: the lead copies this file into the PR body at review. Keep this file current with every push — update the SHA line, the Proof log and the Handoff in the same commit as each milestone.
-**Last updated at:** `76d296d`
+**Last updated at:** `0152a44` (M1 merged)
 
 ---
 
@@ -22,7 +22,7 @@ Step S1 of `docs/plan/CALL-PLAN.md` (base `alpha` @ `ddc94d4`): rebuild #24's no
 ### Milestones
 
 - [x] M0 — design contract, baseline receipt, pinned hook types (`3162e18`, `c33518f`, `76d296d`)
-- [ ] M1 — server identity/watermark fields + convex-test suite
+- [x] M1 — server identity/watermark fields + convex-test suite (merged at `0152a44`)
 - [ ] M2 — ledger + hook + outcome matrix (failing-before receipts for every #24 defect)
 - [ ] M3 — panel + axe + keyboard + reduced-motion + screenshots (1440×900, 390×844)
 - [ ] M4 — property run clean at recorded seed (10k) + final Proof / Handoff
@@ -52,6 +52,14 @@ Reproduction environment: fresh clone of `SamGu-NRX/Connvo`, branch `obv/connvo-
 
 Milestone receipts (M1–M4) are appended here as they land, each with failing-before evidence where applicable (M2's matrix over every #24 defect; M4's fast-check run with the recorded seed).
 
+### M1 @ `6a5238b` (merged into this branch at `0152a44`)
+
+- Scope verified: exactly 5 in-scope files (`convex/notes/mutations.ts`, `convex/notes/queries.ts`, `convex/schema/meetings.ts`, `convex/notes/README.md`, `test/convex/notes-watermark.test.ts`); none of the forbidden paths touched. Author `Sam Gu`, `Co-authored-by` trailer present, verified pre-merge.
+- Contract spot-check (owner, pre-merge): identity triple persisted in-transaction (persist-before-ack); dedupe check-then-insert on `(meetingId, clientId, clientOpId)` returning `deduped: true` with the stored row (Convex serializes mutations, so no check race); per-op echo (`clientSequence` always, `clientOpId`/`deduped` only when sent); `failedOps` entries `{index, clientOpId?, clientSequence?, reason?}`; `getMeetingNotes(clientId?)` → `headSequence` + ≤100 ascending `clientAcks`, legacy shape untouched without it; `getMeetingNotesInternal` untouched.
+- `pnpm type-check 2>&1 | grep -c "error TS"` on merged tree → `32` (bar holds).
+- `pnpm vitest run test/convex/notes-watermark.test.ts` → exit 0, **11/11 passed** (also 11/11 in the worker's clone pre-merge).
+- Full `pnpm test:run` on merged tree: two pre-existing intermittent failures, both documented: `convex/transcripts/ingestion.test.ts` "time-bucketed sharding" (wall-clock flake, fails when `Date.now() mod 300000 ≥ 240000`, ~20% of runs; passed twice in isolation immediately after — 9/9 both runs) and the baseline `ArrayBuffer operations are efficient` perf test. Worker verified both test files byte-identical between base `76d296d` and M1 HEAD; no new failures.
+
 ---
 
 ## Handoff
@@ -63,10 +71,11 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 - Design contract + baseline receipt committed: `docs/notes-ledger-f1/design.md` (registered semantics: op identity, watermark, dedupe, diff base, snapshot ingest, fault matrix, boundaries) and `baseline.md` (recorded baseline outputs).
 - Shared client contract pinned on the branch: `src/hooks/notes/types.ts`, `notesTransport.tsx` (provider + `useNotesTransport`), `index.ts` with a `useNotesLedger` placeholder (throws until M2) — verified to add zero new type errors.
 - Draft PR #31 open, maintained by the lead from the host; sandbox never touches `api.github.com`.
+- **M1 merged at `0152a44`**: additive `clientId`/`clientOpId`/`clientSequence` on `noteOps` + `by_meeting_client`/`by_meeting_client_op` indexes; idempotent dedupe with original-sequence return; per-op echo + `failedOps`; `getMeetingNotes` watermark/acks; protocol documented in `convex/notes/README.md` (deviations recorded there: identity triple persisted only when `clientOpId` present; `clientSequence` always echoed; `failedOps` absent when empty).
 
 **In flight**
 
-- M1 (server identity/watermark + convex-test suite) and M3 (panel + a11y + demo preview route) run as parallel sub-threads off this branch, each in its own fresh clone, reporting commits on `obv/connvo-notes-f1-m1-server` / `obv/connvo-notes-f1-m3-panel` for the owner to merge. M2 (ledger + hook) starts when M1 lands; M4 (property run at recorded seed + final proof) when M2 lands.
+- M3 (panel + a11y + demo preview route) runs as a parallel sub-thread off this branch in its own fresh clone, reporting commits on `obv/connvo-notes-f1-m3-panel` for the owner to merge. M2 (ledger + hook) starts on the merged branch (`0152a44`); M4 (property run at recorded seed + final proof) when M2 lands.
 
 **Left**
 
@@ -74,8 +83,8 @@ Milestone receipts (M1–M4) are appended here as they land, each with failing-b
 
 **How to continue**
 
-1. `git clone https://github.com/SamGu-NRX/Connvo.git && git fetch origin obv/connvo-notes-ledger-f1 && git checkout obv/connvo-notes-ledger-f1`
-2. Read `docs/notes-ledger-f1/design.md` (the contract) and `docs/notes-ledger-f1/baseline.md` (the bar: type-check ≤32 total / none in new files; `pnpm test:run` keeps exactly the one pre-existing failure + one unhandled error).
+1. `git clone https://github.com/SamGu-NRX/Connvo.git && git fetch origin obv/connvo-notes-ledger-f1 && git checkout obv/connvo-notes-ledger-f1` — the server protocol is live at this SHA (`convex/notes/mutations.ts` / `queries.ts` / `schema/meetings.ts`); read `convex/notes/README.md` for the wire behavior.
+2. Read `docs/notes-ledger-f1/design.md` (the contract; §3 for the ledger/hook) and `docs/notes-ledger-f1/baseline.md` (the bar: type-check ≤32 total / none in new files; `pnpm test:run` keeps at most the two documented pre-existing intermittent failures — the ingestion wall-clock flake and the `ArrayBuffer` perf test — both passing in isolation, plus the pre-existing `_scheduled_functions` unhandled rejection; nothing new).
 3. Engineering skills to read (branch `chore/agent-skills-20261011`, never merge): `pstack-principle-*`, `better-accessibility/**`, `anti-ui-slop`, `anti-lazy-architecture`.
 4. Commit as `Sam Gu <127461594+SamGu-NRX@users.noreply.github.com>` with the `Co-authored-by: obvious-autobuild[bot] <262744130+obvious-autobuild[bot]@users.noreply.github.com>` trailer; push only after the verification bar passes; update this file's SHA line, Proof table and Milestones in the same commit. Never edit the PR from the sandbox — hand the body copy to the lead.
 
