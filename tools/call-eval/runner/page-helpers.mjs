@@ -158,8 +158,16 @@ export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
  * as a near-full-cycle jump, which is how an H-15 run reported ~1345 fps.
  * Implausible results still fall back to the median of plausible per-step
  * rates (robustFps below, which keeps its own wrap-aware step filter).
+ *
+ * The step default is 20 ms: computeFps counts ONE advance per sample step,
+ * so the step caps the measurable rate at 1000/stepMs fps. The reviewed bug
+ * sampled every 250 ms, topping out near 4 fps and failing H-01's 15 fps bar
+ * on a healthy 30 fps stream. (Per-frame sampling via requestVideoFrameCallback
+ * would be the next refinement; 20 ms resolves rates up to 50 fps.) Fps
+ * windows are short (the plan's checks use 1.5-5 s windows), so the extra
+ * canvas reads at 20 ms stay bounded.
  */
-export async function measureFps(peer, participantId, ms = 5000, { stepMs = 250 } = {}) {
+export async function measureFps(peer, participantId, ms = 5000, { stepMs = 20 } = {}) {
   const samples = [];
   const deadline = Date.now() + ms;
   while (Date.now() < deadline) {
