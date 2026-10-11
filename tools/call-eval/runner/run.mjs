@@ -69,12 +69,13 @@ async function ensureFixtures(ctx, log) {
 
 async function runOne(ctx, scenarioId, seed, log) {
   const t0 = Date.now();
+  ctx.setSeed(seed); // shapers re-derive from THIS run's seed (reviewed bug: the constructor seed served every run)
   try {
     const mod =
       scenarioId.startsWith("H")
         ? await import("./scenarios-h.mjs")
         : await import("./scenarios-p.mjs");
-    const fn = mod[`scenario_${scenarioId.replace("-", "_")}`];
+    const fn = /** @type {unknown} */ (mod[/** @type {keyof typeof mod} */ (`scenario_${scenarioId.replace("-", "_")}`)]);
     if (typeof fn !== "function") {
       throw new Error(`scenario ${scenarioId} is not implemented in ${scenarioId.startsWith("H") ? "scenarios-h.mjs" : "scenarios-p.mjs"}`);
     }

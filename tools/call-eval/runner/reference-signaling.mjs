@@ -186,6 +186,7 @@ function waitForReady(child, timeoutMs) {
  * @returns {Promise<{
  *   port: number, variant: string, signalUrl: string,
  *   membersPath: string, jwksPath: string, stop: () => void,
+ *   sessionEvents: () => Promise<Array<{ participant: string, reason: string, at: number }>>,
  * }>}
  */
 export async function startReferenceSignaling({
@@ -237,6 +238,16 @@ export async function startReferenceSignaling({
         signalUrl: `ws://127.0.0.1:${ready.port}`,
         membersPath,
         jwksPath,
+        // H-10/H-11 evidence: the server's GET /?events=1 returns its
+        // in-memory departure log (the mock relay's sessionEvents
+        // equivalent).
+        sessionEvents: async () => {
+          const res = await fetch(`http://127.0.0.1:${ready.port}/?events=1`);
+          const body = /** @type {{ sessionEvents?: Array<{ participant: string, reason: string, at: number }> }} */ (
+            await res.json()
+          );
+          return Array.isArray(body.sessionEvents) ? body.sessionEvents : [];
+        },
         stop() {
           try {
             child.kill();

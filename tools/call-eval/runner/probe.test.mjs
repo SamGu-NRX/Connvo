@@ -12,17 +12,23 @@
 import { describe, expect, it } from "vitest";
 import { probeInit } from "./probe.mjs";
 
+/** @typedef {{ [event: string]: ((evt: object) => void)[] }} HandlerMap */
+
 class FakePC {
+  /** @param {{ iceServers?: object[] }} [cfg] */
   constructor(cfg) {
     this.__cfg = cfg;
     this.connectionState = "new";
     this.iceConnectionState = "new";
     this.signalingState = "stable";
+    /** @type {HandlerMap} */
     this.__handlers = {};
   }
+  /** @param {string} type @param {(evt: object) => void} fn */
   addEventListener(type, fn) {
     (this.__handlers[type] ??= []).push(fn);
   }
+  /** @param {string} type */
   fire(type) {
     for (const fn of this.__handlers[type] ?? []) fn({ type });
   }
@@ -39,11 +45,13 @@ class FakePC {
 }
 
 function fakeTrack() {
+  /** @type {HandlerMap} */
   const handlers = {};
   return {
     id: "track-1",
     kind: "video",
     readyState: "live",
+    /** @param {string} type @param {(evt: object) => void} fn */
     addEventListener(type, fn) {
       (handlers[type] ??= []).push(fn);
     },
@@ -54,15 +62,21 @@ function fakeTrack() {
   };
 }
 
-/** Executes probeInit against a fake browser scope and returns the scope. */
+/**
+ * Executes probeInit against a fake browser scope and returns the scope.
+ * @param {{ rtcConfig?: object }} [opts]
+ */
 function boot({ rtcConfig } = {}) {
+  /** @type {{ RTCPeerConnection: typeof FakePC, __probeRtcConfig?: object, __wrappedPcs?: FakePC[] }} */
   const windowObj = { RTCPeerConnection: FakePC };
   if (rtcConfig) windowObj.__probeRtcConfig = rtcConfig;
   const track = fakeTrack();
+  /** @param {object} _constraints */
+  async function fakeGetUserMedia(_constraints) {
+    return { getTracks: () => [track] };
+  }
   const navigatorObj = {
-    mediaDevices: {
-      getUserMedia: async () => ({ getTracks: () => [track] }),
-    },
+    mediaDevices: { getUserMedia: fakeGetUserMedia },
   };
   const probe = new Function("window", "navigator", `${probeInit}\n;return window.__callProbe;`)(
     windowObj,

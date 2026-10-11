@@ -14,6 +14,7 @@ import dgram from "node:dgram";
 import { describe, expect, it } from "vitest";
 import { createShaper } from "./shaper.mjs";
 
+/** @param {import('node:dgram').Socket} sock @param {number} [port] @returns {Promise<number>} */
 function bind(sock, port = 0) {
   return new Promise((resolve, reject) => {
     sock.once("error", reject);
@@ -22,10 +23,11 @@ function bind(sock, port = 0) {
 }
 
 /** Resolves with the next datagram, or rejects after timeoutMs. */
+/** @param {import('node:dgram').Socket} sock @param {number} [timeoutMs] @returns {Promise<{ msg: string, rinfo: { address: string, port: number } }>} */
 function recv(sock, timeoutMs = 1500) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`no datagram within ${timeoutMs} ms`)), timeoutMs);
-    sock.once("message", (msg, rinfo) => {
+    sock.once("message", (/** @type {Buffer} */ msg, /** @type {{ address: string, port: number }} */ rinfo) => {
       clearTimeout(timer);
       resolve({ msg: msg.toString(), rinfo });
     });
@@ -36,7 +38,7 @@ function freePort() {
   return new Promise((resolve, reject) => {
     const probe = net.createServer();
     probe.listen(0, "127.0.0.1", () => {
-      const { port } = probe.address();
+      const port = /** @type {import('node:net').AddressInfo} */ (probe.address()).port;
       probe.close(() => resolve(port));
     });
     probe.on("error", reject);
@@ -66,6 +68,7 @@ async function startShapedClient() {
   return { shaper, listenPort, client, clientPort, closeAll };
 }
 
+/** @param {import('node:dgram').Socket} client @param {number} port @param {string} text @returns {Promise<void>} */
 function sendTo(client, port, text) {
   return new Promise((resolve, reject) =>
     client.send(Buffer.from(text), port, "127.0.0.1", (err) => (err ? reject(err) : resolve())),

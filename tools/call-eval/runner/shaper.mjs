@@ -30,9 +30,13 @@ export function mulberry32(seed) {
 
 export function createShaper({ seed = 1 } = {}) {
   const rng = mulberry32(seed);
+  /** @type {import('node:dgram').Socket | null} */
   let socket = null; // client-facing listener
+  /** @type {import('node:dgram').Socket | null} */
   let uplink = null; // coturn-facing socket
-  let target = null; // { port, host }
+  /** @type {{ address: string, port: number } | null} */
+  let target = null; // the real TURN endpoint media is proxied to
+  /** @type {{ address: string, port: number } | null} */
   let client = null; // { address, port } — the participant's last source, learned per packet
   let profile = { lossPct: 0, delayMs: 0 }; // H-07: 100% loss; H-15: 5/15% + 300 ms
   const timers = new Set();
@@ -45,15 +49,18 @@ export function createShaper({ seed = 1 } = {}) {
   // Routing by socket (not by source port) is what keeps coturn's replies out
   // of a loop: the reviewed bug forwarded every inbound datagram to coturn,
   // so replies never reached the browser and relay-only media was dead.
+  /** @param {Buffer} msg @param {{ address: string, port: number }} rinfo */
   function onClient(msg, rinfo) {
     client = { address: rinfo.address, port: rinfo.port };
     if (profile.lossPct > 0 && rng() * 100 < profile.lossPct) {
       stats.dropped++;
       return;
     }
+    if (!target || !uplink) return; // not started yet: nowhere to forward
     shapedSend(msg, target, uplink);
   }
 
+  /** @param {Buffer} msg */
   function onUplink(msg) {
     if (!client) {
       stats.dropped++; // reply before any client packet: nothing to route to
@@ -62,6 +69,7 @@ export function createShaper({ seed = 1 } = {}) {
     shapedSend(msg, client, socket);
   }
 
+  /** @param {Buffer} msg @param {{ address: string, port: number }} dest @param {import('node:dgram').Socket | null | undefined} via */
   function shapedSend(msg, dest, via) {
     const send = () => {
       if (!via) return;
@@ -82,18 +90,20 @@ export function createShaper({ seed = 1 } = {}) {
   return {
     /** Bind the proxy port; UDP to it is forwarded to the real TURN port. */
     start({ listenPort, targetPort, targetHost = "127.0.0.1" }) {
-      target = { port: targetPort, host: targetHost };
+      target = { address: targetHost, port: targetPort };
       return new Promise((resolve, reject) => {
-        socket = dgram.createSocket("udp4");
-        uplink = dgram.createSocket("udp4");
-        socket.on("message", onClient);
-        uplink.on("message", onUplink);
-        socket.on("error", reject);
-        uplink.on("error", reject);
-        socket.bind(listenPort, "127.0.0.1", () => {
-          uplink.bind(0, "127.0.0.1", () => {
-            socket.on("error", () => {}); // late errors: sweep logs only
-            uplink.on("error", () => {});
+        const listener = dgram.createSocket("udp4");
+        const coturnLink = dgram.createSocket("udp4");
+        socket = listener;
+        uplink = coturnLink;
+        listener.on("message", onClient);
+        coturnLink.on("message", onUplink);
+        listener.on("error", reject);
+        coturnLink.on("error", reject);
+        listener.bind(listenPort, "127.0.0.1", () => {
+          coturnLink.bind(0, "127.0.0.1", () => {
+            listener.on("error", () => {}); // late errors: sweep logs only
+            coturnLink.on("error", () => {});
             resolve(listenPort);
           });
         });

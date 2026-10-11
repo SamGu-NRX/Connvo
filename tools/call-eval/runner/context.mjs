@@ -151,6 +151,23 @@ export class RunContext {
     this._relayEnabled = true;
   }
 
+  /**
+   * Per-scenario-seed determinism: shaper loss patterns derive from the seed
+   * PRNG, so a new seed must re-create the shapers (the reviewed bug kept the
+   * constructor seed for every run of the matrix). Live shapers are stopped
+   * and the relay-config cache dropped — re-created shapers rebind the same
+   * per-participant ports.
+   */
+  /** @param {number} seed */
+  setSeed(seed) {
+    this.seed = seed;
+    if (this.shapers.size > 0) {
+      for (const shaper of this.shapers.values()) shaper.stop();
+      this.shapers.clear();
+      this._relayConfigCache.clear();
+    }
+  }
+
   shaperFor(participant) {
     let shaper = this.shapers.get(participant);
     if (!shaper) {
@@ -218,7 +235,11 @@ export class RunContext {
   }
 
   sessionEvents() {
-    return this.relay ? this.relay.sessionEvents() : [];
+    // Mock relay keeps the log in-process; the reference transports' log
+    // lives in the spawned signaling server (GET /?events=1). Neither → [].
+    if (this.relay) return this.relay.sessionEvents();
+    if (this.signaling) return this.signaling.sessionEvents();
+    return [];
   }
 
   async stop() {

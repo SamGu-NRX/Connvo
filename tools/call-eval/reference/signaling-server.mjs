@@ -135,6 +135,21 @@ function verifyToken(token) {
 /** @type {Map<string, Map<string, import('ws').WebSocket>>} */
 const rooms = new Map();
 
+// Session events for the harness's H-10/H-11 evidence (mock-relay
+// sessionEvents equivalent): one entry per terminal room departure. A bye
+// marks the departure client-initiated ("left", the mock relay's session
+// vocabulary); a bare close is a network death ("disconnected").
+/** @type {Array<{ participant: string, reason: string, at: number }>} */
+const sessionEvents = [];
+/** @type {WeakMap<object, string>} */
+const leaveReasonBySocket = new WeakMap();
+
+/** @param {string} participant @param {string} reason */
+function recordDeparture(participant, reason) {
+  sessionEvents.push({ participant, reason, at: Date.now() });
+  if (sessionEvents.length > 500) sessionEvents.splice(0, sessionEvents.length - 500);
+}
+
 function broadcast(room, message, exceptSocket = null) {
   for (const sock of room.values()) {
     if (sock !== exceptSocket && sock.readyState === sock.OPEN) {
@@ -145,8 +160,17 @@ function broadcast(room, message, exceptSocket = null) {
 
 const server = http.createServer((req, res) => {
   // Health probe used by the runner before it points peers at the server.
+  // GET /?events=1 also returns the session-event log (H-10/H-11 evidence
+  // for the reference transports — the in-memory mock relay's equivalent).
+  const url = new URL(req.url ?? "/", "http://127.0.0.1");
+  const addr = /** @type {import('node:net').AddressInfo} */ (server.address());
+  if (url.searchParams.get("events")) {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: true, variant, port: addr.port, sessionEvents }));
+    return;
+  }
   res.writeHead(200, { "content-type": "application/json" });
-  res.end(JSON.stringify({ ok: true, variant, port: server.address().port }));
+  res.end(JSON.stringify({ ok: true, variant, port: addr.port }));
 });
 
 // A bind/port failure must exit with the pinned JSON error shape instead of
@@ -205,6 +229,7 @@ wss.on("connection", (socket) => {
         return;
       }
       if (msg.type === "bye") {
+        leaveReasonBySocket.set(socket, "left"); // client-initiated: the close handler records "left"
         socket.close(4002, "bye");
         return;
       }
@@ -264,7 +289,13 @@ wss.on("connection", (socket) => {
       const room = rooms.get(joinedMeeting);
       if (room && room.get(self) === socket) {
         room.delete(self);
-        broadcast(room, { type: "peer-left", participantId: self, reason: "disconnected" });
+        // A bye marks the departure client-initiated ("left"); a bare close
+        // is a network death ("disconnected"). The re-join replacement path
+        // never reaches here — the room entry already names the replacing
+        // socket.
+        const reason = leaveReasonBySocket.get(socket) ?? "disconnected";
+        recordDeparture(self, reason);
+        broadcast(room, { type: "peer-left", participantId: self, reason });
         if (room.size === 0) rooms.delete(joinedMeeting);
       }
     }

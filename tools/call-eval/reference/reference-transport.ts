@@ -54,7 +54,8 @@ type SignalData =
 type SignalingUp =
   | { type: "hello"; token: string; meetingId: string }
   | { type: "signal"; to: string; data: SignalData }
-  | { type: "state"; micOn: boolean; cameraOn: boolean };
+  | { type: "state"; micOn: boolean; cameraOn: boolean }
+  | { type: "bye" };
 
 /**
  * A deliberately broken behavior, one per harness scenario the variant must
@@ -372,6 +373,10 @@ export function createReferenceTransport(
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
       }
+      // Mark the departure client-initiated before closing: the server's
+      // close handler records it as "left" (the mock relay's session-event
+      // vocabulary) instead of "disconnected" — H-11's evidence.
+      wsSend({ type: "bye" });
       teardownMesh();
       closeSocket();
       setPhase("left");

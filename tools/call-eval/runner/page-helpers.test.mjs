@@ -14,13 +14,15 @@ import { measureFps, toneMatches, toneIsSilent } from "./page-helpers.mjs";
 import { decodeToneHz } from "../lib/decoders.mjs";
 
 /** 0.5 s of a pure tone at 48 kHz (decodeToneHz caps its window at 12000 samples). */
+/** @param {number} hz @param {number} [sampleRate] @param {number} [seconds] @param {number} [amp] */
 function toneBuffer(hz, sampleRate = 48000, seconds = 0.5, amp = 0.6) {
   const out = new Float32Array(Math.floor(sampleRate * seconds));
   for (let i = 0; i < out.length; i++) out[i] = amp * Math.sin((2 * Math.PI * hz * i) / sampleRate);
   return out;
 }
 
-/** Fake peer whose remote tile decodes to a synthetic stream at `fps`. */
+/** Fake peer whose remote tile decodes to a synthetic stream at `fps`.
+ * @param {number} fps */
 function fakePeerAt(fps) {
   const t0 = Date.now();
   let evalCalls = 0;

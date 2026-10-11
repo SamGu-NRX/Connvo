@@ -61,11 +61,15 @@ export function classifyRemoteColor(rgb, palette, tolerance) {
  * True when a sampleRemoteTone result carries the expected tone: decodeToneHz
  * returns { peakHz, rms } — the reviewed H-02/H-03 bug did arithmetic on the
  * OBJECT (NaN peak), so the predicate reads peakHz explicitly.
+ * @param {{ peakHz?: number, rms?: number } | null | undefined} decoded
+ * @param {number} expectedHz
+ * @param {number} [tolerance]
  * @returns {boolean}
  */
 export function toneMatches(decoded, expectedHz, tolerance = 10) {
-  if (!decoded || typeof decoded !== "object" || !Number.isFinite(decoded.peakHz)) return false;
-  return Math.abs(decoded.peakHz - expectedHz) <= tolerance;
+  const peak = decoded?.peakHz;
+  if (typeof peak !== "number" || !Number.isFinite(peak)) return false;
+  return Math.abs(peak - expectedHz) <= tolerance;
 }
 
 /**
@@ -74,6 +78,8 @@ export function toneMatches(decoded, expectedHz, tolerance = 10) {
  * or sub-floor energy. The floor counts near-silent noise as muted: the
  * reviewed H-03 bug compared the decode OBJECT to 0 and threw on every
  * healthy muted call. Pure digital silence must always count as muted.
+ * @param {{ peakHz?: number, rms?: number } | null | undefined} decoded
+ * @param {{ rmsFloor?: number }} [opts]
  * @returns {boolean}
  */
 export function toneIsSilent(decoded, { rmsFloor = 0.01 } = {}) {

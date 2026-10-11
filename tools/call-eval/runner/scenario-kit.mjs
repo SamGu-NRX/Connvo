@@ -78,6 +78,10 @@ export async function click(peer, testId) {
  * harness-controlled path. Passing null explicitly also resolves from the
  * context (launchPeer treats null as "no explicit config").
  */
+/**
+ * @param {import('./context.mjs').RunContext} ctx
+ * @param {{ a?: string, b?: string, paramsA?: object, paramsB?: object, rtcConfig?: object | null, timeoutMs?: number }} [opts]
+ */
 export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = {}, rtcConfig, timeoutMs = 30000 } = {}) {
   const t0 = Date.now();
   const [peerA, peerB] = await Promise.all([

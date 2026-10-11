@@ -12,6 +12,7 @@
 import { describe, expect, it } from "vitest";
 import { joinPair } from "./scenario-kit.mjs";
 
+/** @param {string} id */
 function fakePeer(id) {
   return {
     peerId: id,
@@ -25,9 +26,14 @@ function fakePeer(id) {
   };
 }
 
+/** @param {{ participant: string, params: object, rtcConfig?: object | null }[]} captured */
 function fakeCtx(captured) {
   return {
-    launchPeer: async (participant, params, rtcConfig) => {
+    launchPeer: async (
+      /** @type {string} */ participant,
+      /** @type {object} */ params,
+      /** @type {object | null | undefined} */ rtcConfig,
+    ) => {
       captured.push({ participant, params, rtcConfig });
       return fakePeer(participant);
     },
@@ -36,8 +42,9 @@ function fakeCtx(captured) {
 
 describe("joinPair rtcConfig resolution", () => {
   it("leaves rtcConfig unset so ctx.launchPeer resolves per-participant relay configs", async () => {
+    /** @type {{ participant: string, params: object, rtcConfig?: object | null }[]} */
     const captured = [];
-    const { peerA, peerB, tJoinMs } = await joinPair(fakeCtx(captured));
+    const { peerA, peerB, tJoinMs } = await joinPair(/** @type {import('./context.mjs').RunContext} */ (/** @type {unknown} */ (fakeCtx(captured))));
     expect(captured.map((c) => c.rtcConfig)).toEqual([undefined, undefined]);
     expect(peerA.peerId).toBe("A");
     expect(peerB.peerId).toBe("B");
@@ -45,9 +52,10 @@ describe("joinPair rtcConfig resolution", () => {
   });
 
   it("forwards an explicitly pinned rtcConfig unchanged", async () => {
+    /** @type {{ participant: string, params: object, rtcConfig?: object | null }[]} */
     const captured = [];
     const pinned = { iceServers: [], iceTransportPolicy: "all" };
-    await joinPair(fakeCtx(captured), { rtcConfig: pinned });
+    await joinPair(/** @type {import('./context.mjs').RunContext} */ (/** @type {unknown} */ (fakeCtx(captured))), { rtcConfig: pinned });
     expect(captured.map((c) => c.rtcConfig)).toEqual([pinned, pinned]);
   });
 });
