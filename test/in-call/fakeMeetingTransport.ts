@@ -99,6 +99,10 @@ export class FakeMeetingTransport {
   private withholdingAcks = false;
   private readonly withheldAcks: DeferredSend[] = [];
 
+  private failBeforeApplyArmed = false;
+  private failAfterApplyArmed = false;
+  private lifecycleFailureArmed: string | null = null;
+
   useMutation(fnRef: unknown): (args: unknown) => Promise<unknown> {
     const name = describeRef(fnRef);
     return async (args: unknown) => this.send(name, args);
@@ -166,6 +170,40 @@ export class FakeMeetingTransport {
     }
   }
 
+  /** Deliver every withheld ack in the GIVEN index order (out-of-order
+   * acks). Indices address the withheld queue in send order; the server
+   * has already applied every withheld batch — only the responses are
+   * reordered, exactly like real network reordering. */
+  flushAcksInOrder(order: number[]): void {
+    this.withholdingAcks = false;
+    const withheld = this.withheldAcks.splice(0);
+    for (const index of order) {
+      const send = withheld[index];
+      if (send) send.resolve();
+    }
+  }
+
+  /** Arm a one-shot send failure: the next send rejects with NETWORK_LOST
+   * BEFORE the mutation is dispatched — the server never applies it (its
+   * version and content stay put). */
+  failNextSendBeforeApply(): void {
+    this.failBeforeApplyArmed = true;
+  }
+
+  /** Arm a one-shot send failure: the next send IS dispatched (the server
+   * applies it and bumps the version) but the response is lost — the
+   * client observes an ambiguous failure. */
+  failNextSendAfterApply(): void {
+    this.failAfterApplyArmed = true;
+  }
+
+  /** Arm a one-shot DEFINITE lifecycle rejection: the next lifecycle
+   * mutation (create/start/end) rejects with an error carrying the given
+   * code (e.g. FORBIDDEN) — the server did not apply it. */
+  failNextLifecycleMutationWith(code: string): void {
+    this.lifecycleFailureArmed = code;
+  }
+
   docContent(): string {
     return this.content;
   }
@@ -180,6 +218,30 @@ export class FakeMeetingTransport {
 
   private send(name: string, args: unknown): Promise<unknown> {
     this.sentMutations.push({ name, args });
+
+    if (this.failBeforeApplyArmed) {
+      this.failBeforeApplyArmed = false;
+      return Promise.reject(
+        new MeetingTransportError(
+          "NETWORK_LOST",
+          "Transport lost before the mutation was dispatched",
+        ),
+      );
+    }
+    if (this.failAfterApplyArmed) {
+      this.failAfterApplyArmed = false;
+      try {
+        this.dispatch(name, args);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+      return Promise.reject(
+        new MeetingTransportError(
+          "NETWORK_LOST",
+          "Transport lost after the server applied the mutation — response not delivered",
+        ),
+      );
+    }
 
     return new Promise<unknown>((resolve, reject) => {
       const run = () => {
@@ -226,6 +288,14 @@ export class FakeMeetingTransport {
    * about the server-verified behaviors (participant guard, version
    * conflict, apply-on-receive with no dedupe). */
   private dispatch(name: string, args: unknown): unknown {
+    if (this.lifecycleFailureArmed !== null && name.includes("lifecycle.")) {
+      const code = this.lifecycleFailureArmed;
+      this.lifecycleFailureArmed = null;
+      throw new MeetingTransportError(
+        code,
+        `Lifecycle mutation rejected: ${code}`,
+      );
+    }
     if (name.endsWith("batchApplyNoteOperations")) {
       return this.bridgeBatch(name, args);
     }
