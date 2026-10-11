@@ -1,7 +1,7 @@
 /**
  * The four matcher directions (README §directions).
  *
- * baseline-defaults: Sam's fixed weights, verbatim pipeline.
+ * baseline-defaults: main's real scorer via documented adapter.
  * tuned-weights:      optimised coefficients, same pipeline (isolates
  *                     the value of weights alone).
  * learned-linear:     tiny ridge regression on observed outcomes with
@@ -11,6 +11,7 @@
  */
 
 import { buildReasons, computeFeatures, NEUTRAL, SAM_DEFAULT_WEIGHTS, weightedSum } from "./features";
+import { realScoringSelect } from "./realScoring";
 import { outcomeValue, type LearningSample, type SimState } from "./outcomes";
 import { scoreAllPairs, buildQueue, type PairScored } from "./metrics";
 import type { EvalProfile, FeatureKey, Matcher, MatcherOutput, MatchReason, Population, SuggestedMatch } from "./types";
@@ -89,10 +90,10 @@ function select(
 export function baselineDefaults(): Matcher {
   return {
     name: "baseline-defaults",
-    blurb: "Sam's fixed weights, verbatim pipeline",
+    blurb: "main's real scorer via documented adapter (convex/matching/scoring.ts)",
     adaptive: false,
     round({ population, embeddingCosine }) {
-      return { matches: select(population, embeddingCosine, SAM_DEFAULT_WEIGHTS).matches };
+      return realScoringSelect(population, embeddingCosine);
     },
   };
 }
