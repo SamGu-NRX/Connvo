@@ -19,6 +19,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: path.resolve(__dirname, "./env/jsdom-sibling.ts"),
+    // The production-handler receipt test runs convex-test in plain node;
+    // it does not need the DOM environment.
+    environmentMatchGlobs: [["**/production-handlers.test.ts", "node"]],
     include: ["experiments/reconnect/**/*.test.ts"],
     testTimeout: 30000,
     hookTimeout: 30000,

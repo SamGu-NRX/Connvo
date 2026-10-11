@@ -26,7 +26,17 @@ Dev dependencies (jsdom, playwright) live OUTSIDE the repo at
 untouched. Chromium browser + system libs are already installed.
 
 ```bash
-# 1) vitest scenarios (2 suites, 14 scenarios)
+# Everything (production-handler receipts + vitest scenarios + browser walk):
+npx tsx experiments/reconnect/run.ts
+
+# Or section by section:
+npx tsx experiments/reconnect/run.ts --section=handlers  # PRODUCTION-OBSERVED receipts
+npx tsx experiments/reconnect/run.ts --section=vitest    # SIMULATED-TRANSPORT scenarios
+npx tsx experiments/reconnect/run.ts --section=walk      # browser walk (keyboard, reduced motion)
+
+# The sections, individually, if you prefer not to use the entry point:
+
+# 1) vitest scenarios (3 suites, 20 tests: 14 simulated + 6 production receipts)
 corepack pnpm exec vitest run --config experiments/reconnect/vitest.config.ts
 
 # 2) manifest-driven runner: aggregates results/ into counts.json
@@ -52,7 +62,11 @@ node experiments/reconnect/prototype/walk.mjs
   sibling install; avoids vitest's populateGlobal/undici crash)
 - `testing/renderHook.ts` — React 19 render helper
 - `runner.ts` — manifest-driven aggregation + replay check
+- `production-handlers.ts` — PRODUCTION-OBSERVED duplicate-delivery
+  receipts from the real registered handlers (convex-test, offline);
+  `production-handlers.test.ts` pins them; `run.ts` is the entry point
 - `prototype/` — real hooks in a real browser, driven by `walk.mjs`
+  (keyboard-only, reduced motion)
 - `results/` — per-scenario counts, counts.json, replay.json, walk states
   and screenshots
 

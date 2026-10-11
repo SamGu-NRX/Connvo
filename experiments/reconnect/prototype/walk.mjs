@@ -29,9 +29,26 @@ const server = spawn("python3", ["-m", "http.server", "41731", "--bind", "127.0.
 await new Promise((r) => setTimeout(r, 600));
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1100, height: 950 } });
+// Reduced motion: honor the OS-level preference so the walk is deterministic
+// and comfortable; the prototype must not require animation frames to settle.
+const page = await browser.newPage({
+  viewport: { width: 1100, height: 950 },
+  reducedMotion: "reduce",
+});
 const consoleErrors = [];
 page.on("pageerror", (e) => consoleErrors.push(String(e)));
+
+// Keyboard-only interaction: focus each control and activate it with
+// Enter/Space. No mouse coordinates — the walk must pass for keyboard users.
+const activate = async (testid) => {
+  await page.focus(`[data-testid="${testid}"]`);
+  await page.keyboard.press("Enter");
+};
+const typeInto = async (testid, text) => {
+  await page.focus(`[data-testid="${testid}"]`);
+  await page.keyboard.press("Control+a");
+  await page.keyboard.type(text, { delay: 10 });
+};
 
 const readState = () =>
   page.evaluate(() => {
@@ -70,39 +87,40 @@ await page.waitForFunction(
 await record("joined");
 
 // A) Request loss: op queued offline, replayed exactly once on restore.
-await page.click('[data-testid="btn-cut"]');
-await page.fill('[data-testid="editor"]', "hello world");
+await activate("btn-cut");
+await typeInto("editor", "hello world");
 await page.waitForTimeout(300);
 await record("offline-edit-queued");
-await page.click('[data-testid="btn-restore"]');
+await activate("btn-restore");
 await page.waitForTimeout(300);
 await record("restored-replayed-once");
 
 // B) Ack loss: server accepted, client does not know; restore re-sends and
 //    the op is applied a second time (duplicate acceptance).
-await page.click('[data-testid="btn-arm-ackloss"]');
-await page.fill('[data-testid="editor"]', "hello world!");
+await activate("btn-arm-ackloss");
+await typeInto("editor", "hello world!");
 await page.waitForTimeout(300);
 await record("ack-lost-syncing-stuck");
-await page.click('[data-testid="btn-restore"]');
+await activate("btn-restore");
 await page.waitForTimeout(300);
 await record("restored-duplicate-applied");
 
 // C) Lifecycle: clean start, then end queued offline and replayed.
-await page.click('[data-testid="btn-start"]');
+await activate("btn-start");
 await page.waitForTimeout(300);
 await record("meeting-started");
-await page.click('[data-testid="btn-cut"]');
-await page.click('[data-testid="btn-end"]');
+await activate("btn-cut");
+await activate("btn-end");
 await page.waitForTimeout(300);
 await record("end-queued-offline");
-await page.click('[data-testid="btn-restore"]');
+await activate("btn-restore");
 await page.waitForTimeout(300);
 await record("end-replayed-once");
 
 const observations = {
   steps,
   consoleErrors,
+  interaction: { keyboardOnly: true, reducedMotion: true },
   summary: {
     requestLoss: "queued op replayed exactly once; saved state converged on restore",
     ackLoss: "server truth advanced while isSyncing stayed true; restore re-sent and duplicated the acceptance",
