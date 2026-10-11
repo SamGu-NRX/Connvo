@@ -306,7 +306,9 @@ export class NotesLedger {
   onEdit = (text: string): void => {
     if (this.destroyed) return;
     this.buffer = text;
-    this.bufferHoldsUnsentWords = true;
+    // Only "unsent" when the buffer differs from the composed view — a
+    // no-op edit must not latch the updating state forever.
+    this.bufferHoldsUnsentWords = text !== this.composedText();
     this.scheduleDebounce();
     this.commit();
   };
@@ -335,6 +337,10 @@ export class NotesLedger {
     this.rebaseIfSafe();
     const ops = diffToSiblingOps(this.composedText(), this.buffer);
     if (ops.length > 0) this.createRecords(ops);
+    // The buffer's words now live in ledger records (or were already
+    // composed) — mirror the keystroke-path handoff in flush(), otherwise
+    // the status latches on "updating" after a successful retry.
+    this.bufferHoldsUnsentWords = false;
     this.flush();
     this.commit();
   };
@@ -611,6 +617,12 @@ export class NotesLedger {
     // field, so a wrong or foreign response cannot poison it.
     if (savedCount > 0 && batch.length > 0) {
       this.awaitingAdoptionVersion = batch[0].baseVersion + 1;
+      // The adoption read may already have landed — a push can precede the
+      // response. The gate only waits for a version the client has not
+      // incorporated yet, mirroring the ingest-time check.
+      if (this.serverVersion >= this.awaitingAdoptionVersion) {
+        this.awaitingAdoptionVersion = null;
+      }
     }
     this.flushRequested = false;
     this.flush(); // a follow-up batch only proceeds if the gate allows

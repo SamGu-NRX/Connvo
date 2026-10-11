@@ -91,19 +91,26 @@ export class NotesBackend {
   /**
    * Applies a batch through the REAL merged mutation as the given face, then
    * pushes a fresh read to every live subscriber of the meeting.
+   *
+   * `opts.push: false` applies the mutation WITHOUT the automatic push — the
+   * matrix uses it when a scenario must control exactly when (and to whom)
+   * fresh reads arrive, mirroring a lost push rather than a lost response.
    */
   async applyBatch(
     face: AuthedEnv,
     meetingId: Id<"meetings">,
     clientId: string,
     batch: OutgoingBatch,
+    opts?: { push?: boolean },
   ): Promise<BatchApplyNoteOperationsResponse> {
     const response = (await face.mutation(api.notes.mutations.batchApplyNoteOperations, {
       meetingId,
       clientId,
       operations: batch.operations,
     })) as BatchApplyNoteOperationsResponse;
-    await this.pushToSubscribers(meetingId);
+    if (opts?.push !== false) {
+      await this.pushToSubscribers(meetingId);
+    }
     return response;
   }
 
