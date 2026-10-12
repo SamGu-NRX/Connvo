@@ -1,0 +1,210 @@
+=== PNPM_BOOT 03:34:40 ===
+
+added 1 package in 1s
+9.15.9
+=== CLONE 03:34:43 ===
+Cloning into 'repo'...
+1242d1c test(history): mounted proofs for the flagged meetings routes
+=== INSTALL 03:34:45 ===
++ tailwindcss 4.1.16
++ tsx 4.20.6
++ typescript 5.9.3
++ vitest 4.0.4
+
+Done in 22.2s using pnpm v9.15.9
+INSTALL_EXIT=0
+=== TYPECHECK 03:35:08 ===
+src/app/app/meetings/[id]/page.tsx(77,9): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/[id]/page.tsx(80,42): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/meetings-pages.test.ts(32,46): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'ReactNode'.
+src/app/app/meetings/meetings-pages.test.ts(234,21): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/meetings-pages.test.ts(265,21): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/meetings-pages.test.ts(275,21): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/page.tsx(37,9): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/page.tsx(46,15): error TS2339: Property 'page' does not exist on type 'any[]'.
+src/app/app/meetings/page.tsx(56,18): error TS2339: Property 'page' does not exist on type 'any[]'.
+src/app/app/meetings/page.tsx(56,28): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/app/videocall/[id]/page.tsx(331,42): error TS7006: Parameter 'msg' implicitly has an 'any' type.
+src/components/mvp/one-on-one-meeting.tsx(90,13): error TS2741: Property 'meetingId' is missing in type '{}' but required in type 'AfterCallScreenProps'.
+src/components/ui/chart.tsx(119,7): error TS2339: Property 'payload' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, "ref">'.
+src/components/ui/chart.tsx(124,7): error TS2339: Property 'label' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, "ref">'.
+src/components/ui/chart.tsx(188,25): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(188,31): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/ui/chart.tsx(264,41): error TS2344: Type '"verticalAlign" | "payload"' does not satisfy the constraint '"string" | "name" | "mode" | "id" | "type" | "key" | "filter" | "fill" | "values" | "role" | "content" | "version" | "local" | "cursor" | "layout" | "offset" | "result" | "target" | ... 428 more ... | "onBBoxUpdate"'.
+  Type '"payload"' is not assignable to type '"string" | "name" | "mode" | "id" | "type" | "key" | "filter" | "fill" | "values" | "role" | "content" | "version" | "local" | "cursor" | "layout" | "offset" | "result" | "target" | ... 428 more ... | "onBBoxUpdate"'.
+src/components/ui/chart.tsx(275,19): error TS2339: Property 'length' does not exist on type '{}'.
+src/components/ui/chart.tsx(288,18): error TS2339: Property 'map' does not exist on type '{}'.
+src/components/ui/chart.tsx(288,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/hooks/useCollaborativeNotes.ts(112,11): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/hooks/useCollaborativeNotes.ts(133,9): error TS2322: Type '{ type: "insert" | "delete" | "retain"; position: number | undefined; text: string | undefined; length: number | undefined; }[]' is not assignable to type '{ operation: { length?: number | undefined; content?: string | undefined; type: "insert" | "delete" | "retain"; position: number; }; clientSequence: number; }[]'.
+  Type '{ type: "insert" | "delete" | "retain"; position: number | undefined; text: string | undefined; length: number | undefined; }' is missing the following properties from type '{ operation: { length?: number | undefined; content?: string | undefined; type: "insert" | "delete" | "retain"; position: number; }; clientSequence: number; }': operation, clientSequence
+src/hooks/useCollaborativeNotes.ts(150,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/note").MeetingNote | null | undefined' is not assignable to type 'import("/home/user/work/repo/src/hooks/useCollaborativeNotes").MeetingNote | null | undefined'.
+  Type 'MeetingNote' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt
+src/hooks/useInCallPrompts.ts(139,9): error TS2353: Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: "used" | "dismissed" | "upvoted"; promptId: Id<"prompts">; }'.
+src/hooks/useMeetingLifecycle.ts(146,9): error TS2561: Object literal may only specify known properties, but 'participantIds' does not exist in type '{ organizerId?: Id<"users"> | undefined; description?: string | undefined; scheduledAt?: number | undefined; duration?: number | undefined; recordingEnabled?: boolean | undefined; ... 4 more ...; title: string; }'. Did you mean to write 'maxParticipants'?
+src/hooks/useMeetingLifecycle.ts(149,27): error TS2345: Argument of type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to parameter of type 'SetStateAction<Id<"meetings"> | null>'.
+src/hooks/useMeetingLifecycle.ts(155,13): error TS2322: Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<"meetings">'.
+  Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'.
+src/hooks/useMeetingLifecycle.ts(164,7): error TS2322: Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<"meetings">'.
+  Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'.
+src/hooks/usePostCallInsights.ts(169,30): error TS2339: Property 'score' does not exist on type 'number'.
+src/hooks/usePostCallInsights.ts(205,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/usePostCallInsights").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/usePostCallInsights").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/usePostCallInsights.ts(206,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/note").MeetingNote | null | undefined' is not assignable to type 'import("/home/user/work/repo/src/hooks/usePostCallInsights").MeetingNote | null | undefined'.
+  Type 'MeetingNote' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt
+src/hooks/usePreCallPrompts.ts(131,9): error TS2353: Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: "used" | "dismissed" | "upvoted"; promptId: Id<"prompts">; }'.
+src/hooks/useTranscription.ts(106,37): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(109,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(119,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(128,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(134,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/lib/history/view.ts(14,60): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/lib/history/view.ts(101,45): error TS7006: Parameter 'participant' implicitly has an 'any' type.
+src/lib/history/view.ts(115,51): error TS7006: Parameter 'event' implicitly has an 'any' type.
+src/lib/history/view.ts(123,35): error TS7006: Parameter 'prompt' implicitly has an 'any' type.
+test/convex/openapiExamples.test.ts(177,9): error TS2353: Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'.
+test/convex/openapiExamples.test.ts(192,9): error TS2353: Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'.
+test/convex/setup.ts(22,12): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+test/test.setup.mts(1,23): error TS2688: Cannot find type definition file for 'vite/client'.
+test/test.setup.mts(3,36): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+ ELIFECYCLE  Command failed with exit code 2.
+TYPECHECK_EXIT=0
+=== TESTRUN 03:35:31 ===
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mMaintenance Recommendations[2m > [22m[2mshould prioritize critical issues
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:272:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/monitoringTools.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m test/convex/openapiExamples.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+ [31m❯[39m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 313[2mms[22m[39m
+     [32m✓[39m renders nothing for the meetings list route[32m 94[2mms[22m[39m
+     [32m✓[39m renders nothing for the meeting detail route[32m 60[2mms[22m[39m
+     [32m✓[39m renders the loading skeleton before the first page arrives[32m 11[2mms[22m[39m
+     [32m✓[39m renders the empty state when the caller has no meetings[32m 4[2mms[22m[39m
+     [32m✓[39m renders meeting items with titles, badges and links from the contract shape[32m 131[2mms[22m[39m
+     [32m✓[39m renders the loading skeleton while history resolves[32m 2[2mms[22m[39m
+[31m     [31m×[31m renders title, recap, calendar export and stay-in-touch from the history payload[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m hides calendar export for meetings without a scheduled time[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m notes when everyone has opted in to stay in touch[39m[32m 1[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/insights/insights.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 100[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/matching/matching.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/prompts/prompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/users/onboarding.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/ics.ical.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/components/history/MeetingRecap.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/components/mvp/navigation-gating.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 5 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m [30m[42m convex [49m[39m convex/history/history.test.ts[2m > [22mAfter-call history data layer[2m > [22mlistMyMeetings[2m > [22mpaginates with cursor and reports isDone
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m convex/history/history.test.ts:[2m132:33[22m[39m
+    [90m130| [39m      })[33m;[39m
+    [90m131| [39m      [34mexpect[39m(secondPage[33m.[39mpage)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m132| [39m      [34mexpect[39m(secondPage[33m.[39misDone)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m133| [39m      [34mexpect[39m(second[33m.[39mmeetingId)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m134| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[42m convex [49m[39m convex/history/history.test.ts[2m > [22mAfter-call history data layer[2m > [22mgetMeetingHistory[2m > [22mthrows the identical forbidden error for a non-participant and a nonexistent meeting (no existence leak)
+[31m[1mAssertionError[22m: expected undefined to be 'FORBIDDEN' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"FORBIDDEN"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m convex/history/history.test.ts:[2m271:39[22m[39m
+    [90m269| [39m      }
+    [90m270| [39m      [34mexpect[39m(nonParticipantThrew)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m271| [39m      [34mexpect[39m(nonParticipantData[33m.[39mcode)[33m.[39m[34mtoBe[39m([32m"FORBIDDEN"[39m)[33m;[39m
+    [90m   | [39m                                      [31m^[39m
+    [90m272| [39m      [34mexpect[39m(nonParticipantData[33m.[39mmessage)[33m.[39m[34mtoBe[39m(
+    [90m273| [39m        [32m"Access denied: Not a meeting participant"[39m[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts[2m > [22mflag-on detail route (mounted)[2m > [22mrenders title, recap, calendar export and stay-in-touch from the history payload
+[41m[1m FAIL [22m[49m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts[2m > [22mflag-on detail route (mounted)[2m > [22mhides calendar export for meetings without a scheduled time
+[41m[1m FAIL [22m[49m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts[2m > [22mflag-on detail route (mounted)[2m > [22mnotes when everyone has opted in to stay in touch
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading '_id')[39m
+[36m [2m❯[22m toRecapInput src/lib/history/view.ts:[2m94:28[22m[39m
+    [90m 92| [39m  [35mreturn[39m {
+    [90m 93| [39m    meeting[33m:[39m {
+    [90m 94| [39m      _id[33m:[39m history[33m.[39mmeeting[33m.[39m_id[33m,[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 95| [39m      title[33m:[39m history[33m.[39mmeeting[33m.[39mtitle[33m,[39m
+    [90m 96| [39m      state[33m:[39m history[33m.[39mmeeting[33m.[39mstate[33m,[39m
+[90m [2m❯[22m buildMeetingRecap src/lib/history/view.ts:[2m135:21[22m[39m
+[90m [2m❯[22m MeetingDetail src/app/app/meetings/[id]/page.tsx:[2m87:17[22m[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m9808:18[22m[39m
+[90m [2m❯[22m renderWithHooks node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5062:19[22m[39m
+[90m [2m❯[22m renderElement node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5497:23[22m[39m
+[90m [2m❯[22m retryNode node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6428:21[22m[39m
+[90m [2m❯[22m renderNodeDestructive node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6367:11[22m[39m
+[90m [2m❯[22m renderElement node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5483:11[22m[39m
+[90m [2m❯[22m retryNode node_modules/.pnpm/react-dom@19.2.0_react@19.2.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6428:21[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m22 passed[39m[22m[90m (24)[39m
+[2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m290 passed[39m[22m[90m (295)[39m
+[2m   Start at [22m 03:35:32
+[2m   Duration [22m 4.75s[2m (transform 1.13s, setup 181ms, collect 1.28s, tests 1.81s, environment 217ms, prepare 63ms)[22m
+
+ ELIFECYCLE  Command failed with exit code 1.
+TESTRUN_EXIT=0
+=== M3_DONE 03:35:36 ===
