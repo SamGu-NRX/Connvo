@@ -11,6 +11,9 @@ import { fileURLToPath } from "node:url";
 import { startMockServer } from "./mock-server.mjs";
 import { createTurn, relayConfig } from "./turn.mjs";
 import { createShaper } from "./shaper.mjs";
+import { closedSessions, createEvalMeeting, installSignalingCut } from "./convex-signaling.mjs";
+import { SECOND_CAMERA_ID, secondCameraInit } from "./second-camera.mjs";
+import { loadContracts } from "./contracts.mjs";
 
 const RUNNER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(RUNNER_DIR, "..", "fixtures");
@@ -48,14 +51,21 @@ export class RunContext {
    *   route registers as its own transport name via --base-url)
    * @param {number} [opts.seed] run seed (shaper determinism)
    * @param {string | null} [opts.baseUrl] external page origin (integration mode)
+   * @param {"bench" | "real"} [opts.page] which page the peers open
    * @param {boolean} [opts.warmUp] load the bench page once before scoring (tests that never start Next pass false)
    * @param {string} [opts.signalingStatePath] state.json override for the
    *   reference signaling members derivation (tests inject a synthetic one)
    * @param {(message: string) => void} [opts.log] progress logger
+   * @param {"reference" | "convex"} [opts.signaling] who carries call
+   *   signaling: the eval reference server, or the local Convex backend
+   *   (real page only; see convex-signaling.mjs)
    */
-  constructor({ transport = "mock", seed = 1, baseUrl = null, page = "bench", log = console.log, signalingStatePath, warmUp = true } = {}) {
+  constructor({ transport = "mock", seed = 1, baseUrl = null, page = "bench", log = console.log, signalingStatePath, warmUp = true, signaling = "reference" } = {}) {
     /** "bench" (/dev/call-bench/<transport>) or "real" (/app/call/<id>, the product page). */
     this.page = page;
+    if (signaling !== "reference" && signaling !== "convex") throw new Error(`signaling must be reference or convex (got "${signaling}")`);
+    if (signaling === "convex" && (page !== "real" || !baseUrl)) throw new Error("signaling over Convex runs on the real call page (--page=real --base-url=...)");
+    this.signalingMode = signaling;
     this._warmUp = warmUp;
     this.transport = transport;
     this.seed = seed;
@@ -75,6 +85,8 @@ export class RunContext {
     this._relayConfigCache = new Map(); // participant -> RTCConfiguration|null
     this._relayEnabled = false; // H-07/H-15 flip this on
     this._peers = new Set(); // live peer records - stop() closes them so failed scenarios never leak browsers
+    /** @type {WeakMap<object, Awaited<ReturnType<typeof installSignalingCut>>>} peer -> its Convex signaling cut */
+    this._signalingCuts = new WeakMap();
   }
 
   async start() {
@@ -82,7 +94,7 @@ export class RunContext {
       this.url = this.baseUrl;
       // TURN starts lazily, only for the scenarios that force relay
       // (H-07/H-15): the rest must run on a machine without it.
-      await this.startReferenceSignalingIfWired();
+      if (this.signalingMode === "reference") await this.startReferenceSignalingIfWired();
       if (this._warmUp) await this.warmUpBench();
       return this;
     }
@@ -150,6 +162,13 @@ export class RunContext {
 
   /** Fresh meeting per scenario-seed for isolation. */
   newMeeting(name) {
+    if (this.signalingMode === "convex") {
+      // A real meeting row: the mesh API refuses unknown meetings.
+      this.meetingId = createEvalMeeting(`${name} s${this.seed}`);
+      this._relayEnabled = false;
+      this._relayConfigCache.clear();
+      return this.meetingId;
+    }
     // Backend mode: the reference signaling server fail-closes membership
     // against one pinned meetingId — per-scenario ids would be rejected.
     // Bench mode (no manifest) always uses fresh per-scenario ids. Isolation
@@ -258,6 +277,13 @@ export class RunContext {
     });
     peer.__query = query;
     if (this.page === "real") {
+      // H-05: the real page switches cameras from its device menu, so it
+      // needs a second camera to pick.
+      const { SECOND_CAMERA_COLOR } = loadContracts();
+      await peer.context.addInitScript(/** @type {any} */ (secondCameraInit), { deviceId: SECOND_CAMERA_ID, color: [...SECOND_CAMERA_COLOR] });
+    }
+    if (this.signalingMode === "convex") this._signalingCuts.set(peer, await installSignalingCut(peer.context));
+    if (this.page === "real") {
       await this.openRealPage(peer, participant, params);
     } else {
       await peer.page.goto(`${this.url}${this.benchPath}?${query}`, { waitUntil: "domcontentloaded" });
@@ -295,8 +321,45 @@ export class RunContext {
     })();
   }
 
+  /**
+   * Press Join call once the lobby allows it (the real page after a reload
+   * or after Rejoin). The bench joins by itself.
+   * @param {{ page: import('@playwright/test').Page }} peer
+   */
+  async joinFromLobby(peer) {
+    if (this.page !== "real") return;
+    await peer.page.locator('[data-testid="join-call"]:not([disabled])').click({ timeout: 30000 });
+  }
+
+  /**
+   * H-05: switch to the second camera. The bench has a button for it; the
+   * real page picks it from the device menu, as a person would.
+   * @param {{ page: import('@playwright/test').Page }} peer
+   */
+  async switchCamera(peer) {
+    if (this.page !== "real") {
+      await peer.page.click('[data-testid="switch-camera"]');
+      return;
+    }
+    await peer.page.click('[data-testid="device-settings"]');
+    await peer.page.selectOption("#device-camera", SECOND_CAMERA_ID, { timeout: 5000 });
+    await peer.page.keyboard.press("Escape");
+  }
+
+  /**
+   * The Convex signaling cut of the participant's most recent live peer.
+   * @param {string} participant
+   */
+  _signalingCut(participant) {
+    const peer = [...this._peers].filter((p) => p.peerId === participant).pop();
+    const cut = peer && this._signalingCuts.get(peer);
+    if (!cut) throw new Error(`no live peer ${participant} with a Convex signaling cut`);
+    return cut;
+  }
+
   // Fault hooks (mock relay only; integration mode reports absence).
   killPeerSocket(participant) {
+    if (this.signalingMode === "convex") return this._signalingCut(participant).cut();
     if (this.relay) return this.relay.killPeerSocket(participant);
     // Reference transports: the signaling server exposes the same fault
     // hook (POST /drop) — the peer's socket dies without a bye, exactly
@@ -305,7 +368,18 @@ export class RunContext {
     throw new Error(`killPeerSocket unavailable for transport "${this.transport}" — no relay and no reference signaling handle`);
   }
 
+  /**
+   * Bring a cut peer's signaling back. The reference server and the relay
+   * kill one socket and the client reconnects by itself, so only the Convex
+   * cut, which holds the network down, needs this.
+   * @param {string} participant
+   */
+  async restorePeerSocket(participant) {
+    if (this.signalingMode === "convex") await this._signalingCut(participant).restore();
+  }
+
   sessionEvents() {
+    if (this.signalingMode === "convex") return this.meetingId ? closedSessions(this.meetingId) : [];
     // Mock relay keeps the log in-process; the reference transports' log
     // lives in the spawned signaling server (GET /?events=1). Neither → [].
     if (this.relay) return this.relay.sessionEvents();

@@ -33,6 +33,10 @@ export interface WebRTCSession {
   userId: Id<"users">;
   state: WebRTCSessionState;
   metadata?: Record<string, string | number | boolean>;
+  lastHeartbeatAt?: number;
+  micOn?: boolean;
+  cameraOn?: boolean;
+  closedReason?: "left" | "replaced" | "expired" | "ended";
   createdAt: number;
   updatedAt: number;
 }
@@ -58,7 +62,8 @@ export interface WebRTCSignal {
   meetingId: Id<"meetings">;
   sessionId: string;
   fromUserId: Id<"users">;
-  toUserId?: Id<"users">; // null for broadcast signals
+  toUserId?: Id<"users">; // legacy; the call mesh always sets both targets
+  toSessionId?: string;
   type: WebRTCSignalType;
   // SDP or ICE candidate data
   data: SDPData | ICEData;

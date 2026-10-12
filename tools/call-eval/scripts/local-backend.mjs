@@ -507,6 +507,8 @@ const serving = (/** @type {string} */ code) => code.startsWith("2") || code.sta
     NEXT_PUBLIC_CONVEX_URL: convexUrl,
     NEXT_PUBLIC_CONNVO_TEST_AUTH: "1",
     NEXT_PUBLIC_CONNVO_CALL_BENCH: "1",
+    // The real call page, signaling over this backend (convex/meetings/webrtc/mesh.ts).
+    NEXT_PUBLIC_CONNVO_REAL_CALL: "1",
     WORKOS_CLIENT_ID: DUMMY_WORKOS_CLIENT_ID,
     WORKOS_API_KEY: DUMMY_WORKOS_API_KEY,
     // authkit-nextjs reads the redirect URI only from the NEXT_PUBLIC_ name.

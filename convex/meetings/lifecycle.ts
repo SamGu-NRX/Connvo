@@ -19,6 +19,7 @@ import {
   assertOwnershipOrAdmin,
 } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
+import { closeMeetingSessions } from "@convex/meetings/webrtc/mesh";
 import { internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { withIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
@@ -1089,6 +1090,7 @@ export const endMeeting = mutation({
       state: "concluded",
       updatedAt: now,
     });
+    await closeMeetingSessions(ctx, meetingId);
 
     // Update meeting state record and calculate duration
     const meetingState = await ctx.db

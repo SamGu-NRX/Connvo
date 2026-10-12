@@ -3,46 +3,173 @@
 /**
  * The real call page behind NEXT_PUBLIC_CONNVO_REAL_CALL=1.
  *
- * Calls connect through a signaling service. The Convex one does not exist
- * yet (it waits for local Convex, PR #35), so today the page can only connect
- * in the local eval setup: with NEXT_PUBLIC_CONNVO_CALL_BENCH=1 it takes a
- * bench identity from ?as=A..D and uses the reference WebSocket signaling
- * server from ?signal= or NEXT_PUBLIC_CONNVO_CALL_SIGNALING_URL. Everywhere
- * else it says plainly that calls need the signaling service.
+ * Signaling, in order:
+ * - the eval reference server, when NEXT_PUBLIC_CONNVO_CALL_BENCH=1 and the
+ *   page has a ?signal= URL (bench identity from ?as=A..D);
+ * - Convex (convex/meetings/webrtc/mesh.ts), whenever Convex is configured:
+ *   the signed-in user joins if they are a participant of the meeting, and
+ *   assertMeetingAccess refuses everyone else;
+ * - otherwise a plain "calls need the signaling service" state.
  */
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { useConvex, useConvexAuth, useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
 
 import { CallRoom } from "@/components/call/CallRoom";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
+import {
+  convexSignaling,
+  type ConvexCallClient,
+} from "@/lib/call/transports/p2p/convex-signaling";
 import { signalUrlFromParam } from "@/app/dev/call-bench/[transport]/signal-url";
 
 const BENCH = process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH === "1";
 const BENCH_IDS = ["A", "B", "C", "D"];
+const CONVEX_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_CONVEX_URL);
+// The local test identities (CALL-PLAN D2) are WorkOS subjects
+// local-test-a..o; on the page and to the harness they are A..O, the same
+// ids the bench uses. Real WorkOS users keep their own ids.
+const TEST_AUTH = process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1";
+const participantIdOf = (workosUserId: string) =>
+  TEST_AUTH && workosUserId.startsWith("local-test-")
+    ? workosUserId.slice("local-test-".length).toUpperCase()
+    : workosUserId;
 
 export function RealCall() {
   const params = useParams();
   const search = useSearchParams();
   const meetingId = String(params.id ?? "");
-  const signalUrl =
-    signalUrlFromParam(search.get("signal") ?? undefined) ??
-    process.env.NEXT_PUBLIC_CONNVO_CALL_SIGNALING_URL ??
-    null;
+  // An explicit ?signal= always means the bench; the build-time default
+  // server only stands in when Convex is not configured.
+  const benchSignalUrl = BENCH
+    ? (signalUrlFromParam(search.get("signal") ?? undefined) ??
+      (CONVEX_CONFIGURED
+        ? null
+        : (process.env.NEXT_PUBLIC_CONNVO_CALL_SIGNALING_URL ?? null)))
+    : null;
 
-  if (!BENCH || !signalUrl) return <NoSignaling />;
+  if (benchSignalUrl) {
+    const requested = (search.get("as") ?? "A").toUpperCase();
+    const selfId = BENCH_IDS.includes(requested) ? requested : "A";
+    const name = search.get("name")?.slice(0, 80) || `Guest ${selfId}`;
+    return (
+      <BenchCall
+        meetingId={meetingId}
+        selfId={selfId}
+        name={name}
+        signalUrl={benchSignalUrl}
+      />
+    );
+  }
+  if (CONVEX_CONFIGURED) return <ConvexCall meetingId={meetingId} />;
+  return <NoSignaling />;
+}
 
-  const requested = (search.get("as") ?? "A").toUpperCase();
-  const selfId = BENCH_IDS.includes(requested) ? requested : "A";
-  const name = search.get("name")?.slice(0, 80) || `Guest ${selfId}`;
+/** A call signaled over Convex, for the signed-in user. */
+function ConvexCall({ meetingId }: { meetingId: string }) {
+  const convex = useConvex();
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const me = useQuery(
+    api.users.queries.getCurrentUser,
+    isAuthenticated ? {} : "skip",
+  );
+
+  const createTransport = useCallback(
+    () =>
+      Promise.resolve(
+        createP2PTransport({
+          signaling: convexSignaling(convex as unknown as ConvexCallClient, {
+            participantIdOf,
+          }),
+        }),
+      ),
+    [convex],
+  );
+  // The Convex client already carries the user's token.
+  const identityToken = useCallback(async () => "", []);
+  const self = useMemo(
+    () =>
+      me
+        ? {
+            id: participantIdOf(me.workosUserId),
+            name: me.displayName ?? me.email ?? "You",
+          }
+        : null,
+    [me],
+  );
+
+  if (isLoading || (isAuthenticated && me === undefined)) {
+    return (
+      <CallNotice
+        title="Getting your call ready"
+        body="Checking who you are…"
+      />
+    );
+  }
+  if (!isAuthenticated || !self) {
+    return (
+      <CallNotice
+        title="Sign in to join this call"
+        body="Calls are for the people invited to the meeting. Sign in, then open this link again."
+        failed
+      />
+    );
+  }
   return (
-    <BenchCall
-      meetingId={meetingId}
-      selfId={selfId}
-      name={name}
-      signalUrl={signalUrl}
-    />
+    <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
+      <CallRoom
+        meetingId={meetingId}
+        self={self}
+        createTransport={createTransport}
+        identityToken={identityToken}
+        // Presence carries ids, not names; test users read as Guest A..O.
+        nameFor={(id) =>
+          TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
+        }
+        inviteLink={() => {
+          const url = new URL(window.location.href);
+          url.search = "";
+          return url.toString();
+        }}
+        exitHref="/app"
+      />
+    </div>
+  );
+}
+
+function CallNotice({
+  title,
+  body,
+  failed,
+}: {
+  title: string;
+  body: string;
+  failed?: boolean;
+}) {
+  return (
+    <div
+      data-call-phase={failed ? "failed" : "idle"}
+      className="grid h-full min-h-[24rem] place-items-center p-6"
+    >
+      <div className="flex max-w-md flex-col gap-3 text-center">
+        <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
+        <p
+          data-testid={failed ? "call-error" : undefined}
+          className="text-muted-foreground text-sm"
+        >
+          {body}
+        </p>
+        <Link
+          href="/app"
+          className="bg-primary text-primary-foreground focus-visible:ring-ring/50 mx-auto mt-1 grid h-10 place-items-center rounded-md px-4 text-sm font-medium outline-none focus-visible:ring-[3px]"
+        >
+          Back to Connvo
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -119,8 +246,7 @@ function NoSignaling() {
         </h1>
         <p data-testid="call-error" className="text-muted-foreground text-sm">
           This build has no call signaling configured, so it cannot connect you
-          to anyone yet. Real calls will connect once the Convex signaling
-          service is set up.
+          to anyone yet.
         </p>
         <Link
           href="/app"

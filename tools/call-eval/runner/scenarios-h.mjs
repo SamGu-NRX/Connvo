@@ -237,7 +237,7 @@ export async function scenario_H_05(ctx) {
   await installColorHook(peerB);
 
   const before = await measureFps(peerB, "A", 1500);
-  await click(peerA, "switch-camera");
+  await ctx.switchCamera(peerA);
   const during = await measureFps(peerB, "A", 2500);
   const phase = await waitFor(peerA, phaseIs("connected"), { timeoutMs: 5000, describe: "phase staying connected after switch" });
 
@@ -300,7 +300,7 @@ export async function scenario_H_07(ctx, { seed }) {
   const recoveries = [];
   for (const durationS of [3, 10, 30]) {
     ctx.shaperFor("B").applyProfile({ lossPct: 100, delayMs: 0 });
-    ctx.killPeerSocket("B"); // signaling gone too
+    await ctx.killPeerSocket("B"); // signaling gone too
 
     await waitFor(peerB, phaseIs("reconnecting"), {
       timeoutMs: 15000,
@@ -309,6 +309,7 @@ export async function scenario_H_07(ctx, { seed }) {
     await H(durationS * 1000);
 
     ctx.shaperFor("B").applyProfile({ lossPct: 0, delayMs: 0 });
+    await ctx.restorePeerSocket("B");
     const restoreAt = Date.now();
     // One deadline from the restore covers reconnecting AND media resuming:
     // the reviewed version gave each wait its own 10 s.
@@ -332,7 +333,10 @@ export async function scenario_H_07(ctx, { seed }) {
     }
     recoveries.push({ durationS, recoveryMs, tilesA, tilesB });
   }
-  return { seed, relayPathB: pathB, shaperB: ctx.shaperFor("B").stats(), drops: recoveries, recovery10sMs: recoveries.find((r) => r.durationS === 10)?.recoveryMs };
+  // Over Convex these show each drop ending B's session and B rejoining
+  // with a new one, i.e. that signaling really went down with the media.
+  const sessionEvents = await ctx.sessionEvents();
+  return { seed, relayPathB: pathB, shaperB: ctx.shaperFor("B").stats(), drops: recoveries, recovery10sMs: recoveries.find((r) => r.durationS === 10)?.recoveryMs, sessionEvents: sessionEvents.slice(-8) };
 }
 
 /** H-08 — recovers within 10 s (signaling outage mid-call: both sockets die at once) */
@@ -386,7 +390,8 @@ export async function scenario_H_09(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   await installColorHook(peerB); // the no-ghost media check decodes through the hook
 
-  await peerA.page.reload({ waitUntil: "domcontentloaded" }); // same URL: auto-rejoin
+  await peerA.page.reload({ waitUntil: "domcontentloaded" }); // same URL: the bench rejoins by itself
+  await ctx.joinFromLobby(peerA); // the real page reloads into its lobby
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "reloaded A reconnected" });
   await waitForValue(peerB, tileCount("A"), (n) => n === 1, {
     timeoutMs: 10000,
@@ -508,6 +513,7 @@ export async function scenario_H_13(ctx) {
     await leaveCall(peerA);
     await waitFor(peerA, phaseIs("left"), { timeoutMs: 5000, describe: `cycle ${cycle}: left` });
     await click(peerA, "join-call"); // same page re-joins; B never leaves
+    await ctx.joinFromLobby(peerA); // the real page's Rejoin goes back to its lobby first
     await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000, describe: `cycle ${cycle}: A rejoined` });
   }
 
@@ -529,7 +535,8 @@ export async function scenario_H_14(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   const peerO = await ctx.launchPeer("O");
   try {
-    await waitFor(peerO, `() => !!document.querySelector('[data-testid="call-error"]').textContent`, {
+    // The real page renders call-error only once there is an error.
+    await waitFor(peerO, `() => !!document.querySelector('[data-testid="call-error"]')?.textContent`, {
       timeoutMs: 10000,
       describe: "named rejection to appear",
     });

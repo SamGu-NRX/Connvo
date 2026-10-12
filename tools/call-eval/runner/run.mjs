@@ -28,9 +28,14 @@ export const ALL_SCENARIOS = [...H_IDS, ...P_IDS];
  */
 const UNWIRED_SCENARIOS = new Set(["H-14"]);
 
-export function wiredScenarioIds(suite = "ALL") {
+/**
+ * @param {string} [suite]
+ * @param {{ signaling?: "reference" | "convex" }} [opts] over Convex the
+ *   backend is live, so H-14 is wired too
+ */
+export function wiredScenarioIds(suite = "ALL", { signaling = "reference" } = {}) {
   const ids = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
-  return ids.filter((id) => !UNWIRED_SCENARIOS.has(id));
+  return ids.filter((id) => signaling === "convex" || !UNWIRED_SCENARIOS.has(id));
 }
 
 const H_15_METHOD = {
@@ -114,13 +119,13 @@ async function runOneInner(ctx, scenarioId, seed, log) {
 
 /**
  * Run a matrix of scenario x seed cells over the given transports.
- * @param {{ transports?: string[], scenarios?: string[], seeds?: number[], baseUrl?: string | null, page?: "bench" | "real", log?: (msg: string) => void, write?: boolean, onResult?: (result: any) => void, skipCell?: ((scenario: string, seed: number, transport: string) => boolean) | null }} [options]
+ * @param {{ transports?: string[], scenarios?: string[], seeds?: number[], baseUrl?: string | null, page?: "bench" | "real", signaling?: "reference" | "convex", log?: (msg: string) => void, write?: boolean, onResult?: (result: any) => void, skipCell?: ((scenario: string, seed: number, transport: string) => boolean) | null }} [options]
  */
-export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, page = "bench", log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}), skipCell = /** @type {((scenario: string, seed: number, transport: string) => boolean) | null} */ (null) } = {}) {
+export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, page = "bench", signaling = "reference", log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}), skipCell = /** @type {((scenario: string, seed: number, transport: string) => boolean) | null} */ (null) } = {}) {
   const results = [];
   const wallStart = Date.now();
   for (const transport of transports) {
-    const ctx = new RunContext({ transport, baseUrl, page, log });
+    const ctx = new RunContext({ transport, baseUrl, page, log, signaling });
     await ctx.start();
     try {
       if (scenarios.some((s) => s.startsWith("H"))) await ensureFixtures(ctx, log);

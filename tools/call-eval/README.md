@@ -44,3 +44,25 @@ pnpm call-eval -- --transport=reference --scenarios=H-07 --seeds=1..3 --base-url
 
 H-14 (outsider rejection) needs local Convex and belongs to the local-backend
 work (`pnpm call-eval:backend`); it runs only when named with `--scenarios=H-14`.
+
+## The real call page over Convex
+
+```sh
+node tools/call-eval/scripts/local-backend.mjs --port=3035
+pnpm call-eval -- --transport=p2p --page=real --signaling=convex \
+  --base-url=http://localhost:3035 --scenarios=H-01..H-14 --seeds=1..3
+```
+
+`local-backend.mjs` starts the anonymous local Convex backend and `next dev`
+with test sign-in and the real call page on. Each peer opens
+`/app/call/<meeting>?as=<A|B|C|O>` signed in as that seeded user and signals
+through `convex/meetings/webrtc/mesh.ts`
+(`runner/convex-signaling.mjs`):
+
+- every scenario gets a fresh meeting from the internal
+  `devEval/callMeeting:create` (A host, B and C participants; O is not invited);
+- H-07 takes the peer's browser offline and cuts its Convex WebSocket for the
+  drop, then brings both back;
+- H-05 picks a second camera from the page's device menu; Chromium has one
+  fake camera, so `runner/second-camera.mjs` adds a canvas camera to the page;
+- H-11 reads closed sessions from the internal `devEval/callMeeting:sessionEvents`.
