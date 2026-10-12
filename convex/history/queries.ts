@@ -8,7 +8,7 @@
  * non-participants.
  */
 
-import { query } from "@convex/_generated/server";
+import { query, type MutationCtx, type QueryCtx } from "@convex/_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { Doc, Id } from "@convex/_generated/dataModel";
@@ -21,26 +21,48 @@ import { isAfterCallEnabledServer } from "./flag";
  * Id-string comparator used as a deterministic tiebreak everywhere ordering
  * must be stable across identical inputs.
  */
+/** Reads per meeting are bounded: a call holds at most a handful of people. */
+const MAX_PARTICIPANTS = 50;
+const MAX_PROMPTS = 100;
+
 function compareIds(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
 /**
- * Lists the caller's meetings newest-first by MEETING time.
+ * Meetings read from the index per page, at most. A page can come back
+ * short, or empty, with isDone false: the caller asks for the next one. This
+ * keeps each call's reads bounded however few of the scanned meetings are
+ * the caller's.
+ */
+export const HISTORY_SCAN_BUDGET = 100;
+
+/** Where the next page starts: the last meeting READ (not emitted). */
+type ListCursor = { t: number | null; c: number };
+
+function decodeCursor(raw: string | null | undefined): ListCursor | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { t?: unknown; c?: unknown };
+    if (typeof parsed.t !== "number" && parsed.t !== null) return null;
+    if (typeof parsed.c !== "number") return null;
+    return { t: parsed.t, c: parsed.c };
+  } catch {
+    return null; // an unknown cursor restarts from the top
+  }
+}
+
+/**
+ * Lists the caller's meetings newest-first by MEETING time: scheduledAt
+ * descending, then newest-created first; meetings with no scheduled time
+ * come last (Convex orders a missing field below every number).
  *
- * Candidates stream from the meetings table's by_scheduled index in
- * descending order (unscheduled meetings last) and the scan stops as soon
- * as the page is full; each candidate's participation is a single indexed
- * point check on meetingParticipants(by_meeting_and_user), so a page never
- * materializes every participation, meeting, and state row.
- *
- * Pagination uses a STABLE keyset cursor — the last emitted meeting's
- * (scheduledAt, _id) — never a mutable array offset, so a meeting inserted
- * between two pages can no longer duplicate an item or hide a newer one.
- * Equal-scheduledAt groups (and the unscheduled tail) keep the documented
- * createdAt-descending then _id-ascending tiebreak; the cursor holds the
- * last emitted meeting's key and a stale cursor falls back to its group's
- * start.
+ * Reads walk the meetings by_scheduled index, whose order is exactly
+ * (scheduledAt, _creationTime), backwards, with one indexed point check of
+ * the caller's participation per meeting. The cursor is the full ordering
+ * key of the last meeting read, and the next page seeks strictly past it in
+ * the index; it never looks the cursor's meeting up, so that meeting being
+ * deleted, or a newer one arriving, cannot repeat or skip anything.
  */
 export const listMyMeetings = query({
   args: { paginationOpts: paginationOptsValidator },
@@ -66,130 +88,74 @@ export const listMyMeetings = query({
       endedAt: number | null;
     };
 
-    type ListCursor = { t: number | null; id: string };
-
-    const decodeCursor = (raw: string | null | undefined): ListCursor | null => {
-      if (!raw) return null;
-      try {
-        const parsed = JSON.parse(raw) as { t?: unknown; id?: unknown };
-        if (typeof parsed.t !== "number" && parsed.t !== null) return null;
-        if (typeof parsed.id !== "string") return null;
-        return { t: parsed.t, id: parsed.id };
-      } catch {
-        // Unknown or legacy (numeric offset) cursor: restart from the top.
-        return null;
-      }
-    };
-
     const cursor = decodeCursor(args.paginationOpts.cursor);
-    const numItems = args.paginationOpts.numItems;
+    const numItems = Math.min(Math.max(1, args.paginationOpts.numItems), 50);
+
+    // Strictly after the cursor, in descending order: the rest of the
+    // cursor's own scheduledAt group, then every earlier scheduledAt
+    // (including the unscheduled ones, which sort lowest).
+    const segments = cursor
+      ? [
+          ctx.db
+            .query("meetings")
+            .withIndex("by_scheduled", (q) =>
+              q.eq("scheduledAt", cursor.t ?? undefined).lt("_creationTime", cursor.c),
+            )
+            .order("desc"),
+          ...(cursor.t !== null
+            ? [
+                ctx.db
+                  .query("meetings")
+                  .withIndex("by_scheduled", (q) => q.lt("scheduledAt", cursor.t as number))
+                  .order("desc"),
+              ]
+            : []),
+        ]
+      : [ctx.db.query("meetings").withIndex("by_scheduled").order("desc")];
 
     const page: MyMeetingItem[] = [];
-    let lastKey: ListCursor | null = null;
-
-    const isParticipant = async (meetingId: Id<"meetings">) =>
-      await ctx.db
-        .query("meetingParticipants")
-        .withIndex("by_meeting_and_user", (q) =>
-          q.eq("meetingId", meetingId).eq("userId", identity.userId),
-        )
-        .unique();
-
-    const buildItem = async (
-      meeting: Doc<"meetings">,
-      participation: Doc<"meetingParticipants">,
-    ): Promise<MyMeetingItem> => {
-      const state = await ctx.db
-        .query("meetingState")
-        .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
-        .unique();
-      return {
-        meeting: {
-          _id: meeting._id,
-          title: meeting.title,
-          state: meeting.state,
-          scheduledAt: meeting.scheduledAt ?? null,
-          duration: meeting.duration ?? null,
-          createdAt: meeting.createdAt,
-        },
-        role: participation.role,
-        startedAt: state?.startedAt ?? null,
-        endedAt: state?.endedAt ?? null,
-      };
-    };
-
-    // Emits one equal-scheduledAt group (groupT === null is the unscheduled
-    // tail) in the documented tiebreak order, honoring the keyset position
-    // when the cursor points into this group. Returns true when the page
-    // filled so the caller can stop scanning.
-    const flushGroup = async (
-      groupT: number | null,
-      group: Doc<"meetings">[],
-    ): Promise<boolean> => {
-      const sorted = [...group].sort((a, b) => {
-        if (a.createdAt !== b.createdAt) return b.createdAt - a.createdAt;
-        return compareIds(a._id, b._id);
-      });
-      let startAt = 0;
-      if (cursor && cursor.t === groupT) {
-        const idx = sorted.findIndex((m) => m._id === cursor.id);
-        if (idx >= 0) startAt = idx + 1;
-      }
-      for (const meeting of sorted.slice(startAt)) {
-        const participation = await isParticipant(meeting._id);
+    let last: ListCursor | null = null;
+    let scanned = 0;
+    let exhausted = true;
+    scan: for (const segment of segments) {
+      for await (const meeting of segment) {
+        if (page.length >= numItems || scanned >= HISTORY_SCAN_BUDGET) {
+          exhausted = false; // more remain; the next page resumes after `last`
+          break scan;
+        }
+        scanned++;
+        last = { t: meeting.scheduledAt ?? null, c: meeting._creationTime };
+        const participation = await ctx.db
+          .query("meetingParticipants")
+          .withIndex("by_meeting_and_user", (q) =>
+            q.eq("meetingId", meeting._id).eq("userId", identity.userId),
+          )
+          .unique();
         if (!participation) continue;
-        page.push(await buildItem(meeting, participation));
-        lastKey = { t: groupT, id: meeting._id };
-        if (page.length >= numItems) return true;
-      }
-      return false;
-    };
-
-    let groupT: number | null = null;
-    let group: Doc<"meetings">[] = [];
-    const flushPending = async (): Promise<boolean> => {
-      if (group.length === 0) return false;
-      const filled = await flushGroup(groupT, group);
-      group = [];
-      return filled;
-    };
-
-    const scheduledQuery = ctx.db
-      .query("meetings")
-      .withIndex("by_scheduled", (q) =>
-        cursor && cursor.t !== null ? q.lte("scheduledAt", cursor.t) : q,
-      )
-      .order("desc");
-
-    for await (const meeting of scheduledQuery) {
-      const meetingT = meeting.scheduledAt ?? null;
-      if (meetingT !== null && meetingT !== groupT) {
-        // New scheduled-time group: flush the previous one first.
-        if (await flushPending()) break;
-        groupT = meetingT;
-        group = [meeting];
-      } else if (meetingT === null) {
-        // Unscheduled meetings sort after every scheduled one; the tail is
-        // its own group keyed only by id.
-        if (await flushPending()) break;
-        groupT = null;
-        group.push(meeting);
-      } else {
-        group.push(meeting);
+        const state = await ctx.db
+          .query("meetingState")
+          .withIndex("by_meeting", (q) => q.eq("meetingId", meeting._id))
+          .unique();
+        page.push({
+          meeting: {
+            _id: meeting._id,
+            title: meeting.title,
+            state: meeting.state,
+            scheduledAt: meeting.scheduledAt ?? null,
+            duration: meeting.duration ?? null,
+            createdAt: meeting.createdAt,
+          },
+          role: participation.role,
+          startedAt: state?.startedAt ?? null,
+          endedAt: state?.endedAt ?? null,
+        });
       }
     }
-    await flushPending();
 
-    // Convex page semantics: an exactly-full page cannot know it is the
-    // last, so isDone stays false and the next short or empty page
-    // completes.
     return {
       page,
-      isDone: page.length < numItems,
-      continueCursor:
-        lastKey === null
-          ? args.paginationOpts.cursor ?? ""
-          : JSON.stringify(lastKey),
+      isDone: exhausted,
+      continueCursor: last ? JSON.stringify(last) : (args.paginationOpts.cursor ?? ""),
     };
   },
 });
@@ -244,7 +210,7 @@ export const getMeetingHistory = query({
     const participantRows = await ctx.db
       .query("meetingParticipants")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .collect();
+      .take(MAX_PARTICIPANTS);
 
     const participants = await Promise.all(
       participantRows.map(async (row) => {
@@ -275,15 +241,16 @@ export const getMeetingHistory = query({
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
 
+    // The 200 most recent events (newest by insertion), shown in time order.
     const eventRows = await ctx.db
       .query("meetingEvents")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .collect();
+      .order("desc")
+      .take(200);
     eventRows.sort(
       (a, b) => a.timestamp - b.timestamp || compareIds(a._id, b._id),
     );
-    // Cap at the 200 most recent events, kept in chronological order.
-    const lifecycleEvents = eventRows.slice(-200);
+    const lifecycleEvents = eventRows;
 
     // Notes are read ONLY through the existing internal notes query.
     const notes = await ctx.runQuery(
@@ -297,13 +264,13 @@ export const getMeetingHistory = query({
         .withIndex("by_meeting_type", (q) =>
           q.eq("meetingId", meetingId).eq("type", "precall"),
         )
-        .collect()),
+        .take(MAX_PROMPTS)),
       ...(await ctx.db
         .query("prompts")
         .withIndex("by_meeting_type", (q) =>
           q.eq("meetingId", meetingId).eq("type", "incall"),
         )
-        .collect()),
+        .take(MAX_PROMPTS)),
     ];
     promptRows.sort(
       (a, b) => a.createdAt - b.createdAt || compareIds(a._id, b._id),
@@ -322,10 +289,39 @@ export const getMeetingHistory = query({
 });
 
 /**
- * The caller's stay-in-touch status for a meeting. Reports only the
- * caller's own opt-in and whether every participant has opted in; never
- * reveals which specific others opted in.
+ * Stay in touch is pairwise: the caller sees another participant's contact
+ * only when both of them have opted in. Before that, nothing about anyone
+ * else's choice is visible to the caller, and nothing of the caller's
+ * reaches anyone.
  */
+export async function stayInTouchView(
+  ctx: QueryCtx | MutationCtx,
+  meetingId: Id<"meetings">,
+  userId: Id<"users">,
+): Promise<{ enabled: boolean; contacts: Array<{ name: string; email: string }> }> {
+  const optedIn = async (who: Id<"users">) =>
+    (await ctx.db
+      .query("stayInTouch")
+      .withIndex("by_meeting_and_user", (q) => q.eq("meetingId", meetingId).eq("userId", who))
+      .unique()) !== null;
+  const enabled = await optedIn(userId);
+  if (!enabled) return { enabled, contacts: [] };
+  const contacts: Array<{ name: string; email: string }> = [];
+  const others = await ctx.db
+    .query("meetingParticipants")
+    .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+    .take(MAX_PARTICIPANTS);
+  for (const other of others) {
+    if (other.userId === userId || !(await optedIn(other.userId))) continue;
+    const user = await ctx.db.get(other.userId);
+    if (!user) continue;
+    contacts.push({ name: user.displayName ?? user.email, email: user.email });
+  }
+  contacts.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  return { enabled, contacts };
+}
+
+/** The caller's stay-in-touch status for a meeting (see stayInTouchView). */
 export const getStayInTouchStatus = query({
   args: { meetingId: v.id("meetings") },
   handler: async (ctx, { meetingId }) => {
@@ -336,33 +332,6 @@ export const getStayInTouchStatus = query({
     }
     const identity = await requireIdentity(ctx);
     await assertMeetingAccess(ctx, meetingId);
-
-    const mine = await ctx.db
-      .query("stayInTouch")
-      .withIndex("by_meeting_and_user", (q) =>
-        q.eq("meetingId", meetingId).eq("userId", identity.userId),
-      )
-      .unique();
-
-    const participantRows = await ctx.db
-      .query("meetingParticipants")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .collect();
-
-    let mutual = participantRows.length > 0;
-    for (const participant of participantRows) {
-      const optedIn = await ctx.db
-        .query("stayInTouch")
-        .withIndex("by_meeting_and_user", (q) =>
-          q.eq("meetingId", meetingId).eq("userId", participant.userId),
-        )
-        .unique();
-      if (!optedIn) {
-        mutual = false;
-        break;
-      }
-    }
-
-    return { enabled: mine !== null, mutual };
+    return stayInTouchView(ctx, meetingId, identity.userId);
   },
 });

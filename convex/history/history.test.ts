@@ -131,15 +131,9 @@ describe("After-call history data layer", () => {
         paginationOpts: { numItems: 1, cursor: firstPage.continueCursor },
       });
       expect(secondPage.page).toHaveLength(1);
-      // An exactly-full page cannot report completion yet — isDone lands
-      // on the next (short or empty) page.
-      expect(secondPage.isDone).toBe(false);
-
-      const thirdPage = await caller.query(api.history.queries.listMyMeetings, {
-        paginationOpts: { numItems: 1, cursor: secondPage.continueCursor },
-      });
-      expect(thirdPage.page).toHaveLength(0);
-      expect(thirdPage.isDone).toBe(true);
+      // The scan reads one meeting past a full page, so the page that takes
+      // the last meeting already knows nothing is left.
+      expect(secondPage.isDone).toBe(true);
       expect(second.meetingId).toBeDefined();
     });
 
@@ -371,14 +365,14 @@ describe("After-call history data layer", () => {
         { meetingId },
       );
       expect(status.enabled).toBe(false);
-      expect(status.mutual).toBe(false);
+      expect(status.contacts).toEqual([]);
 
       const afterEnable = await caller.mutation(
         api.history.mutations.setStayInTouch,
         { meetingId, enabled: true },
       );
       expect(afterEnable.enabled).toBe(true);
-      expect(afterEnable.mutual).toBe(false);
+      expect(afterEnable.contacts).toEqual([]);
 
       // Idempotent: repeat leaves identical state.
       const repeat = await caller.mutation(
@@ -403,7 +397,7 @@ describe("After-call history data layer", () => {
         { meetingId, enabled: false },
       );
       expect(afterDisable.enabled).toBe(false);
-      expect(afterDisable.mutual).toBe(false);
+      expect(afterDisable.contacts).toEqual([]);
 
       status = await caller.query(api.history.queries.getStayInTouchStatus, {
         meetingId,
@@ -411,62 +405,59 @@ describe("After-call history data layer", () => {
       expect(status.enabled).toBe(false);
     });
 
-    test("mutual flips true only when every participant has opted in (2-person meeting)", async () => {
+    test("two people: a contact shows only once both opted in, and never before the caller's own opt-in", async () => {
       const { meetingId, organizerWorkosId, participantWorkosIds } =
         await createTestMeetingWithParticipants(t, {}, 1, {}, {});
-
       const host = identityFor(organizerWorkosId);
       const participant = identityFor(participantWorkosIds[0]);
 
-      await host.mutation(api.history.mutations.setStayInTouch, {
+      // The participant opts in first: the host, not opted in, sees nothing.
+      const mine = await participant.mutation(api.history.mutations.setStayInTouch, {
         meetingId,
         enabled: true,
       });
-      let status = await host.query(api.history.queries.getStayInTouchStatus, {
+      expect(mine.contacts).toEqual([]);
+      let hostView = await host.query(api.history.queries.getStayInTouchStatus, { meetingId });
+      expect(hostView).toEqual({ enabled: false, contacts: [] });
+
+      // Both opted in: each sees the other, and only the other.
+      hostView = await host.mutation(api.history.mutations.setStayInTouch, {
+        meetingId,
+        enabled: true,
+      });
+      const participantView = await participant.query(api.history.queries.getStayInTouchStatus, {
         meetingId,
       });
-      expect(status.mutual).toBe(false);
+      expect(hostView.contacts).toHaveLength(1);
+      expect(participantView.contacts).toHaveLength(1);
+      expect(hostView.contacts[0].email).not.toBe(participantView.contacts[0].email);
 
+      // Withdrawing hides the contact again from the other side.
       await participant.mutation(api.history.mutations.setStayInTouch, {
         meetingId,
-        enabled: true,
+        enabled: false,
       });
-      status = await host.query(api.history.queries.getStayInTouchStatus, {
-        meetingId,
-      });
-      expect(status.enabled).toBe(true);
-      expect(status.mutual).toBe(true);
+      hostView = await host.query(api.history.queries.getStayInTouchStatus, { meetingId });
+      expect(hostView).toEqual({ enabled: true, contacts: [] });
     });
 
-    test("mutual flips true only when every participant has opted in (3-person meeting)", async () => {
+    test("three people: pairwise, each sees exactly the others who opted in too", async () => {
       const { meetingId, organizerWorkosId, participantWorkosIds } =
         await createTestMeetingWithParticipants(t, {}, 2, {}, {});
-
       const host = identityFor(organizerWorkosId);
       const first = identityFor(participantWorkosIds[0]);
       const second = identityFor(participantWorkosIds[1]);
 
-      await host.mutation(api.history.mutations.setStayInTouch, {
-        meetingId,
-        enabled: true,
-      });
-      await first.mutation(api.history.mutations.setStayInTouch, {
-        meetingId,
-        enabled: true,
-      });
-      let status = await host.query(api.history.queries.getStayInTouchStatus, {
-        meetingId,
-      });
-      expect(status.mutual).toBe(false);
+      await host.mutation(api.history.mutations.setStayInTouch, { meetingId, enabled: true });
+      await first.mutation(api.history.mutations.setStayInTouch, { meetingId, enabled: true });
+      let hostView = await host.query(api.history.queries.getStayInTouchStatus, { meetingId });
+      expect(hostView.contacts).toHaveLength(1);
+      const secondView = await second.query(api.history.queries.getStayInTouchStatus, { meetingId });
+      expect(secondView).toEqual({ enabled: false, contacts: [] });
 
-      await second.mutation(api.history.mutations.setStayInTouch, {
-        meetingId,
-        enabled: true,
-      });
-      status = await host.query(api.history.queries.getStayInTouchStatus, {
-        meetingId,
-      });
-      expect(status.mutual).toBe(true);
+      await second.mutation(api.history.mutations.setStayInTouch, { meetingId, enabled: true });
+      hostView = await host.query(api.history.queries.getStayInTouchStatus, { meetingId });
+      expect(hostView.contacts).toHaveLength(2);
     });
 
     test("refuses a non-participant and unauthenticated callers", async () => {
@@ -692,7 +683,7 @@ describe("After-call history data layer", () => {
         { meetingId },
       );
       expect(status.enabled).toBe(false);
-      expect(status.mutual).toBe(false);
+      expect(status.contacts).toEqual([]);
     });
 
     test("setStayInTouch: refused when flag off, works when flag on", async () => {
@@ -897,6 +888,102 @@ describe("After-call history data layer", () => {
         "Meeting C",
       ]);
       expect(full.isDone).toBe(true);
+    });
+  });
+
+  describe("listMyMeetings cursor (review of dc593f8)", () => {
+    /** Meetings the caller (host of the first fixture) also organizes. */
+    async function hostWith(meetings: Array<{ title: string; scheduledAt?: number }>) {
+      const first = await createTestMeetingWithParticipants(t, {}, 1, meetings[0], {});
+      const host = { userId: first.participantIds[0], workosUserId: first.participantWorkosIds[0] };
+      const ids: Record<string, Id<"meetings">> = { [meetings[0].title]: first.meetingId };
+      for (const m of meetings.slice(1)) {
+        const made = await createTestMeetingWithParticipants(t, {}, 0, m, { organizerOverride: host });
+        ids[m.title] = made.meetingId;
+      }
+      return { caller: identityFor(host.workosUserId), ids, host };
+    }
+
+    /** Every page at the given size, until isDone (with a safety bound). */
+    async function walk(caller: ReturnType<typeof identityFor>, numItems: number) {
+      const titles: string[] = [];
+      let cursor: string | null = null;
+      for (let i = 0; i < 20; i++) {
+        const page: any = await caller.query(api.history.queries.listMyMeetings, {
+          paginationOpts: { numItems, cursor },
+        });
+        titles.push(...page.page.map((item: any) => item.meeting.title));
+        if (page.isDone) return titles;
+        cursor = page.continueCursor;
+      }
+      throw new Error(`no isDone after 20 pages: ${titles.join(",")}`);
+    }
+
+    test("unscheduled meetings only, one per page: each once, newest created first", async () => {
+      const { caller } = await hostWith([
+        { title: "U1", scheduledAt: undefined },
+        { title: "U2", scheduledAt: undefined },
+        { title: "U3", scheduledAt: undefined },
+      ]);
+      expect(await walk(caller, 1)).toEqual(["U3", "U2", "U1"]);
+    });
+
+    test("scheduled then unscheduled, one per page: S, then the unscheduled ones, no repeat", async () => {
+      const { caller } = await hostWith([
+        { title: "S", scheduledAt: 5000 },
+        { title: "U1", scheduledAt: undefined },
+        { title: "U2", scheduledAt: undefined },
+      ]);
+      expect(await walk(caller, 1)).toEqual(["S", "U2", "U1"]);
+    });
+
+    test("equal meeting times: deleting the row the cursor points at repeats nothing", async () => {
+      const { caller, ids } = await hostWith([
+        { title: "A", scheduledAt: 7000 },
+        { title: "B", scheduledAt: 7000 },
+        { title: "C", scheduledAt: 7000 },
+      ]);
+      const page1: any = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 2, cursor: null },
+      });
+      const first = page1.page.map((item: any) => item.meeting.title);
+      expect(first).toEqual(["C", "B"]);
+      // The meeting the cursor points at goes away between pages.
+      await t.run(async (ctx) => {
+        await ctx.db.delete(ids[first[1]]);
+      });
+      const page2: any = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 2, cursor: page1.continueCursor },
+      });
+      expect(page2.page.map((item: any) => item.meeting.title)).toEqual(["A"]);
+      expect(page2.isDone).toBe(true);
+    });
+
+    test("a newer meeting arriving mid-scroll is neither repeated nor makes older ones repeat", async () => {
+      const { caller, host } = await hostWith([
+        { title: "M3", scheduledAt: 3000 },
+        { title: "M2", scheduledAt: 2000 },
+        { title: "M1", scheduledAt: 1000 },
+      ]);
+      const page1: any = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 1, cursor: null },
+      });
+      expect(page1.page.map((item: any) => item.meeting.title)).toEqual(["M3"]);
+      await createTestMeetingWithParticipants(t, {}, 0, { title: "M4", scheduledAt: 4000 }, {
+        organizerOverride: host,
+      });
+      const rest: string[] = [];
+      let cursor = page1.continueCursor;
+      for (let i = 0; i < 5; i++) {
+        const page: any = await caller.query(api.history.queries.listMyMeetings, {
+          paginationOpts: { numItems: 1, cursor },
+        });
+        rest.push(...page.page.map((item: any) => item.meeting.title));
+        if (page.isDone) break;
+        cursor = page.continueCursor;
+      }
+      expect(rest).toEqual(["M2", "M1"]);
+      expect(await walk(caller, 2)).toEqual(["M4", "M3", "M2", "M1"]);
     });
   });
 });

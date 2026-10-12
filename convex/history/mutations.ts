@@ -11,13 +11,14 @@ import { v } from "convex/values";
 import { requireIdentity, assertMeetingAccess } from "@convex/auth/guards";
 import { isAfterCallEnabledServer } from "./flag";
 import { createError } from "@convex/lib/errors";
+import { stayInTouchView } from "./queries";
 
 /**
  * Records or clears the caller's stay-in-touch opt-in for a meeting.
- * Calling twice with the same args leaves identical state. Returns the
- * caller's enabled flag plus the mutual flag computed exactly like
- * getStayInTouchStatus: true only when every participant of the meeting
- * has a stayInTouch row.
+ * Calling twice with the same args leaves identical state. Returns what
+ * getStayInTouchStatus returns: the caller's opt-in, and the contacts of
+ * the people who opted in too (pairwise: nobody else's choice shows before
+ * the caller's own opt-in).
  */
 export const setStayInTouch = mutation({
   args: { meetingId: v.id("meetings"), enabled: v.boolean() },
@@ -47,34 +48,7 @@ export const setStayInTouch = mutation({
       await ctx.db.delete(existing._id);
     }
 
-    // Re-read own row (mutations see their own writes) and compute mutual
-    // the same way as getStayInTouchStatus.
-    const mine = await ctx.db
-      .query("stayInTouch")
-      .withIndex("by_meeting_and_user", (q) =>
-        q.eq("meetingId", meetingId).eq("userId", identity.userId),
-      )
-      .unique();
-
-    const participantRows = await ctx.db
-      .query("meetingParticipants")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .collect();
-
-    let mutual = participantRows.length > 0;
-    for (const participant of participantRows) {
-      const optedIn = await ctx.db
-        .query("stayInTouch")
-        .withIndex("by_meeting_and_user", (q) =>
-          q.eq("meetingId", meetingId).eq("userId", participant.userId),
-        )
-        .unique();
-      if (!optedIn) {
-        mutual = false;
-        break;
-      }
-    }
-
-    return { enabled: mine !== null, mutual };
+    return stayInTouchView(ctx, meetingId, identity.userId);
   },
 });
+
