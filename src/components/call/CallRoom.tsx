@@ -18,6 +18,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
   type RefObject,
 } from "react";
 import {
@@ -66,6 +67,10 @@ export interface CallRoomProps {
   exitHref: string;
   /** The link to share so someone else can join this call. */
   inviteLink: () => string;
+  /** Extra actions on the "You left the call" screen (the recap link). */
+  endedActions?: ReactNode;
+  /** Told when the person moves between the lobby, the call and the end. */
+  onScreenChange?: (screen: "lobby" | "call" | "ended") => void;
 }
 
 interface Remote {
@@ -87,6 +92,8 @@ export function CallRoom({
   nameFor,
   exitHref,
   inviteLink,
+  endedActions,
+  onScreenChange,
 }: CallRoomProps) {
   const media = useLocalMedia();
   const [screen, setScreen] = useState<Screen>("lobby");
@@ -222,6 +229,10 @@ export function CallRoom({
     [],
   );
 
+  useEffect(() => {
+    onScreenChange?.(screen);
+  }, [screen, onScreenChange]);
+
   const domPhase: CallPhase =
     screen === "lobby" ? "idle" : screen === "ended" ? "left" : phase;
 
@@ -242,7 +253,7 @@ export function CallRoom({
           onJoin={join}
         />
       ) : screen === "ended" ? (
-        <Ended exitHref={exitHref} onRejoin={rejoin} />
+        <Ended exitHref={exitHref} onRejoin={rejoin} actions={endedActions} />
       ) : (
         <InCall
           media={media}
@@ -806,9 +817,11 @@ function ControlBar({
 function Ended({
   exitHref,
   onRejoin,
+  actions,
 }: {
   exitHref: string;
   onRejoin: () => void;
+  actions?: ReactNode;
 }) {
   return (
     <div
@@ -839,6 +852,7 @@ function Ended({
         >
           Rejoin
         </button>
+        {actions}
         <Link
           href={exitHref}
           className={cn(
