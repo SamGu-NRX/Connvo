@@ -6,11 +6,16 @@
  * between allocations.
  *
  * Scope is what Chromium's TURN client uses: Binding, Allocate, Refresh,
- * CreatePermission, ChannelBind, Send/Data indications and ChannelData. It
- * does not challenge for credentials (Chromium sends MESSAGE-INTEGRITY only
- * after a 401), and it accepts every permission, because it binds to
- * 127.0.0.1 and lives for one eval run.
+ * CreatePermission, ChannelBind, Send/Data indications and ChannelData, with
+ * the long-term credential handshake (RFC 5389 section 10.2). Chromium drops
+ * any TURN success response that lacks a valid MESSAGE-INTEGRITY, so a relay
+ * that skipped the handshake allocated but never produced a relay candidate.
+ * A request without MESSAGE-INTEGRITY gets 401 with REALM and NONCE; every
+ * success response is signed with key = MD5(username:realm:password). The
+ * relay does not verify the request's own integrity and accepts every
+ * permission: it binds to 127.0.0.1 and lives for one eval run.
  */
+import { createHash, createHmac } from "node:crypto";
 import dgram from "node:dgram";
 
 const MAGIC = 0x2112a442;
@@ -23,6 +28,10 @@ const ATTR = {
   xorRelayedAddress: 0x0016,
   errorCode: 0x0009,
   xorMappedAddress: 0x0020,
+  username: 0x0006,
+  messageIntegrity: 0x0008,
+  realm: 0x0014,
+  nonce: 0x0015,
 };
 const CLASS = { request: 0b00, indication: 0b01, success: 0b10, error: 0b11 };
 const DEFAULT_LIFETIME_S = 600;
@@ -82,8 +91,9 @@ export function encodeXorAddress({ address, port }) {
 /**
  * @param {number} method @param {number} cls @param {Buffer} txid
  * @param {Array<[number, Buffer]>} attrs
+ * @param {Buffer | null} [integrityKey] when set, appends MESSAGE-INTEGRITY
  */
-export function buildStun(method, cls, txid, attrs) {
+export function buildStun(method, cls, txid, attrs, integrityKey = null) {
   const parts = [];
   for (const [type, value] of attrs) {
     const head = Buffer.alloc(4);
@@ -94,10 +104,22 @@ export function buildStun(method, cls, txid, attrs) {
   const body = Buffer.concat(parts);
   const header = Buffer.alloc(20);
   header.writeUInt16BE(joinType(method, cls), 0);
-  header.writeUInt16BE(body.length, 2);
+  header.writeUInt16BE(body.length + (integrityKey ? 24 : 0), 2);
   header.writeUInt32BE(MAGIC, 4);
   txid.copy(header, 8);
-  return Buffer.concat([header, body]);
+  if (!integrityKey) return Buffer.concat([header, body]);
+  // The HMAC covers the header (whose length already counts this attribute)
+  // and every attribute before it.
+  const mac = createHmac("sha1", integrityKey).update(Buffer.concat([header, body])).digest();
+  const head = Buffer.alloc(4);
+  head.writeUInt16BE(ATTR.messageIntegrity, 0);
+  head.writeUInt16BE(20, 2);
+  return Buffer.concat([header, body, head, mac]);
+}
+
+/** @param {string} username @param {string} realm @param {string} password */
+export function longTermKey(username, realm, password) {
+  return createHash("md5").update(`${username}:${realm}:${password}`).digest();
 }
 
 /** @param {number} seconds */
@@ -117,9 +139,10 @@ function errorCode(code, reason) {
 
 /**
  * Start the relay. Resolves once the listening socket is bound.
- * @param {{ port?: number, host?: string }} [opts] port 0 picks a free port
+ * @param {{ port?: number, host?: string, realm?: string, password?: string }} [opts] port 0 picks a free port
  */
-export async function startTurnRelay({ port = 0, host = "127.0.0.1" } = {}) {
+export async function startTurnRelay({ port = 0, host = "127.0.0.1", realm = "connvo-eval", password = "eval-pass" } = {}) {
+  const nonce = Buffer.from(`connvo-${Date.now().toString(36)}`);
   const server = dgram.createSocket("udp4");
   /**
    * One allocation per client 5-tuple.
@@ -218,21 +241,35 @@ export async function startTurnRelay({ port = 0, host = "127.0.0.1" } = {}) {
       return;
     }
     if (cls !== CLASS.request) return;
+    // Long-term credentials: challenge, then sign every success with the
+    // key derived from the username the client sent.
+    const username = attrs.get(ATTR.username)?.toString("utf8");
+    if (method !== METHOD.binding && (!attrs.has(ATTR.messageIntegrity) || !username)) {
+      reply(
+        buildStun(method, CLASS.error, txid, [
+          [ATTR.errorCode, errorCode(401, "Unauthorized")],
+          [ATTR.realm, Buffer.from(realm)],
+          [ATTR.nonce, nonce],
+        ]),
+        client,
+      );
+      return;
+    }
+    const integrityKey = username ? longTermKey(username, realm, password) : null;
+    /** @param {Array<[number, Buffer]>} out */
+    const ok = (out) => reply(buildStun(method, CLASS.success, txid, out, integrityKey), client);
     try {
       switch (method) {
         case METHOD.binding:
-          reply(buildStun(method, CLASS.success, txid, [[ATTR.xorMappedAddress, encodeXorAddress(client)]]), client);
+          ok([[ATTR.xorMappedAddress, encodeXorAddress(client)]]);
           return;
         case METHOD.allocate: {
           const relayed = await allocate(client);
-          reply(
-            buildStun(method, CLASS.success, txid, [
-              [ATTR.xorRelayedAddress, encodeXorAddress(relayed)],
-              [ATTR.xorMappedAddress, encodeXorAddress(client)],
-              [ATTR.lifetime, u32(DEFAULT_LIFETIME_S)],
-            ]),
-            client,
-          );
+          ok([
+            [ATTR.xorRelayedAddress, encodeXorAddress(relayed)],
+            [ATTR.xorMappedAddress, encodeXorAddress(client)],
+            [ATTR.lifetime, u32(DEFAULT_LIFETIME_S)],
+          ]);
           return;
         }
         case METHOD.refresh: {
@@ -244,11 +281,11 @@ export async function startTurnRelay({ port = 0, host = "127.0.0.1" } = {}) {
           const lifetime = attrs.get(ATTR.lifetime)?.readUInt32BE(0) ?? DEFAULT_LIFETIME_S;
           if (lifetime === 0) release(k);
           else alloc.expires = Date.now() + Math.min(lifetime, 3600) * 1000;
-          reply(buildStun(method, CLASS.success, txid, [[ATTR.lifetime, u32(lifetime === 0 ? 0 : Math.min(lifetime, 3600))]]), client);
+          ok([[ATTR.lifetime, u32(lifetime === 0 ? 0 : Math.min(lifetime, 3600))]]);
           return;
         }
         case METHOD.createPermission:
-          reply(buildStun(method, CLASS.success, txid, []), client);
+          ok([]);
           return;
         case METHOD.channelBind: {
           const alloc = allocations.get(k);
@@ -262,7 +299,7 @@ export async function startTurnRelay({ port = 0, host = "127.0.0.1" } = {}) {
           const peer = key(decodeXorAddress(peerAttr));
           alloc.channels.set(channel, peer);
           alloc.byPeer.set(peer, channel);
-          reply(buildStun(method, CLASS.success, txid, []), client);
+          ok([]);
           return;
         }
         default:

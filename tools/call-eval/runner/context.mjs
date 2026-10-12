@@ -281,9 +281,14 @@ export class RunContext {
     return [];
   }
 
-  async stop() {
+  /** Close every peer browser a scenario launched (runOne calls this after each run). */
+  async closePeers() {
     await Promise.allSettled([...this._peers].map((p) => p.close()));
     this._peers.clear();
+  }
+
+  async stop() {
+    await this.closePeers();
     for (const shaper of this.shapers.values()) shaper.stop();
     this.shapers.clear();
     this.turn?.stop();

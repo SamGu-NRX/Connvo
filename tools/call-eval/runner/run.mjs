@@ -69,6 +69,16 @@ async function ensureFixtures(ctx, log) {
 }
 
 async function runOne(ctx, scenarioId, seed, log) {
+  try {
+    return await runOneInner(ctx, scenarioId, seed, log);
+  } finally {
+    // Every scenario closes its own browsers; the reviewed bug kept them all
+    // open until the sweep ended, dozens of Chromium processes at 5 seeds.
+    await ctx.closePeers();
+  }
+}
+
+async function runOneInner(ctx, scenarioId, seed, log) {
   const t0 = Date.now();
   ctx.setSeed(seed); // shapers re-derive from THIS run's seed (reviewed bug: the constructor seed served every run)
   try {

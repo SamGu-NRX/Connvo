@@ -9,7 +9,7 @@
  * Usage:
  *   pnpm call-eval:self-proof -- [--seeds=1..20] [--variant-seeds=1] \
  *     [--scenarios=H-01..H-13] [--variants=no-audio,never-close,no-reconnect] \
- *     [--port=3036] [--base-url=http://localhost:3036] [--fresh]
+ *     [--variant-scenarios=all|target] [--port=3036] [--base-url=http://localhost:3036] [--fresh]
  *
  * --base-url skips starting Next and uses a server already running with the
  * bench flag. Every completed run is appended to self-proof/checkpoint.jsonl
@@ -38,7 +38,13 @@ const OUT = path.join(EVAL_DIR, "self-proof");
 
 /** Which scenario each broken variant must fail (CALL-PLAN.md, harness self-proof). */
 /** @type {Record<string, string>} */
-const EXPECTED_FAILURE = { "no-audio": "H-02", "never-close": "H-11", "no-reconnect": "H-07" };
+const EXPECTED_FAILURE = { "no-audio": "H-02,H-03", "never-close": "H-11", "no-reconnect": "H-07" };
+/** Why each variant fails what it fails; printed in summary.md. */
+const EXPECTED_REASON = {
+  "no-audio": "it never sends audio, so H-02 hears no tone, and H-03 cannot hear the tone come back after unmute",
+  "never-close": "leave() closes nothing, so H-11 finds live connections and the signaling session still open",
+  "no-reconnect": "a lost connection goes straight to failed, so H-07 never recovers",
+};
 
 const flags = Object.fromEntries(
   process.argv.slice(2).filter((a) => a !== "--").map((a) => {
@@ -66,6 +72,10 @@ function scenarioRange(raw) {
 
 const seeds = range(flags.seeds ?? "1..20");
 const variantSeeds = range(flags["variant-seeds"] ?? "1");
+// "target" runs each variant only on the scenarios it must fail (a smaller
+// matrix); "all" also shows it passing everything else.
+const variantScope = flags["variant-scenarios"] ?? "all";
+if (!["all", "target"].includes(variantScope)) throw new Error(`--variant-scenarios must be all or target`);
 const scenarios = scenarioRange(flags.scenarios ?? "H-01..H-13");
 const variants = flags.variants === "none" ? [] : (flags.variants ?? Object.keys(EXPECTED_FAILURE).join(",")).split(",");
 for (const v of variants) if (!(v in EXPECTED_FAILURE)) throw new Error(`unknown variant "${v}"`);
@@ -121,14 +131,24 @@ if (!baseUrl) {
 }
 
 const wallStart = Date.now();
-/** @type {Array<{ transport: string, expected: string | null, plannedSeeds: number[], results: any[] }>} */
 // Order: reference seed one, then each variant, then the remaining
 // reference seeds. A run cut short still covers every transport.
-/** @type {Array<{ transport: string, expected: string | null, plannedSeeds: number[], results: any[] }>} */
+/** @typedef {{ transport: string, expected: string[] | null, reason: string | null, scenarios: string[], plannedSeeds: number[], results: any[] }} Section */
+/** @type {Section[]} */
 const sections = [
-  { transport: "reference", expected: null, plannedSeeds: seeds.slice(0, 1), results: [] },
-  ...variants.map((v) => ({ transport: `reference-${v}`, expected: EXPECTED_FAILURE[v], plannedSeeds: variantSeeds, results: [] })),
-  ...(seeds.length > 1 ? [{ transport: "reference", expected: null, plannedSeeds: seeds.slice(1), results: [] }] : []),
+  { transport: "reference", expected: null, reason: null, scenarios, plannedSeeds: seeds.slice(0, 1), results: [] },
+  ...variants.map((v) => {
+    const expected = EXPECTED_FAILURE[v].split(",");
+    return {
+      transport: `reference-${v}`,
+      expected,
+      reason: /** @type {Record<string, string>} */ (EXPECTED_REASON)[v],
+      scenarios: variantScope === "target" ? expected : scenarios,
+      plannedSeeds: variantSeeds,
+      results: [],
+    };
+  }),
+  ...(seeds.length > 1 ? [{ transport: "reference", expected: null, reason: null, scenarios, plannedSeeds: seeds.slice(1), results: [] }] : []),
 ];
 // Restore completed cells so an interrupted run neither loses results nor
 // repeats them (rows outside this invocation's seeds/scenarios stay in the
@@ -138,10 +158,10 @@ const priorKeys = checkpointKeys(priorRows);
 let finished = false;
 try {
   for (const section of sections) {
-    console.log(`self-proof: ${section.transport} ${scenarios.length} scenarios x ${section.plannedSeeds.length} seeds`);
+    console.log(`self-proof: ${section.transport} ${section.scenarios.length} scenarios x ${section.plannedSeeds.length} seeds`);
     await runScenarios({
       transports: [section.transport],
-      scenarios,
+      scenarios: section.scenarios,
       seeds: section.plannedSeeds,
       baseUrl,
       write: false,
@@ -188,10 +208,10 @@ const lines = [
   `Host: ${os.platform()} ${os.arch()}, ${os.cpus().length} CPUs, node ${process.version}. No Convex, no sign-in.`,
   "",
 ];
-/** @type {Map<string, { transport: string, expected: string | null, plannedSeeds: number[], results: any[] }>} */
+/** @type {Map<string, Section>} */
 const byTransport = new Map();
 for (const s of sections) {
-  const merged = byTransport.get(s.transport) ?? { transport: s.transport, expected: s.expected, plannedSeeds: [], results: [] };
+  const merged = byTransport.get(s.transport) ?? { ...s, plannedSeeds: [], results: [] };
   merged.plannedSeeds.push(...s.plannedSeeds);
   merged.results.push(...s.results);
   byTransport.set(s.transport, merged);
@@ -203,7 +223,7 @@ for (const section of byTransport.values()) {
     continue;
   }
   /** @type {Map<string, { pass: number, total: number }>} */
-  const byScenario = new Map(scenarios.map((s) => [s, { pass: 0, total: 0 }]));
+  const byScenario = new Map(section.scenarios.map((s) => [s, { pass: 0, total: 0 }]));
   for (const r of section.results) {
     const e = byScenario.get(r.scenario);
     if (!e) continue;
@@ -216,11 +236,17 @@ for (const section of byTransport.values()) {
     verdict = failing.length === 0 ? "PASS: every run passed" : `FAIL: ${failing.join(", ")} had failures`;
     if (failing.length) ok = false;
   } else {
-    const exact = failing.length === 1 && failing[0] === section.expected && byScenario.get(section.expected)?.pass === 0;
-    verdict = exact ? `PASS: fails exactly ${section.expected}` : `FAIL: expected only ${section.expected} to fail, got [${failing.join(", ")}]`;
+    const want = section.expected;
+    const exact =
+      failing.length === want.length &&
+      want.every((id) => failing.includes(id) && byScenario.get(id)?.pass === 0);
+    const scope = variantScope === "target" ? " (run on those scenarios only)" : "";
+    verdict = exact
+      ? `PASS: fails exactly ${want.join(" and ")}${scope}, because ${section.reason}`
+      : `FAIL: expected exactly ${want.join(", ")} to fail, got [${failing.join(", ")}]`;
     if (!exact) ok = false;
   }
-  const planned = scenarios.length * section.plannedSeeds.length;
+  const planned = section.scenarios.length * section.plannedSeeds.length;
   if (section.results.length < planned) {
     verdict = `INCOMPLETE (${section.results.length} of ${planned} runs): ${verdict}`;
     ok = false;
