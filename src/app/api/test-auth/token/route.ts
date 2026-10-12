@@ -8,9 +8,9 @@
  *
  * This route does not exist in any authorization path on main:
  * - 404 unless NEXT_PUBLIC_CONNVO_TEST_AUTH === "1";
- * - refuses to run when VERCEL_ENV === "production" or NODE_ENV ===
- *   "production" without the explicit local-build marker
- *   NEXT_PUBLIC_CONNVO_LOCAL_BUILD === "1".
+ * - refuses on any Vercel deployment (VERCEL set), whatever the markers;
+ * - refuses when NODE_ENV === "production" without the explicit local-build
+ *   marker NEXT_PUBLIC_CONNVO_LOCAL_BUILD === "1".
  * The private key is generated and injected only by
  * tools/call-eval/scripts/local-backend.mjs (D1).
  */
@@ -36,6 +36,11 @@ type SeedUserKey = keyof typeof SEED_USERS;
 function testAuthGuardsFail(): string | null {
   if (process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH !== "1") {
     return "Not found";
+  }
+  // The local-build marker is for production-mode builds on a developer
+  // machine. A deployment that carries it by mistake must still refuse.
+  if (process.env.VERCEL) {
+    return "[connvo test-auth] refusing: this is a Vercel deployment";
   }
   const reasons: string[] = [];
   if (process.env.VERCEL_ENV === "production") reasons.push("VERCEL_ENV=production");
