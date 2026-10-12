@@ -1,11 +1,12 @@
-// Eval-only seed mutation for the local anonymous backend used by
+// Eval-only seed for the local anonymous backend used by
 // tools/call-eval (CONTRACT.md): users A/B/C + outsider O (WorkOS subjects
 // local-test-a/b/c/o) and one active meeting with A–C as participants (A
 // host). Env-gated: refuses to run unless CONNVO_LOCAL_TEST_JWKS is set on
-// the deployment — the harness sets it only on the local backend, so this
-// mutation cannot seed a real deployment.
+// the deployment — the harness sets it only on the local backend. It is an
+// internalMutation, so no client can call it on any deployment; only the CLI
+// (`npx convex run devEval/seed`) and other server functions can.
 import type { Id } from "../_generated/dataModel";
-import { mutation } from "../_generated/server";
+import { internalMutation } from "../_generated/server";
 
 const SEED_USERS = [
   { subject: "local-test-a", email: "a@connvo-local.test", name: "Alice Anderson" },
@@ -16,7 +17,7 @@ const SEED_USERS = [
 
 const MEETING_TITLE = "Eval harness smoke meeting";
 
-export const seed = mutation({
+export const seed = internalMutation({
   args: {},
   handler: async (ctx) => {
     // D2 gate: the local-test JWT provider is only configured on the eval
