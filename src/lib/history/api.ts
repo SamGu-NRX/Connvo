@@ -15,7 +15,7 @@
  */
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import type { FunctionReference, PaginationOpts } from "convex/server";
+import type { FunctionReference, PaginationOptions } from "convex/server";
 
 /** Meeting lifecycle states, mirroring the meetings table validator. */
 export type MeetingState = "scheduled" | "active" | "concluded" | "cancelled";
@@ -140,7 +140,7 @@ function historyMutationRef(
 export const listMyMeetingsRef = historyQueryRef("listMyMeetings") as unknown as FunctionReference<
   "query",
   "public",
-  { paginationOpts: PaginationOpts },
+  { paginationOpts: PaginationOptions },
   MeetingListPage
 >;
 
