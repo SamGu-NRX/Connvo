@@ -11,8 +11,9 @@
  * ICE restarts started by both ends at once.
  *
  * Recovery:
- * - ICE "failed" restarts ICE at once; "disconnected" restarts it after
- *   DISCONNECTED_GRACE_MS, since it often heals by itself first.
+ * - The impolite side restarts ICE (the polite side follows through the
+ *   offer): at once on "failed", and after DISCONNECTED_GRACE_MS of
+ *   "disconnected", since that often heals by itself first.
  * - A connection that is not up within NOT_CONNECTED_RESTART_MS restarts
  *   ICE, and again each period after. A connection built while the network
  *   was down can have no TURN allocation and no candidates at all, and
@@ -40,6 +41,8 @@ import type {
 
 const DISCONNECTED_GRACE_MS = 3000;
 const NOT_CONNECTED_RESTART_MS = 6000;
+/** How long the polite side waits for the other side's offer before offering itself. */
+const POLITE_OFFER_DELAY_MS = 1500;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 5000;
 const GIVE_UP_MS = { joining: 30_000, reconnecting: 45_000 } as const;
@@ -79,6 +82,9 @@ interface Peer {
   chain: Promise<void>;
   disconnectedTimer: ReturnType<typeof setTimeout> | null;
   watchdog: ReturnType<typeof setInterval> | null;
+  politeOfferTimer: ReturnType<typeof setTimeout> | null;
+  /** When the last offer from the other side arrived (ms since epoch). */
+  lastRemoteOfferAt: number;
 }
 
 export interface P2PTransportOptions {
@@ -193,6 +199,8 @@ export function createP2PTransport({
       chain: Promise.resolve(),
       disconnectedTimer: null,
       watchdog: null,
+      politeOfferTimer: null,
+      lastRemoteOfferAt: 0,
     };
     peers.set(id, peer);
 
@@ -227,8 +235,7 @@ export function createP2PTransport({
         });
       }
     };
-    pc.onnegotiationneeded = async () => {
-      trace(`${id} negotiationneeded (${pc.signalingState})`);
+    const makeOffer = async () => {
       try {
         peer.makingOffer = true;
         await pc.setLocalDescription();
@@ -244,14 +251,45 @@ export function createP2PTransport({
         peer.makingOffer = false;
       }
     };
+    // Glare avoidance. When both sides offered at once, the polite side
+    // rolled back its offer, and after that rollback Chromium's ICE agent on
+    // that connection never produced a candidate, so the call never
+    // connected (traced on the real call page; a fresh connection on the
+    // same page still gathered). Perfect negotiation still handles any
+    // collision, but the polite side no longer starts one:
+    // - when it needs to negotiate (first offer, ICE restart, a new track)
+    //   it waits POLITE_OFFER_DELAY_MS, and offers only if the other side
+    //   sent no offer meanwhile. If negotiation is still needed after
+    //   answering that offer, Chromium fires negotiationneeded again.
+    // - only the impolite side starts ICE restarts on its own timers.
+    pc.onnegotiationneeded = () => {
+      trace(`${id} negotiationneeded (${pc.signalingState})`);
+      if (!peer.polite) {
+        void makeOffer();
+        return;
+      }
+      if (peer.politeOfferTimer) return;
+      const askedAt = Date.now();
+      peer.politeOfferTimer = setTimeout(() => {
+        peer.politeOfferTimer = null;
+        if (peer.lastRemoteOfferAt >= askedAt) return;
+        if (pc.signalingState === "stable" && pc.connectionState !== "closed") {
+          trace(`${id} no offer arrived; offering`);
+          void makeOffer();
+        }
+      }, POLITE_OFFER_DELAY_MS);
+    };
+    const restart = () => {
+      if (!peer.polite) pc.restartIce();
+    };
     pc.oniceconnectionstatechange = () => {
       const state = pc.iceConnectionState;
       if (state === "failed") {
-        pc.restartIce();
+        restart();
       } else if (state === "disconnected" && !peer.disconnectedTimer) {
         peer.disconnectedTimer = setTimeout(() => {
           peer.disconnectedTimer = null;
-          if (pc.iceConnectionState === "disconnected") pc.restartIce();
+          if (pc.iceConnectionState === "disconnected") restart();
         }, DISCONNECTED_GRACE_MS);
       }
     };
@@ -261,7 +299,7 @@ export function createP2PTransport({
     };
     peer.watchdog = setInterval(() => {
       if (pc.connectionState !== "connected" && pc.connectionState !== "closed")
-        pc.restartIce();
+        restart();
     }, NOT_CONNECTED_RESTART_MS);
     return peer;
   }
@@ -270,6 +308,7 @@ export function createP2PTransport({
     const { pc } = peer;
     if ("description" in signal) {
       const description = signal.description;
+      if (description.type === "offer") peer.lastRemoteOfferAt = Date.now();
       const readyForOffer =
         !peer.makingOffer &&
         (pc.signalingState === "stable" || peer.settingRemoteAnswer);
@@ -311,6 +350,7 @@ export function createP2PTransport({
   function closePeer(peer: Peer): void {
     if (peer.disconnectedTimer) clearTimeout(peer.disconnectedTimer);
     if (peer.watchdog) clearInterval(peer.watchdog);
+    if (peer.politeOfferTimer) clearTimeout(peer.politeOfferTimer);
     const { pc } = peer;
     pc.onicecandidate = null;
     pc.ontrack = null;
@@ -395,6 +435,8 @@ export function createP2PTransport({
             events?.onRemoteJoined({ participantId: from });
             peer = createPeer(from);
           }
+          if ("description" in signal && signal.description.type === "offer")
+            peer.lastRemoteOfferAt = Date.now();
           const target = peer;
           enqueue(target, () => applySignal(target, signal));
         },

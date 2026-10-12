@@ -84,6 +84,13 @@
   .notice {
     transition: opacity 200ms ease;
   }
+  /* No movement: drop the press scale and its transform transition, keep
+     the colour fades. */
+  .press {
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
   .press:active {
     transform: none;
   }

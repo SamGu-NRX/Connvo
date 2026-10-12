@@ -101,16 +101,25 @@ export async function scenario_H_01(ctx, { log }) {
     throw new ScenarioError(`H-01: time to first remote frame exceeded the 5 s bar (A ${aSeesB.ms} ms, B ${bSeesA.ms} ms)`, { aSeesB, bSeesA });
   }
 
-  const colorA = await decodeRemoteFrame(peerA, "B");
-  const colorB = await decodeRemoteFrame(peerB, "A");
-  const matchB = matchPeerColor(colorA.color); // A's view of B must be B's green
-  const matchA = matchPeerColor(colorB.color);
-  if (!matchB.ok || matchB.label !== "B") {
-    throw new ScenarioError(`H-01: A's view of B classified as ${matchB.label} (distance ${matchB.distance})`, { colorA });
+  // Each side must decode the other's colour within the same 5 s from the
+  // join. The first frames come from an encoder still ramping up and can
+  // sit just outside the tolerance, so keep decoding until the bar, rather
+  // than judging one early frame.
+  /** @param {any} peer @param {string} from @param {string} want */
+  async function colourWithin(peer, from, want) {
+    let last = null;
+    for (;;) {
+      const frame = await decodeRemoteFrame(peer, from);
+      last = frame.present ? matchPeerColor(frame.color) : null;
+      if (last?.ok && last.label === want) return { ms: Date.now() - t0, distance: last.distance };
+      if (Date.now() - t0 > 5000) {
+        throw new ScenarioError(`H-01: ${peer.peerId}'s view of ${from} classified as ${last?.label ?? "nothing"} (distance ${last?.distance ?? "n/a"}) at the 5 s bar`, { frame });
+      }
+      await H(100);
+    }
   }
-  if (!matchA.ok || matchA.label !== "A") {
-    throw new ScenarioError(`H-01: B's view of A classified as ${matchA.label} (distance ${matchA.distance})`, { colorB });
-  }
+  const colourB = await colourWithin(peerA, "B", "B"); // A's view of B must be B's green
+  const colourA = await colourWithin(peerB, "A", "A");
 
   const fpsA = await measureFps(peerA, "B", 5000); // A receiving B
   const fpsB = await measureFps(peerB, "A", 5000);
@@ -124,6 +133,8 @@ export async function scenario_H_01(ctx, { log }) {
     timeToFirstRemoteFrameMsReverse: bSeesA.ms,
     fpsAtoB: fpsA.fps,
     fpsBtoA: fpsB.fps,
+    colourMsAseesB: colourB.ms,
+    colourMsBseesA: colourA.ms,
   };
 }
 

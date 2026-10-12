@@ -280,12 +280,18 @@ export async function scenario_P_04(ctx) {
     // Hover and focus every control so transitions that only run on
     // interaction get a chance to start.
     for (const id of ["toggle-mic", "toggle-camera", "leave-call"]) await peer.page.hover(`[data-testid="${id}"]`);
-    const check = await peer.page.evaluate(() => {
+    // On the real page only the call is scored; the app shell around it is
+    // someone else's code (as in P-02).
+    const scope = ctx.page === "real" ? "[data-call-phase]" : null;
+    const check = await peer.page.evaluate((/** @type {string | null} */ rootSel) => {
+      const root = rootSel ? document.querySelector(rootSel) : document;
+      if (!root) return { mq: false, animationCount: 0, allAnimations: [], maxDurationMs: 0, transitions: ["no call root"] };
       const mq = matchMedia("(prefers-reduced-motion: reduce)").matches;
       const MOVES = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
       // Running animations and transitions that move something. A colour or
       // opacity fade (a hover background, say) is allowed under reduced motion.
-      const anims = document.getAnimations().map((a) => {
+      const all = rootSel ? /** @type {Element} */ (root).getAnimations({ subtree: true }) : document.getAnimations();
+      const anims = all.map((a) => {
         const anyA = /** @type {any} */ (a);
         const t = a.effect?.getTiming?.() ?? {};
         const duration = typeof t.duration === "number" ? t.duration : 0;
@@ -303,7 +309,7 @@ export async function scenario_P_04(ctx) {
       // real; Tailwind's transition-none sets the property to none and leaves
       // the duration, which the reviewed check misread as motion.
       const MOTION = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
-      const transitions = [...document.querySelectorAll("button")].flatMap((b) => {
+      const transitions = [...root.querySelectorAll("button")].flatMap((b) => {
         const cs = getComputedStyle(b);
         const props = cs.transitionProperty.split(",").map((x) => x.trim());
         const durs = cs.transitionDuration.split(",").map((x) => parseFloat(x));
@@ -316,7 +322,7 @@ export async function scenario_P_04(ctx) {
         maxDurationMs: durations.length ? Math.max(...durations) : 0,
         transitions,
       };
-    });
+    }, scope);
     if (!check.mq) throw new ScenarioError("P-04: reduced-motion media query not active", check);
     if (check.animationCount > 0 && check.maxDurationMs > 50) {
       throw new ScenarioError(`P-04: ${check.animationCount} animations still run (max ${check.maxDurationMs} ms)`, check);
