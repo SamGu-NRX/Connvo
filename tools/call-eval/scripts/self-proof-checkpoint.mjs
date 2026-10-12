@@ -87,7 +87,9 @@ export function loadCheckpoint(file) {
   return rows;
 }
 
-/** Key format for skip decisions: transport|scenario|seed. */
+/** Key format for skip decisions: transport|scenario|seed.
+ * @param {string} transport @param {string} scenario @param {number} seed
+ */
 export function checkpointKey(transport, scenario, seed) {
   return `${transport}|${scenario}|${seed}`;
 }

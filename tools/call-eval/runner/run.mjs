@@ -102,6 +102,10 @@ async function runOne(ctx, scenarioId, seed, log) {
   }
 }
 
+/**
+ * Run a matrix of scenario x seed cells over the given transports.
+ * @param {{ transports?: string[], scenarios?: string[], seeds?: number[], baseUrl?: string | null, log?: (msg: string) => void, write?: boolean, onResult?: (result: any) => void, skipCell?: ((scenario: string, seed: number, transport: string) => boolean) | null }} [options]
+ */
 export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}), skipCell = /** @type {((scenario: string, seed: number, transport: string) => boolean) | null} */ (null) } = {}) {
   const results = [];
   const wallStart = Date.now();

@@ -97,6 +97,7 @@ async function waitForHttp(url, timeoutMs) {
   throw new Error(`${url} did not answer 200 within ${timeoutMs} ms`);
 }
 
+/** @type {import("node:child_process").ChildProcess | null} */
 let next = null;
 if (!baseUrl) {
   baseUrl = `http://localhost:${port}`;
