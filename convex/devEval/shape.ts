@@ -2,12 +2,13 @@
 // the seeded shape the browser proof needs — users A/B/C + outsider O, the
 // one active meeting, its meetingParticipants rows (A host, then B and C;
 // outsider O deliberately has NO row — that absence is what H-14 exercises)
-// and the meetingState row. Env-gated like the seed: read-only, but refused
-// off the eval backend.
+// and the meetingState row. An internalQuery, like the seed: no client can
+// call it on any deployment, only the CLI (`npx convex run devEval/shape:shape`).
+// The env check stays as a second guard off the eval backend.
 import { v } from "convex/values";
-import { query } from "../_generated/server";
+import { internalQuery } from "../_generated/server";
 
-export const shape = query({
+export const shape = internalQuery({
   args: { meetingId: v.id("meetings") },
   handler: async (ctx, args) => {
     if (!process.env.CONNVO_LOCAL_TEST_JWKS) {
