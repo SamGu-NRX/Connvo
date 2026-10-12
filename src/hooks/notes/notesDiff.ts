@@ -91,6 +91,92 @@ export function applyOperations(doc: string, ops: NotesOperation[]): string {
   return ops.reduce((acc, op) => applyToDoc(acc, op), doc);
 }
 
+/**
+ * Apply a BATCH of sibling ops the way the server does: each op is
+ * transformed against the stored transformed forms of the earlier ops in
+ * the batch (they share one clientSequence frame), then applied. The
+ * ledger's composed-view mirror and the composition checks use this —
+ * a raw sequential apply would double-shift later hunks, the mirror image
+ * of the emission bug this pairs with.
+ */
+export function applyBatchOps(doc: string, ops: NotesOperation[]): string {
+  const applied: NotesOperation[] = [];
+  for (const op of ops) {
+    let live = op;
+    for (const prior of applied) {
+      live = transformAgainst(live, prior);
+    }
+    applied.push(live);
+    doc = applyToDoc(doc, live);
+  }
+  return doc;
+}
+
+/**
+ * One OT diamond step: carry `op` (clientSequence frame) across `prior`
+ * (already applied, an earlier op of the same batch). Same conventions as
+ * the hunk transform above: a remote insert strictly before — or
+ * lexicographically first at a pure-insert collision — shifts the local
+ * coordinates; deletes clip overlapping ranges.
+ */
+function transformAgainst(
+  op: NotesOperation,
+  prior: NotesOperation,
+): NotesOperation {
+  if (op.type === "insert") {
+    const p = op.position;
+    if (prior.type === "insert") {
+      const q = prior.position;
+      const len = (prior.content ?? "").length;
+      // Same tie-break as the hunk transform: at an equal position the
+      // lexicographically first content stays put, the other shifts.
+      const shifts =
+        p > q ||
+        (p === q && (op.content ?? "") >= (prior.content ?? "") && len > 0);
+      if (shifts) {
+        return { ...op, position: p + len };
+      }
+      return op;
+    }
+    // prior is a delete [q, q+len): before it, inside it, or after it.
+    const q = prior.position;
+    const len = prior.length ?? 0;
+    if (p <= q) return op;
+    if (p >= q + len) return { ...op, position: p - len };
+    // Inside the deleted range: the server preserves concurrently
+    // inserted content (zero-length retain), so the insert clamps to the
+    // range's start.
+    return { ...op, position: q };
+  }
+  // op is a delete [p, p+len).
+  const p = op.position;
+  const len = op.length ?? 0;
+  if (prior.type === "insert") {
+    const q = prior.position;
+    const ilen = (prior.content ?? "").length;
+    if (q <= p) {
+      return { ...op, position: p + ilen };
+    }
+    if (q >= p + len) return op;
+    // Concurrent insert inside the deleted range: the server keeps it
+    // (zero-length retain), so the delete must skip it — unrepresentable
+    // as one simple op. Hunks are disjoint, so one decomposition can
+    // never produce this; keep the range and let the reference suite
+    // flag a caller bug.
+    return op;
+  }
+  // Both deletes: clip the overlap out of the live range.
+  const q = prior.position;
+  const qlen = prior.length ?? 0;
+  const qEnd = q + qlen;
+  const pEnd = p + len;
+  if (qEnd <= p) return { ...op, position: p - qlen };
+  if (q >= pEnd) return op;
+  const overlap = Math.min(pEnd, qEnd) - Math.max(p, q);
+  const shift = Math.max(0, Math.min(qlen, p - q));
+  return { ...op, position: p - shift, length: len - overlap };
+}
+
 // ---------------------------------------------------------------------------
 // Multi-hunk sibling diff + composite hunk transform (r2 W1/W3)
 // ---------------------------------------------------------------------------
@@ -186,7 +272,33 @@ export function diffToHunks(base: string, next: string): DiffHunk[] {
     }
     hunks.push({ position, removed, inserted });
   }
-  return hunks.filter((h) => h.removed.length > 0 || h.inserted.length > 0);
+  const nonEmpty = hunks.filter(
+    (h) => h.removed.length > 0 || h.inserted.length > 0,
+  );
+  // Heal the walk's greedy splits: a kept run of at most one character
+  // between two changed regions is almost always a coincidental letter
+  // match inside ONE intended replacement ("world" -> "there" keeps the
+  // 'r'), and splitting there leaves sibling ops whose record content no
+  // longer names the edited word. A merged hunk composes identically and
+  // keeps the replacement as one delete+insert pair. Bridges of two or
+  // more kept characters are genuinely separate regions and stay split
+  // (the S2 remote shape: two inserts around the whole of "ab").
+  const merged: DiffHunk[] = [];
+  for (const hunk of nonEmpty) {
+    const prev = merged[merged.length - 1];
+    if (prev) {
+      const bridgeStart = prev.position + prev.removed.length;
+      const bridge = hunk.position - bridgeStart;
+      if (bridge <= 1) {
+        const gap = a.slice(bridgeStart, hunk.position).join("");
+        prev.removed += gap + hunk.removed;
+        prev.inserted += gap + hunk.inserted;
+        continue;
+      }
+    }
+    merged.push(hunk);
+  }
+  return merged;
 }
 
 /**
@@ -259,23 +371,23 @@ export function transformHunksToSiblingOps(
     }
   }
   // Decompose in transformed coordinates. Hunks are disjoint; emit them in
-  // ascending transformed order, folding each hunk's net length change
-  // into the positions of later hunks (sibling ops apply sequentially).
+  // ascending order at their clientSequence-frame positions. The positions
+  // stay RAW (no folding of the batch's own deltas into later hunks): the
+  // server transforms each incoming op against the stored transformed forms
+  // of the SAME batch's earlier ops, so a pre-folded position would be
+  // shifted twice (observed in the LightServer trace: delete(11) -> 10).
   const ordered = [...live]
     .map((h, idx) => ({ h, idx }))
     .sort((x, y) => x.h.start - y.h.start || x.idx - y.idx);
   const ops: NotesOperation[] = [];
-  let delta = 0;
   for (const { h } of ordered) {
-    const start = h.start + delta;
     const rangeLen = h.end - h.start;
     if (rangeLen > 0) {
-      ops.push({ type: "delete", position: start, length: rangeLen });
+      ops.push({ type: "delete", position: h.start, length: rangeLen });
     }
     if (h.inserted !== "") {
-      ops.push({ type: "insert", position: start, content: h.inserted });
+      ops.push({ type: "insert", position: h.start, content: h.inserted });
     }
-    delta += h.inserted.length - rangeLen;
   }
   return ops;
 }

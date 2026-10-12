@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
+  applyBatchOps,
   applyOperations,
   diffToSiblingOps,
   diffToHunks,
@@ -17,7 +18,7 @@ describe("diffToSiblingOps", () => {
       { type: "delete", position: 2, length: 1 },
       { type: "insert", position: 2, content: "r" },
     ]);
-    expect(applyOperations("cat", ops)).toBe("car");
+    expect(applyBatchOps("cat", ops)).toBe("car");
   });
 
   test("pure inserts and deletes round-trip", () => {
@@ -29,7 +30,7 @@ describe("diffToSiblingOps", () => {
     const base = "a🐱b";
     const next = "x🐱y";
     const ops = diffToSiblingOps(base, next);
-    expect(applyOperations(base, ops)).toBe(next);
+    expect(applyBatchOps(base, ops)).toBe(next);
     // No lone surrogates anywhere in the emitted ops: every element must
     // be a whole character, never a single surrogate code unit.
     for (const op of ops) {
@@ -47,7 +48,7 @@ describe("multi-hunk sibling diff (r2 W1/W3)", () => {
     const next = "ONE two THREE";
     const hunks = diffToHunks(base, next);
     expect(hunks).toHaveLength(2);
-    expect(applyOperations(base, transformHunksToSiblingOps(hunks, []))).toBe(
+    expect(applyBatchOps(base, transformHunksToSiblingOps(hunks, []))).toBe(
       next,
     );
   });
@@ -58,7 +59,7 @@ describe("multi-hunk sibling diff (r2 W1/W3)", () => {
     const hunks = diffToHunks(base, next);
     expect(hunks.length).toBe(2);
     const ops = transformHunksToSiblingOps(hunks, []);
-    expect(applyOperations(base, ops)).toBe(next);
+    expect(applyBatchOps(base, ops)).toBe(next);
   });
 
   test("a replacement hunk transforms as ONE unit against real remote ops", () => {

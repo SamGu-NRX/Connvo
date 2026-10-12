@@ -13,7 +13,7 @@
 import { describe, expect, test } from "vitest";
 import type { Id } from "@convex/_generated/dataModel";
 import { NotesLedger } from "../../src/hooks/notes/notesLedger";
-import { applyOperations } from "../../src/hooks/notes/notesDiff";
+import { applyBatchOps } from "../../src/hooks/notes/notesDiff";
 import type { NotesServerSnapshot } from "../../src/hooks/notes/types";
 import {
   deterministicLedgerClock,
@@ -106,7 +106,7 @@ describe("r2 review sequences", () => {
     expect(
       ops.every((op) => op.type === "insert" || (op.length ?? 0) === 0),
     ).toBe(true);
-    const serverText = applyOperations("base bravo", ops);
+    const serverText = applyBatchOps("base bravo", ops);
     expect(serverText).toContain("bravo");
     expect(serverText).toContain("alpha");
   });
@@ -133,7 +133,7 @@ describe("r2 review sequences", () => {
     await tick();
     expect(transport.calls.length).toBe(1);
     const ops = transport.calls[0]!.operations.map((e) => e.operation);
-    const serverText = applyOperations("XabY", ops);
+    const serverText = applyBatchOps("XabY", ops);
     // The old prefix/suffix collapse produced 'XabYc' (or 'XaYc'): the
     // replacement must transform as ONE hunk unit against the real remote
     // operations instead.
@@ -165,7 +165,7 @@ describe("r2 review sequences", () => {
     expect(
       ops.every((op) => op.type === "insert" || (op.length ?? 0) === 0),
     ).toBe(true);
-    const serverText = applyOperations("base bravo", ops);
+    const serverText = applyBatchOps("base bravo", ops);
     expect(serverText).toContain("bravo");
     expect(serverText).toContain("alpha");
   });

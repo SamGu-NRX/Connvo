@@ -63,11 +63,33 @@ describe("unconfirmed send deadline (r2 W5)", () => {
     expect(snapshot.status).toBe("unconfirmed");
     expect(snapshot.unconfirmedCount).toBe(1);
 
-    // The slot is released: a follow-up edit sends as a second batch.
+    // The slot is released, but an unconfirmed record pins the composed
+    // view: a follow-up batch diffed over it would stamp speculative
+    // coordinates (the server re-transforms them against the unconfirmed
+    // ops and double-shifts — the M4 property). The follow-up words stay
+    // VISIBLY queued instead: no second call, still honest unconfirmed.
     ledger.onEdit("hello world xy");
     ledger.flushNow();
     await tick();
+    expect(transport.calls.length).toBe(1);
+    expect(ledger.getSnapshot().status).toBe("unconfirmed");
+    expect(ledger.getSnapshot().bufferedContent).toBe("y");
+
+    // Fresh evidence (a read past the op's basis with no ack) re-pends the
+    // work; the retry goes out under the SAME client identity.
+    transport.deliver({
+      content: "hello world remote",
+      version: 3,
+      headSequence: 2,
+      clientAcks: [],
+    });
+    await tick();
+    ledger.flushNow();
+    await tick();
     expect(transport.calls.length).toBe(2);
+    expect(transport.calls[1]!.operations[0]!.clientOpId).toBe(
+      transport.calls[0]!.operations[0]!.clientOpId,
+    );
   });
 
   test("a late identity echo after the deadline still retires by identity", async () => {

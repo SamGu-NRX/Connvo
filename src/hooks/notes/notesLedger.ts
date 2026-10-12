@@ -22,6 +22,7 @@
 
 import type { Id } from "@convex/_generated/dataModel";
 import {
+  applyBatchOps,
   applyOperations,
   diffToHunks,
   transformHunksToSiblingOps,
@@ -349,8 +350,23 @@ export class NotesLedger {
         // them. The remount re-diffs from acked truth after resolution.
         if (!this.bufferHoldsUnsentWords) this.bufferBasis = composed;
         this.bufferHoldsUnsentWords = true;
+      } else if (
+        [...this.records.values()].some(
+          (record) =>
+            record.state === "saved" &&
+            record.serverSequence !== undefined &&
+            record.serverSequence > this.headSequence,
+        )
+      ) {
+        // Same absorption guard as the flush path: the composed view is
+        // ahead of the last incorporated read. Keep the words buffered;
+        // the remount's first ingest rebases and its requested flush
+        // converts from acked truth.
+        if (!this.bufferHoldsUnsentWords) this.bufferBasis = composed;
+        this.bufferHoldsUnsentWords = true;
       } else {
-        const ops = this.convertBufferToOps(composed);
+        this.rebaseIfSafe();
+        const ops = this.convertBufferToOps(this.composedText());
         if (ops.length > 0) {
           this.createRecords(ops);
         }
@@ -615,12 +631,8 @@ export class NotesLedger {
 
   flush(): void {
     if (this.flushIsBlocked()) return;
-    // Anything not proven incorporated gets retried: never-sent records
-    // and records whose send stalled past the deadline (unconfirmed).
-    // Both re-send under their ORIGINAL client identities — the server
-    // dedupes by identity, so a lost response can never double-apply.
     const resendable = [...this.records.values()].filter(
-      (record) => record.state === "pending" || record.state === "unconfirmed",
+      (record) => record.state === "pending",
     );
     if (resendable.length > 0) {
       this.sendBatch(resendable);
@@ -638,6 +650,25 @@ export class NotesLedger {
       this.flushRequested = true;
       return;
     }
+    // Saved-but-unabsorbed records (retired by a settle or ack whose
+    // follow-up read has not landed) still sit between baseContent and
+    // the composed view: a diff over the composed view would carry their
+    // effects above the stamped clientSequence, and the server would
+    // re-transform against them (observed: two batches sharing one
+    // clientSequence). Absorb them first — but only onto a read that has
+    // actually incorporated their server sequences; otherwise hold the
+    // words for the next ingest, which rebases and re-fires this flush.
+    const unabsorbed = [...this.records.values()].some(
+      (record) =>
+        record.state === "saved" &&
+        record.serverSequence !== undefined &&
+        record.serverSequence > this.headSequence,
+    );
+    if (unabsorbed) {
+      this.flushRequested = true;
+      return;
+    }
+    this.rebaseIfSafe();
     // Bootstrap/keystroke path: diff the buffer from the current base. With
     // no base yet (a meeting with no notes row), the diff runs from empty
     // content and the first batch creates the row server-side.
@@ -898,8 +929,17 @@ export class NotesLedger {
    * replayed in creation order (saved ops remain until the rebase absorbs
    * them into the base, so their words never vanish from the view). */
   private composedText(): string {
-    const ops = [...this.records.values()].map((record) => record.op);
-    return applyOperations(this.baseContent, ops);
+    // Mirror the server's batch application. The absorption guards in
+    // flush()/destroy() ensure the map holds at most ONE batch's records:
+    // a new batch is only created after the base has absorbed every
+    // earlier record. Each op of that batch shares one clientSequence
+    // frame, so — exactly like the server — each transforms against the
+    // applied transformed forms of its earlier siblings before applying.
+    let doc = this.baseContent;
+    const ops: NotesOperation[] = [];
+    for (const record of this.records.values()) ops.push(record.op);
+    if (ops.length > 0) doc = applyBatchOps(doc, ops);
+    return doc;
   }
 
   private buildSnapshot(): UseNotesLedgerResult {
