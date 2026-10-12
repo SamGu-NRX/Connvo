@@ -75,6 +75,7 @@ export function BenchClient({
   const cameraRef = useRef(true);
   const secondCameraTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoJoinedRef = useRef(false);
 
   const identityText = useMemo(
     () =>
@@ -209,12 +210,22 @@ export function BenchClient({
   }, [capture, events, meetingId, participant, publishLocalState, selfId, signalUrl, transportName]);
 
   // Auto-join (H scenarios) with the P-05 slow-join delay.
+  // React StrictMode (on by default under `next dev`) runs this effect twice
+  // on mount. Two joins built two transports that said hello with the same
+  // identity, and the server kept swapping one socket for the other. The ref
+  // survives StrictMode's remount, so the auto-join fires once; it is set
+  // when the join fires, so a cleared delay timer re-arms on the remount.
   useEffect(() => {
-    if (!autoJoin) return;
-    if (delayJoinMs > 0) {
-      joinTimerRef.current = setTimeout(() => void join(), delayJoinMs);
-    } else {
+    if (!autoJoin || autoJoinedRef.current) return;
+    const fire = () => {
+      if (autoJoinedRef.current) return;
+      autoJoinedRef.current = true;
       void join();
+    };
+    if (delayJoinMs > 0) {
+      joinTimerRef.current = setTimeout(fire, delayJoinMs);
+    } else {
+      fire();
     }
     return () => {
       if (joinTimerRef.current) {

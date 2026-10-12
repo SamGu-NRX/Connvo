@@ -43,6 +43,13 @@ const tileCount = (participantId) =>
 
 const tileCountAll = `() => document.querySelectorAll('[data-testid="remote-media"]').length`;
 
+// page.evaluate() given a string evaluates it as an expression: a function
+// source comes back as the function itself (serialized as undefined), never
+// called. Every direct evaluate of these sources wraps them as "(src)()".
+
+/** Milliseconds left until `deadline`, never below 1 (a wait needs a positive timeout). */
+const left = (/** @type {number} */ deadline) => Math.max(1, deadline - Date.now());
+
 // Node-side color assertions go through one page-side hook wrapping the pinned
 // decoder bundle; tolerant classification per the S0b cross-thread note.
 async function installColorHook(peer) {
@@ -285,8 +292,11 @@ export async function scenario_H_07(ctx, { seed }) {
 
     ctx.shaperFor("B").applyProfile({ lossPct: 0, delayMs: 0 });
     const restoreAt = Date.now();
+    // One deadline from the restore covers reconnecting AND media resuming:
+    // the reviewed version gave each wait its own 10 s.
+    const deadline = restoreAt + 10000;
     await waitFor(peerB, phaseIs("connected"), {
-      timeoutMs: 10000,
+      timeoutMs: left(deadline),
       describe: `reconnected within 10 s of restore (${durationS}s drop)`,
     });
     // Media resumes: B decodes A again.
@@ -294,12 +304,15 @@ export async function scenario_H_07(ctx, { seed }) {
       peerB,
       `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok, label: c?.label }; }`,
       (c) => c.ok,
-      { timeoutMs: 10000, describe: `media resumed within 10 s (${durationS}s drop)` },
+      { timeoutMs: left(deadline), describe: `media resumed within 10 s (${durationS}s drop)` },
     );
     const recoveryMs = Date.now() - restoreAt;
+    if (recoveryMs > 10000) {
+      throw new ScenarioError(`H-07: recovery took ${recoveryMs} ms after the ${durationS}s drop; the bar is 10 s`);
+    }
 
-    const tilesA = await peerA.page.evaluate(tileCountAll);
-    const tilesB = await peerB.page.evaluate(tileCountAll);
+    const tilesA = await peerA.page.evaluate(`(${tileCountAll})()`);
+    const tilesB = await peerB.page.evaluate(`(${tileCountAll})()`);
     if (tilesA !== 1 || tilesB !== 1) {
       throw new ScenarioError(`H-07: duplicate tiles after ${durationS}s drop (A:${tilesA}, B:${tilesB})`);
     }
@@ -335,23 +348,28 @@ export async function scenario_H_08(ctx) {
   // real once each live pc carries a new local ICE ufrag. Without this check a
   // transport that ignored the restart would pass, since media never stopped.
   const t0 = Date.now();
+  // One 10 s deadline from the forced restart for every step below; the
+  // reviewed version gave each wait its own 10 s, so 50 s could pass.
+  const deadline = t0 + 10000;
   for (const [peer, before] of [[peerA, ufragsA], [peerB, ufragsB]]) {
     await waitForValue(peer, ufragsSource, (/** @type {Array<string | null>} */ now) => Array.isArray(now) && now.length > 0 && now.every((u, i) => u && u !== before[i]), {
-      timeoutMs: 10000,
+      timeoutMs: left(deadline),
       describe: `new ICE ufrag on every live pc after the forced restart (before ${JSON.stringify(before)})`,
     });
   }
   await waitForValue(peerA, `async () => { const c = await window.__decodeRemoteColor("B"); return { ok: c?.ok }; }`, (c) => c.ok, {
-    timeoutMs: 10000,
+    timeoutMs: left(deadline),
     describe: "A sees B's frames within 10 s of the restart",
   });
   await waitForValue(peerB, `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok }; }`, (c) => c.ok, {
-    timeoutMs: 10000,
+    timeoutMs: left(deadline),
     describe: "B sees A's frames within 10 s of the restart",
   });
-  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "A phase connected within 10 s" });
-  await waitFor(peerB, phaseIs("connected"), { timeoutMs: 10000, describe: "B phase connected within 10 s" });
-  return { recoveryMs: Date.now() - t0, restartedPcs: restartedA.length + restartedB.length, ufragsBefore: { A: ufragsA, B: ufragsB } };
+  await waitFor(peerA, phaseIs("connected"), { timeoutMs: left(deadline), describe: "A phase connected within 10 s" });
+  await waitFor(peerB, phaseIs("connected"), { timeoutMs: left(deadline), describe: "B phase connected within 10 s" });
+  const recoveryMs = Date.now() - t0;
+  if (recoveryMs > 10000) throw new ScenarioError(`H-08: recovery took ${recoveryMs} ms; the bar is 10 s`);
+  return { recoveryMs, restartedPcs: restartedA.length + restartedB.length, ufragsBefore: { A: ufragsA, B: ufragsB } };
 }
 
 /** H-09 — reloaded peer rejoins; no ghost participant after 10 s */
@@ -366,7 +384,7 @@ export async function scenario_H_09(ctx) {
     describe: "B sees exactly one A tile",
   });
   await H(10000); // the contract's ghost observation window
-  const ghostTiles = await peerB.page.evaluate(tileCount("A"));
+  const ghostTiles = await peerB.page.evaluate(`(${tileCount("A")})()`);
   if (ghostTiles !== 1) {
     throw new ScenarioError(`H-09: ghost participant after reload (${ghostTiles} A tiles)`);
   }
@@ -508,7 +526,7 @@ export async function scenario_H_14(ctx) {
       describe: "named rejection to appear",
     });
     const text = await peerO.page.evaluate(`(() => document.querySelector('[data-testid="call-error"]').textContent)()`);
-    const tiles = await peerO.page.evaluate(tileCountAll);
+    const tiles = await peerO.page.evaluate(`(${tileCountAll})()`);
     if (tiles !== 0) throw new ScenarioError(`H-14: rejected peer has ${tiles} media tiles`, { text });
     const phase = await peerO.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
     await waitForValue(peerB, tileCountAll, (n) => n === 1, { timeoutMs: 5000, describe: "no O tile on B" });
