@@ -1,0 +1,35 @@
+{
+  "baseUrl": "http://localhost:3035",
+  "startedAt": "2026-10-12T19:23:36.091Z",
+  "checks": {
+    "notesInCall": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+    "endedRecap": {
+      "A": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "B": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "sameAsStored": true
+    },
+    "detail": {
+      "A": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "B": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "same": true
+    },
+    "calendar": {
+      "fileName": "budget-review.ics",
+      "summary": "Budget review",
+      "start": "2026-10-12T19:23:36Z"
+    },
+    "stayInTouch": {
+      "bSawAnythingBeforeSayingYes": false,
+      "aSees": "Bob Brown\nb@connvo-local.test",
+      "bSees": "Alice Anderson\na@connvo-local.test"
+    },
+    "listHasMeeting": true,
+    "outsider": {
+      "kind": "refused",
+      "text": "This meeting's recap is only for the people who were in it.",
+      "sawNotes": false
+    }
+  },
+  "pass": true,
+  "meetingId": "m972yf5zp5wap848ckkdktecex8g4e5w"
+}
