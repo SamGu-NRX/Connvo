@@ -717,12 +717,29 @@ export class NotesLedger {
       diffToHunks(basis, composed),
       [],
     );
-    const ops = transformHunksToSiblingOps(
+    const raw = transformHunksToSiblingOps(
       diffToHunks(basis, this.buffer),
       remoteOps,
-    ).filter((op) =>
-      op.type === "insert" ? (op.content ?? "") !== "" : (op.length ?? 0) > 0,
     );
+    // The drift transform can overshoot the composed frame when remote ops
+    // and local hunks interleave at the text's end; a position beyond the
+    // stamp frame is illegal for the server and produced the rejected
+    // insert(10) on an 8-char document (seed 20261011 path 4). Clamp to
+    // the composed frame — the words land at the frame's edge.
+    const docLen = composed.length;
+    const ops = raw
+      .map((op) => {
+        const position = Math.min(Math.max(op.position, 0), docLen);
+        if (op.type === "insert") return { ...op, position };
+        return {
+          ...op,
+          position,
+          length: Math.min(op.length ?? 0, docLen - position),
+        };
+      })
+      .filter((op) =>
+        op.type === "insert" ? (op.content ?? "") !== "" : (op.length ?? 0) > 0,
+      );
     return ops;
   }
 
@@ -827,6 +844,7 @@ export class NotesLedger {
         rejected.set(failedOp.clientOpId, failedOp.reason ?? "rejected by the server");
       }
     }
+
     let savedCount = 0;
     for (const record of batch) {
       // A fresh read may have retired this record first (a lost response
@@ -877,7 +895,8 @@ export class NotesLedger {
     switch (classifyTransportError(error)) {
       case "conflict":
       case "forbidden": {
-        // A definite server answer — the ops were seen and refused.
+        // A definite server answer — the ops were seen and refused. The
+        // records stay for the conflict surface; retryConflicts re-diffs.
         for (const record of batch) {
           record.state =
             classifyTransportError(error) === "conflict" ? "conflict" : "rejected";
@@ -937,7 +956,20 @@ export class NotesLedger {
     // applied transformed forms of its earlier siblings before applying.
     let doc = this.baseContent;
     const ops: NotesOperation[] = [];
-    for (const record of this.records.values()) ops.push(record.op);
+    for (const record of this.records.values()) {
+      // Mirror every op that still fits the base frame — including refused
+      // ones: a transport-level refusal (conflict/rejected from a bounced
+      // batch) must keep the user's words visible until retryConflicts
+      // re-diffs them. An op whose frame no longer fits (the base moved
+      // under a refused op) cannot be applied without throwing; its words
+      // surface through the conflict records and the explicit retry.
+      const op = record.op;
+      const fits =
+        op.type === "insert"
+          ? op.position >= 0 && op.position <= doc.length
+          : op.position >= 0 && op.position + (op.length ?? 0) <= doc.length;
+      if (fits) ops.push(op);
+    }
     if (ops.length > 0) doc = applyBatchOps(doc, ops);
     return doc;
   }
