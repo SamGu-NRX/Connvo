@@ -1,1 +1,665 @@
-/home/user/work/m3b-chain.sh: line 58: pnpm: command not found
+
+> connvo@0.1.1 test:run /home/user/work/repo
+> vitest run
+
+[33mTesting types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.[39m
+
+[1m[46m RUN [49m[22m [36mv4.0.4 [39m[90m/home/user/work/repo[39m
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/notes/operations.test.ts [2m([22m[2m65 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+[90mstdout[2m | convex/types/__tests__/propertyBasedTests.test.ts[2m > [22m[2mPerformance Property Tests[2m > [22m[2mValidator performance scales linearly
+[22m[39mValidator performance scaling: {
+  sizes: [ [33m10[39m, [33m50[39m, [33m100[39m, [33m500[39m ],
+  timings: [ [32m'0.09ms'[39m, [32m'0.00ms'[39m, [32m'0.00ms'[39m, [32m'0.00ms'[39m ],
+  sizeRatio: [33m50[39m,
+  timeRatio: [32m'0.05'[39m
+}
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/propertyBasedTests.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [31m❯[39m [30m[42m convex [49m[39m convex/history/history.test.ts [2m([22m[2m19 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 132[2mms[22m[39m
+       [32m✓[39m returns only the caller's meetings, newest first[32m 40[2mms[22m[39m
+[31m       [31m×[31m paginates with cursor and reports isDone[39m[32m 14[2mms[22m[39m
+       [32m✓[39m refuses unauthenticated callers[32m 2[2mms[22m[39m
+       [32m✓[39m returns the full payload for a participant[32m 11[2mms[22m[39m
+[31m       [31m×[31m throws the identical forbidden error for a non-participant and a nonexistent meeting (no existence leak)[39m[32m 4[2mms[22m[39m
+       [32m✓[39m refuses unauthenticated callers[32m 2[2mms[22m[39m
+       [32m✓[39m opt-in persists, is idempotent, and disable removes[32m 12[2mms[22m[39m
+       [32m✓[39m mutual flips true only when every participant has opted in (2-person meeting)[32m 6[2mms[22m[39m
+       [32m✓[39m mutual flips true only when every participant has opted in (3-person meeting)[32m 10[2mms[22m[39m
+       [32m✓[39m refuses a non-participant and unauthenticated callers[32m 4[2mms[22m[39m
+       [32m✓[39m is deterministic: two builds are deeply equal[32m 2[2mms[22m[39m
+       [32m✓[39m covers participants, duration, events, notes, and prompts verbatim[32m 1[2mms[22m[39m
+       [32m✓[39m never invents: empty inputs produce the literal not-recorded items[32m 1[2mms[22m[39m
+       [32m✓[39m listMyMeetings: refused when flag off, works when flag on[32m 3[2mms[22m[39m
+       [32m✓[39m getMeetingHistory: refused when flag off, works when flag on[32m 7[2mms[22m[39m
+       [32m✓[39m getStayInTouchStatus: refused when flag off, works when flag on[32m 3[2mms[22m[39m
+       [32m✓[39m setStayInTouch: refused when flag off, works when flag on[32m 3[2mms[22m[39m
+       [32m✓[39m flag gate runs before identity: unauthenticated caller sees the flag error[32m 2[2mms[22m[39m
+       [32m✓[39m globally newest-first across pages, no duplicates or gaps[32m 4[2mms[22m[39m
+[90mstdout[2m | test/convex/realWorldScenarios.test.ts[2m > [22m[2mReal-World Scenario Tests[2m > [22m[2mPerformance SLO Validation[2m > [22m[2mshould meet query performance targets
+[22m[39mQuery performance: avg=0.1ms, max=1ms
+
+ [32m✓[39m [30m[42m convex [49m[39m test/convex/realWorldScenarios.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 92[2mms[22m[39m
+[90mstdout[2m | convex/types/__tests__/functionTypeConsistency.test.ts[2m > [22m[2mPerformance and Scalability Validation[2m > [22m[2mLarge validator collections perform well
+[22m[39mValidated 100 functions in 0.08ms (avg: 0.00ms per function)
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/functionTypeConsistency.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+[90mstdout[2m | convex/auth/permissions.test.ts[2m > [22m[2mDynamic Permission Management[2m > [22m[2mSubscription Permission Validation[2m > [22m[2mshould enforce role-based permissions
+[22m[39mparticipantValidation: { granted: [33mfalse[39m, metadata: {}, permissions: [ [32m'read'[39m, [32m'write'[39m ] }
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/auth/permissions.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 147[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/auth/guards.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 111[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m test/convex/schemaValidation.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mCompile-time Performance[2m > [22m[2mTypeScript compilation time impact
+[22m[39mValidated 27 validators in 0.10ms
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mCompile-time Performance[2m > [22m[2mValidator performance scales linearly
+[22m[39mPerformance scaling: {
+  sizes: [ [33m10[39m, [33m25[39m, [33m50[39m, [33m100[39m ],
+  timings: [ [32m'0.01ms'[39m, [32m'0.01ms'[39m, [32m'0.13ms'[39m, [32m'0.02ms'[39m ],
+  sizeRatio: [33m10[39m,
+  timeRatio: [32m'2.86'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mCompile-time Performance[2m > [22m[2mComplex validator performance
+[22m[39mComplex validators validated in 0.00ms
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mRuntime Performance[2m > [22m[2mArrayBuffer operations are efficient
+[22m[39mArrayBuffer operations: 0.027ms per operation (1000 iterations)
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mRuntime Performance[2m > [22m[2mLarge embedding vector performance
+[22m[39mLarge vector processing: 0.13ms per vector (100 vectors, 3072 dimensions)
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mRuntime Performance[2m > [22m[2mMemory usage remains bounded
+[22m[39mMemory monitoring not available in this environment
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mBundle Size Impact[2m > [22m[2mValidator objects are lightweight
+[22m[39mValidator size: 1.28KB
+Validator size: 0.40KB
+Validator size: 1.56KB
+Validator size: 1.19KB
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mScalability Validation[2m > [22m[2mPerformance with 100+ validators
+[22m[39mScalability test: 0.09ms total, 0.001ms per validator (100 validators)
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mScalability Validation[2m > [22m[2mConcurrent validation performance
+[22m[39mConcurrent validation: 3.82ms for 12 validators
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mReal-world Performance Scenarios[2m > [22m[2mFunction definition performance simulation
+[22m[39mFunction simulation: 0.01ms per function (4 functions)
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mReal-world Performance Scenarios[2m > [22m[2mDevelopment workflow performance
+[22m[39mDevelopment workflow: 0.00ms per cycle (10 cycles, 5 validators each)
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mPerformance Regression Detection[2m > [22m[2mBaseline performance metrics
+[22m[39mSingle validator validation: 0.016ms (expected < 1ms)
+Pagination validator creation: 0.038ms (expected < 2ms)
+ArrayBuffer conversion: 0.071ms (expected < 1ms)
+
+[90mstdout[2m | convex/types/__tests__/performanceValidation.test.ts[2m > [22m[2mPerformance Validation[2m > [22m[2mPerformance Regression Detection[2m > [22m[2mPerformance consistency across runs
+[22m[39mPerformance consistency: avg=0.00ms, min=0.00ms, max=0.01ms, variance=0.01ms
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/performanceValidation.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould ingest single transcript chunk successfully
+[22m[39mrateLimitRemaining in return: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould ingest single transcript chunk successfully
+[22m[39mresult.rateLimitRemaining in test: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle time-bucketed sharding correctly
+[22m[39mrateLimitRemaining in return: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle time-bucketed sharding correctly
+[22m[39mrateLimitRemaining in return: [33m48[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle time-bucketed sharding correctly
+[22m[39mrateLimitRemaining in return: [33m47[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m48[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m47[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m46[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m45[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m44[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m43[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m42[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m41[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m40[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m39[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m38[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m37[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m36[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m35[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m34[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m33[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m32[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m31[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m30[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m29[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m28[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m27[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m26[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m25[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m24[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m23[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m22[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m21[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m20[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m19[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m18[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m17[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m16[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m15[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m14[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m13[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m12[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m11[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m10[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m9[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m8[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m7[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m6[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m5[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m4[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m3[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m2[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m1[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould enforce rate limits
+[22m[39mrateLimitRemaining in return: [33m0[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould calculate transcript statistics correctly
+[22m[39mrateLimitRemaining in return: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould calculate transcript statistics correctly
+[22m[39mrateLimitRemaining in return: [33m48[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould calculate transcript statistics correctly
+[22m[39mrateLimitRemaining in return: [33m47[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould cleanup old transcripts
+[22m[39mrateLimitRemaining in return: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m49[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m48[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m47[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m46[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m45[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m44[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m43[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m42[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m41[39m
+
+[90mstdout[2m | convex/transcripts/ingestion.test.ts[2m > [22m[2mTranscript Ingestion Pipeline[2m > [22m[2mshould handle concurrent ingestion without conflicts
+[22m[39mrateLimitRemaining in return: [33m40[39m
+
+ [31m❯[39m [30m[42m convex [49m[39m convex/transcripts/ingestion.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 108[2mms[22m[39m
+     [32m✓[39m should ingest single transcript chunk successfully[32m 29[2mms[22m[39m
+     [32m✓[39m should validate transcript chunk input[32m 3[2mms[22m[39m
+[31m     [31m×[31m should handle time-bucketed sharding correctly[39m[32m 5[2mms[22m[39m
+     [32m✓[39m should enforce rate limits[32m 40[2mms[22m[39m
+     [32m✓[39m should batch ingest transcript chunks efficiently[32m 7[2mms[22m[39m
+     [32m✓[39m should calculate transcript statistics correctly[32m 10[2mms[22m[39m
+     [32m✓[39m should cleanup old transcripts[32m 4[2mms[22m[39m
+     [32m✓[39m should handle concurrent ingestion without conflicts[32m 7[2mms[22m[39m
+     [32m✓[39m should reject ingestion for inactive meetings[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/ics.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 389[2mms[22m[39m
+     [33m[2m✓[22m[39m round-trips every field across randomized unicode-heavy meetings [33m 368[2mms[22m[39m
+[90mstdout[2m | convex/types/__tests__/validatorConsistency.test.ts[2m > [22m[2mValidator Consistency for Function Usage[2m > [22m[2mPerformance Validation[2m > [22m[2mLarge validator collections perform well
+[22m[39mValidated 27 validators in 0.14ms
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/validatorConsistency.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+[90mstdout[2m | convex/types/__tests__/typeAlignment.test.ts[2m > [22m[2mCI/CD Validation Report[2m > [22m[2mGenerate comprehensive validation report
+[22m[39mValidation Performance: {
+  totalValidators: [33m12[39m,
+  averageTime: [32m'0.00ms'[39m,
+  maxTime: [32m'0.00ms'[39m,
+  totalTime: [32m'0.02ms'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/typeAlignment.test.ts[2m > [22m[2mType Exploration Tools[2m > [22m[2mExplore User validator structure
+[22m[39mUser validator exploration: { complexity: [33m17[39m, dependencies: [ [32m'table:users'[39m ] }
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/typeAlignment.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mHealth Monitoring[2m > [22m[2mshould generate comprehensive health report
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:22:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mHealth Monitoring[2m > [22m[2mshould generate comprehensive health report
+[22m[39mHealth Report Summary: {
+  totalValidators: [33m36[39m,
+  failedValidators: [33m1[39m,
+  warnings: [33m0[39m,
+  compilationTime: [32m'0.86ms'[39m,
+  validationTime: [32m'0.10ms'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mHealth Monitoring[2m > [22m[2mshould check system health status
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at TypeSystemMonitor.checkHealth [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:238:31[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:52:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mHealth Monitoring[2m > [22m[2mshould check system health status
+[22m[39mHealth Status: {
+  healthy: [33mfalse[39m,
+  issueCount: [33m1[39m,
+  issues: [ [32m'1 validators failed validation'[39m ]
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mHealth Monitoring[2m > [22m[2mshould detect type drift
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:69:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mPerformance Monitoring[2m > [22m[2mshould track performance metrics
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:95:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mPerformance Monitoring[2m > [22m[2mshould track performance metrics
+[22m[39mPerformance Metrics: {
+  validatorCount: [33m36[39m,
+  averageTime: [32m'0.001ms'[39m,
+  maxTime: [32m'0.017ms'[39m,
+  totalTime: [32m'0.057ms'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mReport Generation[2m > [22m[2mshould export report to markdown
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:134:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mReport Generation[2m > [22m[2mshould export report to markdown
+[22m[39mMarkdown Report Length: [33m624[39m characters
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mReport Generation[2m > [22m[2mshould include recommendations
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:155:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstdout[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mReport Generation[2m > [22m[2mshould include recommendations
+[22m[39mRecommendations: [ [32m'Fix 1 failed validators'[39m ]
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mIntegration with CI/CD[2m > [22m[2mshould provide CI-friendly health check
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at TypeSystemMonitor.checkHealth [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:238:31[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:212:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mIntegration with CI/CD[2m > [22m[2mshould provide CI-friendly health check
+[22m[39mType system health check failed: [ [32m'1 validators failed validation'[39m ]
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mIntegration with CI/CD[2m > [22m[2mshould generate reports suitable for CI artifacts
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:225:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mError Handling[2m > [22m[2mshould handle missing validators gracefully
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:241:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mError Handling[2m > [22m[2mshould handle performance measurement errors
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:249:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mMaintenance Recommendations[2m > [22m[2mshould provide actionable maintenance recommendations
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:259:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+[90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mMaintenance Recommendations[2m > [22m[2mshould prioritize critical issues
+[22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
+[90m    at writeFileSync (node:fs:2380:20)[39m
+    at TypeSystemMonitor.saveReportHistory [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:402:7[90m)[39m
+    at TypeSystemMonitor.generateHealthReport [90m(/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.ts:229:10[90m)[39m
+    at [90m/home/user/work/repo/[39mconvex/types/__tests__/monitoringTools.test.ts:272:36
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:157:11
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:753:26
+    at [90mfile:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1602:10[90m)[39m
+    at runTest [90m(file:///home/user/work/repo/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.0.4/node_modules/[4m@vitest/runner[24m/dist/index.js:1309:12[90m)[39m {
+  errno: [33m-2[39m,
+  code: [32m'ENOENT'[39m,
+  syscall: [32m'open'[39m,
+  path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
+}
+
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/monitoringTools.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m test/convex/openapiExamples.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 300[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/insights/insights.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 111[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/matching/matching.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/prompts/prompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/users/onboarding.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/ics.ical.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/components/history/MeetingRecap.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/components/mvp/navigation-gating.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m [30m[42m convex [49m[39m convex/history/history.test.ts[2m > [22mAfter-call history data layer[2m > [22mlistMyMeetings[2m > [22mpaginates with cursor and reports isDone
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m convex/history/history.test.ts:[2m132:33[22m[39m
+    [90m130| [39m      })[33m;[39m
+    [90m131| [39m      [34mexpect[39m(secondPage[33m.[39mpage)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m132| [39m      [34mexpect[39m(secondPage[33m.[39misDone)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m133| [39m      [34mexpect[39m(second[33m.[39mmeetingId)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m134| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[42m convex [49m[39m convex/history/history.test.ts[2m > [22mAfter-call history data layer[2m > [22mgetMeetingHistory[2m > [22mthrows the identical forbidden error for a non-participant and a nonexistent meeting (no existence leak)
+[31m[1mAssertionError[22m: expected undefined to be 'FORBIDDEN' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"FORBIDDEN"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m convex/history/history.test.ts:[2m271:39[22m[39m
+    [90m269| [39m      }
+    [90m270| [39m      [34mexpect[39m(nonParticipantThrew)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m271| [39m      [34mexpect[39m(nonParticipantData[33m.[39mcode)[33m.[39m[34mtoBe[39m([32m"FORBIDDEN"[39m)[33m;[39m
+    [90m   | [39m                                      [31m^[39m
+    [90m272| [39m      [34mexpect[39m(nonParticipantData[33m.[39mmessage)[33m.[39m[34mtoBe[39m(
+    [90m273| [39m        [32m"Access denied: Not a meeting participant"[39m[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m [30m[42m convex [49m[39m convex/transcripts/ingestion.test.ts[2m > [22mTranscript Ingestion Pipeline[2m > [22mshould handle time-bucketed sharding correctly
+[31m[1mAssertionError[22m: expected 1791779700000 to be 1791779400000 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1791779400000[39m
+[31m+ 1791779700000[39m
+
+[36m [2m❯[22m convex/transcripts/ingestion.test.ts:[2m198:33[22m[39m
+    [90m196| [39m
+    [90m197| [39m    [34mexpect[39m(results[[34m0[39m][33m.[39mbucketMs)[33m.[39m[34mtoBe[39m(bucket1)[33m;[39m
+    [90m198| [39m    [34mexpect[39m(results[[34m1[39m][33m.[39mbucketMs)[33m.[39m[34mtoBe[39m(bucket1)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m199| [39m    [34mexpect[39m(results[[34m2[39m][33m.[39mbucketMs)[33m.[39m[34mtoBe[39m(bucket3)[33m;[39m
+    [90m200| [39m    [34mexpect[39m(bucket3)[33m.[39m[34mtoBeGreaterThan[39m(bucket1)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m22 passed[39m[22m[90m (24)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m292 passed[39m[22m[90m (295)[39m
+[2m   Start at [22m 04:34:50
+[2m   Duration [22m 5.22s[2m (transform 1.21s, setup 198ms, collect 1.39s, tests 1.91s, environment 219ms, prepare 73ms)[22m
+
+ ELIFECYCLE  Command failed with exit code 1.
