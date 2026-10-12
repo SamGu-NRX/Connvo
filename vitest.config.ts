@@ -60,6 +60,10 @@ export default defineConfig({
           include: ["test/in-call/**/*.test.{ts,tsx}"],
           environment: "jsdom",
           setupFiles: ["./test/in-call/setup.ts"],
+          // Project-level config replaces the root test block in Vitest 4, so
+          // the 10k-run property proofs need their own generous timeout.
+          testTimeout: 900000,
+          hookTimeout: 30000,
         },
         resolve: commonResolve,
       },

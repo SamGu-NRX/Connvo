@@ -506,8 +506,27 @@ export function transformOperationSequence(
       const againstOp = pendingAgainst[j];
       // Both ops are in the same frame here: `current` after the earlier
       // local ops, `againstOp` carried through those same local ops.
+      const absorbedInsert =
+        againstOp.type === "insert" &&
+        current.type === "delete" &&
+        againstOp.position > current.position &&
+        againstOp.position < current.position + (current.length || 0);
       pendingAgainst[j] = transformAgainst(againstOp, current);
       current = transformAgainst(current, againstOp);
+      if (absorbedInsert) {
+        // Absorb reconciliation (design.md: an insert appears exactly once
+        // unless absorbed by a concurrent delete): this delete consumed the
+        // insert's characters, so the insert is gone. It must not survive
+        // in the carried frame — a surviving insert shifts the remaining
+        // local ops past characters this delete already removed, producing
+        // a self-inconsistent sequence that cannot apply over its own
+        // target document (observed at property seed 20261011, path 8610).
+        pendingAgainst[j] = {
+          type: "retain",
+          position: current.position,
+          length: 0,
+        };
+      }
     }
     transformed.push(current);
   }
