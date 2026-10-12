@@ -40,6 +40,8 @@ const VARIANT_BY_TRANSPORT = {
   "reference-never-close": "never-close",
   "reference-no-reconnect": "no-reconnect",
   "reference-outsider-allowed": "outsider-allowed",
+  // The p2p transport rides the same server through its WebSocket adapter.
+  p2p: "reference",
 };
 
 /** Returns the signaling variant for a reference transport, else null.

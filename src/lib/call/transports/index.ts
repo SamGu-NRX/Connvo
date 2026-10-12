@@ -48,6 +48,17 @@ export async function loadTransport(
 }
 
 // Registered transports — one line each.
+import { createP2PTransport } from "./p2p/p2p-transport";
+import { websocketSignaling } from "./p2p/websocket-signaling";
+
+// P2P mesh over the reference WebSocket signaling server (until the Convex
+// adapter lands with PR #35).
+registerTransport("p2p", (options) => {
+  const url = options.signalUrl ?? process.env.NEXT_PUBLIC_CONNVO_CALL_SIGNALING_URL;
+  if (!url) return Promise.reject(new Error("p2p transport needs a signaling URL"));
+  return Promise.resolve(createP2PTransport({ signaling: websocketSignaling(url) }));
+});
+
 // S2A (P2P over Convex signaling) and S2B (self-hosted LiveKit) register
 // here in their own tasks. The eval-only "reference" transport (and its
 // broken variants) register in tools/call-eval/reference and are added here
