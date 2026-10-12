@@ -5,13 +5,19 @@ import { usePathname } from "next/navigation";
 import { TransitionLink } from "@/utils/TransitionLink";
 import { motion } from "motion/react";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { navSections } from "./navigation.config";
+import { getNavSections } from "./navigation.config";
 
-const MOBILE_ITEM_ORDER = ["Home", "Smart Match", "Match Queue", "Profile"];
+const MOBILE_ITEM_ORDER = [
+  "Home",
+  "Smart Match",
+  "Match Queue",
+  "Meetings",
+  "Profile",
+];
 
 export function MobileNavigation() {
   const pathname = usePathname();
-  const navItems = navSections
+  const navItems = getNavSections()
     .flatMap((section) => section.items)
     .filter((item) => MOBILE_ITEM_ORDER.includes(item.name))
     .sort(
