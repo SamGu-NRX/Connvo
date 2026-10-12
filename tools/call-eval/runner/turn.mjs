@@ -12,7 +12,7 @@ export function turnAvailable() {
 }
 
 export async function createTurn({ port = 0, user = "eval-user", pass = "eval-pass" } = {}) {
-  const relay = await startTurnRelay({ port });
+  const relay = await startTurnRelay({ port, realm: "connvo-eval", password: pass });
   return { port: relay.port, user, pass, stats: relay.stats, stop: () => relay.stop() };
 }
 
