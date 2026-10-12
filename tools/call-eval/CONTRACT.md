@@ -128,6 +128,10 @@ Pinned fixture spec (generator + decoders must match):
   `NEXT_PUBLIC_CONNVO_CALL_BENCH=1`. It mounts a transport by name from
   `src/lib/call/transports/index.ts`, owns minimal local-media handling
   (getUserMedia via the Chromium fake devices), and implements the DOM contract.
+  It takes its token from the reference signaling server's `POST /mint` (the
+  runner passes that server as `?signal=`). `src/proxy.ts` skips WorkOS for
+  `/dev/call-bench` only, only with the flag on, and never when
+  `NODE_ENV` or `VERCEL_ENV` is `production`; no API route is exempt.
 - Reference transport: `tools/call-eval/reference/`, its own local WebSocket
   signaling server (ports 9301–9310 reserved for eval), registered as
   `"reference"` in the registry. Its signaling authorizes the RS256 token and
@@ -181,20 +185,23 @@ serialize them into the page):
 
 ## Reference signaling server CLI (pinned; consumed by runner)
 
-`node tools/call-eval/reference/signaling-server.mjs --port=<9301..9310> --variant=<reference|no-audio|never-close|no-reconnect|outsider-allowed> [--jwks-file=<path>]`
+`node tools/call-eval/reference/signaling-server.mjs --port=<9301..9310> --variant=<reference|no-audio|never-close|no-reconnect|outsider-allowed> (--bench=1 | --jwks-file=<path> --members-file=<path>)`
 — binds, prints exactly one JSON line `{"ok":true,"port":<p>,"variant":"..."}` to
 stdout when ready. JWKS from `--jwks-file` or `CONNVO_LOCAL_TEST_JWKS_FILE`.
 Verifies the RS256 bearer token (issuer `https://connvo-local-test.invalid`) and
 meeting membership; fails closed. The `outsider-allowed` variant skips that
-check (H-14 broken variant).
+check (H-14 broken variant). With `--bench=1` (the runner's default for bench
+runs) the server generates its own key and mints tokens for the bench
+identities `A` and `B` at `POST /mint`; no JWKS, no Convex.
 
 ## Scenario fault mechanisms (pinned)
 
 - H-07 network drop and H-15 lossy link both force all media through the
   harness-controlled path: the probe wrapper overrides `RTCConfiguration` with
-  `{ iceServers: [<local TURN behind the shaper>], iceTransportPolicy: "relay" }`.
-  H-07 then drops 100% (plus closes the peer's signaling socket); H-15 applies
-  5% / 15% loss with 300 ms delay. One mechanism, transport-agnostic.
+  `{ iceServers: [<TURN relay behind the shaper>], iceTransportPolicy: "relay" }`.
+  The TURN relay is the in-process `runner/turn-relay.mjs` (no coturn). H-07
+  drops 100% in both directions (plus closes the peer's signaling socket); H-15
+  applies 5% / 15% loss with 300 ms delay to one participant's link only.
 - If forcing relay proves impossible for a transport under test, that failure
   is reported as a blocked measurement — never faked.
 

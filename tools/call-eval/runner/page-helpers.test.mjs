@@ -1,16 +1,14 @@
 /**
- * measureFps sampling tests (reviewed bug: 250 ms sampling saturates
- * observed-advance fps near 4).
+ * measureFps and color classification tests over known inputs.
  *
- * computeFps counts one advance per sample step, so the sampling step caps
- * the measurable rate at 1000/stepMs fps. The old default (250 ms) topped
- * out near 4 fps and failed H-01's >= 15 fps bar on a perfectly healthy
- * 30 fps stream. The fix samples every 20 ms, which tracks real frame rates
- * up to 50 fps. The fake peer synthesizes a 30 fps stream by deriving the
- * frame counter from wall-clock time, so no browser is involved.
+ * measureFps samples inside the page (requestVideoFrameCallback plus a 10 ms
+ * timer) and returns the samples to Node in one evaluate call; the fake page
+ * below stands in for that call with the samples a stream at `fps` produces
+ * when read every 10 ms. The reviewed bug sampled through one Node round trip
+ * per read, which capped the observable rate under load.
  */
 import { describe, expect, it } from "vitest";
-import { measureFps, toneMatches, toneIsSilent } from "./page-helpers.mjs";
+import { matchPeerColor, measureFps, toneMatches, toneIsSilent } from "./page-helpers.mjs";
 import { decodeToneHz } from "../lib/decoders.mjs";
 
 /** 0.5 s of a pure tone at 48 kHz (decodeToneHz caps its window at 12000 samples). */
@@ -21,48 +19,62 @@ function toneBuffer(hz, sampleRate = 48000, seconds = 0.5, amp = 0.6) {
   return out;
 }
 
-/** Fake peer whose remote tile decodes to a synthetic stream at `fps`.
+/** Fake peer whose in-page sampler returns a stream at `fps`, read every 10 ms.
  * @param {number} fps */
 function fakePeerAt(fps) {
-  const t0 = Date.now();
-  let evalCalls = 0;
   return {
     peerId: "A",
-    __evalCalls: () => evalCalls,
     page: {
-      evaluate: async () => {
-        evalCalls++;
-        return {
-          present: true,
-          counter: { ok: true, counter: Math.floor(((Date.now() - t0) * fps) / 1000) % 4096 },
-        };
+      /** @param {unknown} _fn @param {{ ms: number }} arg */
+      evaluate: async (_fn, arg) => {
+        const out = [];
+        for (let t = 0; t < arg.ms; t += 10) out.push({ t, counter: Math.floor((t * fps) / 1000) % 4096 });
+        return out;
       },
     },
   };
 }
 
-describe("measureFps default sampling", () => {
-  it("measures a healthy 30 fps stream above the H-01 bar with the default step", { timeout: 15000 }, async () => {
-    const peer = fakePeerAt(30);
-    const result = await measureFps(peer, "B", 2000);
-    // Old code: ~4 fps (250 ms step saturates observed advances) — fails here.
-    expect(result.fps).toBeGreaterThanOrEqual(15);
+describe("measureFps", () => {
+  it("measures a healthy 30 fps stream at about 30 fps", async () => {
+    const result = await measureFps(fakePeerAt(30), "B", 2000);
+    expect(result.fps).toBeGreaterThan(29);
+    expect(result.fps).toBeLessThan(31);
     expect(result.implausible).toBe(false);
   });
 
-  it("samples densely enough to resolve per-frame advances", { timeout: 15000 }, async () => {
-    const peer = fakePeerAt(30);
-    await measureFps(peer, "B", 2000);
-    // Old code: 2000/250 = 8 samples for the window — fails here. The new
-    // 20 ms step yields ~100 nominal; the floor absorbs timer stretch on a
-    // loaded box.
-    expect(peer.__evalCalls()).toBeGreaterThanOrEqual(12);
+  it("measures a 10 fps stream below the H-01 bar", async () => {
+    const result = await measureFps(fakePeerAt(10), "B", 2000);
+    expect(result.fps).toBeLessThan(15);
   });
 
-  it("reports a frozen stream as 0 fps, not a sampling artifact", { timeout: 15000 }, async () => {
-    const peer = fakePeerAt(0); // counter never advances
-    const result = await measureFps(peer, "B", 1500);
+  it("reports a frozen stream as 0 fps", async () => {
+    const result = await measureFps(fakePeerAt(0), "B", 1500);
     expect(result.fps).toBe(0);
+  });
+
+  it("reports no tile as 0 fps", async () => {
+    const peer = { peerId: "A", page: { evaluate: async () => [] } };
+    expect((await measureFps(peer, "B", 1000)).fps).toBe(0);
+  });
+});
+
+describe("matchPeerColor", () => {
+  // Known inputs: each pinned fixture color, shifted by the y4m round trip.
+  it.each([
+    ["A", { r: 205, g: 35, b: 35 }],
+    ["B", { r: 35, g: 150, b: 85 }],
+    ["C", { r: 45, g: 85, b: 175 }],
+    ["second-camera", { r: 170, g: 40, b: 170 }],
+    ["B", { r: 46, g: 140, b: 92 }],
+  ])("classifies %s", (label, rgb) => {
+    const match = matchPeerColor(rgb);
+    expect(match.label).toBe(label);
+    expect(match.ok).toBe(true);
+  });
+
+  it("rejects a color far from every peer", () => {
+    expect(matchPeerColor({ r: 128, g: 128, b: 128 }).ok).toBe(false);
   });
 });
 

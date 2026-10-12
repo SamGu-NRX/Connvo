@@ -2,9 +2,9 @@
 //
 // S0 call-harness gate for the eval-only bench carve-out
 // (tools/call-eval/CONTRACT.md): /dev/call-bench skips the WorkOS AuthKit
-// middleware only while NEXT_PUBLIC_CONNVO_CALL_BENCH=1 and VERCEL_ENV is not
-// "production"; every other /dev path keeps the middleware in all
-// environments.
+// middleware only while NEXT_PUBLIC_CONNVO_CALL_BENCH=1, NODE_ENV is not
+// "production" and VERCEL_ENV is not "production"; every other path keeps the
+// middleware in all environments.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -32,6 +32,7 @@ const event = {} as NextFetchEvent;
 beforeEach(() => {
   mocks.handleAuth.mockClear();
   vi.stubEnv("VERCEL_ENV", undefined);
+  vi.stubEnv("NODE_ENV", "development");
   vi.stubEnv("NEXT_PUBLIC_CONNVO_CALL_BENCH", "1");
 });
 
@@ -138,33 +139,26 @@ describe("proxy middleware gate", () => {
   });
 });
 
-describe("token endpoint carve-out", () => {
-  it("passes the token route through with the flag on outside production", () => {
-    vi.stubEnv("VERCEL_ENV", undefined);
-    expect(benchPathPassesThrough("/api/test-auth/token", { benchFlag: "1", vercelEnv: undefined })).toBe(true);
-    vi.stubEnv("VERCEL_ENV", "preview");
-    expect(benchPathPassesThrough("/api/test-auth/token", { benchFlag: "1", vercelEnv: "preview" })).toBe(true);
-  });
-
-  it("flag off or production: the middleware stays on the token route", () => {
-    vi.stubEnv("NEXT_PUBLIC_CONNVO_CALL_BENCH", "");
-    expect(benchPathPassesThrough("/api/test-auth/token", { benchFlag: "", vercelEnv: undefined })).toBe(false);
+describe("production build", () => {
+  it("keeps WorkOS on every /dev path, the bench included, even with the flag on", () => {
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_CONNVO_CALL_BENCH", "1");
-    expect(benchPathPassesThrough("/api/test-auth/token", { benchFlag: "1", vercelEnv: "production" })).toBe(false);
+    const paths = ["/dev", "/dev/", "/dev/call-bench", "/dev/call-bench/reference?as=A", "/dev/call-bench/reference-no-audio", "/dev/auth-proof"];
+    for (const vercelEnv of [undefined, "preview", "development"]) {
+      vi.stubEnv("VERCEL_ENV", vercelEnv);
+      for (const path of paths) {
+        expect(proxy(requestAt(path), event)).toBe(mocks.AUTH_SENTINEL);
+      }
+    }
+    expect(mocks.handleAuth).toHaveBeenCalledTimes(paths.length * 3);
   });
+});
 
-  it("only the exact token path passes; sibling api paths keep the middleware", () => {
-    expect(benchPathPassesThrough("/api/test-auth/token/extra", { benchFlag: "1", vercelEnv: undefined })).toBe(false);
-    expect(benchPathPassesThrough("/api/test-auth", { benchFlag: "1", vercelEnv: undefined })).toBe(false);
-    const siblings = ["/api/test-auth/keys", "/api/convex/token", "/api/auth/token"];
-    for (const path of siblings) {
+describe("no API carve-out", () => {
+  it("the test-auth token route keeps the middleware with the bench flag on", () => {
+    for (const path of ["/api/test-auth/token", "/api/test-auth/token?user=A", "/api/convex/token"]) {
+      expect(benchPathPassesThrough(path.split("?")[0], { benchFlag: "1", nodeEnv: "development" })).toBe(false);
       expect(proxy(requestAt(path), event)).toBe(mocks.AUTH_SENTINEL);
     }
-    expect(mocks.handleAuth).toHaveBeenCalledTimes(siblings.length);
-  });
-
-  it("the proxy passes the token route to the bench client without auth", () => {
-    vi.stubEnv("VERCEL_ENV", undefined);
-    expect(proxy(requestAt("/api/test-auth/token?user=A"), event)).not.toBe(mocks.AUTH_SENTINEL);
   });
 });

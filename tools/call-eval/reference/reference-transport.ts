@@ -49,7 +49,9 @@ type SignalingDown =
 
 type SignalData =
   | { description: RTCSessionDescriptionInit }
-  | { candidate: RTCIceCandidateInit };
+  | { candidate: RTCIceCandidateInit }
+  /** The answering side asks the offering side for a fresh offer. */
+  | { renegotiate: true };
 
 type SignalingUp =
   | { type: "hello"; token: string; meetingId: string }
@@ -79,6 +81,10 @@ interface PeerEntry {
   publishedStream: boolean;
   /** Highest inbound framesDecoded observed — the decoder-output evidence the connected phase requires. */
   decodedFrames: number;
+  /** Signals for this peer run one at a time, in arrival order. */
+  chain: Promise<void>;
+  /** The initiator owes a fresh offer once the current one is answered. */
+  offerPending: boolean;
 }
 
 export function createReferenceTransport(
@@ -185,15 +191,20 @@ export function createReferenceTransport(
 
   /** Adds the local capture tracks to a peer connection (D5: never stops them). */
   function attachLocalTracks(entry: PeerEntry): void {
-    if (!localStream) return;
-    for (const track of localStream.getVideoTracks()) {
-      entry.pc.addTrack(track, localStream);
+    // The UI's capture can exist before publishLocalStream runs (the bench
+    // captures, connects, then publishes), and a welcome can arrive in
+    // between. Reading the context's stream here means a peer built in that
+    // window still carries media in its first offer or answer.
+    const stream = localStream ?? ctx?.getLocalStream() ?? null;
+    if (!stream) return;
+    for (const track of stream.getVideoTracks()) {
+      entry.pc.addTrack(track, stream);
     }
     // H-02 defect: the audio track is never added, so receivers hear silence
     // and the tone-frequency pass condition cannot hold.
     if (defect !== "no-audio") {
-      for (const track of localStream.getAudioTracks()) {
-        entry.pc.addTrack(track, localStream);
+      for (const track of stream.getAudioTracks()) {
+        entry.pc.addTrack(track, stream);
       }
     }
   }
@@ -204,6 +215,7 @@ export function createReferenceTransport(
     entry.pc.onicecandidate = null;
     entry.pc.ontrack = null;
     entry.pc.onconnectionstatechange = null;
+    entry.pc.onnegotiationneeded = null;
     entry.pc.close();
     peers.delete(participantId);
   }
@@ -217,6 +229,8 @@ export function createReferenceTransport(
       pendingCandidates: [],
       publishedStream: false,
       decodedFrames: 0,
+      chain: Promise.resolve(),
+      offerPending: false,
     };
     peers.set(participantId, entry);
 
@@ -246,14 +260,32 @@ export function createReferenceTransport(
 
     attachLocalTracks(entry);
 
-    if (entry.initiator) {
-      pc.onnegotiationneeded = () => {
-        void createAndSendOffer(participantId, entry);
-      };
-    }
+    // Only the initiator offers, so offers never collide. When the answering
+    // side needs negotiation (a track added after its answer, or an ICE
+    // restart), it asks the initiator for a fresh offer instead.
+    pc.onnegotiationneeded = () => {
+      if (entry.initiator) {
+        enqueue(entry, () => createAndSendOffer(participantId, entry));
+      } else if (pc.remoteDescription && pc.signalingState === "stable") {
+        // Before the first offer arrives there is nothing to renegotiate:
+        // the answer will carry the tracks already attached.
+        relayTo(participantId, { renegotiate: true });
+      }
+    };
+  }
+
+  function enqueue(entry: PeerEntry, step: () => Promise<void>): void {
+    entry.chain = entry.chain.then(step).catch(() => {});
   }
 
   async function createAndSendOffer(participantId: string, entry: PeerEntry): Promise<void> {
+    // One offer in flight at a time: a second offer made before the answer
+    // lands would pair that answer with the wrong local description.
+    if (entry.pc.signalingState !== "stable") {
+      entry.offerPending = true;
+      return;
+    }
+    entry.offerPending = false;
     try {
       const offer = await entry.pc.createOffer();
       await entry.pc.setLocalDescription(offer);
@@ -266,7 +298,12 @@ export function createReferenceTransport(
   async function handleSignal(from: string, data: SignalData): Promise<void> {
     const entry = peers.get(from);
     if (!entry) return;
+    if ("renegotiate" in data) {
+      if (entry.initiator) await createAndSendOffer(from, entry);
+      return;
+    }
     if ("description" in data) {
+      if (data.description.type === "answer" && entry.pc.signalingState !== "have-local-offer") return;
       await entry.pc.setRemoteDescription(data.description);
       for (const candidate of entry.pendingCandidates.splice(0)) {
         await entry.pc.addIceCandidate(candidate).catch(() => {});
@@ -275,6 +312,8 @@ export function createReferenceTransport(
         const answer = await entry.pc.createAnswer();
         await entry.pc.setLocalDescription(answer);
         relayTo(from, { description: { type: "answer", sdp: entry.pc.localDescription?.sdp ?? "" } });
+      } else if (entry.offerPending) {
+        await createAndSendOffer(from, entry);
       }
     } else {
       if (!entry.pc.remoteDescription) {
@@ -349,7 +388,8 @@ export function createReferenceTransport(
         break;
       }
       case "signal": {
-        void handleSignal(message.from, message.data);
+        const entry = peers.get(message.from);
+        if (entry) enqueue(entry, () => handleSignal(message.from, message.data));
         break;
       }
       case "remote-state": {

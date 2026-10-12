@@ -31,7 +31,8 @@
     "audit:docs:json": "tsx scripts/audit-docstrings.ts --json",
     "validate:docs": "tsx scripts/validate-docstrings.ts",
     "validate:docs:file": "tsx scripts/validate-docstrings.ts --file=",
-    "call-eval": "node tools/call-eval/scripts/run-eval.mjs"
+    "call-eval": "node tools/call-eval/scripts/run-eval.mjs",
+    "call-eval:self-proof": "node tools/call-eval/scripts/self-proof.mjs"
   },
   "dependencies": {
     "@convex-dev/rate-limiter": "^0.2.14",

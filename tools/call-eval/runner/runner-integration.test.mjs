@@ -270,7 +270,7 @@ describe("reference signaling machinery", () => {
     // the synthetic one via env so no real backend keys are required.
     const prevEnv = process.env.CONNVO_LOCAL_TEST_JWKS_FILE;
     process.env.CONNVO_LOCAL_TEST_JWKS_FILE = jwksPath;
-    const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3000", signalingStatePath: statePath });
+    const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3000", signalingStatePath: statePath, warmUp: false });
     let signalPort = null;
     try {
       await ctx.start();

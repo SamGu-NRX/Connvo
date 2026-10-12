@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+// In-page code below runs in the browser through page.evaluate.
 /**
  * Shared scenario helpers. Two hard-won behaviors live here:
  * 1. page.evaluate("() => …") in Playwright 1.64 evaluates the string as an
@@ -13,6 +15,7 @@ import { launchPeer } from "./peers.mjs";
 import { decodeRemoteFrame } from "./page-helpers.mjs";
 
 export class ScenarioError extends Error {
+  /** @param {string} message @param {unknown} [details] */
   constructor(message, details = null) {
     super(message);
     this.name = "ScenarioError";
@@ -90,11 +93,34 @@ export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = 
     ctx.launchPeer(a, paramsA, rtcConfig),
     ctx.launchPeer(b, paramsB, rtcConfig),
   ]);
-  await Promise.all([
-    waitFor(peerA, phaseIs("connected"), { timeoutMs, describe: "phase 'connected'" }),
-    waitFor(peerB, phaseIs("connected"), { timeoutMs, describe: "phase 'connected'" }),
-  ]);
+  try {
+    // Settle on connected OR failed: a failed page will not recover by
+    // itself, so waiting out the full timeout would only slow the run.
+    const settled = `() => { const p = document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'); return p === 'connected' || p === 'failed' ? p : null; }`;
+    const phases = await Promise.all([
+      waitFor(peerA, settled, { timeoutMs, describe: "phase 'connected'" }),
+      waitFor(peerB, settled, { timeoutMs, describe: "phase 'connected'" }),
+    ]);
+    if (phases.includes("failed")) throw new ScenarioError(`join failed (phases ${phases.join("/")})`);
+  } catch (err) {
+    const states = await Promise.all([peerA, peerB].map((p) => pageDiagnostics(p).catch((e) => ({ error: String(e) }))));
+    throw new ScenarioError(`${err instanceof Error ? err.message : err} | ${JSON.stringify(states)}`);
+  }
   return { peerA, peerB, tJoinMs: Date.now() - t0 };
+}
+
+/**
+ * What a stuck page looks like: phase, error text, tiles and each wrapped pc's states.
+ * @param {{ page: import('@playwright/test').Page }} peer
+ */
+export async function pageDiagnostics(peer) {
+  return peer.page.evaluate(() => ({
+    peer: new URLSearchParams(location.search).get("as"),
+    phase: document.querySelector("[data-call-phase]")?.getAttribute("data-call-phase") ?? null,
+    error: document.querySelector('[data-testid="call-error"]')?.textContent?.slice(0, 160) || null,
+    tiles: [...document.querySelectorAll('[data-testid="remote-media"]')].map((t) => t.getAttribute("data-participant-id")),
+    pcs: (/** @type {any} */ (window).__wrappedPcs || []).map((/** @type {RTCPeerConnection} */ pc) => `${pc.signalingState}/${pc.iceConnectionState}/${pc.connectionState}`),
+  }));
 }
 
 /**

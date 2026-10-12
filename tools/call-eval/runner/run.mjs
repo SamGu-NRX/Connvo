@@ -35,10 +35,11 @@ export function wiredScenarioIds(suite = "ALL") {
 
 const H_15_METHOD = {
   method:
-    "Local coturn TURN with all media forced relay-only through a per-participant user-space UDP shaper (seeded Node dgram proxy adding loss/delay)",
+    "In-process Node TURN relay (runner/turn-relay.mjs) with all media forced relay-only through one participant's user-space UDP shaper (seeded Node dgram proxy adding loss/delay in both directions)",
   rejected: [
     "Chromium network emulation / CDP Network interception — does not touch WebRTC UDP",
-    "tc/netem on a loopback interface — needs root; used only as a fallback if the shaper proved insufficient",
+    "tc/netem or dummynet (pfctl) on loopback — needs root",
+    "coturn — a system binary the harness cannot assume; replaced by the in-process relay",
     "netns via unshare — root again; same rejection",
   ],
   details: "See tools/call-eval/NOTES-h15-loss-method.md for the proof numbers and interactions.",
@@ -101,7 +102,7 @@ async function runOne(ctx, scenarioId, seed, log) {
   }
 }
 
-export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, log = console.log } = {}) {
+export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}) } = {}) {
   const results = [];
   const wallStart = Date.now();
   for (const transport of transports) {
@@ -112,7 +113,9 @@ export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"]
       for (const scenarioId of scenarios) {
         for (const seed of seeds) {
           log(`▶ ${scenarioId} seed ${seed} on ${transport}`);
-          results.push(await runOne(ctx, scenarioId, seed, log));
+          const result = await runOne(ctx, scenarioId, seed, log);
+          results.push(result);
+          onResult(result);
         }
       }
     } finally {
@@ -120,6 +123,7 @@ export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"]
     }
   }
   const wallMs = Date.now() - wallStart;
+  if (!write) return { results, wallMs };
   const written = await writeOutputs(results, wallMs);
   return { results, wallMs, ...written };
 }
@@ -129,14 +133,10 @@ async function environmentInfo() {
   try {
     chromium = (await import("@playwright/test")).chromium.name();
   } catch { /* best-effort */ }
-  let coturnVersion = "unknown";
-  try {
-    coturnVersion = execSync("turnserver --version 2>&1 | head -1").toString().trim();
-  } catch { /* best-effort */ }
   return {
     node: process.version,
     chromium,
-    coturn: coturnVersion,
+    turn: "in-process Node relay (runner/turn-relay.mjs)",
     platform: `${process.platform} ${process.arch}`,
   };
 }

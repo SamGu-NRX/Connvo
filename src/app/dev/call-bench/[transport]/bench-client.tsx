@@ -162,26 +162,37 @@ export function BenchClient({
     }
     try {
       await capture();
+    } catch (err) {
+      const reason = err instanceof Error ? err.name : "error";
+      setError({
+        message: `Microphone and camera access was denied (${reason}). Allow access to join this call.`,
+        retryable: true,
+      });
+      setPhase("failed");
+      return;
+    }
+    try {
       const context: TransportContext = {
         meetingId,
         selfId,
         identityToken: async () => {
-          // Bench runs mint on the signaling server itself (no Convex, no
-          // JWKS, no backend): swap the signal URL's ws scheme for http and
-          // POST the participant id — the minted subject IS that id. The
-          // backend-minted route stays for runs without a signal override.
-          if (signalUrl) {
-            const res = await fetch(`${signalUrl.replace(/^ws/, "http")}/mint`, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ user: participant }),
-            });
-            if (!res.ok) throw new Error(`bench mint unavailable (${res.status})`);
-            const data = (await res.json()) as { token: string };
-            return data.token;
+          // The bench mints on the reference signaling server itself (no
+          // Convex, no JWKS, no backend): swap the signal URL's ws scheme for
+          // http and POST the participant id; the minted subject IS that id.
+          if (!signalUrl) {
+            throw new Error("bench has no ?signal= URL; run it through pnpm call-eval");
           }
-          const res = await fetch(`/api/test-auth/token?user=${participant}`);
-          if (!res.ok) throw new Error(`test-auth token unavailable (${res.status})`);
+          // new URL, not string concatenation: the normalized signal URL
+          // ends in "/", and "//mint" missed the server's route.
+          const res = await fetch(new URL("/mint", signalUrl.replace(/^ws/, "http")), {
+            method: "POST",
+            // text/plain keeps this a CORS "simple" request: the page and the
+            // signaling server are different origins, and no preflight means
+            // no browser policy can block the mint before it is sent.
+            headers: { "content-type": "text/plain" },
+            body: JSON.stringify({ user: participant }),
+          });
+          if (!res.ok) throw new Error(`bench mint unavailable (${res.status})`);
           const data = (await res.json()) as { token: string };
           return data.token;
         },
@@ -191,11 +202,8 @@ export function BenchClient({
       transport.publishLocalStream(streamRef.current);
       publishLocalState({ micOn: micRef.current, cameraOn: cameraRef.current });
     } catch (err) {
-      const reason = err instanceof Error ? err.name : "error";
-      setError({
-        message: `Microphone and camera access was denied (${reason}). Allow access to join this call.`,
-        retryable: true,
-      });
+      const reason = err instanceof Error ? err.message : String(err);
+      setError({ message: `Could not reach the call (${reason}).`, retryable: true });
       setPhase("failed");
     }
   }, [capture, events, meetingId, participant, publishLocalState, selfId, signalUrl, transportName]);

@@ -1,18 +1,17 @@
 /**
  * Harness-controlled UDP shaper (H-07 / H-15 fault mechanism).
  *
- * Chromium's network emulation (`Network.emulateNetworkConditions`,
- * `--host-resolver-rules`) and Playwright route interception shape the
- * browser's HTTP stack only — ICE/STUN/TURN and RTP ride Chromium's own UDP
- * sockets that CDP never touches. This shaper is the accepted alternative: a
- * user-space dgram proxy sitting in front of the local TURN server, with
- * seeded loss decisions and a fixed reordering-free delay queue. Scenarios
- * force every peer connection onto `iceTransportPolicy: "relay"` so ALL RTP
- * traverses coturn through this proxy.
+ * Chromium's network emulation and Playwright route interception shape the
+ * browser's HTTP stack only; ICE/STUN/TURN and RTP ride Chromium's own UDP
+ * sockets that CDP never touches. This shaper is a user-space dgram proxy in
+ * front of the harness TURN relay, with seeded loss decisions and a fixed
+ * delay queue. Scenarios force peer connections onto
+ * `iceTransportPolicy: "relay"`, so all of a shaped participant's RTP passes
+ * through here in both directions.
  *
- * One shaper per participant (each gets its own listen port forwarding to the
- * shared coturn), so shaping is asymmetric by design — H-07 shapes only the
- * dropped participant.
+ * Loss and delay apply to both directions: 100% loss makes the participant
+ * fully offline (H-07), not just mute. H-15 shapes one participant only, so
+ * a 5% profile is 5% per direction on that participant's link, not doubled.
  */
 import dgram from "node:dgram";
 
@@ -32,49 +31,59 @@ export function createShaper({ seed = 1 } = {}) {
   const rng = mulberry32(seed);
   /** @type {import('node:dgram').Socket | null} */
   let socket = null; // client-facing listener
-  /** @type {import('node:dgram').Socket | null} */
-  let uplink = null; // coturn-facing socket
   /** @type {{ address: string, port: number } | null} */
-  let target = null; // the real TURN endpoint media is proxied to
-  /** @type {{ address: string, port: number } | null} */
-  let client = null; // { address, port } — the participant's last source, learned per packet
-  let profile = { lossPct: 0, delayMs: 0 }; // H-07: 100% loss; H-15: 5/15% + 300 ms
+  let target = null; // the TURN endpoint media is proxied to
+  // One uplink socket per browser source port, like a NAT mapping. Chromium
+  // can open several UDP sockets to the same TURN server (one per network
+  // interface or connection); a single shared uplink sent every reply to the
+  // last source seen, so the other sockets' allocations never completed.
+  /** @type {Map<string, import('node:dgram').Socket>} */
+  const uplinks = new Map();
+  let profile = { lossPct: 0, delayMs: 0 };
   const timers = new Set();
-  const stats = { forwarded: 0, dropped: 0 };
+  const stats = { forwarded: 0, dropped: 0, droppedUp: 0, droppedDown: 0 };
 
-  // One shaper serves one participant's browser: its STUN/TURN client socket
-  // reaches coturn through here, so this proxy sees the participant's egress
-  // on the listen socket and everything coturn sends back — replies from the
-  // TURN port AND relayed media from allocation ports — on the uplink socket.
-  // Routing by socket (not by source port) is what keeps coturn's replies out
-  // of a loop: the reviewed bug forwarded every inbound datagram to coturn,
-  // so replies never reached the browser and relay-only media was dead.
+  const lose = () => profile.lossPct > 0 && rng() * 100 < profile.lossPct;
+
   /** @param {Buffer} msg @param {{ address: string, port: number }} rinfo */
   function onClient(msg, rinfo) {
-    client = { address: rinfo.address, port: rinfo.port };
-    if (profile.lossPct > 0 && rng() * 100 < profile.lossPct) {
+    if (!target || !socket) return;
+    const k = `${rinfo.address}:${rinfo.port}`;
+    let uplink = uplinks.get(k);
+    if (!uplink) {
+      const client = { address: rinfo.address, port: rinfo.port };
+      const fresh = dgram.createSocket("udp4");
+      fresh.on("error", () => {});
+      fresh.on("message", (reply) => {
+        if (lose()) {
+          stats.dropped++;
+          stats.droppedDown++;
+          return;
+        }
+        shapedSend(reply, client, socket);
+      });
+      fresh.bind(0, "127.0.0.1");
+      uplinks.set(k, fresh);
+      uplink = fresh;
+    }
+    if (lose()) {
       stats.dropped++;
+      stats.droppedUp++;
       return;
     }
-    if (!target || !uplink) return; // not started yet: nowhere to forward
     shapedSend(msg, target, uplink);
-  }
-
-  /** @param {Buffer} msg */
-  function onUplink(msg) {
-    if (!client) {
-      stats.dropped++; // reply before any client packet: nothing to route to
-      return;
-    }
-    shapedSend(msg, client, socket);
   }
 
   /** @param {Buffer} msg @param {{ address: string, port: number }} dest @param {import('node:dgram').Socket | null | undefined} via */
   function shapedSend(msg, dest, via) {
     const send = () => {
       if (!via) return;
-      via.send(msg, dest.port, dest.address);
-      stats.forwarded++;
+      try {
+        via.send(msg, dest.port, dest.address);
+        stats.forwarded++;
+      } catch {
+        /* socket closed mid-flight */
+      }
     };
     if (profile.delayMs > 0) {
       const t = setTimeout(() => {
@@ -88,24 +97,17 @@ export function createShaper({ seed = 1 } = {}) {
   }
 
   return {
-    /** Bind the proxy port; UDP to it is forwarded to the real TURN port. */
+    /** Bind the proxy port; UDP to it is forwarded to the TURN port. */
     start({ listenPort, targetPort, targetHost = "127.0.0.1" }) {
       target = { address: targetHost, port: targetPort };
       return new Promise((resolve, reject) => {
         const listener = dgram.createSocket("udp4");
-        const coturnLink = dgram.createSocket("udp4");
         socket = listener;
-        uplink = coturnLink;
         listener.on("message", onClient);
-        coturnLink.on("message", onUplink);
-        listener.on("error", reject);
-        coturnLink.on("error", reject);
+        listener.once("error", reject);
         listener.bind(listenPort, "127.0.0.1", () => {
-          coturnLink.bind(0, "127.0.0.1", () => {
-            listener.on("error", () => {}); // late errors: sweep logs only
-            coturnLink.on("error", () => {});
-            resolve(listenPort);
-          });
+          listener.on("error", () => {});
+          resolve(listener.address().port);
         });
       });
     },
@@ -117,23 +119,25 @@ export function createShaper({ seed = 1 } = {}) {
       this.applyProfile({ lossPct: 0, delayMs: 0 });
     },
     stats() {
-      return { ...stats };
+      return { ...stats, uplinks: uplinks.size };
     },
     stop() {
       for (const t of timers) clearTimeout(t);
       timers.clear();
+      for (const u of uplinks.values()) {
+        try {
+          u.close();
+        } catch {
+          /* already closed */
+        }
+      }
+      uplinks.clear();
       try {
         socket?.close();
       } catch {
         /* already closed */
       }
-      try {
-        uplink?.close();
-      } catch {
-        /* already closed */
-      }
       socket = null;
-      uplink = null;
     },
   };
 }

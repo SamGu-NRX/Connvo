@@ -213,6 +213,7 @@ const server = http.createServer((req, res) => {
       "access-control-allow-origin": "*",
       "access-control-allow-methods": "POST, OPTIONS",
       "access-control-allow-headers": "content-type",
+      "access-control-allow-private-network": "true",
     });
     res.end();
     return;

@@ -118,3 +118,67 @@ describe("shaper route-by-sender", () => {
     }
   });
 });
+
+describe("shaper both directions", () => {
+  /** Fake TURN that remembers the last uplink it heard from, so it can push. */
+  async function startPushTurn() {
+    const sock = dgram.createSocket("udp4");
+    const port = await bind(sock);
+    /** @type {{ address: string, port: number } | null} */
+    let last = null;
+    sock.on("message", (msg, rinfo) => {
+      last = rinfo;
+      sock.send(msg, rinfo.port, rinfo.address);
+    });
+    /** @param {string} text */
+    const push = (text) => last && sock.send(Buffer.from(text), last.port, last.address);
+    return { sock, port, push };
+  }
+
+  it("drops traffic toward the client under 100% loss, so an offline peer receives nothing", { timeout: 10000 }, async () => {
+    const turn = await startPushTurn();
+    const shaper = createShaper({ seed: 3 });
+    const listenPort = await freePort();
+    await shaper.start({ listenPort, targetPort: turn.port });
+    const client = dgram.createSocket("udp4");
+    await bind(client);
+    try {
+      await sendTo(client, listenPort, "hello");
+      expect((await recv(client)).msg).toBe("hello");
+      shaper.applyProfile({ lossPct: 100, delayMs: 0 });
+      turn.push("inbound media");
+      await expect(recv(client, 400)).rejects.toThrow(/no datagram/);
+      expect(shaper.stats().droppedDown).toBe(1);
+      shaper.clear();
+      turn.push("after restore");
+      expect((await recv(client)).msg).toBe("after restore");
+    } finally {
+      shaper.stop();
+      turn.sock.close();
+      client.close();
+    }
+  });
+
+  it("keeps a separate mapping per client source port", { timeout: 10000 }, async () => {
+    const turn = await startEchoTurn();
+    const shaper = createShaper({ seed: 4 });
+    const listenPort = await freePort();
+    await shaper.start({ listenPort, targetPort: turn.port });
+    const one = dgram.createSocket("udp4");
+    const two = dgram.createSocket("udp4");
+    await bind(one);
+    await bind(two);
+    try {
+      await sendTo(one, listenPort, "from-one");
+      await sendTo(two, listenPort, "from-two");
+      expect((await recv(one)).msg).toBe("from-one");
+      expect((await recv(two)).msg).toBe("from-two");
+      expect(shaper.stats().uplinks).toBe(2);
+    } finally {
+      shaper.stop();
+      turn.sock.close();
+      one.close();
+      two.close();
+    }
+  });
+});

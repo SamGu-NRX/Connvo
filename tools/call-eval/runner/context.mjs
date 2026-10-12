@@ -1,6 +1,6 @@
 /**
  * Per-run context: wires the mock server + signaling relay (or an external
- * base URL), coturn, per-participant UDP shapers, fixture paths, and meeting
+ * base URL), the Node TURN relay, per-participant UDP shapers, fixture paths, and meeting
  * identity. Scenarios never touch these pieces directly — they launch peers
  * through ctx and reach fault hooks (killPeerSocket, shaper profiles,
  * sessionEvents) through it.
@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startMockServer } from "./mock-server.mjs";
-import { createTurn, turnAvailable, relayConfig } from "./turn.mjs";
+import { createTurn, relayConfig } from "./turn.mjs";
 import { createShaper } from "./shaper.mjs";
 
 const RUNNER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -21,11 +21,10 @@ const FIXTURES = {
   B: { video: "peer-B.y4m", audio: "peer-B.wav" },
   C: { video: "peer-C.y4m", audio: "peer-C.wav" },
 };
-// coturn owns 3478; shapers forward to it. Two eval runs on one shared box
-// cannot share those ports — the second run's coturn fails to bind and the
-// liveness probe would spuriously answer against the first run's server. Env
-// overrides keep concurrent runs on disjoint port ranges (defaults unchanged).
-const TURN_PORT = Number(process.env.CONNVO_EVAL_TURN_PORT) || 3478;
+// The TURN relay binds a free port unless pinned; shapers forward to it. The
+// shaper ports stay fixed per participant (env override keeps concurrent runs
+// on disjoint ranges).
+const TURN_PORT = Number(process.env.CONNVO_EVAL_TURN_PORT) || 0;
 const SHAPER_BASE_PORT = Number(process.env.CONNVO_EVAL_SHAPER_BASE_PORT) || 3479;
 
 /**
@@ -48,11 +47,13 @@ export class RunContext {
    *   route registers as its own transport name via --base-url)
    * @param {number} [opts.seed] run seed (shaper determinism)
    * @param {string | null} [opts.baseUrl] external page origin (integration mode)
+   * @param {boolean} [opts.warmUp] load the bench page once before scoring (tests that never start Next pass false)
    * @param {string} [opts.signalingStatePath] state.json override for the
    *   reference signaling members derivation (tests inject a synthetic one)
    * @param {(message: string) => void} [opts.log] progress logger
    */
-  constructor({ transport = "mock", seed = 1, baseUrl = null, log = console.log, signalingStatePath } = {}) {
+  constructor({ transport = "mock", seed = 1, baseUrl = null, log = console.log, signalingStatePath, warmUp = true } = {}) {
+    this._warmUp = warmUp;
     this.transport = transport;
     this.seed = seed;
     this.baseUrl = baseUrl;
@@ -76,27 +77,37 @@ export class RunContext {
   async start() {
     if (this.baseUrl) {
       this.url = this.baseUrl;
-      // Integration runs against the bench route: the harness still owns the
-      // TURN/shaper path; relay-dependent hooks (killPeerSocket) are absent
-      // and scenarios must guard on them.
-      await this.ensureTurn();
+      // TURN starts lazily, only for the scenarios that force relay
+      // (H-07/H-15): the rest must run on a machine without it.
       await this.startReferenceSignalingIfWired();
+      if (this._warmUp) await this.warmUpBench();
       return this;
     }
     this.server = await startMockServer({ root: MOCK_DIR });
     this.relay = this.server.relay;
     this.url = this.server.url;
-    await this.ensureTurn();
     return this;
+  }
+
+  /**
+   * Load the bench page once, unscored, before the first scenario. `next dev`
+   * compiles client chunks on the first browser load; without this the first
+   * seed of a run measured that compile (about 30 s here) as join latency.
+   */
+  async warmUpBench() {
+    const { chromium } = await import("@playwright/test");
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage();
+      await page.goto(`${this.url}${this.benchPath}?as=A&autojoin=0`, { waitUntil: "networkidle", timeout: 120000 });
+      await page.waitForSelector("[data-call-phase]", { timeout: 60000 });
+    } finally {
+      await browser.close();
+    }
   }
 
   async ensureTurn() {
     if (this.turn) return this.turn;
-    if (!(await turnAvailable())) {
-      throw new Error(
-        "coturn (turnserver) is not installed — the H-07/H-15 fault path requires it. Install coturn or report the fault scenarios as blocked.",
-      );
-    }
     this.turn = await createTurn({ port: TURN_PORT });
     return this.turn;
   }
@@ -189,7 +200,8 @@ export class RunContext {
       const idx = ["A", "B", "C", "O"].indexOf(participant);
       const port = SHAPER_BASE_PORT + (idx >= 0 ? idx : this.shapers.size + 4);
       // Fire-and-bind; scenario code awaits .ready before applying profiles.
-      shaper.ready = shaper.start({ listenPort: port, targetPort: this.turn.port });
+      // TURN starts here on first use, not at run start.
+      shaper.ready = this.ensureTurn().then((turn) => shaper.start({ listenPort: port, targetPort: turn.port }));
       shaper.port = port;
       this.shapers.set(participant, shaper);
     }
@@ -215,7 +227,13 @@ export class RunContext {
    * resolves the relay-only config itself (H-07/H-15 route media through the
    * participant's shaper). joinPair deliberately passes neither.
    */
-  async launchPeer(participant, params = {}, rtcConfig) {
+  /**
+   * @param {string} participant
+   * @param {Record<string, string>} [params]
+   * @param {object | null} [rtcConfig]
+   * @param {{ fullChromium?: boolean }} [opts]
+   */
+  async launchPeer(participant, params = {}, rtcConfig, { fullChromium = false } = {}) {
     const config = rtcConfig ?? (await this.rtcConfigFor(participant));
     const { video, audio } = this.fixturePaths(participant);
     const { launchPeer: launch } = await import("./peers.mjs");
@@ -228,6 +246,7 @@ export class RunContext {
       benchPath: this.benchPath,
       rtcConfig: config,
       participant,
+      fullChromium,
     });
     peer.__query = query;
     await peer.page.goto(`${this.url}${this.benchPath}?${query}`, { waitUntil: "domcontentloaded" });

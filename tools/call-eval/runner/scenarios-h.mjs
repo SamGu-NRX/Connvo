@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+// In-page code below runs in the browser through page.evaluate.
 /**
  * H-01..H-16. Every function is named scenario_<id> (the orchestrator binds
  * by name) and returns the plan-schema measurement object for its result
@@ -21,6 +23,7 @@ import {
   classifyRemoteColor,
   decodeRemoteFrame,
   matchPeerColor,
+  peerPalette,
   sampleRemoteTone,
   measureFps,
   collectRtpStatsWindow,
@@ -28,6 +31,7 @@ import {
   decoderBundle,
   toneMatches,
   toneIsSilent,
+  selectedCandidateTypes,
 } from "./page-helpers.mjs";
 
 const H = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -46,12 +50,7 @@ async function installColorHook(peer) {
   // and returns { ok, label, distance } (plus the raw color for evidence):
   // the reviewed bug returned the raw decoder RGB, so H-05's `c.ok &&
   // c.label === "second-camera"` could never see the expected shape.
-  const palette = [
-    ["A", PEER_COLORS.A],
-    ["B", PEER_COLORS.B],
-    ["C", PEER_COLORS.C],
-    ["second-camera", SECOND_CAMERA_COLOR],
-  ];
+  const palette = peerPalette(PEER_COLORS, SECOND_CAMERA_COLOR);
   await peer.page.evaluate(`((bundleSrc, palette, tolerance, classifySrc) => {
     if (window.__decodeRemoteColor) return;
     const classify = new Function('return ' + classifySrc)();
@@ -235,36 +234,29 @@ export async function scenario_H_05(ctx) {
 
 /** H-06 — context without media permission shows an actionable error; granting and retry-media joins */
 export async function scenario_H_06(ctx) {
-  const { launchPeer: launch } = await import("./peers.mjs");
-  const { video, audio } = ctx.fixturePaths("A");
-  // Full Chromium build: the headless shell cannot run the real permission
-  // flow, and no fake-UI flag means headless denies the prompt.
-  const peerA = await launch({
-    fixtureVideo: video,
-    fixtureAudio: audio,
-    baseUrl: ctx.url,
-    fullChromium: true,
-    participant: "A",
+  // A runs the full Chromium build without the fake-UI flag, so its
+  // getUserMedia prompt is really denied (headless denies by default). It
+  // launches through ctx.launchPeer like every other peer, so it carries the
+  // bench signaling URL; B is a normal peer A must reach after the retry.
+  const peerA = await ctx.launchPeer("A", {}, undefined, { fullChromium: true });
+  const peerB = await ctx.launchPeer("B");
+  await waitFor(peerA, `() => !!document.querySelector('[data-testid="call-error"]')?.textContent`, {
+    timeoutMs: 10000,
+    describe: "actionable error to appear",
   });
-  try {
-    const query = new URLSearchParams({ as: "A", meeting: ctx.meetingId });
-    await peerA.page.goto(`${ctx.url}${ctx.benchPath}?${query}`, { waitUntil: "domcontentloaded" });
+  const text = await peerA.page.evaluate(`(() => document.querySelector('[data-testid="call-error"]').textContent)()`);
+  const retryVisible = await peerA.page.evaluate(`(() => { const b = document.querySelector('[data-testid="retry-media"]'); return !!b && !b.hidden; })()`);
+  if (!retryVisible) throw new ScenarioError("H-06: retry-media button not offered", { text });
+  const phaseDenied = await peerA.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
+  if (phaseDenied === "connected") throw new ScenarioError("H-06: denied peer reports connected", { text });
 
-    await waitFor(peerA, `() => !!document.querySelector('[data-testid="call-error"]').textContent`, {
-      timeoutMs: 10000,
-      describe: "actionable error to appear",
-    });
-    const text = await peerA.page.evaluate(`(() => document.querySelector('[data-testid="call-error"]').textContent)()`);
-    const retryVisible = await peerA.page.evaluate(`(() => !document.querySelector('[data-testid="retry-media"]').hidden)()`);
-    if (!retryVisible) throw new ScenarioError("H-06: retry-media button not offered", { text });
-
-    await peerA.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
-    await click(peerA, "retry-media");
-    await waitFor(peerA, phaseIs("connected"), { timeoutMs: 20000, describe: "connected after granting + retry" });
-    return { errorText: text.slice(0, 120), joinedAfterRetry: true };
-  } finally {
-    await peerA.close();
-  }
+  await peerA.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
+  await click(peerA, "retry-media");
+  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 20000, describe: "A connected after granting + retry" });
+  await waitFor(peerB, phaseIs("connected"), { timeoutMs: 20000, describe: "B connected to A after A's retry" });
+  const fps = await measureFps(peerB, "A", 1500);
+  if (fps.fps <= 0) throw new ScenarioError("H-06: B receives no frames from A after the retry", { fps });
+  return { errorText: text.slice(0, 120), phaseDenied, joinedAfterRetry: true, fpsBseesA: fps.fps };
 }
 
 /** H-07 — one peer offline 3 s, 10 s, 30 s: honest reconnecting, media resumes within 10 s of restore, no duplicate tiles */
@@ -273,6 +265,10 @@ export async function scenario_H_07(ctx, { seed }) {
   await ctx.shaperFor("B").ready; // B's own shaper; A stays on host candidates
   const { peerA, peerB } = await joinPair(ctx);
   await installColorHook(peerB); // the media-resume check decodes through the hook
+  const pathB = await selectedCandidateTypes(peerB);
+  if (!pathB.length || !pathB.every((/** @type {{ local: string | null } | null} */ p) => p?.local === "relay")) {
+    throw new ScenarioError(`H-07: B's media is not on the TURN relay, so the shaper cannot drop it (${JSON.stringify(pathB)})`);
+  }
 
   const recoveries = [];
   for (const durationS of [3, 10, 30]) {
@@ -307,7 +303,7 @@ export async function scenario_H_07(ctx, { seed }) {
     }
     recoveries.push({ durationS, recoveryMs, tilesA, tilesB });
   }
-  return { seed, drops: recoveries, recovery10sMs: recoveries.find((r) => r.durationS === 10)?.recoveryMs };
+  return { seed, relayPathB: pathB, shaperB: ctx.shaperFor("B").stats(), drops: recoveries, recovery10sMs: recoveries.find((r) => r.durationS === 10)?.recoveryMs };
 }
 
 /** H-08 — recovers within 10 s (signaling outage mid-call: both sockets die at once) */
@@ -321,6 +317,9 @@ export async function scenario_H_08(ctx) {
   // it never exercised the recovery path the contract names). The probe
   // helper returns one boolean per wrapped pc, so the scenario asserts the
   // restart was actually attempted on every connection.
+  const ufragsSource = `() => (window.__wrappedPcs || []).filter((pc) => pc.connectionState !== "closed").map((pc) => (pc.localDescription?.sdp.match(/a=ice-ufrag:(\\S+)/) || [])[1] || null)`;
+  const ufragsA = await peerA.page.evaluate(`(${ufragsSource})()`);
+  const ufragsB = await peerB.page.evaluate(`(${ufragsSource})()`);
   const restartedA = await peerA.page.evaluate(`(() => window.__probeRestartIce())()`);
   const restartedB = await peerB.page.evaluate(`(() => window.__probeRestartIce())()`);
   if (!Array.isArray(restartedA) || restartedA.length === 0 || !restartedA.every(Boolean)) {
@@ -330,7 +329,16 @@ export async function scenario_H_08(ctx) {
     throw new ScenarioError(`H-08: ICE restart not attempted on B's connections (${JSON.stringify(restartedB)})`);
   }
 
+  // restartIce() only marks the pc as needing negotiation; the restart is
+  // real once each live pc carries a new local ICE ufrag. Without this check a
+  // transport that ignored the restart would pass, since media never stopped.
   const t0 = Date.now();
+  for (const [peer, before] of [[peerA, ufragsA], [peerB, ufragsB]]) {
+    await waitForValue(peer, ufragsSource, (/** @type {Array<string | null>} */ now) => Array.isArray(now) && now.length > 0 && now.every((u, i) => u && u !== before[i]), {
+      timeoutMs: 10000,
+      describe: `new ICE ufrag on every live pc after the forced restart (before ${JSON.stringify(before)})`,
+    });
+  }
   await waitForValue(peerA, `async () => { const c = await window.__decodeRemoteColor("B"); return { ok: c?.ok }; }`, (c) => c.ok, {
     timeoutMs: 10000,
     describe: "A sees B's frames within 10 s of the restart",
@@ -341,7 +349,7 @@ export async function scenario_H_08(ctx) {
   });
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "A phase connected within 10 s" });
   await waitFor(peerB, phaseIs("connected"), { timeoutMs: 10000, describe: "B phase connected within 10 s" });
-  return { recoveryMs: Date.now() - t0, restartedPcs: restartedA.length + restartedB.length };
+  return { recoveryMs: Date.now() - t0, restartedPcs: restartedA.length + restartedB.length, ufragsBefore: { A: ufragsA, B: ufragsB } };
 }
 
 /** H-09 — reloaded peer rejoins; no ghost participant after 10 s */
@@ -352,7 +360,7 @@ export async function scenario_H_09(ctx) {
   await peerA.page.reload({ waitUntil: "domcontentloaded" }); // same URL: auto-rejoin
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "reloaded A reconnected" });
   await waitForValue(peerB, tileCount("A"), (n) => n === 1, {
-    timeoutMs: 20000,
+    timeoutMs: 10000,
     describe: "B sees exactly one A tile",
   });
   await H(10000); // the contract's ghost observation window
@@ -361,8 +369,8 @@ export async function scenario_H_09(ctx) {
     throw new ScenarioError(`H-09: ghost participant after reload (${ghostTiles} A tiles)`);
   }
   await waitForValue(peerB, `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok }; }`, (c) => c.ok, {
-    timeoutMs: 15000,
-    describe: "ghost tile keeps decoding (it is live, not stale)",
+    timeoutMs: 2000,
+    describe: "the one A tile is live after the ghost window, not stale",
   });
   return { ghostTiles };
 }
@@ -447,14 +455,17 @@ export async function scenario_H_12(ctx, { seed }) {
   // The transport's connected phase now requires ICE plus decoded frames,
   // but the scenario still proves it directly: sampled fps must be positive
   // on both tiles (the reviewed defect passed H-12 on phase alone).
-  const fpsA = await measureFps(peerA, "B", 2000);
-  const fpsB = await measureFps(peerB, "A", 2000);
+  // peerA is identity `a` and shows `b`'s tile (and vice versa). The reviewed
+  // bug sampled "B" on the first page even when the seed swapped the order,
+  // so every even seed read the page's own id, found no tile and failed.
+  const fpsA = await measureFps(peerA, b, 2000);
+  const fpsB = await measureFps(peerB, a, 2000);
   if (fpsA.fps <= 0 || fpsB.fps <= 0) {
     throw new ScenarioError(`H-12: remote frames did not advance (${a}: ${fpsA.fps} fps, ${b}: ${fpsB.fps} fps)`);
   }
   await peerA.close();
   await peerB.close();
-  return { order: `${a}-first`, bothConnected: true, fps: { [a]: fpsA.fps, [b]: fpsB.fps } };
+  return { order: `${a}-first`, bothConnected: true, fps: { [`${a}sees${b}`]: fpsA.fps, [`${b}sees${a}`]: fpsB.fps } };
 }
 
 /** H-13 — five leave/rejoin cycles: live connection and track counts return to baseline */

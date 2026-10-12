@@ -61,6 +61,7 @@ export const probeInit = String.raw`
     pc.addEventListener('connectionstatechange', sync);
     pc.addEventListener('iceconnectionstatechange', sync);
     pc.addEventListener('signalingstatechange', sync);
+    rec.sync = sync;
     return rec;
   }
 
@@ -76,6 +77,12 @@ export const probeInit = String.raw`
     getStats(...args) {
       probe.getStatsCalls++;
       return super.getStats(...args);
+    }
+    // close() fires no connectionstatechange event, so the record must
+    // sync here or a cleanly closed pc would count as live forever.
+    close() {
+      super.close();
+      this.__probe.sync();
     }
   }
   window.RTCPeerConnection = WrappedPC;
@@ -94,15 +101,29 @@ export const probeInit = String.raw`
     }
   });
 
+  // A capture track ends either by its source ending (the 'ended' event) or
+  // by stop(), which fires no event. Both paths decrement once.
+  const captured = new WeakSet();
+  const markEnded = (track) => {
+    if (!captured.has(track)) return;
+    captured.delete(track);
+    probe.tracks.live--;
+  };
+  if (typeof MediaStreamTrack !== 'undefined') {
+    const nativeStop = MediaStreamTrack.prototype.stop;
+    MediaStreamTrack.prototype.stop = function stop() {
+      nativeStop.call(this);
+      markEnded(this);
+    };
+  }
   if (NativeGUM) {
     navigator.mediaDevices.getUserMedia = async (constraints) => {
       const stream = await NativeGUM(constraints);
       for (const track of stream.getTracks()) {
         probe.tracks.created++;
         probe.tracks.live++;
-        track.addEventListener('ended', () => {
-          probe.tracks.live--;
-        });
+        captured.add(track);
+        track.addEventListener('ended', () => markEnded(track));
       }
       return stream;
     };

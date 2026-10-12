@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+// In-page code below runs in the browser through page.evaluate.
 /**
  * In-page media helpers: everything a scenario asserts about media receipts is
  * decoded here from the DOM (remote <video> pixels, audio track samples) plus
@@ -37,7 +39,26 @@ function initDecodersInNode(bundleSrc) {
 /** Node-side tolerant color classification (y4m round-trip shifts ~±13/ch). */
 export function matchPeerColor(rgb) {
   const { PEER_COLORS, SECOND_CAMERA_COLOR, COLOR_TOLERANCE } = loadContracts();
-  return classifyRemoteColor(rgb, [PEER_COLORS.A, PEER_COLORS.B, PEER_COLORS.C, SECOND_CAMERA_COLOR], COLOR_TOLERANCE);
+  return classifyRemoteColor(rgb, peerPalette(PEER_COLORS, SECOND_CAMERA_COLOR), COLOR_TOLERANCE);
+}
+
+/**
+ * The labelled palette both color classifiers use. classifyRemoteColor
+ * destructures [label, rgb] pairs; passing bare triples made every color
+ * classify as garbage (NaN distance), so H-01 failed healthy calls.
+ * @param {Record<"A" | "B" | "C", ArrayLike<number>>} peerColors
+ * @param {ArrayLike<number>} secondCamera
+ * @returns {Array<[string, [number, number, number]]>}
+ */
+export function peerPalette(peerColors, secondCamera) {
+  /** @param {ArrayLike<number>} c @returns {[number, number, number]} */
+  const rgb = (c) => [c[0], c[1], c[2]];
+  return [
+    ["A", rgb(peerColors.A)],
+    ["B", rgb(peerColors.B)],
+    ["C", rgb(peerColors.C)],
+    ["second-camera", rgb(secondCamera)],
+  ];
 }
 
 /**
@@ -188,34 +209,79 @@ export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
 }
 
 /**
- * Remote video fps from consecutive counter reads. computeFps counts OBSERVED
- * counter advances (a duplicate frame advances nothing; a 4095->0 wrap is
- * just another change), so a lost/late decode LOWERS the rate instead of
- * inflating it — the old gap-sum interpretation read a backward transition
- * as a near-full-cycle jump, which is how an H-15 run reported ~1345 fps.
- * Implausible results still fall back to the median of plausible per-step
- * rates (robustFps below, which keeps its own wrap-aware step filter).
+ * Remote video fps from counter reads taken inside the page. computeFps counts
+ * OBSERVED counter advances (a duplicate frame advances nothing; a 4095->0
+ * wrap is just another change), so a lost or late decode lowers the rate.
  *
- * The step default is 20 ms: computeFps counts ONE advance per sample step,
- * so the step caps the measurable rate at 1000/stepMs fps. The reviewed bug
- * sampled every 250 ms, topping out near 4 fps and failing H-01's 15 fps bar
- * on a healthy 30 fps stream. (Per-frame sampling via requestVideoFrameCallback
- * would be the next refinement; 20 ms resolves rates up to 50 fps.) Fps
- * windows are short (the plan's checks use 1.5-5 s windows), so the extra
- * canvas reads at 20 ms stay bounded.
+ * Sampling runs in the page, not through one page.evaluate per read: a Node
+ * round trip per sample (plus canvas setup) took longer than a 33 ms frame on
+ * a loaded host, which capped the measurable rate below the stream's real one.
+ * The page reads the counter on every requestVideoFrameCallback and also on a
+ * 10 ms timer (the fallback when the browser skips frame callbacks); duplicate
+ * reads of the same frame add no advances. Frames are scaled into the pinned
+ * 320x240 layout first, so an encoder downscale cannot move the barcode band.
  */
-export async function measureFps(peer, participantId, ms = 5000, { stepMs = 20 } = {}) {
-  const samples = [];
-  const deadline = Date.now() + ms;
-  while (Date.now() < deadline) {
-    const frame = await decodeRemoteFrame(peer, participantId);
-    if (frame.present && frame.counter?.ok) {
-      samples.push({ t: Date.now(), counter: frame.counter.counter });
-    }
-    await new Promise((r) => setTimeout(r, stepMs));
-  }
+/**
+ * @param {{ page: { evaluate: Function } }} peer
+ * @param {string} participantId
+ * @param {number} [ms]
+ */
+export async function measureFps(peer, participantId, ms = 5000) {
+  const bundleSrc = await decoderBundle();
+  const samples = await peer.page.evaluate(
+    /** @param {{ participantId: string, ms: number, bundleSrc: string }} arg */
+    async ({ participantId, ms, bundleSrc }) => {
+      const w = /** @type {any} */ (window);
+      if (!w.__connvoDecoders) {
+        w.__connvoDecoders = new Function(
+          bundleSrc + "\nreturn { decodeBarcodeColor, decodeFrameCounter, computeFps, decodeToneHz };",
+        )();
+      }
+      const { decodeFrameCounter } = w.__connvoDecoders;
+      const video = document
+        .querySelector(`[data-testid="remote-media"][data-participant-id="${participantId}"]`)
+        ?.querySelector("video");
+      if (!video) return [];
+      const canvas = document.createElement("canvas");
+      canvas.width = 320;
+      canvas.height = 240;
+      const c2d = /** @type {CanvasRenderingContext2D} */ (canvas.getContext("2d", { willReadFrequently: true }));
+      /** @type {Array<{ t: number, counter: number }>} */
+      const out = [];
+      /** @param {number} t */
+      const read = (t) => {
+        if (!video.videoWidth) return;
+        c2d.drawImage(video, 0, 0, 320, 240);
+        const decoded = decodeFrameCounter(c2d.getImageData(0, 200, 320, 40));
+        if (decoded.ok) out.push({ t, counter: decoded.counter });
+      };
+      const end = performance.now() + ms;
+      await new Promise((resolve) => {
+        const timer = setInterval(() => {
+          const now = performance.now();
+          if (now >= end) {
+            clearInterval(timer);
+            resolve(undefined);
+            return;
+          }
+          read(now);
+        }, 10);
+        if (typeof video.requestVideoFrameCallback === "function") {
+          /** @param {number} now */
+          const onFrame = (now) => {
+            if (now >= end) return;
+            read(now);
+            video.requestVideoFrameCallback(onFrame);
+          };
+          video.requestVideoFrameCallback(onFrame);
+        }
+      });
+      return out.sort((x, y) => x.t - y.t);
+    },
+    { participantId, ms, bundleSrc },
+  );
   if (samples.length < 3) return { fps: 0, samples: samples.length, implausible: true };
-  const { computeFps } = initDecodersInNode(await decoderBundle());
+  const { computeFps } = initDecodersInNode(bundleSrc);
   const plausible = (v) => Number.isFinite(v) && v > 0 && v <= 60;
   let computed = computeFps(samples);
   let implausible = !plausible(computed);
@@ -320,4 +386,31 @@ export async function collectRtpStatsWindow(peer, kind, ms, { stepMs = 500, part
 /** Probe snapshot (connection/track lifecycle + getStatsCalls). */
 export async function probeState(peer) {
   return peer.page.evaluate(() => JSON.parse(JSON.stringify(window.__callProbe)));
+}
+
+/**
+ * The local and remote candidate types of each live pc's selected pair, read
+ * from getStats. H-07 and H-15 use it to prove media really rides the
+ * harness TURN relay (both ends "relay") rather than a direct host path the
+ * shaper never sees.
+ */
+/** @param {{ page: import('@playwright/test').Page }} peer */
+export async function selectedCandidateTypes(peer) {
+  return peer.page.evaluate(async () => {
+    const out = [];
+    for (const pc of /** @type {RTCPeerConnection[]} */ (/** @type {any} */ (window).__wrappedPcs || [])) {
+      if (pc.connectionState === "closed") continue;
+      const stats = await pc.getStats();
+      /** @type {Map<string, any>} */
+      const byId = new Map();
+      stats.forEach((/** @type {any} */ s) => byId.set(s.id, s));
+      /** @type {any} */
+      let pair = null;
+      stats.forEach((/** @type {any} */ s) => {
+        if (s.type === "transport" && s.selectedCandidatePairId) pair = byId.get(s.selectedCandidatePairId);
+      });
+      out.push(pair ? { local: byId.get(pair.localCandidateId)?.candidateType ?? null, remote: byId.get(pair.remoteCandidateId)?.candidateType ?? null } : null);
+    }
+    return out;
+  });
 }
