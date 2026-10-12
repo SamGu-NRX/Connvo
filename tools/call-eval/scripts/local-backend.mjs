@@ -36,6 +36,7 @@ import {
   deploymentPortFromUrl,
   deploymentRefusalMessage,
   pickConvexUrlFromEnvText,
+  pruneTestArtifacts,
   resolveSelectedDeployment,
 } from "./local-backend-core.mjs";
 
@@ -73,11 +74,21 @@ function buildHarnessTree() {
       cpSync(path.join(REPO, "convex", f), path.join(HARNESS_DIR, f), { dereference: true });
     }
   }
-  // Carry the ignore list so the push excludes test files (*.test.ts,
-  // __tests__/, ciValidation.ts) — a copied test file with top-level
-  // process.exit() killed the backend's module loader (InvalidModules).
+  // Test/development artifacts are pruned at materialization time. Copying
+  // .convexignore is NOT sufficient: the CLI does not honor it when bundling
+  // an overridden functions dir (verified 2026-10-12 — the copied ignore file
+  // sat in convex-harness/ while types/__tests__/ciValidation.ts was still
+  // bundled, pushed, and executed its top-level process.exit(1) inside the
+  // backend's module loader: InvalidModules, or the 300 s 408 loop when the
+  // inner npm/codegen subprocesses were slower). See pruneTestArtifacts in
+  // local-backend-core.mjs.
   if (existsSync(path.join(REPO, "convex", ".convexignore"))) {
     cpSync(path.join(REPO, "convex", ".convexignore"), path.join(HARNESS_DIR, ".convexignore"), { dereference: true });
+  }
+  const pruned = pruneTestArtifacts(HARNESS_DIR);
+  if (pruned.length > 0) {
+    const preview = pruned.slice(0, 5).join(", ") + (pruned.length > 5 ? ", ..." : "");
+    console.log(`[backend] harness tree: pruned ${pruned.length} test artifact(s): ${preview}`);
   }
   console.log(`[backend] harness tree: ${readdirSync(HARNESS_DIR).length} entries in convex-harness/`);
 }
@@ -208,10 +219,17 @@ if (!tmuxRunning(CONV_TMUX)) {
   console.log("[backend] convex dev already running in tmux");
 }
 
-// Wait for the deployment URL in .env.local and a ready push in the log.
+// Wait for the deployment URL in .env.local and a live local backend.
+// This waits for PROVISIONING only — not for a completed push. The first
+// push cannot succeed before stage 3 sets the deployment env:
+// convex/auth.config.ts is evaluated server-side at push time and throws
+// "WORKOS_CLIENT_ID environment variable is required" when the variable is
+// absent, so the watch's early push attempts fail until the env exists.
+// Waiting for push markers here made a fresh checkout sit through the
+// watch's failing-push loop for the whole deadline.
 let convexUrl = null;
 const deadline = Date.now() + 540_000; // first run may download the backend
-console.log("[backend] waiting for convex dev (first run downloads the local backend binary)…");
+console.log("[backend] 2/6 waiting for convex dev provisioning (first run downloads the local backend binary)...");
 while (Date.now() < deadline) {
   const envLocal = path.join(REPO, ".env.local");
   if (existsSync(envLocal)) {
@@ -221,18 +239,11 @@ while (Date.now() < deadline) {
     const picked = pickConvexUrlFromEnvText(readFileSync(envLocal, "utf8"));
     if (picked) convexUrl = picked.value;
   }
-  const logPath = path.join(LOCAL_DIR, "convex-dev.log");
-  const log = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
-  const ready =
-    convexUrl &&
-    (log.includes("Convex functions ready") ||
-      log.includes("Pushed code to") ||
-      log.includes("waiting for changes"));
-  if (ready) break;
+  if (convexUrl && localBackendAnswers(deploymentPortFromUrl(convexUrl))) break;
   await new Promise((r) => setTimeout(r, 3000));
 }
 if (!convexUrl) {
-  console.error("[backend] timed out waiting for the local Convex deployment; log tail:");
+  console.error("[backend] TIMED OUT (provisioning): no local deployment URL + live backend within 540 s; convex-dev log tail:");
   const logPath = path.join(LOCAL_DIR, "convex-dev.log");
   if (existsSync(logPath)) console.error(readFileSync(logPath, "utf8").slice(-4000));
   process.exit(1);
@@ -307,10 +318,28 @@ while (Date.now() < rePushDeadline) {
     rePushed = true;
     break;
   }
+  // Fail fast with a named cause instead of burning the whole budget: these
+  // strings mean the backend is REJECTING the push (module evaluation or
+  // auth-config failure), which no deadline will fix.
+  const failingLine = fresh
+    .split("\n")
+    .find((l) => /InvalidModules|Hit an error while pushing|Uncaught .*Error|WORKOS_CLIENT_ID environment variable is required/.test(l));
+  if (failingLine) {
+    console.error(`[backend] FAILED (push rejected): ${failingLine.trim()}`);
+    console.error("[backend] matching log lines:");
+    console.error(
+      fresh
+        .split("\n")
+        .filter((l) => /InvalidModules|Hit an error while pushing|Uncaught|WORKOS_CLIENT_ID/.test(l))
+        .slice(-15)
+        .join("\n"),
+    );
+    process.exit(1);
+  }
   await new Promise((r) => setTimeout(r, 3000));
 }
 if (!rePushed) {
-  console.error("[backend] timed out waiting for the watch session to re-push; log tail:");
+  console.error("[backend] TIMED OUT (push): the watch session did not complete a re-push within 540 s; convex-dev log tail:");
   if (existsSync(convLog)) console.error(readFileSync(convLog, "utf8").slice(-4000));
   process.exit(1);
 }

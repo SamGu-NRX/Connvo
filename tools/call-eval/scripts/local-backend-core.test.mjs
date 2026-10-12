@@ -8,7 +8,7 @@
 //         convex.json with no restorable original;
 //   (iii) a non-local deployment refuses BEFORE any `convex env set` call —
 //         pre-fix ran env set unconditionally.
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -24,7 +24,9 @@ import {
   deploymentPortFromUrl,
   deploymentRefusalMessage,
   isHarnessModulePath,
+  isTestArtifactPath,
   pickConvexUrlFromEnvText,
+  pruneTestArtifacts,
   resolveSelectedDeployment,
 } from "./local-backend-core.mjs";
 
@@ -271,5 +273,86 @@ describe("deployment selection and port parsing", () => {
     expect(msg).toContain("REFUSING to run 'convex env set'");
     expect(msg).toContain("  - p1");
     expect(msg).toContain("  - p2");
+  });
+});
+
+// Guard (iv): test artifacts must never reach the pushed module tree. The
+// CLI does not honor .convexignore when bundling an overridden functions
+// dir, so exclusion happens at materialization time. Pre-fix behavior (no
+// pruning) shipped convex-harness/types/__tests__/ciValidation.ts, which
+// the backend executed during module loading — "Uncaught process.exit()
+// called with exit code 1" -> InvalidModules, or the 300 s 408 loop when
+// its inner npm/codegen subprocesses were slower.
+describe("test-artifact pruning", () => {
+  it("classifies test/development paths and real module paths", () => {
+    // Must be pruned — the exact file that killed the backend's loader:
+    expect(isTestArtifactPath("types/__tests__/ciValidation.ts")).toBe(true);
+    expect(isTestArtifactPath("types/__tests__/ciValidation.test.ts")).toBe(true);
+    expect(isTestArtifactPath("auth/guards.test.ts")).toBe(true);
+    expect(isTestArtifactPath("users/onboarding.spec.ts")).toBe(true);
+    expect(isTestArtifactPath("test/helpers.ts")).toBe(true);
+    expect(isTestArtifactPath("__tests__/root.ts")).toBe(true);
+    expect(isTestArtifactPath("vitest.config.ts")).toBe(true);
+    // Must survive:
+    expect(isTestArtifactPath("auth.config.ts")).toBe(false);
+    expect(isTestArtifactPath("schema.ts")).toBe(false);
+    expect(isTestArtifactPath("auth/guards.ts")).toBe(false);
+    expect(isTestArtifactPath("lib/getstreamServer.ts")).toBe(false);
+    expect(isTestArtifactPath("types/validators/index.ts")).toBe(false);
+    expect(isTestArtifactPath("devEval/seed.ts")).toBe(false);
+  });
+
+  it("prunes test artifacts from a materialized tree and keeps every real module", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "prune-fixture-"));
+    tmpDirs.push(root);
+    /** @param {string} rel */
+    const touch = (rel) => {
+      const abs = path.join(root, rel);
+      mkdirSync(path.dirname(abs), { recursive: true });
+      writeFileSync(abs, "// fixture\n");
+    };
+    // The pre-fix harness tree, reproduced: copied dirs carried __tests__/
+    // wholesale (including ciValidation.ts), and *.test.ts files rode along.
+    touch("types/__tests__/ciValidation.ts");
+    touch("types/__tests__/functionTypeConsistency.test.ts");
+    touch("types/validators/index.ts");
+    touch("auth/guards.test.ts");
+    touch("auth/guards.ts");
+    touch("auth.config.ts");
+    touch("schema.ts");
+    touch("devEval/seed.ts");
+    touch("vitest.config.ts");
+
+    const removed = pruneTestArtifacts(root);
+    expect(removed).toEqual(
+      expect.arrayContaining([
+        "types/__tests__",
+        "auth/guards.test.ts",
+        "vitest.config.ts",
+      ]),
+    );
+    expect(existsSync(path.join(root, "types/__tests__/ciValidation.ts"))).toBe(false);
+    expect(existsSync(path.join(root, "auth/guards.test.ts"))).toBe(false);
+    expect(existsSync(path.join(root, "vitest.config.ts"))).toBe(false);
+    // Every real module survives:
+    expect(existsSync(path.join(root, "auth.config.ts"))).toBe(true);
+    expect(existsSync(path.join(root, "schema.ts"))).toBe(true);
+    expect(existsSync(path.join(root, "auth/guards.ts"))).toBe(true);
+    expect(existsSync(path.join(root, "types/validators/index.ts"))).toBe(true);
+    expect(existsSync(path.join(root, "devEval/seed.ts"))).toBe(true);
+  });
+
+  it("is idempotent: a second prune removes nothing", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "prune-idem-"));
+    tmpDirs.push(root);
+    const abs = path.join(root, "types/__tests__");
+    mkdirSync(abs, { recursive: true });
+    writeFileSync(path.join(abs, "ciValidation.ts"), "// fixture\n");
+    writeFileSync(path.join(root, "schema.ts"), "// fixture\n");
+
+    pruneTestArtifacts(root);
+    const second = pruneTestArtifacts(root);
+    expect(second).toEqual([]);
+    expect(existsSync(path.join(root, "schema.ts"))).toBe(true);
   });
 });
