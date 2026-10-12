@@ -114,13 +114,33 @@ export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = 
  * @param {{ page: import('@playwright/test').Page }} peer
  */
 export async function pageDiagnostics(peer) {
-  return peer.page.evaluate(() => ({
-    peer: new URLSearchParams(location.search).get("as"),
-    phase: document.querySelector("[data-call-phase]")?.getAttribute("data-call-phase") ?? null,
-    error: document.querySelector('[data-testid="call-error"]')?.textContent?.slice(0, 160) || null,
-    tiles: [...document.querySelectorAll('[data-testid="remote-media"]')].map((t) => t.getAttribute("data-participant-id")),
-    pcs: (/** @type {any} */ (window).__wrappedPcs || []).map((/** @type {RTCPeerConnection} */ pc) => `${pc.signalingState}/${pc.iceConnectionState}/${pc.connectionState}`),
-  }));
+  return peer.page.evaluate(async () => {
+    const w = /** @type {any} */ (window);
+    const pcs = /** @type {RTCPeerConnection[]} */ (w.__wrappedPcs || []);
+    /** Candidate types and address kinds per live pc, from getStats. */
+    const candidates = [];
+    for (const pc of pcs) {
+      if (pc.connectionState === "closed") continue;
+      const local = [];
+      const remote = [];
+      const stats = await pc.getStats();
+      stats.forEach((/** @type {any} */ r) => {
+        if (r.type !== "local-candidate" && r.type !== "remote-candidate") return;
+        const addr = String(r.address ?? "");
+        const kind = addr.endsWith(".local") ? "mdns" : addr.includes(":") ? "v6" : addr.startsWith("127.") ? "loopback" : addr ? "v4" : "none";
+        (r.type === "local-candidate" ? local : remote).push(`${r.candidateType}/${r.protocol}/${kind}`);
+      });
+      candidates.push({ local: [...new Set(local)], remote: [...new Set(remote)] });
+    }
+    return {
+      peer: new URLSearchParams(location.search).get("as"),
+      phase: document.querySelector("[data-call-phase]")?.getAttribute("data-call-phase") ?? null,
+      error: document.querySelector('[data-testid="call-error"]')?.textContent?.slice(0, 160) || null,
+      tiles: [...document.querySelectorAll('[data-testid="remote-media"]')].map((t) => t.getAttribute("data-participant-id")),
+      pcs: pcs.map((pc) => `${pc.signalingState}/${pc.iceConnectionState}/${pc.connectionState}`),
+      candidates,
+    };
+  });
 }
 
 /**

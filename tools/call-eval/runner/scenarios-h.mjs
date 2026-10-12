@@ -16,6 +16,7 @@ import {
   joinPair,
   timeToFirstRemoteFrame,
   assertProbePresent,
+  pageDiagnostics,
 } from "./scenario-kit.mjs";
 import { killPeerTab } from "./peers.mjs";
 import { loadContracts } from "./contracts.mjs";
@@ -260,8 +261,13 @@ export async function scenario_H_06(ctx) {
 
   await peerA.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
   await click(peerA, "retry-media");
-  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 20000, describe: "A connected after granting + retry" });
-  await waitFor(peerB, phaseIs("connected"), { timeoutMs: 20000, describe: "B connected to A after A's retry" });
+  try {
+    await waitFor(peerA, phaseIs("connected"), { timeoutMs: 20000, describe: "A connected after granting + retry" });
+    await waitFor(peerB, phaseIs("connected"), { timeoutMs: 20000, describe: "B connected to A after A's retry" });
+  } catch (err) {
+    const states = await Promise.all([peerA, peerB].map((p) => pageDiagnostics(p).catch((e) => ({ error: String(e) }))));
+    throw new ScenarioError(`${err instanceof Error ? err.message : err} | ${JSON.stringify(states)}`);
+  }
   const fps = await measureFps(peerB, "A", 1500);
   if (fps.fps <= 0) throw new ScenarioError("H-06: B receives no frames from A after the retry", { fps });
   return { errorText: text.slice(0, 120), phaseDenied, joinedAfterRetry: true, fpsBseesA: fps.fps };
