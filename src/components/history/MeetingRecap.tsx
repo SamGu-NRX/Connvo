@@ -36,16 +36,19 @@ function durationLine(history: MeetingHistory): string {
 
 function Section({
   title,
+  level,
   children,
 }: {
   title: string;
+  level: 2 | 3;
   children: React.ReactNode;
 }) {
+  const Heading = level === 2 ? "h2" : "h3";
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+      <Heading className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
         {title}
-      </h3>
+      </Heading>
       {children}
     </section>
   );
@@ -55,7 +58,10 @@ function Section({
 export function MeetingRecapView({
   history,
   compact = false,
+  level = 2,
 }: {
+  /** Heading level of the recap's sections: 2 on its own page, 3 inside a titled box. */
+  level?: 2 | 3;
   history: MeetingHistory;
   compact?: boolean;
 }) {
@@ -79,7 +85,7 @@ export function MeetingRecapView({
       data-testid="meeting-recap"
       className={cn("flex flex-col", compact ? "gap-4" : "gap-6")}
     >
-      <Section title="Who took part">
+      <Section title="Who took part" level={level}>
         <ul className="flex flex-wrap gap-2">
           {people.map((p) => (
             <li
@@ -97,11 +103,11 @@ export function MeetingRecapView({
         </ul>
       </Section>
 
-      <Section title="Duration">
+      <Section title="Duration" level={level}>
         <p className="text-sm">{durationLine(history)}</p>
       </Section>
 
-      <Section title="Shared notes">
+      <Section title="Shared notes" level={level}>
         {notes ? (
           <p
             data-testid="recap-notes"
@@ -120,7 +126,7 @@ export function MeetingRecapView({
       </Section>
 
       {!compact || used ? (
-        <Section title="Prompts used">
+        <Section title="Prompts used" level={level}>
           {used ? (
             <ul className="list-disc space-y-1 pl-5 text-sm">
               {used.items.map((item, i) => (
@@ -179,7 +185,13 @@ function MeetingRecapData({
     meetingId,
   });
   if (history === undefined) return <MeetingRecapSkeleton />;
-  return <MeetingRecapView history={history} compact={compact} />;
+  return (
+    <MeetingRecapView
+      history={history}
+      compact={compact}
+      level={compact ? 3 : 2}
+    />
+  );
 }
 
 /** The recap for a meeting, loaded live; refusals show as one sentence. */

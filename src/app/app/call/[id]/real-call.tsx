@@ -26,8 +26,7 @@ import type { Id } from "@convex/_generated/dataModel";
 
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
-import { MeetingRecap } from "@/components/history/MeetingRecap";
-import { isAfterCallEnabled } from "@/lib/featureFlags";
+import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
 import {
@@ -88,13 +87,11 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   );
   // After the person leaves, the page shows what the meeting recorded
   // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
-  const afterCall = isAfterCallEnabled();
   const [ended, setEnded] = useState(false);
   const onScreenChange = useCallback(
     (screen: "lobby" | "call" | "ended") => setEnded(screen === "ended"),
     [],
   );
-  const recapHref = `/app/meetings/${meetingId}`;
 
   const createTransport = useCallback(
     () =>
@@ -160,43 +157,14 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
           }}
           exitHref="/app"
           onScreenChange={onScreenChange}
-          endedActions={
-            afterCall ? (
-              <Link
-                href={recapHref}
-                data-testid="open-recap"
-                className="grid h-11 place-items-center rounded-md bg-white/10 px-5 text-sm font-medium outline-none hover:bg-white/15 focus-visible:ring-[3px] focus-visible:ring-emerald-400/50"
-              >
-                Open the recap
-              </Link>
-            ) : undefined
-          }
+          endedActions={<OpenRecapLink meetingId={meetingId} />}
         />
       </div>
       <aside
         aria-label="Meeting notes"
         className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
       >
-        {afterCall && ended ? (
-          <section
-            aria-labelledby="ended-recap-title"
-            data-testid="ended-recap"
-            className="bg-card mb-3 flex flex-col gap-4 rounded-xl border p-5"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 id="ended-recap-title" className="font-semibold">
-                What this meeting recorded
-              </h2>
-              <Link
-                href={recapHref}
-                className="text-primary shrink-0 text-sm underline-offset-4 hover:underline"
-              >
-                Full recap
-              </Link>
-            </div>
-            <MeetingRecap meetingId={meetingId as Id<"meetings">} compact />
-          </section>
-        ) : null}
+        {ended ? <EndedRecap meetingId={meetingId} /> : null}
         <NotesBoundary>
           <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
         </NotesBoundary>
