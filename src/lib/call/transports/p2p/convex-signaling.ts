@@ -22,6 +22,13 @@ import type {
 export const HEARTBEAT_MS = 2000;
 /** A heartbeat that has not answered in this long counts as a lost connection. */
 export const HEARTBEAT_STALL_MS = 6000;
+/**
+ * How long a signal from a sender presence has not shown is kept before it
+ * is acknowledged unread. A sender's first offer can beat its presence entry
+ * by a few hundred milliseconds; a sender that never appears has closed, and
+ * its signals would otherwise hold places in this session's capped queue.
+ */
+export const UNKNOWN_SENDER_HOLD_MS = 5000;
 
 /** The slice of ConvexReactClient the adapter uses (a fake in tests). */
 export interface ConvexCallClient {
@@ -151,7 +158,7 @@ export function convexSignaling(
       const peers = new Map<string, PresenceEntry>();
       const seen = new Set<string>();
       /** Signals from sessions presence has not shown yet, by signal id. */
-      const held = new Map<string, InboundSignal>();
+      const held = new Map<string, { row: InboundSignal; since: number }>();
       const stops: Array<() => void> = [];
       let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
       let lastHeartbeatOk = Date.now();
@@ -180,7 +187,7 @@ export function convexSignaling(
 
       const onPresence = (entries: PresenceEntry[]) => {
         applyPresence(entries);
-        if (held.size) onSignals([...held.values()]);
+        if (held.size) onSignals([...held.values()].map((h) => h.row));
       };
       const applyPresence = (entries: PresenceEntry[]) => {
         const now = new Map<string, PresenceEntry>();
@@ -240,7 +247,8 @@ export function convexSignaling(
           // A peer's first offer can arrive before presence shows the peer:
           // hold it until presence does (onPresence replays held signals).
           if (!known) {
-            held.set(row._id, row);
+            if (!held.has(row._id))
+              held.set(row._id, { row, since: Date.now() });
             continue;
           }
           held.delete(row._id);
@@ -277,8 +285,28 @@ export function convexSignaling(
         read();
       };
 
+      const dropUnclaimed = () => {
+        const now = Date.now();
+        const drop: string[] = [];
+        for (const [id, h] of held) {
+          if (now - h.since <= UNKNOWN_SENDER_HOLD_MS) continue;
+          held.delete(id);
+          seen.add(id);
+          drop.push(id);
+        }
+        if (drop.length)
+          void client
+            .mutation(mesh.ackSignals, {
+              meetingId,
+              sessionId,
+              signalIds: drop,
+            })
+            .catch(() => {});
+      };
+
       const beat = async () => {
         if (closed) return;
+        dropUnclaimed();
         if (Date.now() - lastHeartbeatOk > HEARTBEAT_STALL_MS) {
           report({
             kind: "lost",
@@ -299,6 +327,8 @@ export function convexSignaling(
                 kind: "replaced",
                 message: "This call is open in another window or tab.",
               });
+            else if (r.reason === "ended")
+              report({ kind: "rejected", message: "This meeting has ended." });
             else report({ kind: "lost", message: "the call session expired" });
           }
         } catch (err) {

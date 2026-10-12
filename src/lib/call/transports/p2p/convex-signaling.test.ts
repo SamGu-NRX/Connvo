@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   convexSignaling,
   HEARTBEAT_MS,
+  UNKNOWN_SENDER_HOLD_MS,
   type ConvexCallClient,
 } from "./convex-signaling";
 import type { SignalingHandlers } from "./signaling";
@@ -195,6 +196,34 @@ describe("convexSignaling signals", () => {
       toSessionId: "b-1",
       signal: { kind: "candidate", candidate: "c", sdpMLineIndex: 0 },
     });
+  });
+});
+
+describe("convexSignaling unknown senders", () => {
+  beforeEach(() =>
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] }),
+  );
+
+  it("acknowledges a signal whose sender never appears, after a short hold", async () => {
+    const { fake, rec } = await opened();
+    fake.push(PRESENCE, [entry("self-session", "local-test-a")]);
+    fake.push(SIGNALS, [
+      {
+        _id: "s-ghost",
+        fromSessionId: "c-closed",
+        fromParticipantId: "local-test-c",
+        signal: { kind: "description", type: "offer", sdp: "x" },
+      },
+    ]);
+    const acked = () =>
+      fake.mutations
+        .filter((m) => m.name === "meetings/webrtc/mesh:ackSignals")
+        .flatMap((m) => m.args.signalIds as string[]);
+    await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
+    expect(acked()).toEqual([]); // still within the hold
+    await vi.advanceTimersByTimeAsync(UNKNOWN_SENDER_HOLD_MS + HEARTBEAT_MS);
+    expect(acked()).toEqual(["s-ghost"]);
+    expect(rec.signals).toEqual([]);
   });
 });
 
