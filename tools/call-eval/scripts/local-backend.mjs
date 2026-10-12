@@ -220,11 +220,12 @@ if (!tmuxRunning(CONV_TMUX)) {
 }
 
 // Wait for the deployment URL in .env.local and a live local backend.
-// This waits for PROVISIONING only — not for a completed push. The first
-// push cannot succeed before stage 3 sets the deployment env:
-// convex/auth.config.ts is evaluated server-side at push time and throws
-// "WORKOS_CLIENT_ID environment variable is required" when the variable is
-// absent, so the watch's early push attempts fail until the env exists.
+// This waits for PROVISIONING only: the first push cannot succeed before
+// stage 3 sets the deployment env (convex/auth.config.ts is evaluated
+// server-side at push time and throws "WORKOS_CLIENT_ID environment
+// variable is required" when it is absent), so env-set runs before the
+// first REQUIRED push and the completed-push marker is enforced at the
+// stage-4 wait — a fresh-marker slice that cannot see pre-env pushes.
 // Waiting for push markers here made a fresh checkout sit through the
 // watch's failing-push loop for the whole deadline.
 let convexUrl = null;
@@ -242,7 +243,7 @@ while (Date.now() < deadline) {
   if (convexUrl && localBackendAnswers(deploymentPortFromUrl(convexUrl))) break;
   await new Promise((r) => setTimeout(r, 3000));
 }
-if (!convexUrl) {
+if (!convexUrl || !localBackendAnswers(deploymentPortFromUrl(convexUrl))) {
   console.error("[backend] TIMED OUT (provisioning): no local deployment URL + live backend within 540 s; convex-dev log tail:");
   const logPath = path.join(LOCAL_DIR, "convex-dev.log");
   if (existsSync(logPath)) console.error(readFileSync(logPath, "utf8").slice(-4000));
@@ -297,11 +298,14 @@ function assertLocalDeployment() {
 console.log("[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)");
 assertLocalDeployment();
 
-// Re-push so the backend re-evaluates auth.config with the new deployment
-// env. `convex dev --once` refuses while the watch session's local backend
-// is already listening on the port ("A local backend is still running on
-// port ..."), so nudge the watch instead: touching the auth config makes
-// it re-push the bundle to the same backend.
+// First REQUIRED push: the watch's boot push runs before the deployment env
+// exists (the watch itself provisions the backend), so it may fail; the
+// nudge (touch auth.config.ts) triggers a fresh push that IS evaluated with
+// the env set in stage 3. `convex dev --once` refuses while the watch
+// session's local backend is already listening on the port ("A local
+// backend is still running on port ..."), so the nudge is how we get a
+// deterministic completed push; the marker search only sees log content
+// written after the nudge.
 console.log("[backend] 4/6 re-push + seed");
 const convLog = path.join(LOCAL_DIR, "convex-dev.log");
 const logLenBeforeRePush = existsSync(convLog) ? readFileSync(convLog, "utf8").length : 0;
@@ -360,11 +364,49 @@ const nextUp = sh(`curl -s -o /dev/null -w '%{http_code}' http://localhost:${nex
 if (nextUp.startsWith("2") || nextUp.startsWith("3")) {
   console.log(`[backend] next dev already serving on :${nextPort}`);
 } else {
+  // src/proxy.ts (authkitMiddleware) runs in the edge runtime, which does not
+  // see the spawned process's shell env in next dev — only `.env*` files. The
+  // authkit session loader throws without WORKOS_REDIRECT_URI and again without
+  // a >=32-char WORKOS_COOKIE_PASSWORD, so write a managed (idempotent) block
+  // into .env.local instead of relying on the inline env prefix.
+  const envLocalPath = path.join(REPO, ".env.local");
+  const blockStart = "# connvo-call-eval eval env (managed block) — BEGIN";
+  const blockEnd = "# connvo-call-eval eval env (managed block) — END";
+  const evalBlock = [
+    blockStart,
+    `NEXT_PUBLIC_CONVEX_URL=${convexUrl}`,
+    "NEXT_PUBLIC_CONNVO_TEST_AUTH=1",
+    "NEXT_PUBLIC_CONNVO_CALL_BENCH=1",
+    `WORKOS_CLIENT_ID=${DUMMY_WORKOS_CLIENT_ID}`,
+    // authkit's env-variables.js reads the redirect URI ONLY from the
+    // NEXT_PUBLIC_-prefixed name (so it inlines into the edge bundle); every
+    // other var is plain. Matches .env.example.
+    `NEXT_PUBLIC_WORKOS_REDIRECT_URI=http://localhost:${nextPort}/auth/callback`,
+    "WORKOS_COOKIE_PASSWORD=connvo-local-eval-cookie-password-0123456789",
+    `CONNVO_LOCAL_TEST_AUTH_KEY=${authKeyB64}`,
+    blockEnd,
+    "",
+  ].join("\n");
+  let envLocal = existsSync(envLocalPath) ? readFileSync(envLocalPath, "utf8") : "";
+  // Idempotent removal of any previous managed block — string slicing, no
+  // regex escaping pitfalls.
+  const from = envLocal.indexOf(blockStart);
+  if (from !== -1) {
+    const to = envLocal.indexOf(blockEnd);
+    envLocal = to === -1 ? envLocal.slice(0, from) : envLocal.slice(0, from) + envLocal.slice(to + blockEnd.length);
+  }
+  if (envLocal.length > 0 && !envLocal.endsWith("\n")) envLocal += "\n";
+  writeFileSync(envLocalPath, envLocal + evalBlock);
+  console.log("[backend] wrote eval env block to .env.local (edge runtime reads it; shell env is invisible to proxy.ts)");
   const nextEnv = [
     `NEXT_PUBLIC_CONVEX_URL='${convexUrl}'`,
     "NEXT_PUBLIC_CONNVO_TEST_AUTH=1",
     "NEXT_PUBLIC_CONNVO_CALL_BENCH=1",
     `WORKOS_CLIENT_ID=${DUMMY_WORKOS_CLIENT_ID}`,
+    // authkit-nextjs 2.10.0 reads the redirect URI ONLY from the
+    // NEXT_PUBLIC_-prefixed name (so it inlines into the edge bundle);
+    // plain WORKOS_REDIRECT_URI is ignored and the middleware 500s.
+    `NEXT_PUBLIC_WORKOS_REDIRECT_URI='http://localhost:${nextPort}/auth/callback'`,
     `CONNVO_LOCAL_TEST_AUTH_KEY='${authKeyB64}'`,
   ].join(" ");
   sh(`tmux new-session -d -s ${NEXT_TMUX} "bash -c 'cd ${REPO} && ${nextEnv} pnpm exec next dev -p ${nextPort} 2>&1 | tee ${LOCAL_DIR}/next-dev.log'"`);
