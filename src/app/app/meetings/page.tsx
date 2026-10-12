@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePaginatedQuery } from "convex/react";
-import { api } from "@convex/_generated/api";
 import { isAfterCallEnabled } from "@/lib/featureFlags";
+import { historyQueries } from "@/lib/history/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +34,7 @@ export default function MeetingsPage() {
 
 function MeetingsList() {
   const { results, status, loadMore } = usePaginatedQuery(
-    api.history.queries.listMyMeetings,
+    historyQueries.listMyMeetings,
     {},
     { initialNumItems: INITIAL_PAGE_SIZE },
   );

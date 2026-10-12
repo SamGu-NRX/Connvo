@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
-import { api } from "@convex/_generated/api";
+import { historyMutations, historyQueries } from "@/lib/history/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { isAfterCallEnabled } from "@/lib/featureFlags";
 import { buildCalendarExport } from "@/lib/history/ics";
@@ -70,14 +70,14 @@ async function changeStayInTouch(
 }
 
 function MeetingDetail({ meetingId }: { meetingId: Id<"meetings"> }) {
-  const history = useQuery(api.history.queries.getMeetingHistory, {
+  const history = useQuery(historyQueries.getMeetingHistory, {
     meetingId,
   });
   const stayInTouchStatus = useQuery(
-    api.history.queries.getStayInTouchStatus,
+    historyQueries.getStayInTouchStatus,
     { meetingId },
   );
-  const setStayInTouch = useMutation(api.history.mutations.setStayInTouch);
+  const setStayInTouch = useMutation(historyMutations.setStayInTouch);
   const [savingOptIn, setSavingOptIn] = useState(false);
 
   if (history === undefined) {

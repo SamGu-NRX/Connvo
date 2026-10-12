@@ -9,11 +9,11 @@
  * exercised end to end.
  */
 
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { api } from "@convex/_generated/api";
+import { historyQueries } from "@/lib/history/api";
 
 const mocks = vi.hoisted(() => ({
   listPayload: null as unknown,
@@ -28,7 +28,7 @@ vi.mock("convex/react", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: (props: { href: string; children?: unknown }) =>
+  default: (props: { href: string; children?: ReactNode }) =>
     createElement("a", { href: props.href }, props.children),
 }));
 
@@ -231,7 +231,7 @@ describe("flag-on detail route (mounted)", () => {
   beforeEach(() => {
     process.env[FLAG] = "1";
     mocks.queryDispatch = (query) =>
-      query === api.history.queries.getMeetingHistory
+      query === historyQueries.getMeetingHistory
         ? historyFixture()
         : { enabled: false, mutual: false };
   });
@@ -262,7 +262,7 @@ describe("flag-on detail route (mounted)", () => {
     const fixture = historyFixture();
     (fixture.meeting as { scheduledAt: number | null }).scheduledAt = null;
     mocks.queryDispatch = (query) =>
-      query === api.history.queries.getMeetingHistory
+      query === historyQueries.getMeetingHistory
         ? fixture
         : { enabled: false, mutual: false };
     const html = await renderDetail();
@@ -272,7 +272,7 @@ describe("flag-on detail route (mounted)", () => {
 
   it("notes when everyone has opted in to stay in touch", async () => {
     mocks.queryDispatch = (query) =>
-      query === api.history.queries.getMeetingHistory
+      query === historyQueries.getMeetingHistory
         ? historyFixture()
         : { enabled: true, mutual: true };
     const html = await renderDetail();

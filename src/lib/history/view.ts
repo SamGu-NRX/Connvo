@@ -2,19 +2,18 @@
  * Presentation helpers for the after-call meetings UI.
  *
  * Pure functions only: no Convex client, no DOM, no clocks. The Convex
- * payload type is imported as a type so mapping into the recap builder
- * stays compile-checked.
+ * payload type comes from the typed bridge (src/lib/history/api.ts) so
+ * mapping into the recap builder stays compile-checked.
  */
 
-import type { api } from "@convex/_generated/api";
-import type { FunctionReturnType } from "convex/server";
+import type { MeetingHistoryPayload, MeetingState } from "./api";
 import { buildRecap, type RecapInput } from "./recap";
 
 /** The full after-call history payload served by getMeetingHistory. */
-export type MeetingHistory = FunctionReturnType<typeof api.history.queries.getMeetingHistory>;
+export type MeetingHistory = MeetingHistoryPayload;
 
 /** Meeting lifecycle states, mirroring the meetings table validator. */
-export type MeetingState = "scheduled" | "active" | "concluded" | "cancelled";
+export type { MeetingState };
 
 /** Badge variants available in the repo's Badge component. */
 export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
