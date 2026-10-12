@@ -28,6 +28,8 @@ import {
   pickConvexUrlFromEnvText,
   pruneTestArtifacts,
   resolveSelectedDeployment,
+  seedShapeProblems,
+  shellQuote,
 } from "./local-backend-core.mjs";
 
 const TEST_JWKS_DATA_URI = "data:application/json;base64,eyJrZXlzIjpbXX0=";
@@ -354,5 +356,60 @@ describe("test-artifact pruning", () => {
     const second = pruneTestArtifacts(root);
     expect(second).toEqual([]);
     expect(existsSync(path.join(root, "schema.ts"))).toBe(true);
+  });
+});
+
+describe("seed shape check (H-14 depends on it)", () => {
+  // Known input: the exact shape devEval/seed creates.
+  const good = () => ({
+    found: true,
+    meeting: { title: "Eval harness smoke meeting", state: "active", organizerWorkosUserId: "local-test-a" },
+    users: ["a", "b", "c", "o"].map((k) => ({ workosUserId: `local-test-${k}` })),
+    participants: [
+      { workosUserId: "local-test-a", role: "host" },
+      { workosUserId: "local-test-b", role: "participant" },
+      { workosUserId: "local-test-c", role: "participant" },
+    ],
+    meetingState: { active: true },
+  });
+
+  it("accepts the seeded shape", () => {
+    expect(seedShapeProblems(good())).toEqual([]);
+  });
+
+  it("rejects a missing meeting and an empty result", () => {
+    expect(seedShapeProblems(null)).toEqual(["shape query returned nothing"]);
+    expect(seedShapeProblems({ found: false })).toEqual(["meeting not found"]);
+  });
+
+  it("rejects the outsider holding a participant row", () => {
+    const s = good();
+    s.participants.push({ workosUserId: "local-test-o", role: "participant" });
+    expect(seedShapeProblems(s)).toEqual(["outsider local-test-o has a participant row"]);
+  });
+
+  it("rejects a wrong organizer, a wrong role, an inactive meeting and a missing user", () => {
+    const s = good();
+    s.meeting.organizerWorkosUserId = "local-test-b";
+    s.participants[1].role = "host";
+    s.meeting.state = "scheduled";
+    s.users = s.users.filter((u) => u.workosUserId !== "local-test-c");
+    expect(seedShapeProblems(s)).toEqual([
+      'meeting state is "scheduled", expected "active"',
+      'organizer is "local-test-b", expected "local-test-a"',
+      'local-test-b participant rows ["host"], expected ["participant"]',
+      "user local-test-c missing",
+    ]);
+  });
+
+  it("rejects a seed receipt in place of the shape", () => {
+    expect(seedShapeProblems({ meetingId: "m1" })).toEqual(["meeting not found"]);
+  });
+});
+
+describe("shellQuote", () => {
+  it("survives quotes and spaces in values", () => {
+    expect(shellQuote("a b")).toBe("'a b'");
+    expect(shellQuote("it's")).toBe("'it'\\''s'");
   });
 });

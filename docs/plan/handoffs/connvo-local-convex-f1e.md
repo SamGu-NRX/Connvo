@@ -8,7 +8,7 @@ State at cutoff 04:55Z 2026-10-12: tip `c9f0e24` (merged umbrella `2c0c4fa` at `
 - `c9f0e24` cutoff witness: run 4 from merged tip reached stage 4/6 (slim harness re-push + seed) in flight at 04:50Z; env vars (`NEXT_PUBLIC_WORKOS_REDIRECT_URI`, `WORKOS_API_KEY`, test-auth flags) verified present in run 4's own log and `.env.local` (`env-verification.txt`).
 
 ## Proof that already exists (prior sandbox, cited in repo docs)
-- Push + seed + shape read-back proven at f1c `119f29f` (`tools/call-eval/verification/2026-10-12-local-push-witness.md`): meeting `m97b6bv3j4p6gmmbzhem83wtws8g5dqn`, organizer local-test-a, A host, B/C joined, O without participant row. (c)'s run-4 equivalent: `m97avnrxsgwys54askp2bsf9398g5e10`.
+- Correction (2026-10-12, takeover): this line used to cite `tools/call-eval/verification/2026-10-12-local-push-witness.md` as proof of a completed push, but that witness records that no push completed in any of its runs. The receipt for the f1c run at `119f29f` (meeting `m97b6bv3j4p6gmmbzhem83wtws8g5dqn`) was never committed. The current proof is the one-command run recorded in `tools/call-eval/verification/2026-10-12-local-convex-proof/`.
 
 ## What is left
 - The A/B/O real-browser run against the seeded meeting (screenshots + recording + run log committed). Run 4 (log in `tools/call-eval/out/proof-2026-10-12T04-43-4*/run.log`, untracked — out/ is gitignored) may finish after cutoff; check its log, `state.json`, and any screenshots before rerunning.

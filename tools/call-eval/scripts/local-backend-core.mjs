@@ -252,3 +252,44 @@ export function applyDeploymentEnv({ deployment, backendAnswered, port, envSets,
   }
   return { ok: true, problems, deployment: dep, port };
 }
+
+/**
+ * The seeded shape the H-14 browser proof depends on, as returned by
+ * `npx convex run devEval/shape:shape '{"meetingId":...}'`. Returns the list
+ * of ways it differs from the seed; empty means the seed is exactly right.
+ * A seed receipt (a returned meetingId) is not evidence of any of this.
+ * @param {any} shape
+ * @returns {string[]}
+ */
+export function seedShapeProblems(shape) {
+  if (!shape || typeof shape !== "object") return ["shape query returned nothing"];
+  if (shape.found !== true) return ["meeting not found"];
+  const problems = [];
+  const m = shape.meeting ?? {};
+  if (m.state !== "active") problems.push(`meeting state is ${JSON.stringify(m.state)}, expected "active"`);
+  if (m.organizerWorkosUserId !== "local-test-a") {
+    problems.push(`organizer is ${JSON.stringify(m.organizerWorkosUserId)}, expected "local-test-a"`);
+  }
+  const role = (/** @type {string} */ subject) =>
+    (shape.participants ?? []).filter((/** @type {any} */ p) => p.workosUserId === subject).map((/** @type {any} */ p) => p.role);
+  const expected = { "local-test-a": "host", "local-test-b": "participant", "local-test-c": "participant" };
+  for (const [subject, want] of Object.entries(expected)) {
+    const got = role(subject);
+    if (got.length !== 1 || got[0] !== want) problems.push(`${subject} participant rows ${JSON.stringify(got)}, expected ["${want}"]`);
+  }
+  if (role("local-test-o").length !== 0) problems.push("outsider local-test-o has a participant row");
+  const users = new Set((shape.users ?? []).map((/** @type {any} */ u) => u.workosUserId));
+  for (const subject of ["local-test-a", "local-test-b", "local-test-c", "local-test-o"]) {
+    if (!users.has(subject)) problems.push(`user ${subject} missing`);
+  }
+  if (shape.meetingState?.active !== true) problems.push("meetingState is not active");
+  return problems;
+}
+
+/** The only CLI 1.46 line that means a push finished. */
+export const PUSH_COMPLETE_MARKER = "Convex functions ready!";
+
+/** Single-quote a value for a bash script. @param {string} value */
+export function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}

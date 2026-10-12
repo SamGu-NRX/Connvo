@@ -8,7 +8,8 @@
 // env, and writes tools/call-eval/out/state.json for the runner and bench.
 //
 // Long-running pieces (convex dev, next dev) run detached in tmux sessions
-// `conn-eval` and `conn-eval-next` so this script can exit.
+// named after this checkout (conn-eval-<hash>, conn-eval-next-<hash>) so this
+// script can exit.
 //
 // Flags:
 //   --stop      kill both tmux sessions
@@ -18,8 +19,9 @@
 //   --port=<n>  next dev port (default 3000)
 
 import { spawnSync } from "node:child_process";
-import { createSign, createPrivateKey, generateKeyPairSync } from "node:crypto";
+import { createHash, createSign, createPrivateKey, generateKeyPairSync } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -31,6 +33,9 @@ import {
   EVAL_ENV_WORKOS_CLIENT_ID,
   HARNESS_INCLUDE_DIRS,
   LOCAL_TEST_ISSUER,
+  PUSH_COMPLETE_MARKER,
+  seedShapeProblems,
+  shellQuote,
   applyConvexJsonOverride as overrideConvexJsonOnDisk,
   applyDeploymentEnv,
   deploymentPortFromUrl,
@@ -53,8 +58,32 @@ const KEY_DIR = path.join(LOCAL_DIR, "keys");
 const OUT_DIR = path.join(EVAL_DIR, "out");
 const STATE_PATH = path.join(OUT_DIR, "state.json");
 
-const CONV_TMUX = "conn-eval";
-const NEXT_TMUX = "conn-eval-next";
+// Session names carry a hash of this checkout's path: two worktrees (or two
+// agents) on one machine must never attach to or kill each other's backend.
+const REPO_TAG = createHash("sha1").update(REPO).digest("hex").slice(0, 8);
+const CONV_TMUX = `conn-eval-${REPO_TAG}`;
+const NEXT_TMUX = `conn-eval-next-${REPO_TAG}`;
+
+/**
+ * Write a launcher script and run it in a detached tmux session. Exported
+ * variables reach the child process; a single `bash -c` string with inline
+ * assignments did not (one path ran `cd` with them as arguments, the other
+ * separated them with && so they never reached the child).
+ * @param {string} session @param {string} file @param {Record<string, string>} env @param {string} command
+ */
+function launchInTmux(session, file, env, command) {
+  mkdirSync(LOCAL_DIR, { recursive: true });
+  const lines = [
+    "#!/bin/bash",
+    "set -uo pipefail",
+    `cd ${shellQuote(REPO)}`,
+    ...Object.entries(env).map(([k, v]) => `export ${k}=${shellQuote(v)}`),
+    command,
+    "",
+  ];
+  writeFileSync(file, lines.join("\n"), { mode: 0o700 });
+  sh(`tmux new-session -d -s ${session} bash ${shellQuote(file)}`);
+}
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
@@ -132,6 +161,26 @@ function sh(cmd, opts = {}) {
     process.exit(r.status || 1);
   }
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
+}
+
+/**
+ * A bin directory holding Node 20, 22 or 24, or null.
+ * @returns {string | null}
+ */
+function supportedNodeBin() {
+  const candidates = [
+    process.env.CONNVO_EVAL_NODE_BIN,
+    path.dirname(process.execPath),
+    ...["24", "22", "20"].map((v) => `/opt/homebrew/opt/node@${v}/bin`),
+    ...["24", "22", "20"].map((v) => `/usr/local/opt/node@${v}/bin`),
+  ].filter(Boolean);
+  for (const dir of candidates) {
+    const bin = path.join(/** @type {string} */ (dir), "node");
+    if (!existsSync(bin)) continue;
+    const major = Number(spawnSync(bin, ["-p", "process.versions.node.split('.')[0]"], { encoding: "utf8" }).stdout.trim());
+    if ([20, 22, 24].includes(major)) return /** @type {string} */ (dir);
+  }
+  return null;
 }
 
 function tmuxRunning(name) {
@@ -220,7 +269,45 @@ if (!tmuxRunning(CONV_TMUX)) {
   // lands on a different mount than the backend data dir. stdin /dev/null:
   // 1.46 reads stdin even when attached to tmux and dies with
   // "Cannot prompt for input in non-interactive terminals" otherwise.
-  sh(`tmux new-session -d -s ${CONV_TMUX} "bash -c 'cd ${REPO} && mkdir -p ${LOCAL_DIR}/tmp && TMPDIR=${LOCAL_DIR}/tmp npx convex dev --typecheck=disable < /dev/null 2>&1 | tee ${LOCAL_DIR}/convex-dev.log'"`);
+  // TMPDIR must share the backend's filesystem (1.46 renames staged files
+  // across it), and must not contain spaces: the CLI runs `chmod +x <path>`
+  // unquoted when it installs the backend binary, and this repo usually lives
+  // under "Programming Projects".
+  const convexTmp = path.join(os.homedir(), ".cache", "connvo-call-eval", REPO_TAG, "tmp");
+  // The local backend deploys "use node" actions only with Node 20, 22 or 24
+  // on PATH ("DeploymentNotConfiguredForNodeActions" otherwise), and the
+  // pushed tree has some (lib/getstreamServer.ts, meetings/stream/*).
+  const nodeBin = supportedNodeBin();
+  if (!nodeBin) {
+    console.error(
+      "[backend] FAILED: the local Convex backend needs Node 20, 22 or 24 for \"use node\" actions, and none was found. " +
+        "Install one (for example `brew install node@24`) or set CONNVO_EVAL_NODE_BIN to its bin directory.",
+    );
+    process.exit(1);
+  }
+  console.log(`[backend] node for convex dev: ${nodeBin}`);
+  mkdirSync(convexTmp, { recursive: true });
+  // WORKOS_CLIENT_ID and the test JWKS go to the CLI process from the start.
+  // The backend evaluates auth.config.ts with the DEPLOYMENT env, which only
+  // exists once this command has provisioned it, so the first boot push can
+  // still fail; stage 3 sets the deployment env and stage 4 trusts only a
+  // completed push logged after that.
+  // A new session gets a new log: the wait below reads it for fatal errors,
+  // and a previous run's crash must not count against this one.
+  writeFileSync(path.join(LOCAL_DIR, "convex-dev.log"), "");
+  launchInTmux(
+    CONV_TMUX,
+    path.join(LOCAL_DIR, "convex-dev.sh"),
+    {
+      TMPDIR: convexTmp,
+      PATH: `${nodeBin}:${process.env.PATH ?? ""}`,
+      // Anonymous local deployment, no account and no prompts (CLI 1.46).
+      CONVEX_AGENT_MODE: "anonymous",
+      [EVAL_ENV_WORKOS_CLIENT_ID]: DUMMY_WORKOS_CLIENT_ID,
+      [EVAL_ENV_TEST_JWKS]: jwksDataUri,
+    },
+    `npx convex dev --typecheck=disable < /dev/null 2>&1 | tee ${shellQuote(path.join(LOCAL_DIR, "convex-dev.log"))}`,
+  );
 } else {
   console.log("[backend] convex dev already running in tmux");
 }
@@ -247,6 +334,14 @@ while (Date.now() < deadline) {
     if (picked) convexUrl = picked.value;
   }
   if (convexUrl && localBackendAnswers(deploymentPortFromUrl(convexUrl))) break;
+  // A dead session or a CLI crash will not recover by waiting out the deadline.
+  const provisionLog = path.join(LOCAL_DIR, "convex-dev.log");
+  const provisionText = existsSync(provisionLog) ? readFileSync(provisionLog, "utf8") : "";
+  if (!tmuxRunning(CONV_TMUX) || /Unexpected Error/.test(provisionText)) {
+    console.error(`[backend] FAILED (provisioning): convex dev ${tmuxRunning(CONV_TMUX) ? "reported an error" : "exited"}; log tail:`);
+    console.error(provisionText.slice(-3000));
+    process.exit(1);
+  }
   await new Promise((r) => setTimeout(r, 3000));
 }
 if (!convexUrl || !localBackendAnswers(deploymentPortFromUrl(convexUrl))) {
@@ -328,11 +423,10 @@ const rePushDeadline = Date.now() + 540_000; // same budget as stage 2: pushes r
 let rePushed = false;
 while (Date.now() < rePushDeadline) {
   const fresh = existsSync(convLog) ? readFileSync(convLog, "utf8").slice(logLenBeforeRePush) : "";
-  if (
-    fresh.includes("Convex functions ready") ||
-    fresh.includes("Pushed code to") ||
-    fresh.includes("waiting for changes")
-  ) {
+  // Only the completion line counts: "waiting for changes" also prints after
+  // a FAILED push, and a deployment URL proves provisioning, not a push.
+  if (fresh.includes(PUSH_COMPLETE_MARKER)) {
+    console.log(`[backend] push completed after the deployment env was set ("${PUSH_COMPLETE_MARKER}" in convex-dev.log)`);
     rePushed = true;
     break;
   }
@@ -348,7 +442,7 @@ while (Date.now() < rePushDeadline) {
   // genuinely fatal push surfaces as the timeout below with the log tail.
   const fatalLine = fresh
     .split("\n")
-    .find((l) => /InvalidModules|Uncaught .*Error|process\.exit\(\) called|WORKOS_CLIENT_ID environment variable is required/.test(l));
+    .find((l) => /InvalidModules|DeploymentNotConfiguredForNodeActions|Uncaught .*Error|process\.exit\(\) called|WORKOS_CLIENT_ID environment variable is required/.test(l));
   if (fatalLine) {
     console.error(`[backend] FAILED (push rejected): ${fatalLine.trim()}`);
     console.error("[backend] matching log lines:");
@@ -379,70 +473,83 @@ if (!seedJson?.meetingId) {
 }
 console.log(`[backend] seeded meeting ${seedJson.meetingId}`);
 
+// Read the seed back and check every fact the H-14 proof relies on. Positional
+// JSON args (the CLI has no --meetingId option); no shell, so no quoting.
+const shapeRun = spawnSync("npx", ["convex", "run", "devEval/shape:shape", JSON.stringify({ meetingId: seedJson.meetingId })], {
+  cwd: REPO,
+  encoding: "utf8",
+});
+let shape = null;
+try {
+  const out = shapeRun.stdout ?? "";
+  shape = JSON.parse(out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1));
+} catch {}
+const shapeProblems = shapeRun.status === 0 ? seedShapeProblems(shape) : [`shape query exited ${shapeRun.status}: ${(shapeRun.stderr ?? "").slice(-400)}`];
+if (shapeProblems.length) {
+  console.error(`[backend] FAILED (seed shape): ${shapeProblems.join("; ")}`);
+  process.exit(1);
+}
+console.log("[backend] seed shape verified: A host, B and C participants, O no row, meeting and meetingState active");
+
 // ------------------------------------------------------------------- next dev
-console.log("[backend] 5/6 next dev with eval env");
-const nextUp = sh(`curl -s -o /dev/null -w '%{http_code}' http://localhost:${nextPort}`, { capture: true, allowFail: true }).stdout.trim();
-if (nextUp.startsWith("2") || nextUp.startsWith("3")) {
-  console.log(`[backend] next dev already serving on :${nextPort}`);
-} else {
-  // src/proxy.ts (authkitMiddleware) runs in the edge runtime, which does not
-  // see the spawned process's shell env in next dev — only `.env*` files. The
-  // authkit session loader throws without WORKOS_REDIRECT_URI and again without
-  // a >=32-char WORKOS_COOKIE_PASSWORD, so write a managed (idempotent) block
-  // into .env.local instead of relying on the inline env prefix.
+const httpCode = () =>
+  sh(`curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://localhost:${nextPort}/dev/auth-proof?as=A`, { capture: true, allowFail: true }).stdout.trim();
+const serving = (/** @type {string} */ code) => code.startsWith("2") || code.startsWith("3");
+{
+  // src/proxy.ts (authkitMiddleware) runs in the edge runtime, which reads
+  // only `.env*` files in next dev, so the eval env goes into a managed block
+  // in .env.local, and also into the launcher's environment.
   const envLocalPath = path.join(REPO, ".env.local");
   const blockStart = "# connvo-call-eval eval env (managed block) — BEGIN";
   const blockEnd = "# connvo-call-eval eval env (managed block) — END";
-  const evalBlock = [
-    blockStart,
-    `NEXT_PUBLIC_CONVEX_URL=${convexUrl}`,
-    "NEXT_PUBLIC_CONNVO_TEST_AUTH=1",
-    "NEXT_PUBLIC_CONNVO_CALL_BENCH=1",
-    `WORKOS_CLIENT_ID=${DUMMY_WORKOS_CLIENT_ID}`,
-    `WORKOS_API_KEY=${DUMMY_WORKOS_API_KEY}`,
-    // authkit's env-variables.js reads the redirect URI ONLY from the
-    // NEXT_PUBLIC_-prefixed name (so it inlines into the edge bundle); every
-    // other var is plain. Matches .env.example.
-    `NEXT_PUBLIC_WORKOS_REDIRECT_URI=http://localhost:${nextPort}/auth/callback`,
-    "WORKOS_COOKIE_PASSWORD=connvo-local-eval-cookie-password-0123456789",
-    `CONNVO_LOCAL_TEST_AUTH_KEY=${authKeyB64}`,
-    blockEnd,
-    "",
-  ].join("\n");
+  /** @type {Record<string, string>} */
+  const nextEnv = {
+    NEXT_PUBLIC_CONVEX_URL: convexUrl,
+    NEXT_PUBLIC_CONNVO_TEST_AUTH: "1",
+    NEXT_PUBLIC_CONNVO_CALL_BENCH: "1",
+    WORKOS_CLIENT_ID: DUMMY_WORKOS_CLIENT_ID,
+    WORKOS_API_KEY: DUMMY_WORKOS_API_KEY,
+    // authkit-nextjs reads the redirect URI only from the NEXT_PUBLIC_ name.
+    NEXT_PUBLIC_WORKOS_REDIRECT_URI: `http://localhost:${nextPort}/auth/callback`,
+    WORKOS_COOKIE_PASSWORD: "connvo-local-eval-cookie-password-0123456789",
+    CONNVO_LOCAL_TEST_AUTH_KEY: authKeyB64,
+  };
+  const evalBlock = [blockStart, ...Object.entries(nextEnv).map(([k, v]) => `${k}=${v}`), blockEnd, ""].join("\n");
   let envLocal = existsSync(envLocalPath) ? readFileSync(envLocalPath, "utf8") : "";
-  // Idempotent removal of any previous managed block — string slicing, no
-  // regex escaping pitfalls.
   const from = envLocal.indexOf(blockStart);
   if (from !== -1) {
     const to = envLocal.indexOf(blockEnd);
-    envLocal = to === -1 ? envLocal.slice(0, from) : envLocal.slice(0, from) + envLocal.slice(to + blockEnd.length);
+    envLocal = to === -1 ? envLocal.slice(0, from) : envLocal.slice(0, from) + envLocal.slice(to + blockEnd.length + 1);
   }
   if (envLocal.length > 0 && !envLocal.endsWith("\n")) envLocal += "\n";
   writeFileSync(envLocalPath, envLocal + evalBlock);
-  console.log("[backend] wrote eval env block to .env.local (edge runtime reads it; shell env is invisible to proxy.ts)");
-  const nextEnv = [
-    `NEXT_PUBLIC_CONVEX_URL='${convexUrl}'`,
-    "NEXT_PUBLIC_CONNVO_TEST_AUTH=1",
-    "NEXT_PUBLIC_CONNVO_CALL_BENCH=1",
-    `WORKOS_CLIENT_ID=${DUMMY_WORKOS_CLIENT_ID}`,
-    `WORKOS_API_KEY=${DUMMY_WORKOS_API_KEY}`,
-    // authkit-nextjs 2.10.0 reads the redirect URI ONLY from the
-    // NEXT_PUBLIC_-prefixed name (so it inlines into the edge bundle);
-    // plain WORKOS_REDIRECT_URI is ignored and the middleware 500s.
-    `NEXT_PUBLIC_WORKOS_REDIRECT_URI='http://localhost:${nextPort}/auth/callback'`,
-    `CONNVO_LOCAL_TEST_AUTH_KEY='${authKeyB64}'`,
-  ].join(" ");
-  sh(`tmux new-session -d -s ${NEXT_TMUX} "bash -c 'cd ${REPO} && ${nextEnv} pnpm exec next dev -p ${nextPort} 2>&1 | tee ${LOCAL_DIR}/next-dev.log'"`);
-  const nextDeadline = Date.now() + 180_000;
-  while (Date.now() < nextDeadline) {
-    const code = sh(`curl -s -o /dev/null -w '%{http_code}' http://localhost:${nextPort}`, { capture: true, allowFail: true }).stdout.trim();
-    if (code.startsWith("2") || code.startsWith("3")) break;
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  const finalCode = sh(`curl -s -o /dev/null -w '%{http_code}' http://localhost:${nextPort}`, { capture: true, allowFail: true }).stdout.trim();
-  if (!finalCode.startsWith("2") && !finalCode.startsWith("3")) {
-    console.error("[backend] next dev did not come up; see " + path.join(LOCAL_DIR, "next-dev.log"));
+
+  // A running Next started with a different env (a new deployment URL, or a
+  // key regenerated by --fresh) would keep signing tokens with the old key
+  // while Convex trusts the new one. Restart unless it is ours and its env
+  // is unchanged.
+  const fingerprint = createHash("sha256").update(evalBlock).digest("hex");
+  const fingerprintPath = path.join(LOCAL_DIR, "next-env.sha256");
+  const sameEnv = existsSync(fingerprintPath) && readFileSync(fingerprintPath, "utf8") === fingerprint;
+  const ours = tmuxRunning(NEXT_TMUX);
+  const code = httpCode();
+  if (serving(code) && !ours) {
+    console.error(`[backend] FAILED: port ${nextPort} is served by a process this script did not start; pass --port=<free port>`);
     process.exit(1);
+  }
+  if (ours && sameEnv && serving(code)) {
+    console.log(`[backend] 5/6 next dev already serving on :${nextPort} with this env`);
+  } else {
+    console.log(`[backend] 5/6 ${ours ? "restarting" : "starting"} next dev on :${nextPort}${ours && !sameEnv ? " (env or key changed)" : ""}`);
+    if (ours) sh(`tmux kill-session -t ${NEXT_TMUX}`, { allowFail: true });
+    launchInTmux(NEXT_TMUX, path.join(LOCAL_DIR, "next-dev.sh"), nextEnv, `pnpm exec next dev -p ${nextPort} 2>&1 | tee ${shellQuote(path.join(LOCAL_DIR, "next-dev.log"))}`);
+    writeFileSync(fingerprintPath, fingerprint);
+    const nextDeadline = Date.now() + 240_000;
+    while (Date.now() < nextDeadline && !serving(httpCode())) await new Promise((r) => setTimeout(r, 2000));
+    if (!serving(httpCode())) {
+      console.error("[backend] next dev did not come up; see " + path.join(LOCAL_DIR, "next-dev.log"));
+      process.exit(1);
+    }
   }
 }
 const nextBaseUrl = `http://localhost:${nextPort}`;
