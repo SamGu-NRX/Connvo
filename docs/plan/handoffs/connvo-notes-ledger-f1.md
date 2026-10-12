@@ -1,0 +1,150 @@
+# PR #31 — feat(notes): loss-proof in-call collaborative notes ledger (S1)
+
+**Branch** `obv/connvo-notes-ledger-f1` → `alpha` · **Draft PR #31** (opened from the host at `76d296d`)
+**This doc is the PR body's source of truth.** The sandbox cannot reach `api.github.com` (egress proxy blocks the host), so nothing in this workspace edits the PR: the lead copies this file into the PR body at review. Keep this file current with every push — update the SHA line, the Proof log and the Handoff in the same commit as each milestone.
+**Last updated at:** `7293ceb` (M1 + M3 + M2 + M4 checkpoint)
+
+---
+
+## PR description
+
+### Why
+
+Step S1 of `docs/plan/CALL-PLAN.md` (base `alpha` @ `ddc94d4`): rebuild #24's notes repair from main so in-call collaborative notes are impossible to lose. PR #24 (`b9b4c5a`) is evidence only — never merged. Its audited defects each get a named failing-before / pass-after test here: blanket ack retirement, equal-length replacements treated as no-ops, unstable snapshots, stale/loading results dropping edits, wrong batch/newVersion/sequence acknowledgements, text-matching "confirmation", lost teardown.
+
+### Approach — `docs/notes-ledger-f1/design.md` is the contract
+
+- **Server, additive only** (no access-check changes): `noteOps` gains optional `clientId` / `clientOpId` / `clientSequence` + two indexes; batch results echo per-op identity, `failedOps` reports failures with identity, resends dedupe on `clientOpId` (identity persisted in the same transaction as the text change); `getMeetingNotes` accepts an optional `clientId` and additively returns `headSequence` (incorporated server-history watermark W) and `clientAcks` (identity acks).
+- **Client** (new `src/hooks/notes/**`; the old `useCollaborativeNotes.ts` is intentionally untouched): a pending-operation ledger keyed by `clientOpId`; `clientSequence` is the incorporated server-history watermark (not a counter); sibling-op diffs from one base with serialized flushes; monotonic snapshot ingest (stale/loading never drop edits); stable `useSyncExternalStore` snapshots; **identity-only ack retirement** (never text matching); evidence-gated resend with the same `clientOpId` (server idempotence); synchronous buffer→ledger commit on teardown + `sessionStorage` recovery.
+- **UI** (`src/components/meeting-notes/MeetingNotesPanel`, props `{ meetingId }`): honest loading / synced / saving / unconfirmed / conflict / offline / updating states, polite live region, keyboard-first, reduced-motion-aware (`animate` from `motion`), self-contained for the S3 call-UX task to mount.
+- **Tests**: mounted React matrix (testing-library) over a fault-injecting transport in front of a **convex-test** backend — 12 named cases incl. two clients, two reconnect cycles, unmount-in-debounce; fast-check property suite (10,000 cases, recorded seed) with convergence + conservation invariants; convex-test server suite; jest-axe on every panel state.
+
+### Milestones
+
+- [x] M0 — design contract, baseline receipt, pinned hook types (`3162e18`, `c33518f`, `76d296d`)
+- [x] M1 — server identity/watermark fields + convex-test suite (merged at `0152a44`)
+- [x] M2 — ledger + hook + outcome matrix (failing-before receipts for every #24 defect; merged at `04f9454`)
+- [x] M3 — panel + axe + keyboard + reduced-motion (mounted matrix landed; real-browser screenshots deferred to the M2/M3 join)
+- [~] M4 — property suite + review fixes checkpointed at `7293ceb` (25-run bar green, type-check at baseline); open: 10k seeded run, default-provider/remount mounted proof, committed 1440/390 screenshots, final Proof/Handoff polish
+
+### Baseline @ `ddc94d4` (`docs/notes-ledger-f1/baseline.md`)
+
+- `pnpm type-check`: **32 errors, exit 2** — all pre-existing (3 in the old `useCollaborativeNotes.ts`, intentionally untouched). Bar: ≤32 total, zero new codes, none in new files.
+- `pnpm test:run`: **1 failed | 239 passed (240), 1 unhandled convex-test error, exit 1** — all pre-existing (perf test `ArrayBuffer operations are efficient`; unhandled `Write outside of transaction 10008;_scheduled_functions`).
+- CI triggers verified: `ci.yml` → push `[main, develop]` / PR `[main]`; `type-validation.yml` → push/PR `[main, develop]`. **No workflow fires for `obv/*` pushes or PRs into `alpha`.** Full local verification runs before every push regardless.
+
+### Boundaries respected
+
+`convex/auth.config.ts`, `tools/call-eval/`, `convex/meetings/**`, `src/app/app/call/**` untouched; no #16/#22/#24/#25 content; Andrew's landing/dashboard pages (PRs #9/#13) untouched — an entry-point suggestion for his pages is recorded in the Handoff, not applied. Draft PR; never merges; no force-push; author Sam Gu on every commit.
+
+---
+
+## Proof
+
+Reproduction environment: fresh clone of `SamGu-NRX/Connvo`, branch `obv/connvo-notes-ledger-f1`, `export PATH=/home/user/.npm-global/bin:$PATH` (node v20, pnpm 9).
+
+| When | HEAD | Check | Command | Result |
+|---|---|---|---|---|
+| @ `ddc94d4` (baseline) | — | types | `pnpm type-check` | exit 2, 32 errors, all pre-existing |
+| @ `ddc94d4` (baseline) | — | tests | `pnpm test:run` | exit 1: 1 failed / 239 passed, 1 unhandled error — all pre-existing |
+| @ `3162e18`+`c33518f`+`76d296d` | `76d296d` | types after contract files | `pnpm type-check 2>&1 \| grep -cE "error TS"` | `32` — no new errors; `grep src/hooks/notes/` → none |
+| @ `76d296d` | `76d296d` | authorship | `git log --format='%h %an <%ae>' -3` | all three commits `Sam Gu <127461594+SamGu-NRX@users.noreply.github.com>`; each ends with the `Co-authored-by: obvious-autobuild[bot]` trailer |
+
+Milestone receipts (M1–M4) are appended here as they land, each with failing-before evidence where applicable (M2's matrix over every #24 defect; M4's fast-check run with the recorded seed).
+
+### M2 @ `211e4f4` (merged into this branch at `04f9454`)
+
+- Delivery note: the original M2 worker was lost twice — once to a shared-sandbox session reset (local-only `5dc0d39` destroyed) and then terminally after 5 rebirth attempts (~17:54 UTC). Its surviving working tree was preserved as checkpoint `7e810db` on `obv/connvo-notes-f1-m2-ledger` and a relaunched task completed the milestone from it (milestone 1 `a96688d`, milestone 2 `211e4f4`). No rebase/amend/force anywhere; every commit `Sam Gu` + `Co-authored-by: obvious-autobuild[bot]`.
+- Scope verified pre-merge: 15 files, all under `src/hooks/notes/**`, `test/notes/**`, or an additive `vitest.config.ts` `notes` project (jsdom). None of the forbidden paths touched; `src/components/**` untouched (the M3 join is a separate lead-owned step).
+- `pnpm type-check` on merged tree → **32** (exact baseline, zero errors in notes files).
+- `pnpm exec vitest run --project notes` on merged tree → **48/48 passed, 5 files**: mounted fault matrix 12/12 on the real ledger, failing-before receipts 7/7 (one per audited #24 defect class D1–D7), notesLedger unit 19/19, notesDiff 9/9, convex-test smoke 1/1 (ran against convex-test — not deferred).
+- Replica control: a defect-replica ledger built only from the #24 audit descriptions fails 11/12 of the same matrix (stable across 3 runs), demonstrating the matrix discriminates. Case 5's replica pass is explained (text-matching retirement coincidentally matches a batch the server applied) and covered by a dedicated D6 receipt.
+- Full `pnpm test:run` on merged tree → **331/331 passed, 25 files, exit 0**; both documented pre-existing intermittents passed this run.
+- Three real ledger bugs the matrix caught and fixed (worth reviewer attention): adoption gate cleared at set (a push can precede the adopting response, which silently blocked the next flush after reconnect cycles); retryConflicts now hands buffered words to re-created records; no-op edits no longer latch `bufferHoldsUnsentWords`.
+
+### M1 @ `6a5238b` (merged into this branch at `0152a44`)
+
+- Scope verified: exactly 5 in-scope files (`convex/notes/mutations.ts`, `convex/notes/queries.ts`, `convex/schema/meetings.ts`, `convex/notes/README.md`, `test/convex/notes-watermark.test.ts`); none of the forbidden paths touched. Author `Sam Gu`, `Co-authored-by` trailer present, verified pre-merge.
+- Contract spot-check (owner, pre-merge): identity triple persisted in-transaction (persist-before-ack); dedupe check-then-insert on `(meetingId, clientId, clientOpId)` returning `deduped: true` with the stored row (Convex serializes mutations, so no check race); per-op echo (`clientSequence` always, `clientOpId`/`deduped` only when sent); `failedOps` entries `{index, clientOpId?, clientSequence?, reason?}`; `getMeetingNotes(clientId?)` → `headSequence` + ≤100 ascending `clientAcks`, legacy shape untouched without it; `getMeetingNotesInternal` untouched.
+- `pnpm type-check 2>&1 | grep -c "error TS"` on merged tree → `32` (bar holds).
+- `pnpm vitest run test/convex/notes-watermark.test.ts` → exit 0, **11/11 passed** (also 11/11 in the worker's clone pre-merge).
+- Full `pnpm test:run` on merged tree: two pre-existing intermittent failures, both documented: `convex/transcripts/ingestion.test.ts` "time-bucketed sharding" (wall-clock flake, fails when `Date.now() mod 300000 ≥ 240000`, ~20% of runs; passed twice in isolation immediately after — 9/9 both runs) and the baseline `ArrayBuffer operations are efficient` perf test. Worker verified both test files byte-identical between base `76d296d` and M1 HEAD; no new failures.
+
+### M3 @ `e8f5b74` (merged into this branch at `622cbb8`)
+
+- Scope verified: 15 files, all inside bounds (`src/components/meeting-notes/**`, `src/app/dev/notes-preview/page.tsx`, `test/in-call/**`, additive `vitest.config.ts` project, `package.json`/`pnpm-lock.yaml` dev deps — jsdom pinned to 26 because 30's undici crashes Node 20). No forbidden paths; `src/hooks/notes/**` untouched. Author/trailer verified pre-merge.
+- Contract spot-check (owner, pre-merge): panel maps all seven states with a polite `role=status` live region, never claims "Saved" unless synced, keeps unsaved words visible with per-record state words; jest-axe over all seven states; keyboard walkthrough (tab to editor, native Enter newline, Tab to retry, no trap, focus-visible); reduced-motion honored (motion markers only under default motion); default transport fails loudly until the M2 join (one-line TODO swap) instead of pretending to save; demo backend implements the pinned transport seam with offline/drop-ack/slow-network/conflict toggles.
+- Bar on merged tree: `pnpm type-check` → `32` (holds); `pnpm vitest run test/in-call` → exit 0, **32/32 passed**; M1 suite still 11/11; full `pnpm test:run` clean in this run (282 passed, 0 failed) with the two documented pre-existing tests remaining intermittent.
+- Known M3 debts for the M2/M3 join (documented in code): the M0 placeholder's zero-arg `useNotesLedger` is signature-aligned via a typed cast (collapses at the join); a11y tests mock `@/hooks/notes` — swap in the real hook; jest-axe page-has-heading-one disabled (page shells own the h1); **real-browser responsive/color-contrast/focus-visibility checks at 1440×900 and 390×844 deferred to the join**.
+
+### M4 checkpoint @ `7293ceb` (property suite + independent-review fixes)
+
+- Scope: `test/in-call/property/notesLedger.property.test.ts` (new, fast-check 3.22.0), `src/hooks/notes/notesLedger.ts`, `src/hooks/notes/notesTransport.tsx`, `src/hooks/notes/types.ts`, `src/components/meeting-notes/MeetingNotesPanel.tsx`, `convex/notes/operations.ts`, `convex/notes/mutations.ts`, `src/proxy.ts`, `test/notes/mountedMatrix.test.tsx`, `test/notes/notesLedger.test.ts`, `test/notes/replica/defectReplicaLedger.tsx`, `test/in-call/meetingNotesPanel.a11y.test.tsx`, `package.json`/`pnpm-lock.yaml`. No forbidden paths; author `Sam Gu` + `Co-authored-by: obvious-autobuild[bot]` verified pre-push.
+- Property proof (25-run bar): P1 single-client and P2 two-client random-edits-x-faults scenarios → exact server convergence + ≤2 identical sends; recorded mounted counterexample replay (seed 20261011); 200 mounted runs through the real hook.
+- Fixes from the independent review, each with a failing-before receipt where applicable:
+  1. **Lost remote words mid-debounce**: buffered words now keep their original basis (`bufferBasis`); the flush diffs the local edit from that basis and transforms it against the drift — `mountedMatrix` case 13 fails on the pre-fix ledger, passes after (server text `base alpha bravo`, both words survive).
+  2. **Stuck batch after a lost response**: identity-ack retirement releases `batchInFlight`; a late response never downgrades a saved record — case 5's follow-up-edit extension fails before, passes after.
+  3. **Mixed-frame OT transform**: `transformOperationSequence` now carries the against-ops through each local op's effect (the diamond); `transformAgainst` delete-vs-delete maps an overlapping delete's survivor to the deletion boundary (`opB.position`), not `bEnd` (an original-frame coordinate). Found by property counterexample seed 20261011 path 23 ("Invalid delete range: 40..43"), which failed under the naive transform and passes after both fixes.
+  4. **Duplicate-only batch**: a fully-deduped batch no longer patches the document, bumps its version or writes an audit log — version advances only when new ops actually apply.
+  5. **Middleware**: WorkOS runs on every `/dev` path again; the `/dev/notes-preview` bypass requires `NEXT_PUBLIC_CONNVO_CALL_BENCH=1` and a non-production environment.
+  6. **Type-check reconciled to 32** (the baseline): the 33rd error was the defect replica missing the new `bufferedContent` field — fixed in the replica.
+- Verification on this tree: notes project **49/49** (matrix 13/13, failing-before replica 7/7, store core, diff, smoke), in-call **36/36** incl. the a11y suite, property **4/4 at 25 runs**, full suite **335/336** (the one failure is the documented pre-existing intermittent time-bucketed sharding test), `pnpm type-check` **32 errors = baseline**, none in touched files.
+- Continuation note: this checkpoint is a fast-forward commit on `obv/connvo-notes-ledger-f1` (parent `4bd4261`); `obv/connvo-notes-f1-m4-property` carries the same tree. A continuation that starts from `4bd4261` should take `7293ceb` (or re-run the bar on it) rather than re-deriving the fixes.
+
+---
+
+## Handoff
+
+*(at `7293ceb`)*
+
+**Done**
+
+- Design contract + baseline receipt committed: `docs/notes-ledger-f1/design.md` (registered semantics: op identity, watermark, dedupe, diff base, snapshot ingest, fault matrix, boundaries) and `baseline.md` (recorded baseline outputs).
+- Shared client contract pinned on the branch: `src/hooks/notes/types.ts`, `notesTransport.tsx` (provider + `useNotesTransport`), `index.ts` with a `useNotesLedger` placeholder (throws until M2) — verified to add zero new type errors.
+- Draft PR #31 open, maintained by the lead from the host; sandbox never touches `api.github.com`.
+- **M1 merged at `0152a44`**: additive `clientId`/`clientOpId`/`clientSequence` on `noteOps` + `by_meeting_client`/`by_meeting_client_op` indexes; idempotent dedupe with original-sequence return; per-op echo + `failedOps`; `getMeetingNotes` watermark/acks; protocol documented in `convex/notes/README.md` (deviations recorded there: identity triple persisted only when `clientOpId` present; `clientSequence` always echoed; `failedOps` absent when empty).
+- **M3 merged at `622cbb8`**: MeetingNotesPanel (seven-state honest status, unsaved-word visibility, retry only for conflict/rejected), FadeRise reduced-motion animation, `notesStatus` helpers, in-memory demo backend with fault toggles, `/dev/notes-preview` demo route, additive `in-call` vitest project with 32 mounted a11y/behavior tests.
+- **M2/M3 join landed at `57b95ce`** (lead-owned): removed the panel's temporary signature-alignment cast; wired the real `useNotesLedger` to `NotesConvexTransportProvider` (replacing the placeholder default transport); added `src/hooks/notes/stableClientId.ts` (`stableNotesClientId`/`useStableNotesClientId` — UUID stable per tab per meeting via sessionStorage, shared by hook and transport); dev-only `/dev/notes-preview` (notFound outside development) with the `dev` path exclusion in `src/proxy.ts`'s middleware matcher so the local demo avoids the blocked WorkOS handshake. Verified on the joined tree: `pnpm type-check` = 32 errors (documented baseline, none in notes files); in-call suite 32/32. `pnpm lint` is **not runnable** in this repo state (the script invokes `next lint`, which this installed Next CLI misparses as a project directory) — pre-existing, not caused by the join; type-check + suites remain the enforced gates.
+
+**Real-browser evidence (2026-10-11, joined tree, `/dev/notes-preview` with `NEXT_PUBLIC_CONVEX_URL=https://demo-placeholder.convex.cloud` — the layout's Convex client validates the env at init and the demo route never subscribes; captures in `/home/user/work/evidence/`, to be attached to PR #31 by the lead):**
+
+| Capture | Shows |
+|---|---|
+| `tc-1-desktop-synced.png` | 1440×900: panel with Synced badge, seed content, word/char metrics, fault controls |
+| `tc-2-after-synced.png` | Typed text appended via real keyboard events, flush settled, Synced |
+| `tc-3-words-survive-reload.png` | After a **full page reload**: typed words restored (sessionStorage recovery), Synced |
+| `tc-4-offline-queued-words.png` | Offline toggle on: Offline badge, editor enabled, queued words visible |
+| `tc-5-mobile-390.png` | 390×844: single-column layout, no overflow, offline state + Unsaved changes list |
+| `tc-6-focus-editor.png` | Keyboard Tab walk: visible focus ring on "Retry unsaved changes" (conflict state rendered) |
+| `tc-7-conflict-rejected.png` | Conflict badge, Rejected chip with quoted words, attempt counter, retry affordance |
+| `tc-8-retry-synced.png` | Retry **after the demo's Reset**: stays conflicted (demo-reset divergence, see known issues) |
+| `tc-9a-offline-queued.png` / `tc-9b-reconnect-synced.png` | Offline queue → fault cleared: Pending stays visible; resend is flush/retry-driven per the M2 contract, not automatic on reconnect |
+
+**Known issues (recorded, none block the join):**
+
+- **Intermittent dev-only hydration warning** ("Recoverable Error: Hydration failed", dev overlay) observed 2 of ~7 loads **with stored recovery content present**, never on clean loads; 5× stress loop clean; component stack points inside `<MeetingNotesPanel>`. Suspect: recovery content available synchronously to the first client render while the server render has none. Suggested fix for M4 or a follow-up: apply sessionStorage recovery strictly after hydration (in `start()`), keeping the matrix's remount-recovery semantics.
+- **Demo Reset divergence:** the demo page's Reset rewinds the backend document; the real ledger correctly refuses to resync against rewound server state (retry stays conflicted, `tc-8`/`tc-10`). A real Convex backend never rewinds; the coherent-backend retry→synced path is covered deterministically by the suite.
+- The dev overlay also counts the failed Convex WebSocket connection to the placeholder URL (demo-env artifact of the placeholder env above).
+
+**In flight**
+
+- **M1+M2+M3 landed and joined** (`0152a44`, `04f9454`, `622cbb8`, join `57b95ce`, a11y swap `986fdfb` — receipts above/below). **M4 checkpointed at `7293ceb`** on this branch: the property suite (P1/P2, replay, 200 mounted runs at 25 runs) plus all six independent-review fixes, verified (numbers in the M4 receipt above). Continuation is owned by task `connvo-notes-ledger-r2` on branch `obv/connvo-notes-ledger-r2` (that branch starts from `4bd4261` — take `7293ceb` from here first).
+- **Incident record (2026-10-11):** a shared-sandbox session reset destroyed M2's local-only milestone commit (`5dc0d39`), and its replacement worker died terminally after 5 rebirth attempts. Recovery preserved the surviving tree as checkpoint `7e810db` and the relaunched task completed the milestone from it. Lesson for every milestone on this project: a local-only passing commit is not a checkpoint — push after the per-milestone attribution/scope checks pass.
+
+**Left**
+
+- **M4 remainder** (on `obv/connvo-notes-ledger-r2`, taking `7293ceb` first): 10,000-case seeded property run at the recorded seed; a mounted proof that the default `NotesConvexTransportProvider` path recovers across a real remount; committed 1440×900 / 390×844 screenshots as PR evidence; final Proof/Handoff polish for the PR body copy. Merge remaining milestones with `git merge --no-ff` (no rebase/force-push), re-run the full verification bar, update this doc in the same push.
+- ~~A11y real-hook swap~~ **Landed**: worker branch `obv/connvo-notes-f1-a11y-real` at `c351459` (base exactly `57b95ce`, scope strictly `test/in-call/**`, Sam Gu author + trailer verified by the lead), merged `--no-ff` at `986fdfb` after independent re-verification on the merged tree: in-call 32/32, type-check = exactly 32 errors, full `test:run` 331/331 exit 0. Worker root-cause worth keeping: convex-test environment ids repeat per environment while `useStableNotesClientId` is session-scoped, so recovery keys collided across tests — the new helper `test/in-call/helpers/realLedgerPanel.tsx` clears sessionStorage per mount and adds `ReadGateTransport` to observe pre-first-read loading.
+- ~~M2/M3 join~~ **Done at `57b95ce`** (was: un-mock a11y signature cast, wire Convex transport, stable client identity, dev-route middleware exclusion, deferred browser checks — all landed; browser checks below).
+
+**How to continue**
+
+1. `git clone https://github.com/SamGu-NRX/Connvo.git && git fetch origin obv/connvo-notes-ledger-f1 && git checkout obv/connvo-notes-ledger-f1` — the server protocol is live at this SHA (`convex/notes/mutations.ts` / `queries.ts` / `schema/meetings.ts`); read `convex/notes/README.md` for the wire behavior.
+2. Read `docs/notes-ledger-f1/design.md` (the contract; §3 for the ledger/hook) and `docs/notes-ledger-f1/baseline.md` (the bar: type-check ≤32 total / none in new files; `pnpm test:run` keeps at most the two documented pre-existing intermittent failures — the ingestion wall-clock flake and the `ArrayBuffer` perf test — both passing in isolation, plus the pre-existing `_scheduled_functions` unhandled rejection; nothing new).
+3. Engineering skills to read (branch `chore/agent-skills-20261011`, never merge): `pstack-principle-*`, `better-accessibility/**`, `anti-ui-slop`, `anti-lazy-architecture`.
+4. Commit as `Sam Gu <127461594+SamGu-NRX@users.noreply.github.com>` with the `Co-authored-by: obvious-autobuild[bot] <262744130+obvious-autobuild[bot]@users.noreply.github.com>` trailer; push only after the verification bar passes; update this file's SHA line, Proof table and Milestones in the same commit. Never edit the PR from the sandbox — hand the body copy to the lead.
+
+**Notes for reviewers / other owners**
+
+- The panel is self-contained (props `{ meetingId }`) so the later S3 call-UX task can mount it on call pages and retire the old `useCollaborativeNotes` hook. For Andrew's landing/dashboard pages (PRs #9/#13, untouched here): the same panel can be dropped into any meeting summary surface with a one-line import once S3 wires production transport — suggestion only, not applied.
+- If a continuation starts from this PR: the operator must verify the original writer is not actively editing, recover branch/PR/checkpoint progress, and record the handoff before launching a replacement. No competing writer, no rebase/amend/force-push.

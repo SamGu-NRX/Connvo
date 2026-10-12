@@ -51,10 +51,49 @@ export default defineConfig({
         },
         resolve: commonResolve,
       },
+      // M3 (connvo-notes-ledger-f1): mounted panel tests under test/in-call.
+      // Additive only — jsdom + testing-library + jest-axe; the convex and
+      // frontend projects above are untouched.
+      {
+        test: {
+          name: "in-call",
+          include: ["test/in-call/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./test/in-call/setup.ts"],
+          // Project-level config replaces the root test block in Vitest 4, so
+          // the 10k-run property proofs need their own generous timeout.
+          testTimeout: 900000,
+          hookTimeout: 30000,
+        },
+        resolve: commonResolve,
+      },
+      // M2 (connvo-notes-ledger-f1): notes ledger suite under test/notes —
+      // ledger/diff units, the convex-test smoke, and the mounted fault
+      // matrix. Additive only — jsdom + testing-library, convex-test inlined
+      // like the convex project (the harness runs the real notes API).
+      {
+        test: {
+          name: "notes",
+          include: ["test/notes/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./test/notes/setup.ts"],
+          pool: "threads",
+          maxWorkers: 1,
+          server: {
+            deps: {
+              inline: ["convex-test"],
+            },
+          },
+        },
+        resolve: commonResolve,
+      },
       {
         test: {
           name: "eval",
-          include: ["tools/call-eval/**/*.test.ts", "tools/call-eval/**/*.test.mjs"],
+          include: [
+            "tools/call-eval/**/*.test.ts",
+            "tools/call-eval/**/*.test.mjs",
+          ],
           environment: "node",
         },
         resolve: commonResolve,

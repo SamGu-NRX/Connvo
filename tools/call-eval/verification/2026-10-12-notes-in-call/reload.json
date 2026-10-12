@@ -1,0 +1,31 @@
+{
+  "scenario": "reload",
+  "meetingId": "m9766bv2zdftehmyghgrwa6gf58g405v",
+  "startedAt": "2026-10-12T18:32:45.928Z",
+  "pass": true,
+  "phrases": [
+    "Before reload from A. ",
+    "Meanwhile from B. "
+  ],
+  "steps": [
+    "A types, reloads before the debounce fires; B types meanwhile; A rejoins"
+  ],
+  "converged": true,
+  "texts": [
+    "Before reload from A. Meanwhile from B. ",
+    "Before reload from A. Meanwhile from B. "
+  ],
+  "statuses": [
+    "Synced",
+    "Synced"
+  ],
+  "stored": {
+    "content": "Before reload from A. Meanwhile from B. ",
+    "version": 2
+  },
+  "phraseCounts": {
+    "Before reload from A. ": 1,
+    "Meanwhile from B. ": 1
+  },
+  "convergeMs": 1979
+}

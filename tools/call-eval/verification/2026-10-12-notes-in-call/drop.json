@@ -1,0 +1,37 @@
+{
+  "scenario": "drop",
+  "meetingId": "m97dsn2697awby4zp0ywhyyj2d8g4j78",
+  "startedAt": "2026-10-12T18:32:50.412Z",
+  "pass": true,
+  "phrases": [
+    "Typed by A while offline. ",
+    "Typed by B while A was away. "
+  ],
+  "steps": [
+    "A offline (browser offline + Convex socket cut); both type; A back after 10 s"
+  ],
+  "offlineMs": 10001,
+  "whileOffline": {
+    "aText": "Typed by A while offline. ",
+    "aStatus": "Saving",
+    "stored": "Typed by B while A was away. "
+  },
+  "converged": true,
+  "texts": [
+    "Typed by A while offline. Typed by B while A was away. ",
+    "Typed by A while offline. Typed by B while A was away. "
+  ],
+  "statuses": [
+    "Synced",
+    "Synced"
+  ],
+  "stored": {
+    "content": "Typed by A while offline. Typed by B while A was away. ",
+    "version": 2
+  },
+  "phraseCounts": {
+    "Typed by A while offline. ": 1,
+    "Typed by B while A was away. ": 1
+  },
+  "convergeMs": 1102
+}

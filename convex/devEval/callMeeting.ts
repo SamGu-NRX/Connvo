@@ -100,3 +100,17 @@ export const sessionEvents = internalQuery({
     return out.sort((a, b) => a.at - b.at);
   },
 });
+
+/** The stored shared-notes text for a meeting (the notes proof's server truth). */
+export const notes = internalQuery({
+  args: { meetingId: v.id("meetings") },
+  returns: v.object({ content: v.string(), version: v.number() }),
+  handler: async (ctx, { meetingId }) => {
+    requireEvalBackend("notes");
+    const row = await ctx.db
+      .query("meetingNotes")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .unique();
+    return { content: row?.content ?? "", version: row?.version ?? 0 };
+  },
+});

@@ -12,14 +12,60 @@ import { NoteV } from "@convex/types/validators/note";
 import type { MeetingNote } from "@convex/types/entities/note";
 
 /**
+ * Ack payload for one operation the server applied on behalf of a client
+ * (notes-ledger F1). Lets a client retire its own records by identity after a
+ * lost response instead of guessing from text or version numbers.
+ */
+interface ClientOperationAck {
+  clientOpId: string;
+  clientSequence: number;
+  serverSequence: number;
+  appliedAt: number;
+}
+
+/**
+ * getMeetingNotes return type: the legacy materialized row, plus the
+ * watermark fields when the caller passes `clientId`. Optional so legacy
+ * consumers are unaffected.
+ */
+type MeetingNotesWithWatermark = MeetingNote & {
+  headSequence?: number;
+  clientAcks?: ClientOperationAck[];
+};
+
+// Extended return validator: legacy meetingNote fields + additive optional
+// watermark fields. Built by spreading NoteV.meetingNote.fields so the legacy
+// shape cannot drift from its single source of truth.
+const meetingNotesResultV = v.object({
+  ...NoteV.meetingNote.fields,
+  headSequence: v.optional(v.number()),
+  clientAcks: v.optional(
+    v.array(
+      v.object({
+        clientOpId: v.string(),
+        clientSequence: v.number(),
+        serverSequence: v.number(),
+        appliedAt: v.number(),
+      }),
+    ),
+  ),
+});
+
+/**
  * Gets meeting notes (public, with auth)
  */
 export const getMeetingNotes = query({
   args: {
     meetingId: v.id("meetings"),
+    // Additive (notes-ledger F1). When provided, the response gains the
+    // headSequence watermark and this client's acks; legacy shape otherwise.
+    clientId: v.optional(v.string()),
   },
-  returns: v.union(NoteV.meetingNote, v.null()),
-  handler: async (ctx, { meetingId }): Promise<MeetingNote | null> => {
+  returns: v.union(meetingNotesResultV, v.null()),
+  handler: async (
+    ctx,
+    { meetingId, clientId },
+  ): Promise<MeetingNotesWithWatermark | null> => {
     // Verify user has access to this meeting
     await assertMeetingAccess(ctx, meetingId);
 
@@ -28,7 +74,51 @@ export const getMeetingNotes = query({
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
 
-    return note;
+    // Legacy shape: exactly the stored row, nothing added.
+    if (!note || clientId === undefined) {
+      return note;
+    }
+
+    // headSequence: the incorporated-history watermark W — the max noteOps
+    // sequence for the meeting (0 when none exist yet).
+    const lastOp = await ctx.db
+      .query("noteOps")
+      .withIndex("by_meeting_sequence", (q) => q.eq("meetingId", meetingId))
+      .order("desc")
+      .first();
+    const headSequence = lastOp?.sequence ?? 0;
+
+    // The ≤100 most recent applied ops carrying THIS client's identity,
+    // ascending by serverSequence. Rows without clientId are not in the
+    // by_meeting_client index; the JS-side filter guards the (clientOpId,
+    // clientSequence) pair for any hypothetical partial-identity row.
+    const clientRows = await ctx.db
+      .query("noteOps")
+      .withIndex("by_meeting_client", (q) =>
+        q.eq("meetingId", meetingId).eq("clientId", clientId),
+      )
+      .order("desc")
+      .filter((q) => q.eq(q.field("applied"), true))
+      .take(100);
+
+    const clientAcks: ClientOperationAck[] = clientRows
+      .filter(
+        (
+          row,
+        ): row is typeof row & {
+          clientOpId: string;
+          clientSequence: number;
+        } => row.clientOpId !== undefined && row.clientSequence !== undefined,
+      )
+      .map((row) => ({
+        clientOpId: row.clientOpId,
+        clientSequence: row.clientSequence,
+        serverSequence: row.sequence,
+        appliedAt: row.timestamp,
+      }))
+      .reverse();
+
+    return { ...note, headSequence, clientAcks };
   },
 });
 
