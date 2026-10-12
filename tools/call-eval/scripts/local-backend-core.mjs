@@ -6,7 +6,7 @@
 // invariant that fails on the pre-fix behavior (recon dossier section 2,
 // defects i–iii at parent bbc62fae, fixed at f06669f).
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 /** @typedef {{ source: "environment" | ".env.local" | "unset", value: string | null }} SelectedDeployment */
@@ -45,6 +45,63 @@ export const HARNESS_EXTERNAL = ["@stream-io/video-react-sdk", "openai"];
 export function isHarnessModulePath(modulePath) {
   if (!modulePath || !modulePath.includes("/")) return Boolean(modulePath);
   return HARNESS_INCLUDE_DIRS.includes(modulePath.split("/")[0]);
+}
+
+/**
+ * Test/development artifacts must never reach the pushed module tree. The
+ * CLI does not honor .convexignore when bundling an overridden functions
+ * dir (verified 2026-10-12: convex-harness/.convexignore sat in the tree
+ * while types/__tests__/ciValidation.ts was still bundled, pushed, and
+ * EXECUTED by the backend's module loader — it spawns npm/tsc/npx-codegen
+ * subprocesses inside the backend and calls process.exit(1); that produced
+ * 400 InvalidModules "Uncaught process.exit() called with exit code 1" and,
+ * when the inner subprocesses were slower, the 300 s 408 loop). Exclusion
+ * therefore happens at materialization time.
+ * @param {string} relPath path relative to the harness root (POSIX slashes)
+ * @returns {boolean}
+ */
+export function isTestArtifactPath(relPath) {
+  if (!relPath) return false;
+  const p = relPath.split(path.sep).join("/");
+  const base = p.split("/").pop() ?? p;
+  if (/(^|\/)__tests__(\/|$)/.test(p) || /(^|\/)test(\/|$)/.test(p)) return true;
+  if (/\.test\.[tj]sx?$/.test(base) || /\.spec\.[tj]sx?$/.test(base)) return true;
+  if (/^vitest\.config\.[tj]sx?$/.test(base) || /^vitest\.workspace\.[tj]sx?$/.test(base)) return true;
+  return false;
+}
+
+/**
+ * Remove every test artifact from a materialized tree. Idempotent: a second
+ * run removes nothing. Returns the removed paths (directories appear as
+ * plain paths, files likewise) for logging and tests.
+ * @param {string} root harness tree root
+ * @returns {string[]}
+ */
+export function pruneTestArtifacts(root) {
+  /** @type {string[]} */
+  const removed = [];
+  /** @param {string} dir @param {string} rel */
+  const walk = (dir, rel) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, entry.name);
+      const relPath = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        if (isTestArtifactPath(`${relPath}/x`)) {
+          rmSync(abs, { recursive: true, force: true });
+          removed.push(relPath);
+          continue;
+        }
+        walk(abs, relPath);
+        continue;
+      }
+      if (isTestArtifactPath(relPath)) {
+        rmSync(abs, { force: true });
+        removed.push(relPath);
+      }
+    }
+  };
+  walk(root, "");
+  return removed;
 }
 
 /**
