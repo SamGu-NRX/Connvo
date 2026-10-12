@@ -20,6 +20,7 @@ const FIXTURES = {
   A: { video: "peer-A.y4m", audio: "peer-A.wav" },
   B: { video: "peer-B.y4m", audio: "peer-B.wav" },
   C: { video: "peer-C.y4m", audio: "peer-C.wav" },
+  D: { video: "peer-D.y4m", audio: "peer-D.wav" },
 };
 // The TURN relay binds a free port unless pinned; shapers forward to it. The
 // shaper ports stay fixed per participant (env override keeps concurrent runs
@@ -204,7 +205,7 @@ export class RunContext {
     let shaper = this.shapers.get(participant);
     if (!shaper) {
       shaper = createShaper({ seed: this.seed });
-      const idx = ["A", "B", "C", "O"].indexOf(participant);
+      const idx = ["A", "B", "C", "O", "D"].indexOf(participant);
       const port = SHAPER_BASE_PORT + (idx >= 0 ? idx : this.shapers.size + 4);
       // Fire-and-bind; scenario code awaits .ready before applying profiles.
       // TURN starts here on first use, not at run start.

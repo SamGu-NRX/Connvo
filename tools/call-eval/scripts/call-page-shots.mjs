@@ -30,7 +30,7 @@ const VIEWPORTS = [
   { width: 390, height: 844 },
 ];
 const fixture = (id) => {
-  const f = id === "A" || id === "B" ? id : "C";
+  const f = id; // A, B, C and D each have their own colour and tone
   return { video: path.join(EVAL_DIR, "fixtures", `peer-${f}.y4m`), audio: path.join(EVAL_DIR, "fixtures", `peer-${f}.wav`) };
 };
 

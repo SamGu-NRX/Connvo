@@ -146,10 +146,10 @@ const focusIndicator = `() => {
   const ring = (cs.boxShadow ?? "none") !== "none";
   return { visible: outline || ring, outline, ring, focusVisible: el.matches(":focus-visible") };
 }`;
-// A toggle's state as announced: its accessible label when it has one (the
-// real page's icon buttons), else its visible text (the bench).
+// A toggle's announced state. The real page's icon buttons carry it in
+// aria-pressed and aria-label; the bench's text buttons in their text.
 const buttonText = (/** @type {string} */ id) =>
-  `() => { const el = document.querySelector('[data-testid="${id}"]'); return el ? el.getAttribute('aria-label') || el.textContent.trim() : null; }`;
+  `() => { const el = document.querySelector('[data-testid="${id}"]'); if (!el) return null; const pressed = el.getAttribute('aria-pressed'); const label = el.getAttribute('aria-label'); return pressed !== null || label !== null ? (pressed ?? '') + '|' + (label ?? '') : el.textContent.trim(); }`;
 const localVideoTrackId = `() => document.querySelector('[data-testid="local-video"]')?.srcObject?.getVideoTracks()[0]?.id ?? null`;
 
 /**
@@ -183,8 +183,16 @@ export async function scenario_P_03(ctx) {
       results.push({ id, key, indicator, observed });
     };
     const textBefore = (/** @type {string} */ id) => peer.page.evaluate(`(${buttonText(id)})()`);
+    // A toggle must flip what it announces. Where it has aria-pressed and an
+    // aria-label (the real page), BOTH must change; the bench's text changes.
+    const changed = (/** @type {string} */ before, /** @type {string} */ now) => {
+      if (!before.includes("|")) return now !== before;
+      const [p0, l0] = before.split("|");
+      const [p1, l1] = now.split("|");
+      return p0 !== p1 && l0 !== l1;
+    };
     const textChanges = (/** @type {string} */ id, /** @type {string} */ before) =>
-      waitForValue(peer, buttonText(id), (/** @type {string} */ t) => t !== before, { timeoutMs: 3000, describe: `${id} label changes` });
+      waitForValue(peer, buttonText(id), (/** @type {string} */ t) => !!t && changed(before, t), { timeoutMs: 3000, describe: `${id} label changes` });
 
     for (const id of ["toggle-mic", "toggle-camera"]) {
       const before = await textBefore(id);

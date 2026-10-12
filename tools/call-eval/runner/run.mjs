@@ -53,14 +53,14 @@ function percentile(values, p) {
 }
 
 async function ensureFixtures(ctx, log) {
-  const missing = ["A", "B", "C"].filter((p) => !ctx.fixturesExist(p));
+  const missing = ["A", "B", "C", "D"].filter((p) => !ctx.fixturesExist(p));
   if (!missing.length) return;
   const script = path.resolve(RUNNER_DIR, "..", "scripts", "generate-fixtures.mjs");
   if (fs.existsSync(script)) {
     log(`fixtures missing for ${missing.join(", ")} — regenerating via generate-fixtures.mjs`);
     execSync(`node ${JSON.stringify(script)}`, { stdio: "inherit" });
   }
-  const still = ["A", "B", "C"].filter((p) => !ctx.fixturesExist(p));
+  const still = ["A", "B", "C", "D"].filter((p) => !ctx.fixturesExist(p));
   if (still.length) {
     throw new Error(
       `fixtures missing (${still.join(", ")}) and no generator script at ${script} — run the fixtures branch generator first (pnpm call-eval:fixtures)`,

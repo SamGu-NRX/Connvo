@@ -61,8 +61,8 @@ export function loadContracts() {
     P_PASS_CONDITIONS,
     H_IDS,
     P_IDS,
-    TONES: { A: 440, B: 660, C: 880 },
-    PEER_COLORS: { A: [205, 35, 35], B: [35, 150, 85], C: [45, 85, 175] },
+    TONES: { A: 440, B: 660, C: 880, D: 1100 },
+    PEER_COLORS: { A: [205, 35, 35], B: [35, 150, 85], C: [45, 85, 175], D: [210, 150, 30] },
     SECOND_CAMERA_COLOR: extractNumberArray(src, "SECOND_CAMERA_COLOR"),
     COLOR_TOLERANCE: Number(src.match(/export const COLOR_TOLERANCE = (\d+)/)?.[1] ?? 16),
   };
