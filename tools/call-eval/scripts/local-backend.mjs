@@ -19,7 +19,7 @@
 
 import { spawnSync } from "node:child_process";
 import { createSign, createPrivateKey, generateKeyPairSync } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -72,6 +72,12 @@ function buildHarnessTree() {
     if (/\.(ts|json)$/.test(f)) {
       cpSync(path.join(REPO, "convex", f), path.join(HARNESS_DIR, f), { dereference: true });
     }
+  }
+  // Carry the ignore list so the push excludes test files (*.test.ts,
+  // __tests__/, ciValidation.ts) — a copied test file with top-level
+  // process.exit() killed the backend's module loader (InvalidModules).
+  if (existsSync(path.join(REPO, "convex", ".convexignore"))) {
+    cpSync(path.join(REPO, "convex", ".convexignore"), path.join(HARNESS_DIR, ".convexignore"), { dereference: true });
   }
   console.log(`[backend] harness tree: ${readdirSync(HARNESS_DIR).length} entries in convex-harness/`);
 }
@@ -192,7 +198,12 @@ buildHarnessTree();
 applyConvexJsonOverride();
 if (!tmuxRunning(CONV_TMUX)) {
   mkdirSync(LOCAL_DIR, { recursive: true });
-  sh(`tmux new-session -d -s ${CONV_TMUX} "bash -c 'cd ${REPO} && npx convex dev --typecheck=disable 2>&1 | tee ${LOCAL_DIR}/convex-dev.log'"`);
+  // TMPDIR must share the backend's filesystem: 1.46 stages external
+  // modules via a cross-device rename that fails with EXDEV when TMPDIR
+  // lands on a different mount than the backend data dir. stdin /dev/null:
+  // 1.46 reads stdin even when attached to tmux and dies with
+  // "Cannot prompt for input in non-interactive terminals" otherwise.
+  sh(`tmux new-session -d -s ${CONV_TMUX} "bash -c 'cd ${REPO} && mkdir -p ${LOCAL_DIR}/tmp && TMPDIR=${LOCAL_DIR}/tmp npx convex dev --typecheck=disable < /dev/null 2>&1 | tee ${LOCAL_DIR}/convex-dev.log'"`);
 } else {
   console.log("[backend] convex dev already running in tmux");
 }
@@ -275,11 +286,34 @@ function assertLocalDeployment() {
 console.log("[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)");
 assertLocalDeployment();
 
-// Re-push so the backend re-evaluates auth.config with the new env, then seed.
-// --typecheck=disable: same as the first push — the default typechecking
-// would re-run tsc on this shared box mid-run.
+// Re-push so the backend re-evaluates auth.config with the new deployment
+// env. `convex dev --once` refuses while the watch session's local backend
+// is already listening on the port ("A local backend is still running on
+// port ..."), so nudge the watch instead: touching the auth config makes
+// it re-push the bundle to the same backend.
 console.log("[backend] 4/6 re-push + seed");
-sh("npx convex dev --once --typecheck=disable", { capture: true });
+const convLog = path.join(LOCAL_DIR, "convex-dev.log");
+const logLenBeforeRePush = existsSync(convLog) ? readFileSync(convLog, "utf8").length : 0;
+utimesSync(path.join(HARNESS_DIR, "auth.config.ts"), new Date(), new Date());
+const rePushDeadline = Date.now() + 540_000; // same budget as stage 2: pushes retry through 408s under co-tenant load
+let rePushed = false;
+while (Date.now() < rePushDeadline) {
+  const fresh = existsSync(convLog) ? readFileSync(convLog, "utf8").slice(logLenBeforeRePush) : "";
+  if (
+    fresh.includes("Convex functions ready") ||
+    fresh.includes("Pushed code to") ||
+    fresh.includes("waiting for changes")
+  ) {
+    rePushed = true;
+    break;
+  }
+  await new Promise((r) => setTimeout(r, 3000));
+}
+if (!rePushed) {
+  console.error("[backend] timed out waiting for the watch session to re-push; log tail:");
+  if (existsSync(convLog)) console.error(readFileSync(convLog, "utf8").slice(-4000));
+  process.exit(1);
+}
 const seedOut = sh("npx convex run devEval/seed", { capture: true }).stdout;
 let seedJson = null;
 try {
