@@ -41,7 +41,7 @@ export default async function CallBenchPage({
 
   const query = await searchParams;
   const participant = (firstParam(query.as) ?? "A").toUpperCase();
-  if (!["A", "B", "C", "O"].includes(participant)) notFound();
+  if (!["A", "B", "C", "D", "O"].includes(participant)) notFound();
 
   const meetingId = firstParam(query.meeting) ?? "bench-meeting";
   const name = firstParam(query.name);

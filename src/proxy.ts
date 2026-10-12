@@ -14,12 +14,26 @@ const BENCH_PREFIX = "/dev/call-bench";
  */
 export function benchPathPassesThrough(
   pathname: string,
-  env: { benchFlag?: string; nodeEnv?: string; vercelEnv?: string },
+  env: {
+    benchFlag?: string;
+    realCallFlag?: string;
+    nodeEnv?: string;
+    vercelEnv?: string;
+    /** Vercel sets VERCEL=1 on every deployment, preview included. */
+    vercel?: string;
+  },
 ): boolean {
   if (env.benchFlag !== "1") return false;
   if (env.nodeEnv === "production") return false;
   if (env.vercelEnv === "production") return false;
-  return pathname === BENCH_PREFIX || pathname.startsWith(`${BENCH_PREFIX}/`);
+  if (pathname === BENCH_PREFIX || pathname.startsWith(`${BENCH_PREFIX}/`)) return true;
+  // The real call page in its local eval setup (bench identity, reference
+  // signaling): only with BOTH flags on, only /app/call/<id>, and never on
+  // any Vercel deployment. alpha gets preview deployments, and a preview is
+  // not "production", so the production checks alone could expose the page
+  // without sign-in if someone set the flags there.
+  if (env.vercel) return false;
+  return env.realCallFlag === "1" && /^\/app\/call\/[^/]+$/.test(pathname);
 }
 
 const handleAuth = authkitMiddleware({
@@ -38,6 +52,8 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (
     benchPathPassesThrough(request.nextUrl.pathname, {
       benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,
+      realCallFlag: process.env.NEXT_PUBLIC_CONNVO_REAL_CALL,
+      vercel: process.env.VERCEL,
       nodeEnv: process.env.NODE_ENV,
       vercelEnv: process.env.VERCEL_ENV,
     })

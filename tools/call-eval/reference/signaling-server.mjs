@@ -108,7 +108,7 @@ if (bench) {
   // One identity scheme end to end: the bench subjects ARE the harness ids
   // A/B — tokens, rooms, event logs and scenario lookups all use them. Any
   // meeting id is accepted; the runner's scenarios own the meeting ids.
-  membership = { meetingId: null, members: ["A", "B"] };
+  membership = { meetingId: null, members: ["A", "B", "C", "D"] };
 } else if (membersPath) {
   try {
     membership = JSON.parse(readFileSync(membersPath, "utf8"));
@@ -165,6 +165,20 @@ const rooms = new Map();
 const sessionEvents = [];
 /** @type {WeakMap<object, string>} */
 const leaveReasonBySocket = new WeakMap();
+/** Last ping per socket; only sockets that ever pinged are swept. */
+/** @type {Map<import('ws').WebSocket, number>} */
+const lastPingBySocket = new Map();
+const HEARTBEAT_SWEEP_MS = 10000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [sock, at] of lastPingBySocket) {
+    if (sock.readyState !== sock.OPEN) lastPingBySocket.delete(sock);
+    else if (now - at > HEARTBEAT_SWEEP_MS) {
+      lastPingBySocket.delete(sock);
+      sock.terminate();
+    }
+  }
+}, 2000).unref();
 /** participant id -> its live socket; the reference killPeerSocket hook uses this. */
 const socketsByParticipant = new Map();
 
@@ -314,6 +328,13 @@ wss.on("connection", (socket) => {
           { type: "remote-state", from: self, micOn: !!msg.micOn, cameraOn: !!msg.cameraOn },
           socket,
         );
+        return;
+      }
+      if (msg.type === "ping") {
+        // Heartbeat (p2p transport). A socket that has pinged and then goes
+        // silent is swept below, so a half-open peer leaves the room.
+        lastPingBySocket.set(socket, Date.now());
+        socket.send(JSON.stringify({ type: "pong" }));
         return;
       }
       if (msg.type === "bye") {

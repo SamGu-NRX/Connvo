@@ -76,6 +76,29 @@ export async function click(peer, testId) {
 }
 
 /**
+ * Leave the call. The bench leaves on one click; the real call page asks
+ * first, so when `leave-call-confirm` appears this confirms it.
+ * @param {{ page: import('@playwright/test').Page }} peer
+ */
+export async function leaveCall(peer) {
+  await peer.page.click('[data-testid="leave-call"]');
+  const outcome = await peer.page
+    .waitForFunction(
+      () =>
+        document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase') === 'left'
+          ? 'left'
+          : document.querySelector('[data-testid="leave-call-confirm"]')
+            ? 'confirm'
+            : null,
+      null,
+      { timeout: 3000 },
+    )
+    .then((h) => h.jsonValue())
+    .catch(() => null);
+  if (outcome === 'confirm') await peer.page.click('[data-testid="leave-call-confirm"]');
+}
+
+/**
  * Join A and B against ctx.url with optional query params. The rtcConfig
  * parameter stays undefined unless a caller pins one: when the context has
  * relay enabled (H-07/H-15), ctx.launchPeer then resolves each peer's own
@@ -139,6 +162,34 @@ export async function pageDiagnostics(peer) {
       tiles: [...document.querySelectorAll('[data-testid="remote-media"]')].map((t) => t.getAttribute("data-participant-id")),
       pcs: pcs.map((pc) => `${pc.signalingState}/${pc.iceConnectionState}/${pc.connectionState}`),
       candidates,
+      // What each live connection was built with: ICE servers (URLs only)
+      // and transport policy, to tell "nothing to gather from" apart.
+      configs: pcs
+        .filter((pc) => pc.connectionState !== "closed")
+        .map((pc) => {
+          const c = pc.getConfiguration();
+          return { policy: c.iceTransportPolicy, servers: (c.iceServers || []).map((s) => s.urls) };
+        }),
+      probeConfig: w.__probeRtcConfig ? JSON.stringify(w.__probeRtcConfig).slice(0, 200) : null,
+      // Can this page gather at all? A fresh connection, 2 s of gathering.
+      freshGather: await (async () => {
+        try {
+          const test = new RTCPeerConnection();
+          const found = [];
+          test.onicecandidate = (e) => found.push(e.candidate ? e.candidate.type : "end");
+          test.createDataChannel("probe");
+          await test.setLocalDescription();
+          await new Promise((r) => setTimeout(r, 2000));
+          const out = { found, state: test.iceGatheringState };
+          test.close();
+          return out;
+        } catch (err) {
+          return { error: String(err) };
+        }
+      })(),
+      visibility: document.visibilityState,
+      // The p2p transport's bench-only event trace, when present.
+      log: (w.__connvoCallLog || []).slice(-30),
     };
   });
 }

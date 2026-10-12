@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // Generates the D4 media fixtures pinned in tools/call-eval/CONTRACT.md:
 //
-//   tools/call-eval/fixtures/peer-A.y4m  peer-B.y4m  peer-C.y4m
+//   tools/call-eval/fixtures/peer-A.y4m  peer-B.y4m  peer-C.y4m  peer-D.y4m
 //   tools/call-eval/fixtures/second-camera.y4m            (H-05 second camera)
-//   tools/call-eval/fixtures/peer-A.wav  peer-B.wav  peer-C.wav
+//   tools/call-eval/fixtures/peer-A.wav  peer-B.wav  peer-C.wav  peer-D.wav
 //
 // Pure Node, zero dependencies. y4m: I420 (`C420jpeg`), 320x240, 30 fps,
 // 300 frames; peer color above the barcode band, frame-counter barcode in the
-// bottom band. wav: 48 kHz mono 16-bit PCM, 60 s, sine 440/660/880 Hz.
+// bottom band. wav: 48 kHz mono 16-bit PCM, 60 s, sine 440/660/880/1100 Hz.
 //
 // After writing, a self-check decodes frames back out of the artifacts (and
 // in-memory wrap frames for frameNumbers 4095/4096, which do not exist inside
@@ -46,6 +46,7 @@ const Y4M_FILES = {
   A: { name: "peer-A.y4m", color: PEER_COLORS.A },
   B: { name: "peer-B.y4m", color: PEER_COLORS.B },
   C: { name: "peer-C.y4m", color: PEER_COLORS.C },
+  D: { name: "peer-D.y4m", color: PEER_COLORS.D },
   SECOND_CAMERA: { name: "second-camera.y4m", color: PEER_COLORS.SECOND_CAMERA },
 };
 
@@ -53,6 +54,7 @@ const WAV_FILES = {
   A: { name: "peer-A.wav", freqHz: PEER_TONES_HZ.A },
   B: { name: "peer-B.wav", freqHz: PEER_TONES_HZ.B },
   C: { name: "peer-C.wav", freqHz: PEER_TONES_HZ.C },
+  D: { name: "peer-D.wav", freqHz: PEER_TONES_HZ.D },
 };
 
 const frameBytes = (WIDTH * HEIGHT * 3) / 2; // I420
@@ -232,11 +234,13 @@ function main() {
   checkY4m(dir, "A", [0, 137, 299]);
   checkY4m(dir, "B", [0]);
   checkY4m(dir, "C", [0]);
+  checkY4m(dir, "D", [0]);
   checkY4m(dir, "SECOND_CAMERA", [0]);
   checkWrap();
   checkWav(dir, "A");
   checkWav(dir, "B");
   checkWav(dir, "C");
+  checkWav(dir, "D");
 
   if (failures.length > 0) {
     console.error(`[self-check] ${failures.length} mismatch(es): ${failures.join(", ")}`);

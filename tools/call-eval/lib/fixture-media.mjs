@@ -14,16 +14,18 @@ export const DURATION_S = 60;
 export const TONE_AMPLITUDE = 0.6;
 export const FADE_S = 0.02;
 
-// Peer identity colors (D4): A/B/C plus the second fake camera for H-05.
+// Peer identity colors (D4): A/B/C, D for four-person calls, plus the second
+// fake camera for H-05. D is amber, far from every other entry.
 export const PEER_COLORS = {
   A: { r: 205, g: 35, b: 35 },
   B: { r: 35, g: 150, b: 85 },
   C: { r: 45, g: 85, b: 175 },
+  D: { r: 210, g: 150, b: 30 },
   SECOND_CAMERA: { r: 170, g: 40, b: 170 },
 };
 
-// Distinct per-peer tones (D4): A 440 Hz, B 660 Hz, C 880 Hz.
-export const PEER_TONES_HZ = { A: 440, B: 660, C: 880 };
+// Distinct per-peer tones (D4): A 440 Hz, B 660 Hz, C 880 Hz, D 1100 Hz.
+export const PEER_TONES_HZ = { A: 440, B: 660, C: 880, D: 1100 };
 
 // Pinned barcode geometry, in 320x240 source pixels (CONTRACT.md):
 // - band rows y = 200..239, background white rgb(235,235,235);

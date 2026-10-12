@@ -20,6 +20,7 @@ const FIXTURES = {
   A: { video: "peer-A.y4m", audio: "peer-A.wav" },
   B: { video: "peer-B.y4m", audio: "peer-B.wav" },
   C: { video: "peer-C.y4m", audio: "peer-C.wav" },
+  D: { video: "peer-D.y4m", audio: "peer-D.wav" },
 };
 // The TURN relay binds a free port unless pinned; shapers forward to it. The
 // shaper ports stay fixed per participant (env override keeps concurrent runs
@@ -52,7 +53,9 @@ export class RunContext {
    *   reference signaling members derivation (tests inject a synthetic one)
    * @param {(message: string) => void} [opts.log] progress logger
    */
-  constructor({ transport = "mock", seed = 1, baseUrl = null, log = console.log, signalingStatePath, warmUp = true } = {}) {
+  constructor({ transport = "mock", seed = 1, baseUrl = null, page = "bench", log = console.log, signalingStatePath, warmUp = true } = {}) {
+    /** "bench" (/dev/call-bench/<transport>) or "real" (/app/call/<id>, the product page). */
+    this.page = page;
     this._warmUp = warmUp;
     this.transport = transport;
     this.seed = seed;
@@ -99,7 +102,8 @@ export class RunContext {
     const browser = await chromium.launch({ headless: true });
     try {
       const page = await browser.newPage();
-      await page.goto(`${this.url}${this.benchPath}?as=A&autojoin=0`, { waitUntil: "networkidle", timeout: 120000 });
+      const path = this.page === "real" ? "/app/call/warm-up?as=A" : `${this.benchPath}?as=A&autojoin=0`;
+      await page.goto(`${this.url}${path}`, { waitUntil: "networkidle", timeout: 120000 });
       await page.waitForSelector("[data-call-phase]", { timeout: 60000 });
     } finally {
       await browser.close();
@@ -201,7 +205,7 @@ export class RunContext {
     let shaper = this.shapers.get(participant);
     if (!shaper) {
       shaper = createShaper({ seed: this.seed });
-      const idx = ["A", "B", "C", "O"].indexOf(participant);
+      const idx = ["A", "B", "C", "O", "D"].indexOf(participant);
       const port = SHAPER_BASE_PORT + (idx >= 0 ? idx : this.shapers.size + 4);
       // Fire-and-bind; scenario code awaits .ready before applying profiles.
       // TURN starts here on first use, not at run start.
@@ -253,7 +257,11 @@ export class RunContext {
       fullChromium,
     });
     peer.__query = query;
-    await peer.page.goto(`${this.url}${this.benchPath}?${query}`, { waitUntil: "domcontentloaded" });
+    if (this.page === "real") {
+      await this.openRealPage(peer, participant, params);
+    } else {
+      await peer.page.goto(`${this.url}${this.benchPath}?${query}`, { waitUntil: "domcontentloaded" });
+    }
     this._peers.add(peer);
     const origClose = peer.close.bind(peer);
     peer.close = () => {
@@ -261,6 +269,30 @@ export class RunContext {
       return origClose();
     };
     return peer;
+  }
+
+  /**
+   * The real call page has a lobby and no auto-join, so a peer joins the way
+   * a person does: once the preview is ready, press Join call. `autojoin=0`
+   * leaves it in the lobby. `delayJoin` waits that long before pressing Join:
+   * on the real page that holds the lobby for 5 s; it does not slow the
+   * network join the way the bench's delay does.
+   * @param {{ page: import('@playwright/test').Page }} peer
+   * @param {string} participant
+   * @param {Record<string, string>} params
+   */
+  async openRealPage(peer, participant, params) {
+    const q = new URLSearchParams({ as: participant });
+    if (params.name) q.set("name", params.name);
+    if (this.signalUrl) q.set("signal", this.signalUrl);
+    const meeting = encodeURIComponent(this.meetingId ?? "bench-meeting");
+    await peer.page.goto(`${this.url}/app/call/${meeting}?${q}`, { waitUntil: "domcontentloaded" });
+    if (params.autojoin === "0") return;
+    const delay = Number(params.delayJoin ?? 0);
+    void (async () => {
+      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+      await peer.page.locator('[data-testid="join-call"]:not([disabled])').click({ timeout: 30000 }).catch(() => {});
+    })();
   }
 
   // Fault hooks (mock relay only; integration mode reports absence).

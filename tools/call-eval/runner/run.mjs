@@ -53,14 +53,14 @@ function percentile(values, p) {
 }
 
 async function ensureFixtures(ctx, log) {
-  const missing = ["A", "B", "C"].filter((p) => !ctx.fixturesExist(p));
+  const missing = ["A", "B", "C", "D"].filter((p) => !ctx.fixturesExist(p));
   if (!missing.length) return;
   const script = path.resolve(RUNNER_DIR, "..", "scripts", "generate-fixtures.mjs");
   if (fs.existsSync(script)) {
     log(`fixtures missing for ${missing.join(", ")} — regenerating via generate-fixtures.mjs`);
     execSync(`node ${JSON.stringify(script)}`, { stdio: "inherit" });
   }
-  const still = ["A", "B", "C"].filter((p) => !ctx.fixturesExist(p));
+  const still = ["A", "B", "C", "D"].filter((p) => !ctx.fixturesExist(p));
   if (still.length) {
     throw new Error(
       `fixtures missing (${still.join(", ")}) and no generator script at ${script} — run the fixtures branch generator first (pnpm call-eval:fixtures)`,
@@ -114,13 +114,13 @@ async function runOneInner(ctx, scenarioId, seed, log) {
 
 /**
  * Run a matrix of scenario x seed cells over the given transports.
- * @param {{ transports?: string[], scenarios?: string[], seeds?: number[], baseUrl?: string | null, log?: (msg: string) => void, write?: boolean, onResult?: (result: any) => void, skipCell?: ((scenario: string, seed: number, transport: string) => boolean) | null }} [options]
+ * @param {{ transports?: string[], scenarios?: string[], seeds?: number[], baseUrl?: string | null, page?: "bench" | "real", log?: (msg: string) => void, write?: boolean, onResult?: (result: any) => void, skipCell?: ((scenario: string, seed: number, transport: string) => boolean) | null }} [options]
  */
-export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}), skipCell = /** @type {((scenario: string, seed: number, transport: string) => boolean) | null} */ (null) } = {}) {
+export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, page = "bench", log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}), skipCell = /** @type {((scenario: string, seed: number, transport: string) => boolean) | null} */ (null) } = {}) {
   const results = [];
   const wallStart = Date.now();
   for (const transport of transports) {
-    const ctx = new RunContext({ transport, baseUrl, log });
+    const ctx = new RunContext({ transport, baseUrl, page, log });
     await ctx.start();
     try {
       if (scenarios.some((s) => s.startsWith("H"))) await ensureFixtures(ctx, log);

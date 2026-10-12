@@ -46,7 +46,7 @@ export function matchPeerColor(rgb) {
  * The labelled palette both color classifiers use. classifyRemoteColor
  * destructures [label, rgb] pairs; passing bare triples made every color
  * classify as garbage (NaN distance), so H-01 failed healthy calls.
- * @param {Record<"A" | "B" | "C", ArrayLike<number>>} peerColors
+ * @param {Record<"A" | "B" | "C" | "D", ArrayLike<number>>} peerColors
  * @param {ArrayLike<number>} secondCamera
  * @returns {Array<[string, [number, number, number]]>}
  */
@@ -57,6 +57,7 @@ export function peerPalette(peerColors, secondCamera) {
     ["A", rgb(peerColors.A)],
     ["B", rgb(peerColors.B)],
     ["C", rgb(peerColors.C)],
+    ["D", rgb(peerColors.D)],
     ["second-camera", rgb(secondCamera)],
   ];
 }

@@ -47,11 +47,12 @@ export const H_IDS = Object.keys(H_PASS_CONDITIONS) as HScenarioId[];
 export const P_IDS = Object.keys(P_PASS_CONDITIONS) as PScenarioId[];
 
 /** Pinned fixture constants (CONTRACT.md "Fixtures"). */
-export const TONES = { A: 440, B: 660, C: 880 } as const;
+export const TONES = { A: 440, B: 660, C: 880, D: 1100 } as const;
 export const PEER_COLORS = {
   A: [205, 35, 35],
   B: [35, 150, 85],
   C: [45, 85, 175],
+  D: [210, 150, 30],
 } as const;
 export const SECOND_CAMERA_COLOR = [170, 40, 170] as const;
 

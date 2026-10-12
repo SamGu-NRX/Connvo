@@ -11,7 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ScenarioError, waitFor, waitForValue, phaseIs, click, joinPair } from "./scenario-kit.mjs";
+import { ScenarioError, waitFor, waitForValue, phaseIs, click, leaveCall, joinPair } from "./scenario-kit.mjs";
 
 const OUT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "out");
 const SCREENSHOTS_DIR = path.join(OUT_DIR, "screenshots");
@@ -44,14 +44,24 @@ async function openState(ctx, stateName, params = {}) {
     peer = pair.peerA;
     others.push(pair.peerB);
     if (stateName === "ended") {
-      await click(peer, "leave-call");
+      await leaveCall(peer);
       await waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "A's phase left" });
     }
+  } else if (ctx.page === "real") {
+    // The real page has no forced states, so reach them for real: join, then
+    // refuse every new signaling connection from A and drop its socket. A
+    // reconnects in vain (reconnecting), and gives up after 45 s (failed).
+    const pair = await joinPair(ctx, { paramsA: params });
+    peer = pair.peerA;
+    others.push(pair.peerB);
+    await peer.page.routeWebSocket(/.*/, (/** @type {{ close: () => Promise<void> }} */ ws) => void ws.close());
+    await ctx.killPeerSocket("A");
   } else {
     peer = await ctx.launchPeer("A", { state: stateName, autojoin: "0", ...params });
   }
   const expected = /** @type {Record<string, string>} */ (EXPECTED_PHASE)[stateName];
-  await waitFor(peer, phaseIs(expected), { timeoutMs: 10000, describe: `phase ${expected} for state ${stateName}` });
+  const reachMs = ctx.page === "real" && stateName === "failed" ? 70000 : 10000;
+  await waitFor(peer, phaseIs(expected), { timeoutMs: reachMs, describe: `phase ${expected} for state ${stateName}` });
   return { peer, others, close: () => Promise.allSettled([peer, ...others].map((/** @type {{ close: () => Promise<void> }} */ p) => p.close())) };
 }
 
@@ -94,11 +104,24 @@ export async function scenario_P_01(ctx) {
 export async function scenario_P_02(ctx) {
   const { AxeBuilder } = await import("@axe-core/playwright");
   const allStates = [];
+  /** @type {any[]} */
+  const shellFindings = [];
   for (const stateName of STATES) {
     const opened = await openState(ctx, stateName);
     try {
       await opened.peer.page.setViewportSize({ width: 1440, height: 900 });
-      const results = await new AxeBuilder({ page: opened.peer.page }).analyze();
+      // On the real page, axe covers the call itself; the app shell around
+      // it is someone else's code, so its findings are recorded, not scored.
+      const builder = new AxeBuilder({ page: opened.peer.page });
+      if (ctx.page === "real") builder.include("[data-call-phase]");
+      const results = await builder.analyze();
+      if (ctx.page === "real") {
+        const shell = await new AxeBuilder({ page: opened.peer.page }).exclude("[data-call-phase]").analyze();
+        shellFindings.push({
+          state: stateName,
+          seriousOrCritical: shell.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}(${v.nodes.length})`),
+        });
+      }
       const bad = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
       if (bad.length) {
         throw new ScenarioError(
@@ -111,7 +134,7 @@ export async function scenario_P_02(ctx) {
       await opened.close();
     }
   }
-  return { states: allStates };
+  return { states: allStates, ...(ctx.page === "real" ? { appShellFindings: shellFindings } : {}) };
 }
 
 const focusedId = `() => { const el = document.activeElement; return el && el !== document.body ? el.getAttribute('data-testid') || el.tagName.toLowerCase() : null; }`;
@@ -123,7 +146,10 @@ const focusIndicator = `() => {
   const ring = (cs.boxShadow ?? "none") !== "none";
   return { visible: outline || ring, outline, ring, focusVisible: el.matches(":focus-visible") };
 }`;
-const buttonText = (/** @type {string} */ id) => `() => document.querySelector('[data-testid="${id}"]')?.textContent?.trim() ?? null`;
+// A toggle's announced state. The real page's icon buttons carry it in
+// aria-pressed and aria-label; the bench's text buttons in their text.
+const buttonText = (/** @type {string} */ id) =>
+  `() => { const el = document.querySelector('[data-testid="${id}"]'); if (!el) return null; const pressed = el.getAttribute('aria-pressed'); const label = el.getAttribute('aria-label'); return pressed !== null || label !== null ? (pressed ?? '') + '|' + (label ?? '') : el.textContent.trim(); }`;
 const localVideoTrackId = `() => document.querySelector('[data-testid="local-video"]')?.srcObject?.getVideoTracks()[0]?.id ?? null`;
 
 /**
@@ -157,8 +183,16 @@ export async function scenario_P_03(ctx) {
       results.push({ id, key, indicator, observed });
     };
     const textBefore = (/** @type {string} */ id) => peer.page.evaluate(`(${buttonText(id)})()`);
+    // A toggle must flip what it announces. Where it has aria-pressed and an
+    // aria-label (the real page), BOTH must change; the bench's text changes.
+    const changed = (/** @type {string} */ before, /** @type {string} */ now) => {
+      if (!before.includes("|")) return now !== before;
+      const [p0, l0] = before.split("|");
+      const [p1, l1] = now.split("|");
+      return p0 !== p1 && l0 !== l1;
+    };
     const textChanges = (/** @type {string} */ id, /** @type {string} */ before) =>
-      waitForValue(peer, buttonText(id), (/** @type {string} */ t) => t !== before, { timeoutMs: 3000, describe: `${id} label changes` });
+      waitForValue(peer, buttonText(id), (/** @type {string} */ t) => !!t && changed(before, t), { timeoutMs: 3000, describe: `${id} label changes` });
 
     for (const id of ["toggle-mic", "toggle-camera"]) {
       const before = await textBefore(id);
@@ -166,12 +200,43 @@ export async function scenario_P_03(ctx) {
       const flipped = await textBefore(id);
       await operate(id, " ", () => textChanges(id, flipped));
     }
-    const trackBefore = await peer.page.evaluate(`(${localVideoTrackId})()`);
-    await operate("switch-camera", "Enter", () =>
-      waitForValue(peer, localVideoTrackId, (/** @type {string | null} */ t) => !!t && t !== trackBefore, { timeoutMs: 5000, describe: "local video track replaced" }),
-    );
-    await operate("leave-call", "Enter", () => waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "phase left" }));
-    await operate("join-call", "Enter", () => waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: "rejoined" }));
+    if (ctx.page === "real") {
+      // The real page switches devices from a settings popover: Enter opens
+      // it with the device pickers, Escape closes it and returns focus.
+      await operate("device-settings", "Enter", async () => {
+        await peer.page.waitForSelector("#device-camera", { state: "visible", timeout: 3000 });
+        await peer.page.keyboard.press("Escape");
+        await peer.page.waitForSelector("#device-camera", { state: "detached", timeout: 3000 });
+        const back = await peer.page.evaluate(`(${focusedId})()`);
+        if (back !== "device-settings") throw new ScenarioError(`P-03: Escape left focus on ${back}, not device-settings`);
+        return "popover opened and closed";
+      });
+    } else {
+      const trackBefore = await peer.page.evaluate(`(${localVideoTrackId})()`);
+      await operate("switch-camera", "Enter", () =>
+        waitForValue(peer, localVideoTrackId, (/** @type {string | null} */ t) => !!t && t !== trackBefore, { timeoutMs: 5000, describe: "local video track replaced" }),
+      );
+    }
+    await operate("leave-call", "Enter", async () => {
+      // The real call page asks first: reach "Leave call" in the dialog by
+      // keyboard and confirm it. The bench leaves on the first press.
+      const confirm = await peer.page
+        .waitForSelector('[data-testid="leave-call-confirm"]', { timeout: 1500 })
+        .catch(() => null);
+      if (confirm) await tabTo(peer, "leave-call-confirm").then(() => peer.page.keyboard.press("Enter"));
+      return waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "phase left" });
+    });
+    await operate("join-call", "Enter", async () => {
+      // The real page's Rejoin returns to the lobby first; Join call there.
+      const settled = `() => { const p = document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'); return p === 'connected' || p === 'idle' ? p : null; }`;
+      const phase = await waitFor(peer, settled, { timeoutMs: 30000, describe: "rejoined or back in the lobby" });
+      if (phase === "idle") {
+        await peer.page.waitForSelector('[data-testid="join-call"]:not([disabled])', { timeout: 15000 });
+        await tabTo(peer, "join-call");
+        await peer.page.keyboard.press("Enter");
+      }
+      return waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: "rejoined" });
+    });
   } finally {
     await opened.close();
   }
@@ -215,26 +280,49 @@ export async function scenario_P_04(ctx) {
     // Hover and focus every control so transitions that only run on
     // interaction get a chance to start.
     for (const id of ["toggle-mic", "toggle-camera", "leave-call"]) await peer.page.hover(`[data-testid="${id}"]`);
-    const check = await peer.page.evaluate(() => {
-      const anims = document.getAnimations();
-      const durations = anims.map((a) => {
-        const t = a.effect?.getTiming?.() ?? {};
-        return typeof t.duration === "number" ? t.duration : 0;
-      });
+    // On the real page only the call is scored; the app shell around it is
+    // someone else's code (as in P-02).
+    const scope = ctx.page === "real" ? "[data-call-phase]" : null;
+    const check = await peer.page.evaluate((/** @type {string | null} */ rootSel) => {
+      const root = rootSel ? document.querySelector(rootSel) : document;
+      if (!root) return { mq: false, animationCount: 0, allAnimations: [], maxDurationMs: 0, transitions: ["no call root"] };
       const mq = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const MOVES = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
+      // Running animations and transitions that move something. A colour or
+      // opacity fade (a hover background, say) is allowed under reduced motion.
+      const all = rootSel ? /** @type {Element} */ (root).getAnimations({ subtree: true }) : document.getAnimations();
+      const anims = all.map((a) => {
+        const anyA = /** @type {any} */ (a);
+        const t = a.effect?.getTiming?.() ?? {};
+        const duration = typeof t.duration === "number" ? t.duration : 0;
+        const props = anyA.transitionProperty
+          ? [String(anyA.transitionProperty)]
+          : (/** @type {any} */ (a.effect)?.getKeyframes?.() ?? []).flatMap((/** @type {object} */ k) =>
+              Object.keys(k).filter((key) => !["offset", "easing", "composite", "computedOffset"].includes(key)),
+            );
+        return { props: [...new Set(props)], duration };
+      });
+      const moving = anims.filter((a) => a.duration > 50 && a.props.some((p) => MOVES.test(p.replace(/([A-Z])/g, "-$1").toLowerCase())));
+      const durations = moving.map((a) => a.duration);
       // Movement only: color and opacity fades stay under reduced motion. A
       // transition counts when its property moves things and its duration is
       // real; Tailwind's transition-none sets the property to none and leaves
       // the duration, which the reviewed check misread as motion.
       const MOTION = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
-      const transitions = [...document.querySelectorAll("button")].flatMap((b) => {
+      const transitions = [...root.querySelectorAll("button")].flatMap((b) => {
         const cs = getComputedStyle(b);
         const props = cs.transitionProperty.split(",").map((x) => x.trim());
         const durs = cs.transitionDuration.split(",").map((x) => parseFloat(x));
         return props.map((prop, i) => ({ prop, s: durs[i % durs.length] })).filter((t) => MOTION.test(t.prop) && t.s > 0.05).map((t) => `${t.prop} ${t.s}s`);
       });
-      return { mq, animationCount: anims.length, maxDurationMs: durations.length ? Math.max(...durations) : 0, transitions };
-    });
+      return {
+        mq,
+        animationCount: moving.length,
+        allAnimations: anims.map((a) => `${a.props.join("+")} ${a.duration}ms`),
+        maxDurationMs: durations.length ? Math.max(...durations) : 0,
+        transitions,
+      };
+    }, scope);
     if (!check.mq) throw new ScenarioError("P-04: reduced-motion media query not active", check);
     if (check.animationCount > 0 && check.maxDurationMs > 50) {
       throw new ScenarioError(`P-04: ${check.animationCount} animations still run (max ${check.maxDurationMs} ms)`, check);
