@@ -35,6 +35,7 @@ import {
   toneIsSilent,
   selectedCandidateTypes,
   waitForSilence,
+  waitForLiveMedia,
 } from "./page-helpers.mjs";
 
 const H = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -305,14 +306,10 @@ export async function scenario_H_07(ctx, { seed }) {
       timeoutMs: left(deadline),
       describe: `reconnected within 10 s of restore (${durationS}s drop)`,
     });
-    // Media resumes: B decodes A again.
-    await waitForValue(
-      peerB,
-      `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok, label: c?.label }; }`,
-      (c) => c.ok,
-      { timeoutMs: left(deadline), describe: `media resumed within 10 s (${durationS}s drop)` },
-    );
-    const recoveryMs = Date.now() - restoreAt;
+    // Media resumes: B sees A's colour with frames advancing, not a frozen
+    // last frame.
+    const live = await waitForLiveMedia(peerB, "A", { timeoutMs: left(deadline), label: "A" });
+    const recoveryMs = live.liveAt - restoreAt;
     if (recoveryMs > 10000) {
       throw new ScenarioError(`H-07: recovery took ${recoveryMs} ms after the ${durationS}s drop; the bar is 10 s`);
     }
@@ -363,17 +360,12 @@ export async function scenario_H_08(ctx) {
       describe: `new ICE ufrag on every live pc after the forced restart (before ${JSON.stringify(before)})`,
     });
   }
-  await waitForValue(peerA, `async () => { const c = await window.__decodeRemoteColor("B"); return { ok: c?.ok }; }`, (c) => c.ok, {
-    timeoutMs: left(deadline),
-    describe: "A sees B's frames within 10 s of the restart",
-  });
-  await waitForValue(peerB, `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok }; }`, (c) => c.ok, {
-    timeoutMs: left(deadline),
-    describe: "B sees A's frames within 10 s of the restart",
-  });
+  // Frames must keep advancing both ways, not just show the right colour.
+  const liveB = await waitForLiveMedia(peerA, "B", { timeoutMs: left(deadline), label: "B" });
+  const liveA = await waitForLiveMedia(peerB, "A", { timeoutMs: left(deadline), label: "A" });
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: left(deadline), describe: "A phase connected within 10 s" });
   await waitFor(peerB, phaseIs("connected"), { timeoutMs: left(deadline), describe: "B phase connected within 10 s" });
-  const recoveryMs = Date.now() - t0;
+  const recoveryMs = Math.max(liveA.liveAt, liveB.liveAt) - t0;
   if (recoveryMs > 10000) throw new ScenarioError(`H-08: recovery took ${recoveryMs} ms; the bar is 10 s`);
   return { recoveryMs, restartedPcs: restartedA.length + restartedB.length, ufragsBefore: { A: ufragsA, B: ufragsB } };
 }
@@ -394,10 +386,9 @@ export async function scenario_H_09(ctx) {
   if (ghostTiles !== 1) {
     throw new ScenarioError(`H-09: ghost participant after reload (${ghostTiles} A tiles)`);
   }
-  await waitForValue(peerB, `async () => { const c = await window.__decodeRemoteColor("A"); return { ok: c?.ok }; }`, (c) => c.ok, {
-    timeoutMs: 2000,
-    describe: "the one A tile is live after the ghost window, not stale",
-  });
+  // The one A tile is live after the ghost window: advancing frames, not a
+  // stale last frame.
+  await waitForLiveMedia(peerB, "A", { timeoutMs: 3000, label: "A" });
   return { ghostTiles };
 }
 

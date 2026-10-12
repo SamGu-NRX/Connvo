@@ -112,7 +112,11 @@ async function runOneInner(ctx, scenarioId, seed, log) {
   }
 }
 
-export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, page = "bench", log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}) } = {}) {
+/**
+ * Run a matrix of scenario x seed cells over the given transports.
+ * @param {{ transports?: string[], scenarios?: string[], seeds?: number[], baseUrl?: string | null, page?: "bench" | "real", log?: (msg: string) => void, write?: boolean, onResult?: (result: any) => void, skipCell?: ((scenario: string, seed: number, transport: string) => boolean) | null }} [options]
+ */
+export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, page = "bench", log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}), skipCell = /** @type {((scenario: string, seed: number, transport: string) => boolean) | null} */ (null) } = {}) {
   const results = [];
   const wallStart = Date.now();
   for (const transport of transports) {
@@ -122,6 +126,10 @@ export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"]
       if (scenarios.some((s) => s.startsWith("H"))) await ensureFixtures(ctx, log);
       for (const scenarioId of scenarios) {
         for (const seed of seeds) {
+          if (skipCell && skipCell(scenarioId, seed, transport)) {
+            log(`↷ ${scenarioId} seed ${seed} on ${transport} (checkpointed — skipping)`);
+            continue;
+          }
           log(`▶ ${scenarioId} seed ${seed} on ${transport}`);
           const result = await runOne(ctx, scenarioId, seed, log);
           results.push(result);

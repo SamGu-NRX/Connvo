@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Harness self-proof (CALL-PLAN.md S0): the reference transport passes
- * H-01..H-13, and each broken variant fails exactly the scenario it breaks.
+ * H-01..H-13, and each broken variant fails exactly the scenarios its defect breaks.
  * Runs with no Convex and no sign-in: it starts `next dev` with
  * NEXT_PUBLIC_CONNVO_CALL_BENCH=1, and the runner starts the reference
  * signaling server, which mints the bench identities itself.
@@ -9,12 +9,15 @@
  * Usage:
  *   pnpm call-eval:self-proof -- [--seeds=1..20] [--variant-seeds=1] \
  *     [--scenarios=H-01..H-13] [--variants=no-audio,never-close,no-reconnect] \
- *     [--variant-scenarios=all|target] [--port=3036] [--base-url=http://localhost:3036]
+ *     [--variant-scenarios=all|target] [--port=3036] [--base-url=http://localhost:3036] [--fresh]
  *
  * --base-url skips starting Next and uses a server already running with the
- * bench flag. Writes tools/call-eval/self-proof/results.json and summary.md.
- * Exit 0 only when reference passes every run and every variant fails
- * exactly its expected scenario.
+ * bench flag. Every completed run is appended to self-proof/checkpoint.jsonl
+ * before the proof is rewritten; a re-run RESUMES from that checkpoint
+ * (skipping already-run cells) unless --fresh is given. Writes
+ * tools/call-eval/self-proof/results.json and summary.md. Exit 0 only when
+ * reference passes every run and every variant fails exactly its expected
+ * scenario.
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -22,6 +25,12 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runScenarios, H_IDS } from "../runner/run.mjs";
+import {
+  appendCheckpoint,
+  checkpointKeys,
+  loadCheckpoint,
+  rowsForSection,
+} from "./self-proof-checkpoint.mjs";
 
 const EVAL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = path.resolve(EVAL_DIR, "..", "..");
@@ -29,11 +38,11 @@ const OUT = path.join(EVAL_DIR, "self-proof");
 
 /** Which scenario each broken variant must fail (CALL-PLAN.md, harness self-proof). */
 /** @type {Record<string, string>} */
-const EXPECTED_FAILURE = { "no-audio": "H-02,H-03", "never-close": "H-11", "no-reconnect": "H-07" };
+const EXPECTED_FAILURE = { "no-audio": "H-02,H-03", "never-close": "H-11,H-13", "no-reconnect": "H-07" };
 /** Why each variant fails what it fails; printed in summary.md. */
 const EXPECTED_REASON = {
   "no-audio": "it never sends audio, so H-02 hears no tone, and H-03 cannot hear the tone come back after unmute",
-  "never-close": "leave() closes nothing, so H-11 finds live connections and the signaling session still open",
+  "never-close": "leave() closes nothing, so H-11 finds live connections and the signaling session still open, and H-13's leave/rejoin cycles cannot get back to baseline (seen in all three full-scope runs on obv/connvo-36-child-handoff)",
   "no-reconnect": "a lost connection goes straight to failed, so H-07 never recovers",
 };
 
@@ -73,6 +82,16 @@ for (const v of variants) if (!(v in EXPECTED_FAILURE)) throw new Error(`unknown
 const port = Number(flags.port ?? 3036);
 let baseUrl = flags["base-url"] ?? null;
 
+// Crash-safe checkpoint: every completed run is appended here before the
+// proof files are rewritten, and a re-run resumes from it. --fresh discards
+// the checkpoint and starts the matrix from zero.
+const checkpointPath = path.join(OUT, "checkpoint.jsonl");
+if (flags.fresh && fs.existsSync(checkpointPath)) fs.rmSync(checkpointPath);
+const priorRows = loadCheckpoint(checkpointPath);
+if (priorRows.length) {
+  console.log(`self-proof: resuming — ${priorRows.length} checkpointed run(s) in ${path.relative(REPO, checkpointPath)}${flags.fresh ? " (--fresh ignored: file was deleted)" : ""}`);
+}
+
 /** @param {string} url @param {number} timeoutMs */
 async function waitForHttp(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
@@ -88,6 +107,7 @@ async function waitForHttp(url, timeoutMs) {
   throw new Error(`${url} did not answer 200 within ${timeoutMs} ms`);
 }
 
+/** @type {import("node:child_process").ChildProcess | null} */
 let next = null;
 if (!baseUrl) {
   baseUrl = `http://localhost:${port}`;
@@ -130,6 +150,11 @@ const sections = [
   }),
   ...(seeds.length > 1 ? [{ transport: "reference", expected: null, reason: null, scenarios, plannedSeeds: seeds.slice(1), results: [] }] : []),
 ];
+// Restore completed cells so an interrupted run neither loses results nor
+// repeats them (rows outside this invocation's seeds/scenarios stay in the
+// checkpoint file but never enter this proof).
+for (const section of sections) section.results.push(...rowsForSection(priorRows, section, scenarios));
+const priorKeys = checkpointKeys(priorRows);
 let finished = false;
 try {
   for (const section of sections) {
@@ -140,10 +165,14 @@ try {
       seeds: section.plannedSeeds,
       baseUrl,
       write: false,
+      // Resume: never re-run a cell the checkpoint already holds.
+      skipCell: (scenario, seed, transport) => priorKeys.has(`${transport}|${scenario}|${seed}`),
       // Rewrite the proof after every run, so a run cut short still leaves
-      // exact counts of what completed.
+      // exact counts of what completed. The checkpoint append lands FIRST:
+      // results.json is a rendered view, the JSONL is the durable record.
       onResult: (/** @type {any} */ r) => {
         section.results.push(r);
+        appendCheckpoint(checkpointPath, r);
         writeProof();
       },
     });
