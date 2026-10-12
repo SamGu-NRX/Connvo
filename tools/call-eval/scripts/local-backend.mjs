@@ -40,6 +40,12 @@ import {
   resolveSelectedDeployment,
 } from "./local-backend-core.mjs";
 
+// authkit-nextjs constructs the WorkOS client on every middleware hit and
+// throws NoApiKeyProvidedException without a key (:3000 500s — witnessed
+// 2026-10-12). The test-auth path never calls WorkOS APIs, so a dummy key
+// is inert here; it only needs to exist.
+const DUMMY_WORKOS_API_KEY = "sk_test_connvo_local_dummy";
+
 const EVAL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = path.resolve(EVAL_DIR, "../..");
 const LOCAL_DIR = path.join(EVAL_DIR, ".local");
@@ -260,8 +266,16 @@ function readEnvLocalIfPresent() {
 }
 
 function localBackendAnswers(port) {
-  const code = sh(`curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:${port}/`, { capture: true, allowFail: true }).stdout.trim();
-  return code !== "" && code !== "000"; // any HTTP status proves a live backend
+  // Under co-tenant load a single short probe can be CPU-starved into a
+  // false negative (witnessed 2026-10-12 03:32-03:41Z: load 13-22 starved
+  // the provisioning wait for its whole 540 s budget while the backend
+  // answered in <1 ms). Two probes with a longer ceiling; either success
+  // proves liveness.
+  for (const maxTime of ["10", "10"]) {
+    const code = sh(`curl -s -o /dev/null -w '%{http_code}' --max-time ${maxTime} http://127.0.0.1:${port}/`, { capture: true, allowFail: true }).stdout.trim();
+    if (code !== "" && code !== "000") return true;
+  }
+  return false;
 }
 
 /** @param {string} name @param {string} value */
@@ -322,19 +336,26 @@ while (Date.now() < rePushDeadline) {
     rePushed = true;
     break;
   }
-  // Fail fast with a named cause instead of burning the whole budget: these
-  // strings mean the backend is REJECTING the push (module evaluation or
-  // auth-config failure), which no deadline will fix.
-  const failingLine = fresh
+  // Fail fast with a named cause instead of burning the whole budget — but
+  // only for FATAL rejections (module evaluation failures that no retry
+  // fixes). "Hit an error while pushing" is the CLI's generic wrapper for
+  // ANY push error, including the retryable "Environment variables have
+  // changed during push" race with stage 3's env-set: the CLI retries it
+  // itself and then prints the completion marker (witnessed 2026-10-12
+  // 03:37:40 — the retry completed 3.82 s after the wrapper line, four
+  // seconds after a fail-fast on the wrapper alone had already killed the
+  // script). Generic wrapper lines fall through to the marker wait; a
+  // genuinely fatal push surfaces as the timeout below with the log tail.
+  const fatalLine = fresh
     .split("\n")
-    .find((l) => /InvalidModules|Hit an error while pushing|Uncaught .*Error|WORKOS_CLIENT_ID environment variable is required/.test(l));
-  if (failingLine) {
-    console.error(`[backend] FAILED (push rejected): ${failingLine.trim()}`);
+    .find((l) => /InvalidModules|Uncaught .*Error|process\.exit\(\) called|WORKOS_CLIENT_ID environment variable is required/.test(l));
+  if (fatalLine) {
+    console.error(`[backend] FAILED (push rejected): ${fatalLine.trim()}`);
     console.error("[backend] matching log lines:");
     console.error(
       fresh
         .split("\n")
-        .filter((l) => /InvalidModules|Hit an error while pushing|Uncaught|WORKOS_CLIENT_ID/.test(l))
+        .filter((l) => /InvalidModules|Hit an error while pushing|Uncaught|WORKOS_CLIENT_ID|Environment variables have changed/.test(l))
         .slice(-15)
         .join("\n"),
     );
@@ -378,6 +399,7 @@ if (nextUp.startsWith("2") || nextUp.startsWith("3")) {
     "NEXT_PUBLIC_CONNVO_TEST_AUTH=1",
     "NEXT_PUBLIC_CONNVO_CALL_BENCH=1",
     `WORKOS_CLIENT_ID=${DUMMY_WORKOS_CLIENT_ID}`,
+    `WORKOS_API_KEY=${DUMMY_WORKOS_API_KEY}`,
     // authkit's env-variables.js reads the redirect URI ONLY from the
     // NEXT_PUBLIC_-prefixed name (so it inlines into the edge bundle); every
     // other var is plain. Matches .env.example.
@@ -403,6 +425,7 @@ if (nextUp.startsWith("2") || nextUp.startsWith("3")) {
     "NEXT_PUBLIC_CONNVO_TEST_AUTH=1",
     "NEXT_PUBLIC_CONNVO_CALL_BENCH=1",
     `WORKOS_CLIENT_ID=${DUMMY_WORKOS_CLIENT_ID}`,
+    `WORKOS_API_KEY=${DUMMY_WORKOS_API_KEY}`,
     // authkit-nextjs 2.10.0 reads the redirect URI ONLY from the
     // NEXT_PUBLIC_-prefixed name (so it inlines into the edge bundle);
     // plain WORKOS_REDIRECT_URI is ignored and the middleware 500s.
