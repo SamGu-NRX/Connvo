@@ -1,12 +1,12 @@
 # Harness self-proof
 
 Command: `pnpm call-eval:self-proof -- --seeds=1..5 --variant-seeds=1 --variant-scenarios=target`
-Wall time so far: 630.4 s (complete); peers run sequentially, scenario by scenario.
+Wall time so far: 626.4 s (complete); peers run sequentially, scenario by scenario.
 Host: darwin arm64, 12 CPUs, node v26.5.0. No Convex, no sign-in.
 
 ## reference
 
-FAIL: H-06 had failures
+PASS: every run passed
 
 | Scenario | Pass | Total |
 |---|---|---|
@@ -15,7 +15,7 @@ FAIL: H-06 had failures
 | H-03 | 5 | 5 |
 | H-04 | 5 | 5 |
 | H-05 | 5 | 5 |
-| H-06 | 4 | 5 |
+| H-06 | 5 | 5 |
 | H-07 | 5 | 5 |
 | H-08 | 5 | 5 |
 | H-09 | 5 | 5 |
@@ -23,9 +23,6 @@ FAIL: H-06 had failures
 | H-11 | 5 | 5 |
 | H-12 | 5 | 5 |
 | H-13 | 5 | 5 |
-
-Failures:
-- H-06 seed 2: A: A connected after granting + retry not reached within 20000 ms
 
 ## reference-no-audio
 
@@ -64,5 +61,5 @@ Failures:
 
 ## Reference timings
 
-- p95 time to first remote frame (H-01): 1307 ms (n=5); bar 3000 ms.
-- p95 recovery after H-07's 10 s drop: 7035 ms (n=5); bar 8000 ms.
+- p95 time to first remote frame (H-01): 1327 ms (n=5); bar 3000 ms.
+- p95 recovery after H-07's 10 s drop: 7014 ms (n=5); bar 8000 ms.
