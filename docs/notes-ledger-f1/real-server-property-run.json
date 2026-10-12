@@ -1,0 +1,17 @@
+{
+  "test": "test/notes/realServer.property.test.ts",
+  "command": "NOTES_REAL_PROPERTY_RUNS=10000 vitest run --project notes test/notes/realServer.property.test.ts",
+  "commit": "260662a (ledger and test code; this file is added after)",
+  "seed": 20261012,
+  "runs": 10000,
+  "casesRun": 10000,
+  "verdict": "pass",
+  "durationSeconds": 563.4,
+  "serverBatches": 39045,
+  "serverReads": 144880,
+  "faultsInjected": 33956,
+  "remounts": 34518,
+  "ranAt": "2026-10-12T18:22Z to 18:32Z",
+  "server": "real convex/notes mutations.batchApplyNoteOperations and queries.getMeetingNotes in convex-test 0.0.38, convex 1.46.0",
+  "outputLine": "[real-server property] seed=20261012 runs=10000 cases=10000 passed in 563.4 s; server batches=39045 reads=144880 faults=33956 remounts=34518"
+}

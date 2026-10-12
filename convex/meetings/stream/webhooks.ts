@@ -12,6 +12,7 @@ import { internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
 import { logAudit } from "@convex/lib/audit";
+import { closeMeetingSessions } from "@convex/meetings/webrtc/mesh";
 
 /**
  * Handles call session started event
@@ -87,6 +88,7 @@ export const handleCallEnded = internalMutation({
         state: "concluded",
         updatedAt: Date.now(),
       });
+      await closeMeetingSessions(ctx, meetingId);
     }
 
     // Log the event

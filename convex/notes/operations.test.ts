@@ -23,6 +23,7 @@ import {
   validateOperation,
   operationsConflict,
   transformAgainstOperations,
+  transformOperationSequence,
   applyOperations,
   invertOperation,
   normalizeOperations,
@@ -778,5 +779,75 @@ describe("Operational Transform Core Functions", () => {
       expect(result1).toBe(result2);
     });
     */
+  });
+});
+
+describe("transformOperationSequence absorb reconciliation", () => {
+  // Regression: property seed 20261011 path 8610. A local delete whose span
+  // contains a concurrent insert absorbs it (the delete's length extends),
+  // but the diamond then carried that insert to the NEXT local op as if it
+  // survived — positioning it past characters the delete already removed.
+  // The produced sequence [delete@3 len15, insert@6] could not apply over
+  // its own target document and crashed the ledger's composed fold.
+  it("neutralizes a concurrent insert absorbed by a local delete", () => {
+    // Basis frame (15 chars): the view the buffer was diffed from.
+    // Concurrent (against): "1k4" inserted at 14, strictly inside the
+    // local delete's span [3, 15).
+    // Local: delete [3, 15) — the user deleted "1 t0k3 t0k5" — then insert
+    // "t0k6 1 t0k3 t0" at 3 (their words typed on the deleted view).
+    const local: Operation[] = [
+      { type: "delete", position: 3, length: 12 },
+      { type: "insert", position: 3, content: "t0k6 1 t0k3 t0" },
+    ];
+    const against: Operation[] = [{ type: "insert", position: 14, content: "1k4" }];
+
+    const transformed = transformOperationSequence(local, against);
+
+    // The transformed sequence must apply cleanly over the target frame
+    // (basis + against ops) — this threw "Invalid insert position: 6
+    // (document length 3)" before the fix.
+    const target = applyOperations("t0k1 t0k3 t0k5 ", against);
+    expect(target).toBe("t0k1 t0k3 t0k51k4 ");
+    const result = applyOperations(target, transformed);
+    // The user's delete wins per design (an insert absorbed by a concurrent
+    // delete is lost); their own words survive.
+    expect(result).toBe("t0kt0k6 1 t0k3 t0");
+  });
+
+  it("keeps carrying a concurrent insert at the delete's start boundary", () => {
+    // Insert exactly AT the delete's start: the delete shifts right, the
+    // insert survives before it, and a later local insert must still be
+    // positioned consistently (no neutralization at the boundary).
+    const local: Operation[] = [
+      { type: "delete", position: 5, length: 3 },
+      { type: "insert", position: 5, content: "NEW " },
+    ];
+    const against: Operation[] = [{ type: "insert", position: 5, content: "XY" }];
+
+    const transformed = transformOperationSequence(local, against);
+    const target = applyOperations("hello world", against);
+    // Applies without throwing. At the shared position both sides tie-break
+    // on lexicographic order ("NEW " < "XY", smaller lands first): the local
+    // insert lands at 5 in the post-delete frame, the carried remote insert
+    // shifts after it, and the delete removes " wo" past both.
+    const result = applyOperations(target, transformed);
+    expect(result).toBe("helloNEW XYrld");
+  });
+
+  it("keeps carrying a concurrent insert after the delete's span", () => {
+    // Insert at the delete's end boundary: not absorbed (design: B comes
+    // after A's deletion range). The remote "QQ" survives after the deleted
+    // span; the local insert tie-breaks after it ("QQ" < "Z").
+    const local: Operation[] = [
+      { type: "delete", position: 2, length: 4 },
+      { type: "insert", position: 2, content: "Z" },
+    ];
+    const against: Operation[] = [{ type: "insert", position: 6, content: "QQ" }];
+
+    const transformed = transformOperationSequence(local, against);
+    const target = applyOperations("abcdefgh", against);
+    expect(target).toBe("abcdefQQgh");
+    const result = applyOperations(target, transformed);
+    expect(result).toBe("abQQZgh");
   });
 });

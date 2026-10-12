@@ -1,0 +1,35 @@
+{
+  "scenario": "converge",
+  "meetingId": "m97evqmmggrfbtr882mtpfw8nx8g4j0t",
+  "startedAt": "2026-10-12T18:32:39.642Z",
+  "pass": true,
+  "phrases": [
+    "Agenda: budget review. ",
+    "Owner: Bob. ",
+    "Decision: ship Friday. ",
+    "Risk: vendor delay. "
+  ],
+  "steps": [
+    "A appends, B types at the start, at once, twice"
+  ],
+  "converged": true,
+  "texts": [
+    "Agenda: budget review. Decision: ship Friday. Risk: vendor delay. Owner: Bob. ",
+    "Agenda: budget review. Decision: ship Friday. Risk: vendor delay. Owner: Bob. "
+  ],
+  "statuses": [
+    "Synced",
+    "Synced"
+  ],
+  "stored": {
+    "content": "Agenda: budget review. Decision: ship Friday. Risk: vendor delay. Owner: Bob. ",
+    "version": 2
+  },
+  "phraseCounts": {
+    "Agenda: budget review. ": 1,
+    "Owner: Bob. ": 1,
+    "Decision: ship Friday. ": 1,
+    "Risk: vendor delay. ": 1
+  },
+  "convergeMs": 2006
+}

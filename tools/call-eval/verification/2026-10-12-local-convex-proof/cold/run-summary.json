@@ -1,0 +1,55 @@
+{
+  "startedAt": "2026-10-12T13:56:22.632Z",
+  "gitSha": "68978320842fe1821d91fea647a1598a3de8726c",
+  "host": "darwin arm64, 12 CPUs, node v26.5.0",
+  "loadavgStart": "7.87 9.07 9.00",
+  "port": 3035,
+  "stages": {
+    "backend": {
+      "exitCode": 0,
+      "ms": 12532,
+      "ready": true,
+      "pushCompleted": true,
+      "seedShapeVerified": true
+    },
+    "browser": {
+      "ms": 3954
+    }
+  },
+  "personas": [
+    {
+      "as": "A",
+      "expect": "read",
+      "ok": true,
+      "url": "http://localhost:3035/dev/auth-proof?as=A&meeting=m973b3w70zyx98a315y0g9nv9s8g41nh",
+      "observed": "OK: Eval harness smoke meeting\n{\"_creationTime\":1791813390928.828,\"_id\":\"m973b3w70zyx98a315y0g9nv9s8g41nh\",\"activeWebRTCSessions\":0,\"createdAt\":1791813390928,\"description\":\"Seeded by tools/call-eval for the local eval backend (H-scenario fixtures).\",\"duration\":1800000,\"organizerId\":\"p177jqvg8kxy8nnn",
+      "proof": "ok",
+      "pageErrors": [],
+      "ms": 811
+    },
+    {
+      "as": "B",
+      "expect": "read",
+      "ok": true,
+      "url": "http://localhost:3035/dev/auth-proof?as=B&meeting=m973b3w70zyx98a315y0g9nv9s8g41nh",
+      "observed": "OK: Eval harness smoke meeting\n{\"_creationTime\":1791813390928.828,\"_id\":\"m973b3w70zyx98a315y0g9nv9s8g41nh\",\"activeWebRTCSessions\":0,\"createdAt\":1791813390928,\"description\":\"Seeded by tools/call-eval for the local eval backend (H-scenario fixtures).\",\"duration\":1800000,\"organizerId\":\"p177jqvg8kxy8nnn",
+      "proof": "ok",
+      "pageErrors": [],
+      "ms": 300
+    },
+    {
+      "as": "O",
+      "expect": "refused",
+      "ok": true,
+      "url": "http://localhost:3035/dev/auth-proof?as=O&meeting=m973b3w70zyx98a315y0g9nv9s8g41nh",
+      "observed": "ERROR: [CONVEX Q(meetings/queries:getMeeting)] [Request ID: 7a43ca90195729d0] Server Error\nUncaught ConvexError: {\"code\":\"FORBIDDEN\",\"message\":\"Access denied: Not a meeting participant\",\"statusCode\":403,\"metadata\":{\"meetingId\":\"m973b3w70zyx98a315y0g9nv9s8g41nh\",\"userId\":\"p176kxjnr04m1cgcxg3snzbmmh8g",
+      "proof": "error",
+      "pageErrors": [],
+      "ms": 2076
+    }
+  ],
+  "passed": true,
+  "meetingId": "m973b3w70zyx98a315y0g9nv9s8g41nh",
+  "finishedAt": "2026-10-12T13:56:39.124Z",
+  "loadavgEnd": "6.52 8.69 8.86"
+}
