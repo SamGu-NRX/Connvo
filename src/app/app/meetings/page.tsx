@@ -7,7 +7,7 @@ import { isAfterCallEnabled } from "@/lib/featureFlags";
 export default function MeetingsPage() {
   if (!isAfterCallEnabled()) notFound();
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 py-2">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 py-2 pb-48 md:pb-2">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Meetings</h1>
         <p className="text-muted-foreground text-sm">
@@ -16,6 +16,6 @@ export default function MeetingsPage() {
         </p>
       </header>
       <MeetingList />
-    </main>
+    </div>
   );
 }

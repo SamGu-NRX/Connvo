@@ -10,8 +10,8 @@ export default function MeetingPage() {
   if (!isAfterCallEnabled()) notFound();
   const meetingId = String(params.id ?? "") as Id<"meetings">;
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col py-2">
+    <div className="mx-auto flex w-full max-w-3xl flex-col py-2 pb-48 md:pb-2">
       <MeetingDetail meetingId={meetingId} />
-    </main>
+    </div>
   );
 }

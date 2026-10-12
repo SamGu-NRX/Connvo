@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistoryBoundary } from "./HistoryBoundary";
+import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
 
 const PAGE = 20;
 /** Short pages fetched by themselves before the list asks the person to load more. */
@@ -94,9 +95,10 @@ export function MeetingListSkeleton() {
 }
 
 function MeetingListData() {
+  const auth = useHistoryAuth();
   const { results, status, loadMore } = usePaginatedQuery(
     api.history.queries.listMyMeetings,
-    {},
+    auth === "ready" ? {} : "skip",
     { initialNumItems: PAGE },
   );
   const autoFetches = useRef(0);
@@ -111,7 +113,17 @@ function MeetingListData() {
     }
   }, [status, results.length, loadMore]);
 
+  if (auth === "signed-out")
+    return (
+      <p
+        data-testid="history-signed-out"
+        className="text-muted-foreground text-sm"
+      >
+        {SIGNED_OUT_MESSAGE}
+      </p>
+    );
   const settling =
+    auth === "loading" ||
     status === "LoadingFirstPage" ||
     (results.length === 0 &&
       (status === "LoadingMore" ||

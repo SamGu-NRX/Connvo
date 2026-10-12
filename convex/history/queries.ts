@@ -185,6 +185,12 @@ export const getMeetingHistory = query({
     lifecycleEvents: Doc<"meetingEvents">[];
     notes: Doc<"meetingNotes"> | null;
     prompts: Doc<"prompts">[];
+    /**
+     * People who opened the call itself (a call session was recorded for
+     * them), as opposed to everyone invited. Empty when the meeting's call
+     * did not run through the call mesh (no sessions recorded).
+     */
+    callAttendees: Id<"users">[];
   }> => {
     // Server-side feature gate: checked before anything else (including
     // identity) so the API surface disappears when the flag is off.
@@ -276,7 +282,14 @@ export const getMeetingHistory = query({
       (a, b) => a.createdAt - b.createdAt || compareIds(a._id, b._id),
     );
 
+    const sessions = await ctx.db
+      .query("webrtcSessions")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .take(500);
+    const callAttendees = [...new Set(sessions.map((s) => s.userId))];
+
     return {
+      callAttendees,
       meeting,
       myRole: myParticipation.role,
       participants,

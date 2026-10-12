@@ -106,7 +106,7 @@ class HistorySim {
 
   usePaginatedQuery(
     ref: unknown,
-    args: Record<string, unknown>,
+    args: Record<string, unknown> | "skip",
     opts: { initialNumItems: number },
   ) {
     const [state, setState] = useState<{
@@ -120,7 +120,7 @@ class HistorySim {
         const page = (await this.face.query(
           ref as never,
           {
-            ...args,
+            ...(args as Record<string, unknown>),
             paginationOpts: { numItems, cursor },
           } as never,
         )) as { page: unknown[]; isDone: boolean; continueCursor: string };
@@ -136,7 +136,7 @@ class HistorySim {
       }
     };
     useEffect(() => {
-      void fetchPage(null, opts.initialNumItems);
+      if (args !== "skip") void fetchPage(null, opts.initialNumItems);
     }, []);
     if (state.error) throw state.error;
     return {
@@ -150,14 +150,18 @@ class HistorySim {
   }
 }
 
-const sim = vi.hoisted(() => ({ current: null as unknown as HistorySim }));
+const sim = vi.hoisted(() => ({
+  current: null as unknown as HistorySim,
+  auth: { isLoading: false, isAuthenticated: true },
+}));
 vi.mock("convex/react", () => ({
+  useConvexAuth: () => sim.auth,
   useQuery: (ref: unknown, args: Record<string, unknown> | "skip") =>
     sim.current.useQuery(ref, args),
   useMutation: (ref: unknown) => sim.current.useMutation(ref),
   usePaginatedQuery: (
     ref: unknown,
-    args: Record<string, unknown>,
+    args: Record<string, unknown> | "skip",
     opts: { initialNumItems: number },
   ) => sim.current.usePaginatedQuery(ref, args, opts),
 }));
@@ -244,6 +248,7 @@ beforeEach(async () => {
   vi.stubEnv("CONNVO_AFTER_CALL", "1");
   await seed();
   sim.current = new HistorySim();
+  sim.auth = { isLoading: false, isAuthenticated: true };
   sim.current.face = people.A;
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -292,6 +297,21 @@ describe("with the client flag on", () => {
     );
   });
 
+  it("asks a signed-out person to sign in, and sends no history query", async () => {
+    sim.auth = { isLoading: false, isAuthenticated: false };
+    render(<MeetingDetail meetingId={meetingId} />);
+    expect(screen.getByTestId("history-signed-out")).toHaveTextContent(
+      "Sign in to see your meetings.",
+    );
+    expect(screen.queryByTestId("history-error")).not.toBeInTheDocument();
+  });
+
+  it("shows the loading state while sign-in is still being checked", () => {
+    sim.auth = { isLoading: true, isAuthenticated: false };
+    render(<MeetingList />);
+    expect(screen.getByTestId("meeting-list-loading")).toBeInTheDocument();
+  });
+
   it("shows the loading state before the first page", () => {
     render(<MeetingList />);
     expect(screen.getByTestId("meeting-list-loading")).toBeInTheDocument();
@@ -315,7 +335,7 @@ describe("with the client flag on", () => {
     expect(recap).toHaveTextContent("Bob Brown");
     expect(recap).toHaveTextContent("30 minutes");
     expect(screen.getByTestId("recap-notes").textContent).toBe(NOTES);
-    expect(recap).toHaveTextContent("No prompts were recorded");
+    expect(recap).toHaveTextContent("No prompts were recorded.");
     await waitFor(() =>
       expect(screen.getByTestId("stay-in-touch")).toBeInTheDocument(),
     );

@@ -13,17 +13,21 @@ import type { Id } from "@convex/_generated/dataModel";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistoryBoundary } from "./HistoryBoundary";
+import { useHistoryAuth } from "./useHistoryAuth";
 
 function StayInTouchControl({ meetingId }: { meetingId: Id<"meetings"> }) {
-  const status = useQuery(api.history.queries.getStayInTouchStatus, {
-    meetingId,
-  });
+  const auth = useHistoryAuth();
+  const status = useQuery(
+    api.history.queries.getStayInTouchStatus,
+    auth === "ready" ? { meetingId } : "skip",
+  );
   const setStayInTouch = useMutation(api.history.mutations.setStayInTouch);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const labelId = useId();
   const hintId = useId();
 
+  if (auth === "signed-out") return null;
   if (status === undefined) return <Skeleton className="h-16 w-full" />;
 
   const toggle = async (enabled: boolean) => {

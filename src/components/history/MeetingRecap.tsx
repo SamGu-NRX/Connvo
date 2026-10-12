@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buildRecap } from "@/lib/history/recap";
 import { cn } from "@/lib/utils";
 import { HistoryBoundary } from "./HistoryBoundary";
+import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
 
 export type MeetingHistory = FunctionReturnType<
   typeof api.history.queries.getMeetingHistory
@@ -73,12 +74,23 @@ export function MeetingRecapView({
     notes: history.notes,
     prompts: history.prompts,
   });
-  const used = recap.sections.find((s) => s.kind === "prompts-used");
+  // buildRecap writes a literal "No prompts were recorded" item when there
+  // were none; shown here as a plain sentence instead of a one-item list.
+  const used =
+    history.prompts.length > 0
+      ? recap.sections.find((s) => s.kind === "prompts-used")
+      : undefined;
   const served = recap.sections.find((s) => s.kind === "prompts-served");
   const people = [...history.participants].sort((a, b) =>
     (a.displayName ?? "").localeCompare(b.displayName ?? ""),
   );
   const notes = history.notes?.content.trim() ?? "";
+  // Who opened the call, when the call recorded sessions; everyone in the
+  // meeting otherwise (a meeting whose call ran elsewhere records none).
+  const joined = new Set(history.callAttendees);
+  const attended = people.filter((p) => joined.has(p.userId));
+  const invitedOnly =
+    joined.size > 0 ? people.filter((p) => !joined.has(p.userId)) : [];
 
   return (
     <div
@@ -86,21 +98,35 @@ export function MeetingRecapView({
       className={cn("flex flex-col", compact ? "gap-4" : "gap-6")}
     >
       <Section title="Who took part" level={level}>
-        <ul className="flex flex-wrap gap-2">
-          {people.map((p) => (
-            <li
-              key={p.userId}
-              className="bg-muted/60 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm"
-            >
-              {p.displayName ?? "Someone without a name"}
-              {p.role === "host" ? (
-                <Badge variant="outline" className="h-5 px-1.5 text-[11px]">
-                  Host
-                </Badge>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        {attended.length > 0 || invitedOnly.length === 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {(attended.length > 0 ? attended : people).map((p) => (
+              <li
+                key={p.userId}
+                className="bg-muted/60 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm"
+              >
+                {p.displayName ?? "Someone without a name"}
+                {p.role === "host" ? (
+                  <Badge variant="outline" className="h-5 px-1.5 text-[11px]">
+                    Host
+                  </Badge>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            Nobody joined the call.
+          </p>
+        )}
+        {attended.length > 0 && invitedOnly.length > 0 ? (
+          <p className="text-muted-foreground text-sm">
+            Invited but didn&apos;t join:{" "}
+            {invitedOnly
+              .map((p) => p.displayName ?? "someone without a name")
+              .join(", ")}
+          </p>
+        ) : null}
       </Section>
 
       <Section title="Duration" level={level}>
@@ -127,7 +153,11 @@ export function MeetingRecapView({
 
       {!compact || used ? (
         <Section title="Prompts used" level={level}>
-          {used ? (
+          {history.prompts.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No prompts were recorded.
+            </p>
+          ) : used ? (
             <ul className="list-disc space-y-1 pl-5 text-sm">
               {used.items.map((item, i) => (
                 <li key={i}>{item}</li>
@@ -181,9 +211,20 @@ function MeetingRecapData({
   meetingId: Id<"meetings">;
   compact?: boolean;
 }) {
-  const history = useQuery(api.history.queries.getMeetingHistory, {
-    meetingId,
-  });
+  const auth = useHistoryAuth();
+  const history = useQuery(
+    api.history.queries.getMeetingHistory,
+    auth === "ready" ? { meetingId } : "skip",
+  );
+  if (auth === "signed-out")
+    return (
+      <p
+        data-testid="history-signed-out"
+        className="text-muted-foreground text-sm"
+      >
+        {SIGNED_OUT_MESSAGE}
+      </p>
+    );
   if (history === undefined) return <MeetingRecapSkeleton />;
   return (
     <MeetingRecapView

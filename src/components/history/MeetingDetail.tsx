@@ -17,6 +17,7 @@ import { HistoryBoundary } from "./HistoryBoundary";
 import { formatMeetingTime } from "./MeetingList";
 import { MeetingRecapSkeleton, MeetingRecapView } from "./MeetingRecap";
 import { StayInTouch } from "./StayInTouch";
+import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
 
 const STATE_LABEL = {
   scheduled: "Scheduled",
@@ -26,9 +27,20 @@ const STATE_LABEL = {
 } as const;
 
 function MeetingDetailData({ meetingId }: { meetingId: Id<"meetings"> }) {
-  const history = useQuery(api.history.queries.getMeetingHistory, {
-    meetingId,
-  });
+  const auth = useHistoryAuth();
+  const history = useQuery(
+    api.history.queries.getMeetingHistory,
+    auth === "ready" ? { meetingId } : "skip",
+  );
+  if (auth === "signed-out")
+    return (
+      <p
+        data-testid="history-signed-out"
+        className="text-muted-foreground text-sm"
+      >
+        {SIGNED_OUT_MESSAGE}
+      </p>
+    );
   if (history === undefined) {
     return (
       <div className="flex flex-col gap-5">

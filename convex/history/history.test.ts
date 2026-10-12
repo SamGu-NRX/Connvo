@@ -354,6 +354,31 @@ describe("After-call history data layer", () => {
     });
   });
 
+  describe("call attendance", () => {
+    test("callAttendees lists only the people with a recorded call session", async () => {
+      const { meetingId, organizerId, participantWorkosIds } =
+        await createTestMeetingWithParticipants(t, {}, 1, {}, {});
+      await t.run(async (ctx) => {
+        const now = Date.now();
+        for (const sessionId of ["s-host-1", "s-host-2"]) {
+          await ctx.db.insert("webrtcSessions", {
+            meetingId,
+            sessionId,
+            userId: organizerId,
+            state: "closed",
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+      });
+      const history = await identityFor(participantWorkosIds[0]).query(
+        api.history.queries.getMeetingHistory,
+        { meetingId },
+      );
+      expect(history.callAttendees).toEqual([organizerId]);
+    });
+  });
+
   describe("getStayInTouchStatus and setStayInTouch", () => {
     test("opt-in persists, is idempotent, and disable removes", async () => {
       const { meetingId, participantIds, participantWorkosIds } =
