@@ -67,3 +67,7 @@ Known pre-existing (recorded by f1, unchanged): `pnpm lint` is not runnable in t
 - Do not base on/merge/cherry-pick PRs #16, #22, #24, #25; PRs #14–#28 are read-only inputs.
 - Do not modify `convex/meetings/**`, `convex/auth/**`, `tools/call-eval/`, `src/app/app/call/**`.
 - Shared sandbox: take `flock /home/user/work/heavy.lock` around long steps; sandbox session resets lose unpushed work — push after every passing check.
+
+## Join log
+
+- 2026-10-12 M2a: a-server-dup (22ae7ec) joined - test-only regression for wholly-duplicate batch replay (test/convex/notes-watermark.test.ts case 4d, 12/12 file green; full suite 334 passed / 3 known property timeouts; type-check 32 baseline). Fix pre-existing at 7293ceb (appliedNew>0 guard); negative control at 7293ceb~1 fails 4d ("expected 2 to be 1") as designed.
