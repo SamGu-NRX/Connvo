@@ -47,11 +47,21 @@ async function openState(ctx, stateName, params = {}) {
       await leaveCall(peer);
       await waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "A's phase left" });
     }
+  } else if (ctx.page === "real") {
+    // The real page has no forced states, so reach them for real: join, then
+    // refuse every new signaling connection from A and drop its socket. A
+    // reconnects in vain (reconnecting), and gives up after 45 s (failed).
+    const pair = await joinPair(ctx, { paramsA: params });
+    peer = pair.peerA;
+    others.push(pair.peerB);
+    await peer.page.routeWebSocket(/.*/, (/** @type {{ close: () => Promise<void> }} */ ws) => void ws.close());
+    await ctx.killPeerSocket("A");
   } else {
     peer = await ctx.launchPeer("A", { state: stateName, autojoin: "0", ...params });
   }
   const expected = /** @type {Record<string, string>} */ (EXPECTED_PHASE)[stateName];
-  await waitFor(peer, phaseIs(expected), { timeoutMs: 10000, describe: `phase ${expected} for state ${stateName}` });
+  const reachMs = ctx.page === "real" && stateName === "failed" ? 70000 : 10000;
+  await waitFor(peer, phaseIs(expected), { timeoutMs: reachMs, describe: `phase ${expected} for state ${stateName}` });
   return { peer, others, close: () => Promise.allSettled([peer, ...others].map((/** @type {{ close: () => Promise<void> }} */ p) => p.close())) };
 }
 
@@ -94,11 +104,24 @@ export async function scenario_P_01(ctx) {
 export async function scenario_P_02(ctx) {
   const { AxeBuilder } = await import("@axe-core/playwright");
   const allStates = [];
+  /** @type {any[]} */
+  const shellFindings = [];
   for (const stateName of STATES) {
     const opened = await openState(ctx, stateName);
     try {
       await opened.peer.page.setViewportSize({ width: 1440, height: 900 });
-      const results = await new AxeBuilder({ page: opened.peer.page }).analyze();
+      // On the real page, axe covers the call itself; the app shell around
+      // it is someone else's code, so its findings are recorded, not scored.
+      const builder = new AxeBuilder({ page: opened.peer.page });
+      if (ctx.page === "real") builder.include("[data-call-phase]");
+      const results = await builder.analyze();
+      if (ctx.page === "real") {
+        const shell = await new AxeBuilder({ page: opened.peer.page }).exclude("[data-call-phase]").analyze();
+        shellFindings.push({
+          state: stateName,
+          seriousOrCritical: shell.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}(${v.nodes.length})`),
+        });
+      }
       const bad = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
       if (bad.length) {
         throw new ScenarioError(
@@ -111,7 +134,7 @@ export async function scenario_P_02(ctx) {
       await opened.close();
     }
   }
-  return { states: allStates };
+  return { states: allStates, ...(ctx.page === "real" ? { appShellFindings: shellFindings } : {}) };
 }
 
 const focusedId = `() => { const el = document.activeElement; return el && el !== document.body ? el.getAttribute('data-testid') || el.tagName.toLowerCase() : null; }`;
@@ -123,7 +146,10 @@ const focusIndicator = `() => {
   const ring = (cs.boxShadow ?? "none") !== "none";
   return { visible: outline || ring, outline, ring, focusVisible: el.matches(":focus-visible") };
 }`;
-const buttonText = (/** @type {string} */ id) => `() => document.querySelector('[data-testid="${id}"]')?.textContent?.trim() ?? null`;
+// A toggle's state as announced: its accessible label when it has one (the
+// real page's icon buttons), else its visible text (the bench).
+const buttonText = (/** @type {string} */ id) =>
+  `() => { const el = document.querySelector('[data-testid="${id}"]'); return el ? el.getAttribute('aria-label') || el.textContent.trim() : null; }`;
 const localVideoTrackId = `() => document.querySelector('[data-testid="local-video"]')?.srcObject?.getVideoTracks()[0]?.id ?? null`;
 
 /**
@@ -166,10 +192,23 @@ export async function scenario_P_03(ctx) {
       const flipped = await textBefore(id);
       await operate(id, " ", () => textChanges(id, flipped));
     }
-    const trackBefore = await peer.page.evaluate(`(${localVideoTrackId})()`);
-    await operate("switch-camera", "Enter", () =>
-      waitForValue(peer, localVideoTrackId, (/** @type {string | null} */ t) => !!t && t !== trackBefore, { timeoutMs: 5000, describe: "local video track replaced" }),
-    );
+    if (ctx.page === "real") {
+      // The real page switches devices from a settings popover: Enter opens
+      // it with the device pickers, Escape closes it and returns focus.
+      await operate("device-settings", "Enter", async () => {
+        await peer.page.waitForSelector("#device-camera", { state: "visible", timeout: 3000 });
+        await peer.page.keyboard.press("Escape");
+        await peer.page.waitForSelector("#device-camera", { state: "detached", timeout: 3000 });
+        const back = await peer.page.evaluate(`(${focusedId})()`);
+        if (back !== "device-settings") throw new ScenarioError(`P-03: Escape left focus on ${back}, not device-settings`);
+        return "popover opened and closed";
+      });
+    } else {
+      const trackBefore = await peer.page.evaluate(`(${localVideoTrackId})()`);
+      await operate("switch-camera", "Enter", () =>
+        waitForValue(peer, localVideoTrackId, (/** @type {string | null} */ t) => !!t && t !== trackBefore, { timeoutMs: 5000, describe: "local video track replaced" }),
+      );
+    }
     await operate("leave-call", "Enter", async () => {
       // The real call page asks first: reach "Leave call" in the dialog by
       // keyboard and confirm it. The bench leaves on the first press.
@@ -179,7 +218,17 @@ export async function scenario_P_03(ctx) {
       if (confirm) await tabTo(peer, "leave-call-confirm").then(() => peer.page.keyboard.press("Enter"));
       return waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "phase left" });
     });
-    await operate("join-call", "Enter", () => waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: "rejoined" }));
+    await operate("join-call", "Enter", async () => {
+      // The real page's Rejoin returns to the lobby first; Join call there.
+      const settled = `() => { const p = document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'); return p === 'connected' || p === 'idle' ? p : null; }`;
+      const phase = await waitFor(peer, settled, { timeoutMs: 30000, describe: "rejoined or back in the lobby" });
+      if (phase === "idle") {
+        await peer.page.waitForSelector('[data-testid="join-call"]:not([disabled])', { timeout: 15000 });
+        await tabTo(peer, "join-call");
+        await peer.page.keyboard.press("Enter");
+      }
+      return waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: "rejoined" });
+    });
   } finally {
     await opened.close();
   }
@@ -226,14 +275,21 @@ export async function scenario_P_04(ctx) {
         return typeof t.duration === "number" ? t.duration : 0;
       });
       const mq = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const transitions = [...document.querySelectorAll("button")].map((b) => getComputedStyle(b).transitionDuration);
+      // Movement only: color and opacity fades stay under reduced motion.
+      const MOTION = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
+      const transitions = [...document.querySelectorAll("button")].flatMap((b) => {
+        const cs = getComputedStyle(b);
+        const props = cs.transitionProperty.split(",").map((x) => x.trim());
+        const durs = cs.transitionDuration.split(",").map((x) => parseFloat(x));
+        return props.map((prop, i) => ({ prop, s: durs[i % durs.length] })).filter((t) => MOTION.test(t.prop) && t.s > 0.05).map((t) => `${t.prop} ${t.s}s`);
+      });
       return { mq, animationCount: anims.length, maxDurationMs: durations.length ? Math.max(...durations) : 0, transitions };
     });
     if (!check.mq) throw new ScenarioError("P-04: reduced-motion media query not active", check);
     if (check.animationCount > 0 && check.maxDurationMs > 50) {
       throw new ScenarioError(`P-04: ${check.animationCount} animations still run (max ${check.maxDurationMs} ms)`, check);
     }
-    const moving = check.transitions.filter((d) => d.split(",").some((/** @type {string} */ part) => parseFloat(part) > 0.05));
+    const moving = check.transitions;
     if (moving.length) throw new ScenarioError(`P-04: ${moving.length} buttons keep transitions under reduced motion`, check);
     return { ...check };
   } finally {

@@ -112,11 +112,11 @@ async function runOneInner(ctx, scenarioId, seed, log) {
   }
 }
 
-export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}) } = {}) {
+export async function runScenarios({ transports = ["mock"], scenarios = ["H-01"], seeds = [1], baseUrl = null, page = "bench", log = console.log, write = true, onResult = /** @type {(result: any) => void} */ (() => {}) } = {}) {
   const results = [];
   const wallStart = Date.now();
   for (const transport of transports) {
-    const ctx = new RunContext({ transport, baseUrl, log });
+    const ctx = new RunContext({ transport, baseUrl, page, log });
     await ctx.start();
     try {
       if (scenarios.some((s) => s.startsWith("H"))) await ensureFixtures(ctx, log);

@@ -112,7 +112,12 @@ const transports = (flags.transport ?? "mock").split(",").map((s) => s.trim()).f
 const baseUrl = flags["base-url"] ?? null;
 
 console.log(`call-eval: transports=${transports.join(",")} scenarios=${scenarios.length} seeds=${seeds.length} baseUrl=${baseUrl ?? "(mock)"}`);
-const { results, wallMs, resultsPath, summaryPath } = await runScenarios({ transports, scenarios, seeds, baseUrl, log: console.log });
+// --page=real drives the real call page (/app/call/<id>) instead of the
+// bench; it needs next dev with NEXT_PUBLIC_CONNVO_REAL_CALL=1 as well.
+const page = flags.page ?? "bench";
+if (!["bench", "real"].includes(page)) throw new Error(`--page must be bench or real (got "${page}")`);
+if (page === "real" && !baseUrl) throw new Error("--page=real needs --base-url");
+const { results, wallMs, resultsPath, summaryPath } = await runScenarios({ transports, scenarios, seeds, baseUrl, page, log: console.log });
 console.log(`results: ${resultsPath}`);
 console.log(`summary: ${summaryPath}`);
 const failed = results.filter((r) => !r.pass);
