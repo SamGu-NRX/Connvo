@@ -42,13 +42,31 @@ export interface TestAuthUser {
   name: string;
 }
 
-interface CachedToken {
+export interface CachedToken {
   token: string;
   expiresAtMs: number;
   user: TestAuthUser;
 }
 
-let cachedToken: CachedToken | null = null;
+// Token cache keyed by the seeded identity (?as=A|B|C|O). Two harness peers
+// can mount from one SPA session (client-side navigation between ?as=A and
+// ?as=B pages shares this module), so a single-slot cache would hand A's
+// token to B's mount.
+const tokenCache = new Map<string, CachedToken>();
+
+export function cacheTestAuthToken(userParam: string, cached: CachedToken): void {
+  tokenCache.set(userParam, cached);
+}
+
+export function clearTestAuthCache(userParam?: string): void {
+  if (userParam === undefined) tokenCache.clear();
+  else tokenCache.delete(userParam);
+}
+
+function readFreshCache(userParam: string): CachedToken | null {
+  const cached = tokenCache.get(userParam) ?? null;
+  return cached && Date.now() < cached.expiresAtMs ? cached : null;
+}
 
 async function fetchTestToken(userParam: string): Promise<CachedToken> {
   const res = await fetch(
@@ -94,36 +112,52 @@ export interface UseTestAuthResult {
 }
 
 /**
- * Same hook shape ConvexProviderWithAuthKit expects from the WorkOS hook,
- * so the provider swap in ConvexClientProvider stays a one-branch change.
- * The identity is fixed per page load (`?as=A` on the URL, default A); each
- * harness peer loads its URL fresh, so reading it once per mount is correct.
+ * Hook body for a fixed identity param. Exported so the eval driver and the
+ * tests can mount an explicit identity; the URL reading lives in useTestAuth.
  */
-export function useTestAuth(): UseTestAuthResult {
+export function useTestAuthState(userParam: string): UseTestAuthResult {
   assertTestAuthAllowed();
-  const [userParam] = useState(() => testAuthUserParam());
   const [state, setState] = useState<{
     user: TestAuthUser | null;
     isLoading: boolean;
-  }>(() => ({
-    user: cachedToken?.user ?? null,
-    // Derive from the cache, don't default to true: getAccessToken's
-    // cache-hit path returns early without publishing state, so a remount
-    // with a fresh cached token would stay isLoading until the refetch
-    // window nears expiry.
-    isLoading: !(cachedToken && Date.now() < cachedToken.expiresAtMs),
-  }));
+  }>(() => {
+    // Derive from the identity's own cache, don't default to true: a remount
+    // with a fresh cached token must resolve immediately — and to ITS OWN
+    // identity, never another peer's cached token. A STALE entry keeps the
+    // identity visible while the refetch is pending (isLoading true).
+    const cached = tokenCache.get(userParam) ?? null;
+    return {
+      user: cached?.user ?? null,
+      isLoading: !(cached && Date.now() < cached.expiresAtMs),
+    };
+  });
+
+  // Always publish, including on the cache-hit path — a mount whose initial
+  // render saw an empty or expired cache must still resolve once the token
+  // is in hand. The no-op when already resolved keeps the Convex client's
+  // frequent getAccessToken calls from re-rendering the page.
+  const publish = useCallback(
+    (user: TestAuthUser) =>
+      setState((prev) =>
+        prev.user?.id === user.id && !prev.isLoading
+          ? prev
+          : { user, isLoading: false },
+      ),
+    [],
+  );
 
   const getAccessToken = useCallback(async (): Promise<string | null> => {
     assertTestAuthAllowed();
-    if (cachedToken && Date.now() < cachedToken.expiresAtMs) {
-      return cachedToken.token;
+    const cached = readFreshCache(userParam);
+    if (cached) {
+      publish(cached.user);
+      return cached.token;
     }
     const fetched = await fetchTestToken(userParam);
-    cachedToken = fetched;
-    setState({ user: fetched.user, isLoading: false });
+    cacheTestAuthToken(userParam, fetched);
+    publish(fetched.user);
     return fetched.token;
-  }, [userParam]);
+  }, [userParam, publish]);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,4 +171,15 @@ export function useTestAuth(): UseTestAuthResult {
   }, [getAccessToken]);
 
   return { isLoading: state.isLoading, user: state.user, getAccessToken };
+}
+
+/**
+ * Same hook shape ConvexProviderWithAuthKit expects from the WorkOS hook,
+ * so the provider swap in ConvexClientProvider stays a one-branch change.
+ * The identity is fixed per page load (`?as=A` on the URL, default A); each
+ * harness peer loads its URL fresh, so reading it once per mount is correct.
+ */
+export function useTestAuth(): UseTestAuthResult {
+  const [userParam] = useState(() => testAuthUserParam());
+  return useTestAuthState(userParam);
 }

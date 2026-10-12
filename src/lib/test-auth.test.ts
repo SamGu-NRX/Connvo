@@ -24,16 +24,30 @@ function render(useTestAuth: () => LatestState): void {
   renderToString(createElement(Probe));
 }
 
-function tokenResponse(expiresInMs: number): Response {
+function tokenResponseFor(
+  id: string,
+  email: string,
+  name: string,
+  expiresInMs: number,
+): Response {
   return new Response(
     JSON.stringify({
       token: "tok-1",
-      workosUserId: "local-test-a",
-      email: "a@connvo-local.test",
-      name: "User A",
+      workosUserId: id,
+      email,
+      name,
       expiresAt: Date.now() + expiresInMs,
     }),
     { status: 200, headers: { "content-type": "application/json" } },
+  );
+}
+
+function tokenResponse(expiresInMs: number): Response {
+  return tokenResponseFor(
+    "local-test-a",
+    "a@connvo-local.test",
+    "User A",
+    expiresInMs,
   );
 }
 
@@ -84,5 +98,79 @@ describe("useTestAuth loading state (cached-token derivation)", () => {
     expect(latest?.isLoading).toBe(true);
     expect(latest?.user?.id).toBe("local-test-a");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useTestAuth identity-keyed cache (mounts A then B)", () => {
+  it("resolves B from B's own cache and never inherits A's token", async () => {
+    vi.resetModules();
+    const { useTestAuthState, cacheTestAuthToken, clearTestAuthCache } =
+      await import("./test-auth");
+    clearTestAuthCache();
+
+    // A's fetch completed first (cacheTestAuthToken is the call the fetch
+    // path itself makes).
+    cacheTestAuthToken("A", {
+      token: "tok-a",
+      expiresAtMs: Date.now() + 10 * 60_000,
+      user: { id: "local-test-a", email: "a@connvo-local.test", name: "User A" },
+    });
+
+    // B mounts with only A cached: no user — never A's — and still loading.
+    render(() => useTestAuthState("B"));
+    expect(latest?.isLoading).toBe(true);
+    expect(latest?.user).toBe(null);
+
+    // B's own token lands: B resolves immediately, isLoading false.
+    cacheTestAuthToken("B", {
+      token: "tok-b",
+      expiresAtMs: Date.now() + 10 * 60_000,
+      user: { id: "local-test-b", email: "b@connvo-local.test", name: "User B" },
+    });
+    render(() => useTestAuthState("B"));
+    expect(latest?.isLoading).toBe(false);
+    expect(latest?.user?.id).toBe("local-test-b");
+
+    // A's remount still resolves from A's own entry.
+    render(() => useTestAuthState("A"));
+    expect(latest?.isLoading).toBe(false);
+    expect(latest?.user?.id).toBe("local-test-a");
+
+    clearTestAuthCache();
+  });
+
+  it("refetches B after B's cached token expires and resolves on the cache-hit path", async () => {
+    vi.resetModules();
+    const { useTestAuthState, cacheTestAuthToken, clearTestAuthCache } =
+      await import("./test-auth");
+    const fetchMock = vi.fn(async (_url: string) =>
+      tokenResponseFor(
+        "local-test-b",
+        "b@connvo-local.test",
+        "User B",
+        10 * 60_000,
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    cacheTestAuthToken("B", {
+      token: "tok-b-stale",
+      expiresAtMs: Date.now() - 1,
+      user: { id: "local-test-b", email: "b@connvo-local.test", name: "User B" },
+    });
+
+    // Stale cache: the identity stays known while loading.
+    render(() => useTestAuthState("B"));
+    expect(latest?.isLoading).toBe(true);
+    expect(latest?.user?.id).toBe("local-test-b");
+
+    // getAccessToken refetches for B (identity-scoped URL), then the
+    // re-render resolves from the fresh entry.
+    await latest!.getAccessToken();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/test-auth/token?user=B");
+    render(() => useTestAuthState("B"));
+    expect(latest?.isLoading).toBe(false);
+    expect(latest?.user?.id).toBe("local-test-b");
+
+    clearTestAuthCache();
   });
 });

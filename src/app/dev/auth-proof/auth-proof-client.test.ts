@@ -37,6 +37,7 @@ describe("auth-proof page contract", () => {
     vi.mocked(useConvexAuth).mockReturnValue({
       isLoading: true,
       isAuthenticated: false,
+      isRefreshing: false,
     });
     const waiting = renderToString(
       createElement(AuthProof, { as: "A", meetingId: "meeting-1" }),
@@ -47,6 +48,7 @@ describe("auth-proof page contract", () => {
     vi.mocked(useConvexAuth).mockReturnValue({
       isLoading: false,
       isAuthenticated: true,
+      isRefreshing: false,
     });
     const querying = renderToString(
       createElement(AuthProof, { as: "A", meetingId: "meeting-1" }),
