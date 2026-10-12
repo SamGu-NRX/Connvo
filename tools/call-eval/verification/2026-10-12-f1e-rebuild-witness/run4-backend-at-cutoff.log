@@ -1,0 +1,17 @@
+2
+2026-10-12T04:43:45.324Z [proof] (exit code=0 signal=null after 457ms)
+9fc2b6823ebe075135a2ac76962ae828082a40f7
+2026-10-12T04:43:45.495Z [proof] (exit code=0 signal=null after 171ms)
+2026-10-12T04:43:45.495Z [proof] start sha=9fc2b6823ebe075135a2ac76962ae828082a40f7 load=36.24 41.46 40.49 nproc=2
+2026-10-12T04:43:45.548Z [proof] stage 1/5 backend: running local-backend.mjs (provision + push + seed + next dev)
+[backend] 1/6 keys
+[backend] keys loaded (kid connvo-local-test-1)
+[backend] 2/6 convex local deployment (anonymous, no account)
+[backend] harness tree: pruned 7 test artifact(s): auth/guards.test.ts, auth/permissions.test.ts, matching/matching.test.ts, notes/operations.test.ts, transcripts/ingestion.test.ts, ...
+[backend] harness tree: 25 entries in convex-harness/
+[backend] convex dev already running in tmux
+[backend] 2/6 waiting for convex dev provisioning (first run downloads the local backend binary)...
+[backend] convex deployment up: http://127.0.0.1:3210
+[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)
+[backend] deployment guard ok: anonymous:anonymous-connvo-int answering on 127.0.0.1:3210
+[backend] 4/6 re-push + seed
