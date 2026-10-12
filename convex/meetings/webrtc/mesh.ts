@@ -15,7 +15,7 @@
  * session can only be used by the user who owns it.
  */
 
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 import {
   internalMutation,
   mutation,
@@ -26,6 +26,7 @@ import {
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { assertMeetingAccess } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
+import { enforceUserLimit } from "@convex/lib/rateLimiter";
 
 /** A session with no heartbeat for this long is closed as expired. */
 export const HEARTBEAT_EXPIRY_MS = 10_000;
@@ -33,6 +34,51 @@ export const HEARTBEAT_EXPIRY_MS = 10_000;
 const OPEN = "connected" as const;
 
 const sessionIdV = v.string();
+
+/**
+ * sendSignal calls allowed per session per 10 s window. Setting up a
+ * four-person call takes roughly 70 signals per tab (three peers, each an
+ * offer or answer plus about twenty ICE candidates), so 200 leaves room for
+ * an ICE restart round on top. That figure is an estimate: no run has
+ * counted candidates across real networks.
+ */
+export const SIGNAL_RATE_LIMIT = { windowMs: 10_000, maxRequests: 200 };
+
+/**
+ * Largest accepted signal fields, in characters. A Chrome audio+video SDP
+ * is about 5-10 KB, a candidate line about 150 characters, and an ICE
+ * username fragment at most 256 characters (RFC 8839). The caps sit well
+ * above that and keep one signal far below Convex's 1 MB document limit.
+ */
+export const SIGNAL_SIZE_LIMITS = {
+  sdp: 32_768,
+  candidate: 1_024,
+  sdpMid: 64,
+  usernameFragment: 256,
+};
+
+/** The rateLimits action key for one session's signals. */
+const signalRateAction = (meetingId: Id<"meetings">, sessionId: string) =>
+  `callSignal:${meetingId}:${sessionId}`;
+
+function checkSignalSize(signal: Signal): void {
+  const fields: Array<[keyof typeof SIGNAL_SIZE_LIMITS, string | undefined]> =
+    signal.kind === "description"
+      ? [["sdp", signal.sdp]]
+      : [
+          ["candidate", signal.candidate],
+          ["sdpMid", signal.sdpMid],
+          ["usernameFragment", signal.usernameFragment],
+        ];
+  for (const [field, value] of fields) {
+    if (value !== undefined && value.length > SIGNAL_SIZE_LIMITS[field]) {
+      throw createError.validation(
+        `${field} is longer than ${SIGNAL_SIZE_LIMITS[field]} characters`,
+        field,
+      );
+    }
+  }
+}
 
 /** One signal, as the browser's RTCPeerConnection produces it. */
 const signalV = v.union(
@@ -54,6 +100,7 @@ const signalV = v.union(
     usernameFragment: v.optional(v.string()),
   }),
 );
+type Signal = Infer<typeof signalV>;
 
 function checkSessionId(sessionId: string): void {
   if (sessionId.length < 8 || sessionId.length > 64) {
@@ -118,6 +165,16 @@ async function close(
     if (signal.meetingId === session.meetingId)
       await ctx.db.patch(signal._id, { processed: true });
   }
+  // A closed session sends nothing more, so its rate-limit counters go too.
+  const counters = await ctx.db
+    .query("rateLimits")
+    .withIndex("by_user_action_window", (q) =>
+      q
+        .eq("userId", session.userId)
+        .eq("action", signalRateAction(session.meetingId, session.sessionId)),
+    )
+    .collect();
+  for (const counter of counters) await ctx.db.delete(counter._id);
 }
 
 /** Close open sessions in this meeting whose heartbeat has stopped. */
@@ -275,7 +332,8 @@ export const setMediaState = mutation({
 /**
  * Send one signal from the caller's session to another open session in the
  * same meeting. Returns delivered:false, and stores nothing, when the target
- * is not open there.
+ * is not open there. Oversized fields are refused, and each session may send
+ * SIGNAL_RATE_LIMIT.maxRequests signals per window.
  */
 export const sendSignal = mutation({
   args: {
@@ -294,6 +352,14 @@ export const sendSignal = mutation({
       participant.userId,
     );
     if (from.state !== OPEN) return { delivered: false };
+    checkSignalSize(signal);
+    // Every attempt from an open session counts, delivered or not.
+    await enforceUserLimit(
+      ctx,
+      signalRateAction(meetingId, fromSessionId),
+      participant.userId,
+      { config: SIGNAL_RATE_LIMIT, throws: true },
+    );
     const to = await sessionById(ctx, meetingId, toSessionId);
     if (!to || to.state !== OPEN || to.sessionId === from.sessionId)
       return { delivered: false };

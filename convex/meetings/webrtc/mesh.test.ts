@@ -4,9 +4,14 @@
  */
 import { api, internal } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { beforeEach, describe, expect, test } from "vitest";
+import type { FunctionArgs } from "convex/server";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createTestEnvironment } from "../../../test/convex/helpers";
-import { HEARTBEAT_EXPIRY_MS } from "./mesh";
+import {
+  HEARTBEAT_EXPIRY_MS,
+  SIGNAL_RATE_LIMIT,
+  SIGNAL_SIZE_LIMITS,
+} from "./mesh";
 
 type Env = ReturnType<typeof createTestEnvironment>;
 
@@ -479,5 +484,113 @@ describe("heartbeats and cleanup", () => {
     expect(
       await t.run((ctx) => ctx.db.query("webrtcSignals").collect()),
     ).toEqual([]);
+  });
+});
+
+describe("sendSignal limits", () => {
+  const send = (
+    p: "A" | "B",
+    from: string,
+    to: string,
+    signal: FunctionArgs<typeof api.meetings.webrtc.mesh.sendSignal>["signal"],
+  ) =>
+    as[p].mutation(api.meetings.webrtc.mesh.sendSignal, {
+      meetingId,
+      fromSessionId: from,
+      toSessionId: to,
+      signal,
+    });
+  const stored = () => t.run((ctx) => ctx.db.query("webrtcSignals").collect());
+
+  afterEach(() => vi.useRealTimers());
+
+  test("oversized SDP and candidate fields are refused and nothing is stored", async () => {
+    await join("A", "session-a-1");
+    await join("B", "session-b-1");
+    const long = (n: number) => "x".repeat(n + 1);
+    await expect(
+      send("A", "session-a-1", "session-b-1", {
+        ...offer,
+        sdp: long(SIGNAL_SIZE_LIMITS.sdp),
+      }),
+    ).rejects.toThrow(/sdp is longer than/);
+    await expect(
+      send("A", "session-a-1", "session-b-1", {
+        ...candidate,
+        candidate: long(SIGNAL_SIZE_LIMITS.candidate),
+      }),
+    ).rejects.toThrow(/candidate is longer than/);
+    await expect(
+      send("A", "session-a-1", "session-b-1", {
+        ...candidate,
+        sdpMid: long(SIGNAL_SIZE_LIMITS.sdpMid),
+      }),
+    ).rejects.toThrow(/sdpMid is longer than/);
+    await expect(
+      send("A", "session-a-1", "session-b-1", {
+        ...candidate,
+        usernameFragment: long(SIGNAL_SIZE_LIMITS.usernameFragment),
+      }),
+    ).rejects.toThrow(/usernameFragment is longer than/);
+    expect(await stored()).toEqual([]);
+    // At the limit is fine.
+    expect(
+      await send("A", "session-a-1", "session-b-1", {
+        ...offer,
+        sdp: "x".repeat(SIGNAL_SIZE_LIMITS.sdp),
+      }),
+    ).toEqual({ delivered: true });
+  });
+
+  test("a session is limited per window, other sessions are not, and the next window resets it", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    // Start of a window, so the whole burst falls inside one.
+    vi.setSystemTime(
+      Math.ceil(Date.now() / SIGNAL_RATE_LIMIT.windowMs) *
+        SIGNAL_RATE_LIMIT.windowMs,
+    );
+    await join("A", "session-a-1");
+    await join("B", "session-b-1");
+    for (let i = 0; i < SIGNAL_RATE_LIMIT.maxRequests; i++) {
+      await send("A", "session-a-1", "session-b-1", candidate);
+    }
+    await expect(
+      send("A", "session-a-1", "session-b-1", candidate),
+    ).rejects.toThrow(/Rate limit exceeded/);
+    // Attempts at a target that is not open count too.
+    await expect(
+      send("A", "session-a-1", "session-nobody", candidate),
+    ).rejects.toThrow(/Rate limit exceeded/);
+    expect(await stored()).toHaveLength(SIGNAL_RATE_LIMIT.maxRequests);
+    expect(await send("B", "session-b-1", "session-a-1", candidate)).toEqual({
+      delivered: true,
+    });
+
+    vi.setSystemTime(Date.now() + SIGNAL_RATE_LIMIT.windowMs);
+    // Keep A open across the window (its heartbeat would otherwise lapse).
+    await as.A.mutation(api.meetings.webrtc.mesh.heartbeat, {
+      meetingId,
+      sessionId: "session-a-1",
+    });
+    await as.B.mutation(api.meetings.webrtc.mesh.heartbeat, {
+      meetingId,
+      sessionId: "session-b-1",
+    });
+    expect(await send("A", "session-a-1", "session-b-1", candidate)).toEqual({
+      delivered: true,
+    });
+  });
+
+  test("closing a session deletes its rate-limit counters", async () => {
+    await join("A", "session-a-1");
+    await join("B", "session-b-1");
+    await send("A", "session-a-1", "session-b-1", candidate);
+    const counters = () => t.run((ctx) => ctx.db.query("rateLimits").collect());
+    expect(await counters()).toHaveLength(1);
+    await as.A.mutation(api.meetings.webrtc.mesh.leaveCall, {
+      meetingId,
+      sessionId: "session-a-1",
+    });
+    expect(await counters()).toEqual([]);
   });
 });
