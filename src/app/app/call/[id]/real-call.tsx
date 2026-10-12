@@ -80,7 +80,9 @@ function BenchCall({
   const self = useMemo(() => ({ id: selfId, name }), [selfId, name]);
 
   return (
-    <div className="h-[calc(100dvh-9.5rem)] md:h-[calc(100dvh-7rem)]">
+    // Phones: the app shell's floating navigation dock overlays the bottom
+    // of this panel, so the call area ends above it.
+    <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
       <CallRoom
         meetingId={meetingId}
         self={self}

@@ -231,7 +231,7 @@ export function CallRoom({
       data-testid="call-root"
       className={cn(
         styles.room,
-        "relative flex h-full min-h-[34rem] w-full flex-col overflow-hidden rounded-md bg-[var(--stage)] text-[var(--ink)]",
+        "relative flex h-full min-h-[28rem] w-full flex-col overflow-hidden rounded-md bg-[var(--stage)] text-[var(--ink)]",
       )}
     >
       {screen === "lobby" ? (

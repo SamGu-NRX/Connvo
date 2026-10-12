@@ -76,11 +76,24 @@ describe("websocketSignaling", () => {
   it("says hello with the token and meeting, then routes the server's messages", async () => {
     const h = handlers();
     const { socket } = await openWith(h);
-    expect(socket.sent[0]).toEqual({ type: "hello", token: "token-A", meetingId: "m1" });
+    expect(socket.sent[0]).toEqual({
+      type: "hello",
+      token: "token-A",
+      meetingId: "m1",
+    });
     socket.receive({ type: "welcome", selfId: "A", peers: ["B"] });
-    socket.receive({ type: "remote-state", from: "B", micOn: false, cameraOn: true });
+    socket.receive({
+      type: "remote-state",
+      from: "B",
+      micOn: false,
+      cameraOn: true,
+    });
     expect(h.onWelcome).toHaveBeenCalledWith(["B"]);
-    expect(h.onRemoteState).toHaveBeenCalledWith({ participantId: "B", micOn: false, cameraOn: true });
+    expect(h.onRemoteState).toHaveBeenCalledWith({
+      participantId: "B",
+      micOn: false,
+      cameraOn: true,
+    });
   });
 
   it("reports a lost connection when pongs stop arriving", async () => {
@@ -91,7 +104,9 @@ describe("websocketSignaling", () => {
     vi.advanceTimersByTime(2000);
     expect(socket.sent.at(-1)).toEqual({ type: "ping" });
     vi.advanceTimersByTime(6000);
-    expect(h.closed).toEqual([{ kind: "lost", message: "the signaling service stopped answering" }]);
+    expect(h.closed).toEqual([
+      { kind: "lost", message: "the signaling service stopped answering" },
+    ]);
   });
 
   it("keeps the connection while pongs arrive", async () => {
@@ -109,9 +124,30 @@ describe("websocketSignaling", () => {
   it("reports a refusal as rejected, with the server's words", async () => {
     const h = handlers();
     const { socket } = await openWith(h);
-    socket.receive({ type: "error", code: "auth", message: "signaling rejected: O is not a bench participant" });
+    socket.receive({
+      type: "error",
+      code: "auth",
+      message: "signaling rejected: O is not a bench participant",
+    });
     socket.drop(4006, "not a participant");
-    expect(h.closed).toEqual([{ kind: "rejected", message: "signaling rejected: O is not a bench participant" }]);
+    expect(h.closed).toEqual([
+      {
+        kind: "rejected",
+        message: "signaling rejected: O is not a bench participant",
+      },
+    ]);
+  });
+
+  it("reports being replaced by the same identity, so the mesh does not fight it", async () => {
+    const h = handlers();
+    const { socket } = await openWith(h);
+    socket.drop(4007, "replaced by re-join");
+    expect(h.closed).toEqual([
+      {
+        kind: "replaced",
+        message: "This call is open in another window or tab.",
+      },
+    ]);
   });
 
   it("reports an ordinary drop as lost, once", async () => {
@@ -119,7 +155,9 @@ describe("websocketSignaling", () => {
     const { socket } = await openWith(h);
     socket.drop(1006);
     socket.drop(1006);
-    expect(h.closed).toEqual([{ kind: "lost", message: "lost the connection to the signaling service" }]);
+    expect(h.closed).toEqual([
+      { kind: "lost", message: "lost the connection to the signaling service" },
+    ]);
   });
 
   it("leaving sends bye and reports nothing", async () => {
@@ -134,10 +172,15 @@ describe("websocketSignaling", () => {
   it("reports lost when no token can be had", async () => {
     const h = handlers();
     websocketSignaling("ws://127.0.0.1:9301/").open(
-      { meetingId: "m1", identityToken: async () => Promise.reject(new Error("mint down")) },
+      {
+        meetingId: "m1",
+        identityToken: async () => Promise.reject(new Error("mint down")),
+      },
       h,
     );
-    await vi.waitFor(() => expect(h.closed).toEqual([{ kind: "lost", message: "mint down" }]));
+    await vi.waitFor(() =>
+      expect(h.closed).toEqual([{ kind: "lost", message: "mint down" }]),
+    );
     expect(FakeSocket.last).toBeNull();
   });
 });

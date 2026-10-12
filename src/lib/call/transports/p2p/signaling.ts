@@ -17,7 +17,12 @@ export type SignalingClose =
   /** The server refused this identity or meeting; retrying will not help. */
   | { kind: "rejected"; message: string }
   /** The connection dropped or never opened; the mesh may retry. */
-  | { kind: "lost"; message: string };
+  | { kind: "lost"; message: string }
+  /**
+   * The same identity joined again from somewhere else and took over.
+   * Reconnecting would take it back, and the two would fight forever.
+   */
+  | { kind: "replaced"; message: string };
 
 export interface SignalingHandlers {
   /** The server accepted us; `peers` are the participants already present. */

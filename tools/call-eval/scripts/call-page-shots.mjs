@@ -38,13 +38,28 @@ const fixture = (id) => {
 const browsers = [];
 async function peer(id, { devices = true, deny = false, viewport = VIEWPORTS[0] } = {}) {
   const { video, audio } = fixture(id);
-  const args = ["--autoplay-policy=no-user-gesture-required", "--mute-audio"];
-  if (devices) args.push("--use-fake-device-for-media-stream", `--use-file-for-fake-video-capture=${video}`, `--use-file-for-fake-audio-capture=${audio}`);
+  // Always the fake devices: without them Chromium would open this Mac's
+  // real camera and microphone. "No devices" is simulated below instead.
+  const args = [
+    "--autoplay-policy=no-user-gesture-required",
+    "--mute-audio",
+    "--use-fake-device-for-media-stream",
+    `--use-file-for-fake-video-capture=${video}`,
+    `--use-file-for-fake-audio-capture=${audio}`,
+  ];
   if (!deny) args.push("--use-fake-ui-for-media-stream");
   const browser = await chromium.launch({ headless: true, args, ...(deny ? { channel: "chromium" } : {}) });
   browsers.push(browser);
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
   await context.addInitScript(probeInit);
+  if (!devices) {
+    // What the browser does with no camera or microphone attached.
+    await context.addInitScript(() => {
+      const md = navigator.mediaDevices;
+      md.getUserMedia = () => Promise.reject(new DOMException("Requested device not found", "NotFoundError"));
+      md.enumerateDevices = () => Promise.resolve([]);
+    });
+  }
   const page = await context.newPage();
   page.on("pageerror", (e) => console.error(`[pageerror ${id}]`, e.message.slice(0, 200)));
   return { id, browser, context, page };

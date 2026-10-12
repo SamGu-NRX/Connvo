@@ -18,6 +18,8 @@ const HEARTBEAT_MS = 2000;
 const HEARTBEAT_TIMEOUT_MS = 6000;
 /** Close codes the reference server uses for refusals that retrying cannot fix. */
 const REJECTION_CODES = new Set([4004, 4005, 4006]);
+/** The server closes an older socket with this code when the same identity says hello again. */
+const REPLACED_CODE = 4007;
 
 type Down =
   | { type: "welcome"; selfId: string; peers: string[] }
@@ -124,6 +126,13 @@ export function websocketSignaling(url: string): SignalingAdapter {
           }
         };
         ws.onclose = (event) => {
+          if (event.code === REPLACED_CODE) {
+            report({
+              kind: "replaced",
+              message: "This call is open in another window or tab.",
+            });
+            return;
+          }
           if (rejection || REJECTION_CODES.has(event.code)) {
             report({
               kind: "rejected",

@@ -233,7 +233,8 @@ export function createP2PTransport({
       refreshPhase();
     };
     peer.watchdog = setInterval(() => {
-      if (pc.connectionState !== "connected" && pc.connectionState !== "closed") pc.restartIce();
+      if (pc.connectionState !== "connected" && pc.connectionState !== "closed")
+        pc.restartIce();
     }, NOT_CONNECTED_RESTART_MS);
     return peer;
   }
@@ -367,6 +368,12 @@ export function createP2PTransport({
           signalingUp = false;
           if (reason.kind === "rejected") {
             fail("auth", reason.message, false);
+            return;
+          }
+          if (reason.kind === "replaced") {
+            // Retrying is the user's call: it would take the call back from
+            // the other window.
+            fail("network", reason.message, true);
             return;
           }
           refreshPhase();
