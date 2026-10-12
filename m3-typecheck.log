@@ -1,0 +1,97 @@
+=== PNPM_BOOT 03:34:40 ===
+
+added 1 package in 1s
+9.15.9
+=== CLONE 03:34:43 ===
+Cloning into 'repo'...
+1242d1c test(history): mounted proofs for the flagged meetings routes
+=== INSTALL 03:34:45 ===
++ tailwindcss 4.1.16
++ tsx 4.20.6
++ typescript 5.9.3
++ vitest 4.0.4
+
+Done in 22.2s using pnpm v9.15.9
+INSTALL_EXIT=0
+=== TYPECHECK 03:35:08 ===
+src/app/app/meetings/[id]/page.tsx(77,9): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/[id]/page.tsx(80,42): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/meetings-pages.test.ts(32,46): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'ReactNode'.
+src/app/app/meetings/meetings-pages.test.ts(234,21): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/meetings-pages.test.ts(265,21): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/meetings-pages.test.ts(275,21): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/page.tsx(37,9): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/app/app/meetings/page.tsx(46,15): error TS2339: Property 'page' does not exist on type 'any[]'.
+src/app/app/meetings/page.tsx(56,18): error TS2339: Property 'page' does not exist on type 'any[]'.
+src/app/app/meetings/page.tsx(56,28): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/app/videocall/[id]/page.tsx(331,42): error TS7006: Parameter 'msg' implicitly has an 'any' type.
+src/components/mvp/one-on-one-meeting.tsx(90,13): error TS2741: Property 'meetingId' is missing in type '{}' but required in type 'AfterCallScreenProps'.
+src/components/ui/chart.tsx(119,7): error TS2339: Property 'payload' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, "ref">'.
+src/components/ui/chart.tsx(124,7): error TS2339: Property 'label' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, "ref">'.
+src/components/ui/chart.tsx(188,25): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(188,31): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/ui/chart.tsx(264,41): error TS2344: Type '"verticalAlign" | "payload"' does not satisfy the constraint '"string" | "name" | "mode" | "id" | "type" | "key" | "filter" | "fill" | "values" | "role" | "content" | "version" | "local" | "cursor" | "layout" | "offset" | "result" | "target" | ... 428 more ... | "onBBoxUpdate"'.
+  Type '"payload"' is not assignable to type '"string" | "name" | "mode" | "id" | "type" | "key" | "filter" | "fill" | "values" | "role" | "content" | "version" | "local" | "cursor" | "layout" | "offset" | "result" | "target" | ... 428 more ... | "onBBoxUpdate"'.
+src/components/ui/chart.tsx(275,19): error TS2339: Property 'length' does not exist on type '{}'.
+src/components/ui/chart.tsx(288,18): error TS2339: Property 'map' does not exist on type '{}'.
+src/components/ui/chart.tsx(288,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/hooks/useCollaborativeNotes.ts(112,11): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/hooks/useCollaborativeNotes.ts(133,9): error TS2322: Type '{ type: "insert" | "delete" | "retain"; position: number | undefined; text: string | undefined; length: number | undefined; }[]' is not assignable to type '{ operation: { length?: number | undefined; content?: string | undefined; type: "insert" | "delete" | "retain"; position: number; }; clientSequence: number; }[]'.
+  Type '{ type: "insert" | "delete" | "retain"; position: number | undefined; text: string | undefined; length: number | undefined; }' is missing the following properties from type '{ operation: { length?: number | undefined; content?: string | undefined; type: "insert" | "delete" | "retain"; position: number; }; clientSequence: number; }': operation, clientSequence
+src/hooks/useCollaborativeNotes.ts(150,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/note").MeetingNote | null | undefined' is not assignable to type 'import("/home/user/work/repo/src/hooks/useCollaborativeNotes").MeetingNote | null | undefined'.
+  Type 'MeetingNote' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt
+src/hooks/useInCallPrompts.ts(139,9): error TS2353: Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: "used" | "dismissed" | "upvoted"; promptId: Id<"prompts">; }'.
+src/hooks/useMeetingLifecycle.ts(146,9): error TS2561: Object literal may only specify known properties, but 'participantIds' does not exist in type '{ organizerId?: Id<"users"> | undefined; description?: string | undefined; scheduledAt?: number | undefined; duration?: number | undefined; recordingEnabled?: boolean | undefined; ... 4 more ...; title: string; }'. Did you mean to write 'maxParticipants'?
+src/hooks/useMeetingLifecycle.ts(149,27): error TS2345: Argument of type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to parameter of type 'SetStateAction<Id<"meetings"> | null>'.
+src/hooks/useMeetingLifecycle.ts(155,13): error TS2322: Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<"meetings">'.
+  Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'.
+src/hooks/useMeetingLifecycle.ts(164,7): error TS2322: Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<"meetings">'.
+  Type '{ meetingId: Id<"meetings">; webrtcReady: boolean; videoProvider: "webrtc" | "getstream"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'.
+src/hooks/usePostCallInsights.ts(169,30): error TS2339: Property 'score' does not exist on type 'number'.
+src/hooks/usePostCallInsights.ts(205,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/usePostCallInsights").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/usePostCallInsights").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/usePostCallInsights.ts(206,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/note").MeetingNote | null | undefined' is not assignable to type 'import("/home/user/work/repo/src/hooks/usePostCallInsights").MeetingNote | null | undefined'.
+  Type 'MeetingNote' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt
+src/hooks/usePreCallPrompts.ts(131,9): error TS2353: Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: "used" | "dismissed" | "upvoted"; promptId: Id<"prompts">; }'.
+src/hooks/useTranscription.ts(106,37): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(109,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(119,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(128,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/hooks/useTranscription.ts(134,5): error TS2322: Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment[]' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment[]'.
+  Type 'import("/home/user/work/repo/convex/types/entities/transcript").TranscriptSegment' is not assignable to type 'import("/home/user/work/repo/src/hooks/useTranscription").TranscriptSegment'.
+    Types of property 'sentiment' are incompatible.
+      Type 'number | undefined' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; } | undefined'.
+        Type 'number' is not assignable to type '{ score: number; label: "positive" | "negative" | "neutral"; }'.
+src/lib/history/view.ts(14,60): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
+src/lib/history/view.ts(101,45): error TS7006: Parameter 'participant' implicitly has an 'any' type.
+src/lib/history/view.ts(115,51): error TS7006: Parameter 'event' implicitly has an 'any' type.
+src/lib/history/view.ts(123,35): error TS7006: Parameter 'prompt' implicitly has an 'any' type.
+test/convex/openapiExamples.test.ts(177,9): error TS2353: Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'.
+test/convex/openapiExamples.test.ts(192,9): error TS2353: Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'.
+test/convex/setup.ts(22,12): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+test/test.setup.mts(1,23): error TS2688: Cannot find type definition file for 'vite/client'.
+test/test.setup.mts(3,36): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
+ ELIFECYCLE  Command failed with exit code 2.
+TYPECHECK_EXIT=0
