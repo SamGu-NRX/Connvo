@@ -11,7 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ScenarioError, waitFor, waitForValue, phaseIs, click, joinPair } from "./scenario-kit.mjs";
+import { ScenarioError, waitFor, waitForValue, phaseIs, click, leaveCall, joinPair } from "./scenario-kit.mjs";
 
 const OUT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "out");
 const SCREENSHOTS_DIR = path.join(OUT_DIR, "screenshots");
@@ -44,7 +44,7 @@ async function openState(ctx, stateName, params = {}) {
     peer = pair.peerA;
     others.push(pair.peerB);
     if (stateName === "ended") {
-      await click(peer, "leave-call");
+      await leaveCall(peer);
       await waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "A's phase left" });
     }
   } else {
@@ -170,7 +170,15 @@ export async function scenario_P_03(ctx) {
     await operate("switch-camera", "Enter", () =>
       waitForValue(peer, localVideoTrackId, (/** @type {string | null} */ t) => !!t && t !== trackBefore, { timeoutMs: 5000, describe: "local video track replaced" }),
     );
-    await operate("leave-call", "Enter", () => waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "phase left" }));
+    await operate("leave-call", "Enter", async () => {
+      // The real call page asks first: reach "Leave call" in the dialog by
+      // keyboard and confirm it. The bench leaves on the first press.
+      const confirm = await peer.page
+        .waitForSelector('[data-testid="leave-call-confirm"]', { timeout: 1500 })
+        .catch(() => null);
+      if (confirm) await tabTo(peer, "leave-call-confirm").then(() => peer.page.keyboard.press("Enter"));
+      return waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "phase left" });
+    });
     await operate("join-call", "Enter", () => waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: "rejoined" }));
     return { controls: results };
   } finally {

@@ -76,6 +76,29 @@ export async function click(peer, testId) {
 }
 
 /**
+ * Leave the call. The bench leaves on one click; the real call page asks
+ * first, so when `leave-call-confirm` appears this confirms it.
+ * @param {{ page: import('@playwright/test').Page }} peer
+ */
+export async function leaveCall(peer) {
+  await peer.page.click('[data-testid="leave-call"]');
+  const outcome = await peer.page
+    .waitForFunction(
+      () =>
+        document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase') === 'left'
+          ? 'left'
+          : document.querySelector('[data-testid="leave-call-confirm"]')
+            ? 'confirm'
+            : null,
+      null,
+      { timeout: 3000 },
+    )
+    .then((h) => h.jsonValue())
+    .catch(() => null);
+  if (outcome === 'confirm') await peer.page.click('[data-testid="leave-call-confirm"]');
+}
+
+/**
  * Join A and B against ctx.url with optional query params. The rtcConfig
  * parameter stays undefined unless a caller pins one: when the context has
  * relay enabled (H-07/H-15), ctx.launchPeer then resolves each peer's own

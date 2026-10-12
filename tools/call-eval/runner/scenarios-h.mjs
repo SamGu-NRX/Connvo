@@ -13,6 +13,7 @@ import {
   phaseIs,
   waitAttr,
   click,
+  leaveCall,
   joinPair,
   timeToFirstRemoteFrame,
   assertProbePresent,
@@ -402,7 +403,7 @@ export async function scenario_H_11(ctx) {
     window.__h11tracks = [...(document.querySelector('[data-testid="local-video"]')?.srcObject?.getTracks() ?? [])];
   })()`);
 
-  await click(peerA, "leave-call");
+  await leaveCall(peerA);
   await waitFor(peerA, phaseIs("left"), { timeoutMs: 5000, describe: "A's phase left" });
 
   // Read the PRE-CAPTURED track objects (window.__h11tracks, captured above):
@@ -478,7 +479,7 @@ export async function scenario_H_13(ctx) {
   // the reviewed bug did — a fresh page forgets the old page's connections
   // and tracks, so accumulated live state never showed in the probe.
   for (let cycle = 1; cycle <= 5; cycle++) {
-    await click(peerA, "leave-call");
+    await leaveCall(peerA);
     await waitFor(peerA, phaseIs("left"), { timeoutMs: 5000, describe: `cycle ${cycle}: left` });
     await click(peerA, "join-call"); // same page re-joins; B never leaves
     await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000, describe: `cycle ${cycle}: A rejoined` });
