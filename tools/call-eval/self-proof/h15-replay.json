@@ -10,57 +10,69 @@
         "lossPct": 0,
         "delayMs": 0,
         "deltaLost": 0,
-        "rttMs": 2,
-        "fps": 35.8,
-        "phase": "connected"
+        "rttMs": 4,
+        "fps": 34.9,
+        "phase": "connected",
+        "clearedAt": 1791805816699
       },
       "loss5": {
         "label": "5%",
         "lossPct": 5,
         "delayMs": 300,
-        "deltaLost": 12,
-        "rttMs": 602,
-        "fps": 26.1,
-        "phase": "connected"
+        "deltaLost": 10,
+        "rttMs": 605,
+        "fps": 25.8,
+        "phase": "connected",
+        "clearedAt": 1791805825743
       },
       "recovery5": {
         "label": "recovery-5%",
         "lossPct": 0,
         "delayMs": 0,
         "deltaLost": 0,
-        "rttMs": 226,
-        "fps": 31.9,
-        "phase": "connected"
+        "rttMs": 77,
+        "fps": 37.6,
+        "phase": "connected",
+        "clearedAt": 1791805833263
       },
       "loss15": {
         "label": "15%",
         "lossPct": 15,
         "delayMs": 300,
-        "deltaLost": 29,
-        "rttMs": 603,
-        "fps": 3.7,
-        "phase": "connected"
+        "deltaLost": 26,
+        "rttMs": 345,
+        "fps": 3.4,
+        "phase": "connected",
+        "clearedAt": 1791805842324
       },
       "recovery15": {
         "label": "recovery-15%",
         "lossPct": 0,
         "delayMs": 0,
-        "deltaLost": 3,
-        "rttMs": 1,
-        "fps": 37.5,
-        "phase": "connected"
+        "deltaLost": 0,
+        "rttMs": 2,
+        "fps": 35.4,
+        "phase": "connected",
+        "clearedAt": 1791805849839
       },
-      "toneAfterHz": 437.6,
+      "toneAfter5": {
+        "hz": 438.2,
+        "afterMs": 494
+      },
+      "toneAfter15": {
+        "hz": 438.2,
+        "afterMs": 482
+      },
       "shaperB": {
-        "forwarded": 8913,
+        "forwarded": 7956,
         "dropped": 393,
-        "droppedUp": 188,
-        "droppedDown": 205,
+        "droppedUp": 185,
+        "droppedDown": 208,
         "uplinks": 2
       },
       "proof": "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared"
     },
-    "ms": 41405
+    "ms": 41150
   },
   {
     "scenario": "H-15",
@@ -74,56 +86,68 @@
         "delayMs": 0,
         "deltaLost": 0,
         "rttMs": 2,
-        "fps": 28.9,
-        "phase": "connected"
+        "fps": 37.2,
+        "phase": "connected",
+        "clearedAt": 1791805857924
       },
       "loss5": {
         "label": "5%",
         "lossPct": 5,
         "delayMs": 300,
-        "deltaLost": 12,
-        "rttMs": 604,
-        "fps": 32.2,
-        "phase": "connected"
+        "deltaLost": 6,
+        "rttMs": 603,
+        "fps": 18.5,
+        "phase": "connected",
+        "clearedAt": 1791805866976
       },
       "recovery5": {
         "label": "recovery-5%",
         "lossPct": 0,
         "delayMs": 0,
         "deltaLost": 0,
-        "rttMs": 5,
-        "fps": 34.9,
-        "phase": "connected"
+        "rttMs": 154,
+        "fps": 32.2,
+        "phase": "connected",
+        "clearedAt": 1791805874515
       },
       "loss15": {
         "label": "15%",
         "lossPct": 15,
         "delayMs": 300,
-        "deltaLost": 31,
-        "rttMs": 431,
-        "fps": 3,
-        "phase": "connected"
+        "deltaLost": 27,
+        "rttMs": 303,
+        "fps": 1.7,
+        "phase": "connected",
+        "clearedAt": 1791805883575
       },
       "recovery15": {
         "label": "recovery-15%",
         "lossPct": 0,
         "delayMs": 0,
-        "deltaLost": 3,
-        "rttMs": 2,
-        "fps": 35.2,
-        "phase": "connected"
+        "deltaLost": 0,
+        "rttMs": 227,
+        "fps": 33.2,
+        "phase": "connected",
+        "clearedAt": 1791805891061
       },
-      "toneAfterHz": 437.6,
+      "toneAfter5": {
+        "hz": 437.4,
+        "afterMs": 481
+      },
+      "toneAfter15": {
+        "hz": 436.7,
+        "afterMs": 446
+      },
       "shaperB": {
-        "forwarded": 7860,
-        "dropped": 404,
-        "droppedUp": 197,
-        "droppedDown": 207,
+        "forwarded": 7870,
+        "dropped": 384,
+        "droppedUp": 187,
+        "droppedDown": 197,
         "uplinks": 2
       },
       "proof": "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared"
     },
-    "ms": 41416
+    "ms": 41194
   },
   {
     "scenario": "H-15",
@@ -137,55 +161,67 @@
         "delayMs": 0,
         "deltaLost": 0,
         "rttMs": 1,
-        "fps": 40.3,
-        "phase": "connected"
+        "fps": 31.1,
+        "phase": "connected",
+        "clearedAt": 1791805900144
       },
       "loss5": {
         "label": "5%",
         "lossPct": 5,
         "delayMs": 300,
-        "deltaLost": 8,
-        "rttMs": 604,
-        "fps": 34.9,
-        "phase": "connected"
+        "deltaLost": 5,
+        "rttMs": 603,
+        "fps": 13.3,
+        "phase": "connected",
+        "clearedAt": 1791805909192
       },
       "recovery5": {
         "label": "recovery-5%",
         "lossPct": 0,
         "delayMs": 0,
-        "deltaLost": 2,
-        "rttMs": 226,
-        "fps": 31.2,
-        "phase": "connected"
+        "deltaLost": 0,
+        "rttMs": 152,
+        "fps": 33.6,
+        "phase": "connected",
+        "clearedAt": 1791805916716
       },
       "loss15": {
         "label": "15%",
         "lossPct": 15,
         "delayMs": 300,
-        "deltaLost": 33,
-        "rttMs": 453,
-        "fps": 27.8,
-        "phase": "connected"
+        "deltaLost": 24,
+        "rttMs": 337,
+        "fps": 1.7,
+        "phase": "connected",
+        "clearedAt": 1791805925763
       },
       "recovery15": {
         "label": "recovery-15%",
         "lossPct": 0,
         "delayMs": 0,
-        "deltaLost": -12,
-        "rttMs": 189,
-        "fps": 36.9,
-        "phase": "connected"
+        "deltaLost": 0,
+        "rttMs": 78,
+        "fps": 33.1,
+        "phase": "connected",
+        "clearedAt": 1791805933282
       },
-      "toneAfterHz": 437.3,
+      "toneAfter5": {
+        "hz": 437.9,
+        "afterMs": 490
+      },
+      "toneAfter15": {
+        "hz": 438.3,
+        "afterMs": 482
+      },
       "shaperB": {
-        "forwarded": 10395,
-        "dropped": 509,
-        "droppedUp": 175,
-        "droppedDown": 334,
+        "forwarded": 7866,
+        "dropped": 338,
+        "droppedUp": 169,
+        "droppedDown": 169,
         "uplinks": 2
       },
       "proof": "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared"
     },
-    "ms": 42935
+    "ms": 41136
   }
 ]

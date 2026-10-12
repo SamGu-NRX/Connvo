@@ -1,0 +1,234 @@
+[
+  {
+    "scenario": "P-01",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": {
+      "states": [
+        "lobby",
+        "connected",
+        "reconnecting",
+        "failed",
+        "ended"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "screenshots": [
+        "tools/call-eval/self-proof/p-checks/p01-lobby-1440x900.png",
+        "tools/call-eval/self-proof/p-checks/p01-lobby-390x844.png",
+        "tools/call-eval/self-proof/p-checks/p01-connected-1440x900.png",
+        "tools/call-eval/self-proof/p-checks/p01-connected-390x844.png",
+        "tools/call-eval/self-proof/p-checks/p01-reconnecting-1440x900.png",
+        "tools/call-eval/self-proof/p-checks/p01-reconnecting-390x844.png",
+        "tools/call-eval/self-proof/p-checks/p01-failed-1440x900.png",
+        "tools/call-eval/self-proof/p-checks/p01-failed-390x844.png",
+        "tools/call-eval/self-proof/p-checks/p01-ended-1440x900.png",
+        "tools/call-eval/self-proof/p-checks/p01-ended-390x844.png"
+      ]
+    },
+    "failure": null,
+    "ms": 6315
+  },
+  {
+    "scenario": "P-02",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": {
+      "states": [
+        {
+          "state": "lobby",
+          "violations": 3,
+          "passes": 28
+        },
+        {
+          "state": "connected",
+          "violations": 3,
+          "passes": 28
+        },
+        {
+          "state": "reconnecting",
+          "violations": 3,
+          "passes": 28
+        },
+        {
+          "state": "failed",
+          "violations": 3,
+          "passes": 28
+        },
+        {
+          "state": "ended",
+          "violations": 3,
+          "passes": 28
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 6943
+  },
+  {
+    "scenario": "P-03",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": {
+      "controls": [
+        {
+          "id": "toggle-mic",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "Unmute mic"
+        },
+        {
+          "id": "toggle-mic",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "Mute mic"
+        },
+        {
+          "id": "toggle-camera",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "Turn camera on"
+        },
+        {
+          "id": "toggle-camera",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "Turn camera off"
+        },
+        {
+          "id": "switch-camera",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "06bccd71-1fdd-4fe8-94c3-838f9dfe8db4"
+        },
+        {
+          "id": "leave-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "join-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "retry-media",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "local tracks audio:live, video:live"
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 2355
+  },
+  {
+    "scenario": "P-04",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": {
+      "mq": true,
+      "animationCount": 0,
+      "maxDurationMs": 0,
+      "transitions": []
+    },
+    "failure": null,
+    "ms": 1106
+  },
+  {
+    "scenario": "P-05",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": {
+      "cases": [
+        {
+          "label": "long-name",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "missing-avatar",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "slow-join",
+          "joinMs": 5761,
+          "during": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          },
+          "after": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        }
+      ],
+      "nameLength": 50
+    },
+    "failure": null,
+    "ms": 7873
+  }
+]
