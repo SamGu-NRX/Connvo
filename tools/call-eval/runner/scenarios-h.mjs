@@ -32,6 +32,7 @@ import {
   toneMatches,
   toneIsSilent,
   selectedCandidateTypes,
+  waitForSilence,
 } from "./page-helpers.mjs";
 
 const H = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -150,17 +151,17 @@ export async function scenario_H_03(ctx) {
   await waitAttr(peerB, "A", "data-audio-muted", "true", 1000);
   const muteFlipMs = Date.now() - t0;
 
-  // No tone energy while muted. decodeToneHz returns { peakHz, rms }: the
-  // reviewed bug compared the object to 0, which threw on every healthy
-  // muted call. Digital silence decodes to peakHz 0 (rms < 1e-6) and counts
-  // as muted; sub-floor noise energy counts as muted too.
-  const mutedTone = await sampleRemoteTone(peerB, "A", 700);
-  if (!toneIsSilent(mutedTone)) {
+  // No tone energy while muted, within the same 1 s bar as the attribute.
+  // Polling matters: the attribute arrives over signaling before the last
+  // unmuted audio has drained from the receiver (see waitForSilence).
+  const silence = await waitForSilence(() => sampleRemoteTone(peerB, "A", 150), { deadlineMs: 1000 });
+  if (!silence.silent) {
     throw new ScenarioError(
-      `H-03: muted remote still produced energy (peak ${mutedTone.peakHz} Hz, rms ${mutedTone.rms})`,
-      { mutedTone },
+      `H-03: muted remote still produced energy ${silence.afterMs} ms after mute (peak ${silence.last?.peakHz} Hz, rms ${silence.last?.rms})`,
+      { silence },
     );
   }
+  const silentAfterMs = Date.now() - t0;
 
   const t1 = Date.now();
   await click(peerA, "toggle-mic");
@@ -178,7 +179,7 @@ export async function scenario_H_03(ctx) {
     }
     await H(200);
   }
-  return { muteFlipMs, unmuteFlipMs, restoredToneHz: restored.peakHz };
+  return { muteFlipMs, silentAfterMs, unmuteFlipMs, restoredToneHz: restored.peakHz };
 }
 
 /** H-04 — remote data-video-off flips within 1 s; the sender's capture track is ended (camera released); on resumes frames */

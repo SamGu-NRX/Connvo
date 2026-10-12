@@ -414,3 +414,26 @@ export async function selectedCandidateTypes(peer) {
     return out;
   });
 }
+
+/**
+ * Poll short tone samples until the received audio is silent, and report how
+ * long that took. Mute state reaches the other page over signaling in tens of
+ * milliseconds, but audio already encoded, in flight and in the receiver's
+ * jitter buffer keeps playing for a few hundred (measured on the reference
+ * bench: tone until ~190 ms after the flip, silence from ~345 ms). One long
+ * sample taken at the flip therefore averages that tail in and reads as
+ * "still audible" on a healthy call.
+ * @param {() => Promise<{ peakHz?: number, rms?: number } | null>} sample one short window
+ * @param {{ deadlineMs: number, now?: () => number }} opts
+ * @returns {Promise<{ silent: boolean, afterMs: number, last: { peakHz?: number, rms?: number } | null }>}
+ */
+export async function waitForSilence(sample, { deadlineMs, now = Date.now }) {
+  const t0 = now();
+  let last = null;
+  for (;;) {
+    last = await sample();
+    const afterMs = now() - t0;
+    if (toneIsSilent(last)) return { silent: true, afterMs, last };
+    if (afterMs >= deadlineMs) return { silent: false, afterMs, last };
+  }
+}

@@ -8,7 +8,7 @@
  * per read, which capped the observable rate under load.
  */
 import { describe, expect, it } from "vitest";
-import { matchPeerColor, measureFps, toneMatches, toneIsSilent } from "./page-helpers.mjs";
+import { matchPeerColor, measureFps, toneMatches, toneIsSilent, waitForSilence } from "./page-helpers.mjs";
 import { decodeToneHz } from "../lib/decoders.mjs";
 
 /** 0.5 s of a pure tone at 48 kHz (decodeToneHz caps its window at 12000 samples). */
@@ -103,5 +103,42 @@ describe("tone predicates over real decoders", () => {
     expect(toneIsSilent(null)).toBe(true); // no stream/track: sampleRemoteTone returns null
     expect(toneIsSilent({ peakHz: 87, rms: 0.0005 })).toBe(true); // sub-floor noise bin
     expect(toneIsSilent({ peakHz: 660, rms: 0.4 })).toBe(false); // an actual tone is NOT silent
+  });
+});
+
+describe("waitForSilence (H-03)", () => {
+  // Known input: the received-rms timeline measured on the reference bench
+  // after A muted (attribute flip at ~30 ms; tone until ~190 ms; silent from
+  // ~345 ms). The old H-03 took one 700 ms sample at the flip; this one
+  // contains the tone tail, so a healthy call read as "still audible".
+  const timeline = [
+    { untilMs: 250, rms: 0.19, peakHz: 440 },
+    { untilMs: Infinity, rms: 0, peakHz: 0 },
+  ];
+  /** @param {{ value: number }} clock */
+  const samplerOn = (clock) => async () => {
+    clock.value += 150;
+    const step = timeline.find((s) => clock.value - 150 < s.untilMs);
+    return step ? { rms: step.rms, peakHz: step.peakHz } : null;
+  };
+
+  it("passes a healthy mute whose audio drains within the bar", async () => {
+    const clock = { value: 0 };
+    const result = await waitForSilence(samplerOn(clock), { deadlineMs: 1000, now: () => clock.value });
+    expect(result.silent).toBe(true);
+    expect(result.afterMs).toBeLessThanOrEqual(450);
+  });
+
+  it("a single sample taken at the flip would have read the tail as audible", async () => {
+    const clock = { value: 0 };
+    const first = await samplerOn(clock)();
+    expect(toneIsSilent(first)).toBe(false);
+  });
+
+  it("fails a sender whose audio never stops", async () => {
+    let t = 0;
+    const result = await waitForSilence(async () => ((t += 150), { rms: 0.4, peakHz: 440 }), { deadlineMs: 1000, now: () => t });
+    expect(result.silent).toBe(false);
+    expect(result.afterMs).toBeGreaterThanOrEqual(1000);
   });
 });
