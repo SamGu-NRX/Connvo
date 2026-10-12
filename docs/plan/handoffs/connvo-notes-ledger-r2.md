@@ -55,6 +55,11 @@ Known pre-existing (recorded by f1, unchanged): `pnpm lint` is not runnable in t
 - **M5 — property run ≥ 10,000 cases:** full property run at the recorded seed (`20261011`) with `NOTES_PROPERTY_RUNS >= 10000` and an explicit test timeout; record the seed, runs, and verdict in the PR Proof.
 - **M6 — panel states + screenshots + a11y proof:** all seven panel states mounted, committed 1440×900 / 390×844 screenshots as PR evidence, keyboard walkthrough and jest-axe proof, reduced-motion honored.
 
+## Authorship audit (pre-push, range `origin/alpha..r2`)
+
+- **Author:** all 26 commits in range are `Sam Gu <127461594+SamGu-NRX@users.noreply.github.com>` (merge commits included).
+- **Trailer:** 25/26 messages end with `Co-authored-by: obvious-autobuild[bot] <262744130+obvious-autobuild[bot]@users.noreply.github.com>`. The one exception is **pre-existing and inherited**: `04f9454` ("Merge branch 'obv/connvo-notes-f1-m2-ledger' into obv/connvo-notes-ledger-f1"), a pushed merge commit on the read-only f1 branch created with git's default merge message. Repairing it would require rewriting `04f9454` and every descendant — including the r2 branch point `1c9bceb` — which the task's absolute rules forbid (no history rewrites, f1 is read-only). Recorded here rather than repaired. Every commit created by r2 itself carries the trailer.
+
 ## Constraints (carried forward)
 
 - Never push to or modify `obv/connvo-notes-ledger-f1`; never force-push; never rewrite history.
