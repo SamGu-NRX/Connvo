@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Harness self-proof (CALL-PLAN.md S0): the reference transport passes
- * H-01..H-13, and each broken variant fails exactly the scenario it breaks.
+ * H-01..H-13, and each broken variant fails exactly the scenarios its defect breaks.
  * Runs with no Convex and no sign-in: it starts `next dev` with
  * NEXT_PUBLIC_CONNVO_CALL_BENCH=1, and the runner starts the reference
  * signaling server, which mints the bench identities itself.
@@ -38,11 +38,11 @@ const OUT = path.join(EVAL_DIR, "self-proof");
 
 /** Which scenario each broken variant must fail (CALL-PLAN.md, harness self-proof). */
 /** @type {Record<string, string>} */
-const EXPECTED_FAILURE = { "no-audio": "H-02,H-03", "never-close": "H-11", "no-reconnect": "H-07" };
+const EXPECTED_FAILURE = { "no-audio": "H-02,H-03", "never-close": "H-11,H-13", "no-reconnect": "H-07" };
 /** Why each variant fails what it fails; printed in summary.md. */
 const EXPECTED_REASON = {
   "no-audio": "it never sends audio, so H-02 hears no tone, and H-03 cannot hear the tone come back after unmute",
-  "never-close": "leave() closes nothing, so H-11 finds live connections and the signaling session still open",
+  "never-close": "leave() closes nothing, so H-11 finds live connections and the signaling session still open; with one identity scheme the stale session then blocks A's own cycle-2 rejoin, so H-13 fails too (same defect, second observable consequence; deterministic across three runs)",
   "no-reconnect": "a lost connection goes straight to failed, so H-07 never recovers",
 };
 
