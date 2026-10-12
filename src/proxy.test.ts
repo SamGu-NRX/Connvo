@@ -197,3 +197,21 @@ describe("no API carve-out", () => {
     }
   });
 });
+
+describe("after-call pages in the local eval setup", () => {
+  const local = { benchFlag: "1", realCallFlag: "1", afterCallFlag: "1", nodeEnv: "development" };
+  it("pass only with all three flags, only /app/meetings and /app/meetings/<id>", () => {
+    expect(benchPathPassesThrough("/app/meetings", local)).toBe(true);
+    expect(benchPathPassesThrough("/app/meetings/m123", local)).toBe(true);
+    expect(benchPathPassesThrough("/app/meetings/m123/edit", local)).toBe(false);
+    expect(benchPathPassesThrough("/app/meetings", { ...local, afterCallFlag: "0" })).toBe(false);
+    expect(benchPathPassesThrough("/app/meetings", { ...local, realCallFlag: undefined })).toBe(false);
+    expect(benchPathPassesThrough("/app/meetings", { ...local, benchFlag: "0" })).toBe(false);
+  });
+
+  it("never in a production build or on any Vercel deployment", () => {
+    expect(benchPathPassesThrough("/app/meetings", { ...local, nodeEnv: "production" })).toBe(false);
+    expect(benchPathPassesThrough("/app/meetings", { ...local, vercelEnv: "production" })).toBe(false);
+    expect(benchPathPassesThrough("/app/meetings", { ...local, vercel: "1" })).toBe(false);
+  });
+});
