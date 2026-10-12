@@ -10,7 +10,7 @@
  * participant").
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { useConvex, useConvexAuth } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -26,6 +26,13 @@ type ProofState =
   | { kind: "pending" }
   | { kind: "ok"; title: string; raw: string }
   | { kind: "error"; message: string };
+
+// The call-eval harness asserts rejections against [data-testid="call-error"]
+// (tools/call-eval/CONTRACT.md): H-14's named rejection must be non-empty
+// there.
+export function ProofError({ message }: { message: string }): ReactElement {
+  return <div data-testid="call-error">{`ERROR: ${message}`}</div>;
+}
 
 export default function AuthProof({ as, meetingId }: { as: string; meetingId: string }) {
   const convex = useConvex();
@@ -98,7 +105,7 @@ export default function AuthProof({ as, meetingId }: { as: string; meetingId: st
         {state.kind === "pending" &&
           (isAuthenticated ? "calling getMeeting…" : "waiting for authentication…")}
         {state.kind === "ok" && `OK: ${state.title}\n${state.raw}`}
-        {state.kind === "error" && `ERROR: ${state.message}`}
+        {state.kind === "error" && <ProofError message={state.message} />}
       </div>
     </main>
   );
