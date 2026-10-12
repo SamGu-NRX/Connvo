@@ -79,6 +79,18 @@ export function closedSessions(meetingId) {
   return rows.map((r) => ({ participant: participantLetter(r.participant), reason: r.reason, at: r.at }));
 }
 
+/**
+ * The meeting's stored shared-notes text and version (internal
+ * devEval/callMeeting:notes): the notes proof's server truth.
+ * @param {string} meetingId
+ * @returns {{ content: string, version: number }}
+ */
+export function storedNotes(meetingId) {
+  return /** @type {{ content: string, version: number }} */ (
+    parseRunOutput(convexRun("devEval/callMeeting:notes", { meetingId }), "{")
+  );
+}
+
 /** The Convex sync socket: ws://<host>/api/<version>/sync. */
 const SYNC_SOCKET = /\/api\/[^/]+\/sync$/;
 

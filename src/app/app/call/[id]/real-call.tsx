@@ -13,11 +13,13 @@
  */
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { Component, useCallback, useMemo, type ReactNode } from "react";
 import { useConvex, useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 
 import { CallRoom } from "@/components/call/CallRoom";
+import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
 import {
@@ -118,26 +120,72 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
       />
     );
   }
+  // The shared notes sit beside the call on wide screens and below it on
+  // narrow ones; they work in the lobby too, before anyone joins.
   return (
-    <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
-      <CallRoom
-        meetingId={meetingId}
-        self={self}
-        createTransport={createTransport}
-        identityToken={identityToken}
-        // Presence carries ids, not names; test users read as Guest A..O.
-        nameFor={(id) =>
-          TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
-        }
-        inviteLink={() => {
-          const url = new URL(window.location.href);
-          url.search = "";
-          return url.toString();
-        }}
-        exitHref="/app"
-      />
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+      <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
+        <CallRoom
+          meetingId={meetingId}
+          self={self}
+          createTransport={createTransport}
+          identityToken={identityToken}
+          // Presence carries ids, not names; test users read as Guest A..O.
+          nameFor={(id) =>
+            TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
+          }
+          inviteLink={() => {
+            const url = new URL(window.location.href);
+            url.search = "";
+            return url.toString();
+          }}
+          exitHref="/app"
+        />
+      </div>
+      <aside
+        aria-label="Meeting notes"
+        className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
+      >
+        <NotesBoundary>
+          <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
+        </NotesBoundary>
+      </aside>
     </div>
   );
+}
+
+/**
+ * The notes query throws for someone outside the meeting or a link that is
+ * not a meeting. The call shows its own answer for those; the notes say
+ * theirs here instead of taking the page down.
+ */
+class NotesBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error : new Error(String(error)) };
+  }
+
+  render() {
+    const { error } = this.state;
+    if (!error) return this.props.children;
+    const refused = /access denied|forbidden|not a meeting participant/i.test(
+      error.message,
+    );
+    return (
+      <div
+        data-testid="notes-unavailable"
+        className="text-muted-foreground rounded-md border p-4 text-sm"
+      >
+        {refused
+          ? "Notes are only for the people in this meeting."
+          : "Notes could not load. Reload the page to try again."}
+      </div>
+    );
+  }
 }
 
 function CallNotice({
