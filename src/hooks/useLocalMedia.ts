@@ -112,6 +112,19 @@ export function useLocalMedia(): LocalMedia {
     });
   }, []);
 
+  // Every capture request checks, when it resolves, that nothing newer has
+  // happened since it started: release, unmount, a newer start(), or a newer
+  // camera/device change. A stale result is stopped at once, so a slow
+  // permission prompt can never reopen the camera after leave or camera-off.
+  const sessionRef = useRef(0);
+  const videoGenRef = useRef(0);
+  const audioGenRef = useRef(0);
+  const cameraWantedRef = useRef(true);
+  const statusRef = useRef<LocalMediaStatus>("idle");
+  statusRef.current = status;
+  const stopAll = (s: MediaStream | null) =>
+    s?.getTracks().forEach((t) => t.stop());
+
   /** Puts `track` into the stream in place of any track of its kind. */
   const swapIn = useCallback((track: MediaStreamTrack) => {
     const stream = streamRef.current ?? new MediaStream();
@@ -131,12 +144,24 @@ export function useLocalMedia(): LocalMedia {
     }));
   }, []);
 
+  const dropVideo = () => {
+    const stream = streamRef.current;
+    for (const track of stream?.getVideoTracks() ?? []) {
+      stream?.removeTrack(track);
+      track.stop();
+    }
+  };
+
   const start = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus("error");
       setProblem("This browser cannot use a camera or microphone.");
       return;
     }
+    const session = ++sessionRef.current;
+    videoGenRef.current++;
+    audioGenRef.current++;
+    const current = () => session === sessionRef.current;
     setStatus("requesting");
     setProblem(null);
     const wanted = selectedRef.current;
@@ -152,6 +177,7 @@ export function useLocalMedia(): LocalMedia {
       // A missing camera should not keep someone out of a call they can
       // still hear and speak in.
       if (
+        current() &&
         err instanceof DOMException &&
         (err.name === "NotFoundError" || err.name === "NotReadableError")
       ) {
@@ -159,6 +185,10 @@ export function useLocalMedia(): LocalMedia {
           .getUserMedia({ audio: true })
           .catch(() => null);
       }
+    }
+    if (!current()) {
+      stopAll(captured);
+      return;
     }
     if (!captured) {
       const { status: next, problem: why } = describe(firstError);
@@ -168,6 +198,8 @@ export function useLocalMedia(): LocalMedia {
     }
     for (const track of captured.getTracks()) swapIn(track);
     const hasVideo = captured.getVideoTracks().length > 0;
+    if (!hasVideo) dropVideo();
+    cameraWantedRef.current = hasVideo;
     setAudioOnly(!hasVideo);
     setCameraState(hasVideo);
     setStatus("ready");
@@ -184,54 +216,94 @@ export function useLocalMedia(): LocalMedia {
 
   const setCameraOn = useCallback(
     async (on: boolean) => {
-      const stream = streamRef.current;
+      const gen = ++videoGenRef.current;
+      const session = sessionRef.current;
+      cameraWantedRef.current = on;
       if (!on) {
-        for (const track of stream?.getVideoTracks() ?? []) {
-          stream?.removeTrack(track);
-          track.stop();
-        }
+        dropVideo();
         setCameraState(false);
         bump();
         return;
       }
+      let fresh: MediaStream | null = null;
       try {
-        const fresh = await navigator.mediaDevices.getUserMedia({
+        fresh = await navigator.mediaDevices.getUserMedia({
           video: constraint(selectedRef.current.videoinput),
         });
-        swapIn(fresh.getVideoTracks()[0]);
-        setCameraState(true);
-        setAudioOnly(false);
-        bump();
       } catch (err) {
-        setProblem(describe(err).problem);
+        if (gen === videoGenRef.current && session === sessionRef.current) {
+          setProblem(describe(err).problem);
+        }
+        return;
       }
+      if (
+        gen !== videoGenRef.current ||
+        session !== sessionRef.current ||
+        !cameraWantedRef.current
+      ) {
+        stopAll(fresh);
+        return;
+      }
+      swapIn(fresh.getVideoTracks()[0]);
+      setProblem(null);
+      setCameraState(true);
+      setAudioOnly(false);
+      bump();
     },
     [swapIn],
   );
 
   const selectDevice = useCallback(
     async (kind: "audioinput" | "videoinput", deviceId: string) => {
-      setSelected((s) => ({ ...s, [kind]: deviceId }));
-      selectedRef.current = { ...selectedRef.current, [kind]: deviceId };
-      if (status !== "ready") return;
-      if (kind === "videoinput" && !cameraOn) return;
+      const live =
+        statusRef.current === "ready" &&
+        (kind === "audioinput" || cameraWantedRef.current);
+      if (!live) {
+        // Remembered for the next capture; nothing to switch right now.
+        setSelected((s) => ({ ...s, [kind]: deviceId }));
+        selectedRef.current = { ...selectedRef.current, [kind]: deviceId };
+        return;
+      }
+      const genRef = kind === "audioinput" ? audioGenRef : videoGenRef;
+      const gen = ++genRef.current;
+      const session = sessionRef.current;
+      let fresh: MediaStream | null = null;
       try {
-        const fresh = await navigator.mediaDevices.getUserMedia(
+        fresh = await navigator.mediaDevices.getUserMedia(
           kind === "audioinput"
             ? { audio: constraint(deviceId) }
             : { video: constraint(deviceId) },
         );
-        for (const track of fresh.getTracks()) swapIn(track);
-        bump();
       } catch (err) {
-        setProblem(describe(err).problem);
+        // The previous device stays active and selected.
+        if (gen === genRef.current && session === sessionRef.current) {
+          setProblem(
+            `That ${kind === "audioinput" ? "microphone" : "camera"} could not start. ${describe(err).problem}`,
+          );
+        }
+        return;
       }
+      if (
+        gen !== genRef.current ||
+        session !== sessionRef.current ||
+        (kind === "videoinput" && !cameraWantedRef.current)
+      ) {
+        stopAll(fresh);
+        return;
+      }
+      for (const track of fresh.getTracks()) swapIn(track);
+      selectedRef.current = { ...selectedRef.current, [kind]: deviceId };
+      setProblem(null);
+      bump();
     },
-    [cameraOn, status, swapIn],
+    [swapIn],
   );
 
   const release = useCallback(() => {
-    for (const track of streamRef.current?.getTracks() ?? []) track.stop();
+    sessionRef.current++;
+    videoGenRef.current++;
+    audioGenRef.current++;
+    stopAll(streamRef.current);
     streamRef.current = null;
     setStatus("idle");
     bump();
@@ -247,7 +319,9 @@ export function useLocalMedia(): LocalMedia {
 
   useEffect(
     () => () => {
-      for (const track of streamRef.current?.getTracks() ?? []) track.stop();
+      sessionRef.current++;
+      stopAll(streamRef.current);
+      streamRef.current = null;
     },
     [],
   );

@@ -87,6 +87,18 @@ function BenchCall({
         createTransport={createTransport}
         identityToken={identityToken}
         nameFor={(id) => `Guest ${id}`}
+        inviteLink={() => {
+          // Bench invites keep the signaling server and hand the next bench
+          // identity, so the person invited does not replace the sender.
+          const next =
+            BENCH_IDS[(BENCH_IDS.indexOf(selfId) + 1) % BENCH_IDS.length];
+          const url = new URL(window.location.href);
+          url.search = new URLSearchParams({
+            as: next,
+            signal: signalUrl,
+          }).toString();
+          return url.toString();
+        }}
         exitHref="/app"
       />
     </div>

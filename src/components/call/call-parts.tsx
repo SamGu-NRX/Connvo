@@ -14,7 +14,10 @@ function audioContext(): AudioContext | null {
     // Chrome starts an AudioContext made before any user gesture suspended,
     // which would leave the lobby's mic meter flat. Resume on the first one.
     const resume = () => void sharedAudio?.resume().catch(() => {});
-    window.addEventListener("pointerdown", resume, { once: true, capture: true });
+    window.addEventListener("pointerdown", resume, {
+      once: true,
+      capture: true,
+    });
     window.addEventListener("keydown", resume, { once: true, capture: true });
   }
   return sharedAudio;
@@ -62,8 +65,15 @@ export function VoiceLine({
       // attack and a slower release so the line does not flicker.
       const target = Math.min(1, rms * 6);
       level = target > level ? target : level * 0.9 + target * 0.1;
-      if (reduce.matches) line.style.opacity = String(0.25 + level * 0.75);
-      else line.style.transform = `scaleX(${level.toFixed(3)})`;
+      // Set both each frame, so switching the preference mid-call never
+      // leaves a stale value from the other mode behind.
+      if (reduce.matches) {
+        line.style.transform = "";
+        line.style.opacity = String(0.25 + level * 0.75);
+      } else {
+        line.style.opacity = "";
+        line.style.transform = `scaleX(${level.toFixed(3)})`;
+      }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -247,7 +257,7 @@ export function DeviceSelect({
         disabled={disabled || devices.length === 0}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "h-10 w-full min-w-0 truncate rounded-md border px-2.5 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/50 disabled:opacity-60",
+          "h-11 w-full min-w-0 truncate rounded-md border px-2.5 text-base outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/50 disabled:opacity-60 sm:h-10 sm:text-sm",
           dark
             ? "border-white/15 bg-white/5 text-[var(--ink)] [&>option]:text-black"
             : "border-input bg-background",

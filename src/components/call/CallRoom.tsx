@@ -12,7 +12,14 @@
  * leave-call opens the dialog and leave-call-confirm leaves.
  */
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import {
   Check,
   Link2,
@@ -57,6 +64,8 @@ export interface CallRoomProps {
   identityToken: () => Promise<string>;
   nameFor: (participantId: string) => string;
   exitHref: string;
+  /** The link to share so someone else can join this call. */
+  inviteLink: () => string;
 }
 
 interface Remote {
@@ -77,6 +86,7 @@ export function CallRoom({
   identityToken,
   nameFor,
   exitHref,
+  inviteLink,
 }: CallRoomProps) {
   const media = useLocalMedia();
   const [screen, setScreen] = useState<Screen>("lobby");
@@ -87,6 +97,8 @@ export function CallRoom({
   } | null>(null);
   const [remotes, setRemotes] = useState<Map<string, Remote>>(new Map());
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const leaveButtonRef = useRef<HTMLButtonElement>(null);
+  const leavingRef = useRef(false);
   const transportRef = useRef<CallTransport | null>(null);
   const mediaRef = useRef(media);
   mediaRef.current = media;
@@ -187,6 +199,7 @@ export function CallRoom({
   }, [media.micOn, media.cameraOn]);
 
   const leave = useCallback(async () => {
+    leavingRef.current = true;
     setConfirmLeave(false);
     await transportRef.current?.leave();
     transportRef.current = null;
@@ -239,13 +252,26 @@ export function CallRoom({
           nameFor={nameFor}
           callError={callError}
           onRetry={join}
-          onLeave={() => setConfirmLeave(true)}
+          onLeave={() => {
+            leavingRef.current = false;
+            setConfirmLeave(true);
+          }}
+          leaveButtonRef={leaveButtonRef}
+          inviteLink={inviteLink}
           exitHref={exitHref}
         />
       )}
 
       <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
-        <AlertDialogContent className="max-w-sm">
+        <AlertDialogContent
+          className="max-w-sm motion-reduce:animate-none"
+          onCloseAutoFocus={(e) => {
+            // Stay returns focus to Leave; leaving moves it to the ended
+            // screen's heading instead.
+            e.preventDefault();
+            if (!leavingRef.current) leaveButtonRef.current?.focus();
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>Leave the call?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -293,7 +319,12 @@ function Lobby({
         "grid flex-1 content-center gap-5 overflow-y-auto p-4 sm:p-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-8 lg:p-8",
       )}
     >
-      <div className="relative aspect-video w-full overflow-hidden rounded-md bg-[var(--tile)]">
+      <div
+        className={cn(
+          "relative w-full overflow-hidden rounded-md bg-[var(--tile)]",
+          blocked ? "min-h-[16rem]" : "aspect-video",
+        )}
+      >
         {blocked ? (
           <MediaProblem media={media} />
         ) : media.status === "requesting" || media.status === "idle" ? (
@@ -363,6 +394,11 @@ function Lobby({
           >
             Join call
           </button>
+          {media.status === "ready" && media.problem ? (
+            <p role="alert" className="text-xs text-rose-300">
+              {media.problem}
+            </p>
+          ) : null}
           {media.audioOnly ? (
             <p className="text-xs text-[var(--ink-muted)]">
               No camera found. You can join with your microphone only.
@@ -390,7 +426,7 @@ function MediaProblem({ media }: { media: LocalMedia }) {
   return (
     <div
       role="alert"
-      className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center"
+      className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-3 p-6 text-center"
     >
       <VideoOff aria-hidden className="size-8 text-[var(--ink-muted)]" />
       <p
@@ -406,7 +442,7 @@ function MediaProblem({ media }: { media: LocalMedia }) {
         onClick={() => void media.start()}
         className={cn(
           styles.press,
-          "mt-1 h-10 rounded-md bg-white/10 px-4 text-sm font-medium text-[var(--ink)] outline-none hover:bg-white/15 focus-visible:ring-[3px] focus-visible:ring-emerald-400/50",
+          "mt-1 h-11 rounded-md bg-white/10 px-4 text-sm font-medium text-[var(--ink)] outline-none hover:bg-white/15 focus-visible:ring-[3px] focus-visible:ring-emerald-400/50",
         )}
       >
         Try again
@@ -426,9 +462,13 @@ function InCall({
   callError,
   onRetry,
   onLeave,
+  leaveButtonRef,
+  inviteLink,
   exitHref,
 }: {
   media: LocalMedia;
+  leaveButtonRef: RefObject<HTMLButtonElement | null>;
+  inviteLink: () => string;
   self: { id: string; name: string };
   phase: CallPhase;
   remotes: Map<string, Remote>;
@@ -497,7 +537,12 @@ function InCall({
   return (
     <div className={cn(styles.screen, "relative flex min-h-0 flex-1 flex-col")}>
       <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center px-3">
-        <StatusNotice phase={phase} alone={alone} />
+        <StatusNotice
+          phase={phase}
+          alone={alone}
+          inviteLink={inviteLink}
+          problem={media.problem}
+        />
       </div>
 
       <div className="relative min-h-0 flex-1 p-2 sm:p-3">
@@ -550,20 +595,36 @@ function InCall({
         )}
       </div>
 
-      <ControlBar media={media} onLeave={onLeave} />
+      <ControlBar
+        media={media}
+        onLeave={onLeave}
+        leaveButtonRef={leaveButtonRef}
+      />
     </div>
   );
 }
 
-function StatusNotice({ phase, alone }: { phase: CallPhase; alone: boolean }) {
+function StatusNotice({
+  phase,
+  alone,
+  inviteLink,
+  problem,
+}: {
+  phase: CallPhase;
+  alone: boolean;
+  inviteLink: () => string;
+  problem: string | null;
+}) {
   const text =
-    phase === "joining"
-      ? "Connecting to the call…"
-      : phase === "reconnecting"
-        ? "Reconnecting. The call continues when your connection comes back."
-        : alone && phase === "connected"
-          ? "You're the only one here. Others appear when they join."
-          : null;
+    problem && phase === "connected"
+      ? problem
+      : phase === "joining"
+        ? "Connecting to the call…"
+        : phase === "reconnecting"
+          ? "Reconnecting. The call continues when your connection comes back."
+          : alone && phase === "connected"
+            ? "You're the only one here. Others appear when they join."
+            : null;
   return (
     <div role="status" aria-live="polite" className="min-h-0">
       {text ? (
@@ -574,33 +635,35 @@ function StatusNotice({ phase, alone }: { phase: CallPhase; alone: boolean }) {
             "pointer-events-auto flex items-center gap-2 rounded-md bg-black/60 px-3 py-2 text-sm backdrop-blur-md",
             phase === "reconnecting"
               ? "text-[var(--warn)]"
-              : "text-[var(--ink)]",
+              : problem && phase === "connected"
+                ? "text-rose-300"
+                : "text-[var(--ink)]",
           )}
         >
           {text}
-          {alone && phase === "connected" ? <CopyLink /> : null}
+          {alone && phase === "connected" && !problem ? (
+            <CopyLink inviteLink={inviteLink} />
+          ) : null}
         </p>
       ) : null}
     </div>
   );
 }
 
-function CopyLink() {
+function CopyLink({ inviteLink }: { inviteLink: () => string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
       onClick={() => {
-        void navigator.clipboard
-          ?.writeText(window.location.href.split("?")[0])
-          .then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1600);
-          });
+        void navigator.clipboard?.writeText(inviteLink()).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        });
       }}
       className={cn(
         styles.press,
-        "ml-1 inline-flex h-7 items-center gap-1 rounded-sm bg-white/10 px-2 text-xs outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-emerald-400/60",
+        "ml-1 inline-flex h-9 items-center gap-1 rounded-sm bg-white/10 px-2 text-xs outline-none hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-emerald-400/60",
       )}
     >
       {copied ? (
@@ -673,14 +736,16 @@ function CameraButton({ media }: { media: LocalMedia }) {
 function ControlBar({
   media,
   onLeave,
+  leaveButtonRef,
 }: {
   media: LocalMedia;
   onLeave: () => void;
+  leaveButtonRef: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <div
       className="flex items-center justify-center gap-2 border-t border-white/8 px-3 py-3"
-      role="toolbar"
+      role="group"
       aria-label="Call controls"
     >
       <MicButton media={media} />
@@ -701,7 +766,10 @@ function ControlBar({
             <Settings2 aria-hidden className="size-5" />
           </button>
         </PopoverTrigger>
-        <PopoverContent side="top" className="grid w-72 gap-3">
+        <PopoverContent
+          side="top"
+          className="grid w-72 origin-(--radix-popover-content-transform-origin) gap-3 motion-reduce:animate-none"
+        >
           <DeviceSelect
             label="Camera"
             devices={media.devices.videoinput}
@@ -718,6 +786,7 @@ function ControlBar({
       </Popover>
       <button
         type="button"
+        ref={leaveButtonRef}
         data-testid="leave-call"
         onClick={onLeave}
         className={cn(
@@ -748,7 +817,13 @@ function Ended({
         "flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center",
       )}
     >
-      <h1 className="text-2xl font-medium tracking-tight">You left the call</h1>
+      <h1
+        ref={(el) => el?.focus()}
+        tabIndex={-1}
+        className="text-2xl font-medium tracking-tight outline-none"
+      >
+        You left the call
+      </h1>
       <p className="max-w-sm text-sm text-[var(--ink-muted)]">
         Your camera and microphone are off.
       </p>
