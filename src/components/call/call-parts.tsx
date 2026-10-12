@@ -9,7 +9,14 @@ import styles from "./call.module.css";
 let sharedAudio: AudioContext | null = null;
 function audioContext(): AudioContext | null {
   if (typeof window === "undefined" || !window.AudioContext) return null;
-  sharedAudio ??= new AudioContext();
+  if (!sharedAudio) {
+    sharedAudio = new AudioContext();
+    // Chrome starts an AudioContext made before any user gesture suspended,
+    // which would leave the lobby's mic meter flat. Resume on the first one.
+    const resume = () => void sharedAudio?.resume().catch(() => {});
+    window.addEventListener("pointerdown", resume, { once: true, capture: true });
+    window.addEventListener("keydown", resume, { once: true, capture: true });
+  }
   return sharedAudio;
 }
 
