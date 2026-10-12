@@ -1,0 +1,163 @@
+{
+  "baseUrl": "http://localhost:3035",
+  "ranAt": "2026-10-12T18:50:42.553Z",
+  "states": [
+    {
+      "state": "synced",
+      "status": "Synced",
+      "unsaved": [],
+      "notice": null,
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/synced-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/synced-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 13,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "state": "saving",
+      "status": "Saving",
+      "unsaved": [
+        "Sending“Decision: ship Friday. ”"
+      ],
+      "notice": null,
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/saving-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/saving-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 15,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "state": "recovered",
+      "status": "Saving",
+      "unsaved": [
+        "Sending“Decision: ship Friday. ”attempt 2"
+      ],
+      "notice": null,
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/recovered-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/recovered-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 15,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "state": "unconfirmed",
+      "status": "Unconfirmed (1)",
+      "unsaved": [
+        "Unconfirmed“Risk: vendor delay. ”"
+      ],
+      "notice": null,
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/unconfirmed-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/unconfirmed-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 15,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "state": "offline",
+      "status": "Offline",
+      "unsaved": [],
+      "notice": null,
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/offline-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/offline-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 13,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "state": "error",
+      "status": null,
+      "unsaved": [],
+      "notice": "Notes could not load. Reload the page to try again.",
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/error-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/error-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 5,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "state": "not-a-participant",
+      "status": null,
+      "unsaved": [],
+      "notice": "Notes are only for the people in this meeting.",
+      "shots": [
+        "docs/notes-ledger-f1/screenshots/not-a-participant-1440x900.png",
+        "docs/notes-ledger-f1/screenshots/not-a-participant-390x844.png"
+      ],
+      "axe": {
+        "violations": [],
+        "passes": 5,
+        "incomplete": [
+          "color-contrast"
+        ]
+      }
+    }
+  ],
+  "keyboard": {
+    "tabsToEditor": 15,
+    "path": [
+      "a \"Connvo\"",
+      "button \"Toggle theme\"",
+      "a \"HomeWelcome overview\"",
+      "a \"DashboardMetrics and insights\"",
+      "a \"ProfilePersonal details\"",
+      "a \"SettingsPreferences and contro\"",
+      "a \"CasualFriendly voice introduct\"",
+      "a \"ProfessionalTargeted matches\"",
+      "button \"Log out\"",
+      "button \"Copy link\"",
+      "button[toggle-mic] \"Mute microphone\"",
+      "button[toggle-camera] \"Turn camera off\"",
+      "button[device-settings] \"Camera and microphone settings\"",
+      "button[leave-call] \"Leave\"",
+      "textarea[notes-editor] \"Agenda: budget review. Owner: \""
+    ],
+    "reachedEditor": true,
+    "editorShowsFocus": true,
+    "tabFromEditorGoesTo": "body",
+    "leftEditor": true,
+    "shiftTabReturnsTo": "textarea[notes-editor] \"Agenda: budget review. Owner: \"",
+    "shiftTabFromEditorGoesTo": "button[leave-call] \"Leave\"",
+    "reachesCallControls": true
+  },
+  "reducedMotion": {
+    "animatedElementsWithReduce": 0,
+    "animatedElementsWithoutPreference": 1,
+    "pass": true
+  }
+}
