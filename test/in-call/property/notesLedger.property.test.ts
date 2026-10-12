@@ -886,6 +886,86 @@ describe("notes ledger property — P2 two clients", () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// P2 replay — recorded counterexample (seed 20261011, path 8610)
+// ---------------------------------------------------------------------------
+
+/** Deterministic replay of a two-client counterexample recorded at
+ * seed 20261011 (found at scale, path 8610): interleaved offline/dropBefore
+ * faults leave rejected and saved records coexisting while the buffer holds
+ * words typed on top of refused effects. Kept as a permanent regression
+ * check — it drove the transformOperationSequence absorb-reconciliation fix
+ * (an insert absorbed by a local delete must die in the carried frame). */
+test("replay: recorded two-client counterexample (seed 20261011 path 8610)", async () => {
+  const steps: Array<{ client: 0 | 1; edit: EditCommand | null; fault: FaultKind }> = [
+    { client: 0, edit: { kind: "insert", position: 14, token: "t0k1 ", length: 2 }, fault: "none" },
+    { client: 1, edit: { kind: "insert", position: 4, token: "t1k2 ", length: 4 }, fault: "dropBefore" },
+    { client: 0, edit: { kind: "insert", position: 17, token: "t0k3 ", length: 3 }, fault: "none" },
+    { client: 0, edit: null, fault: "offline" },
+    { client: 1, edit: { kind: "insert", position: 14, token: "t1k4 ", length: 2 }, fault: "reconnect" },
+    { client: 1, edit: null, fault: "none" },
+    { client: 0, edit: { kind: "insert", position: 16, token: "t0k5 ", length: 3 }, fault: "none" },
+    { client: 1, edit: { kind: "delete", position: 10, token: "747343 ", length: 5 }, fault: "dropBefore" },
+    { client: 0, edit: { kind: "delete", position: 12, token: "732 ", length: 4 }, fault: "none" },
+    { client: 1, edit: null, fault: "dropBefore" },
+    { client: 0, edit: null, fault: "reconnect" },
+    { client: 0, edit: { kind: "insert", position: 3, token: "t0k6 ", length: 5 }, fault: "offline" },
+  ];
+  const server = new LightServer();
+  const chunks = new ChunkLedger();
+  const ingest = new IngestLog();
+  const sendLog = new SendLog();
+  const idCounter = { n: 0 };
+  const rigs = [
+    makeRig(server, chunks, sendLog, ingest, "c1", idCounter, "meeting-p2"),
+    makeRig(server, chunks, sendLog, ingest, "c2", idCounter, "meeting-p2"),
+  ];
+  const buffers = ["", ""];
+  let tokenSeq = 0;
+
+  for (const step of steps) {
+    const rig = rigs[step.client];
+    switch (step.fault) {
+      case "offline":
+        await armFault(rig, { offline: true }, "meeting-p2");
+        break;
+      case "reconnect":
+        rig.transport.reconnect();
+        break;
+      case "dropBefore":
+        await armFault(rig, { dropBeforeApply: true }, "meeting-p2");
+        break;
+      case "none":
+        break;
+    }
+    if (step.edit) {
+      if (step.edit.kind !== "delete") {
+        step.edit.token = `t${step.client}k${++tokenSeq} `;
+      }
+      buffers[step.client] = applyEdit(buffers[step.client], step.edit);
+      rig.ledger.onEdit(buffers[step.client]);
+    }
+    await quiesce(() => stateOf(rig.ledger));
+  }
+
+  // Final recovery for both clients (mutual pushes settle the reads).
+  await recoverToSynced(rigs[0], "meeting-p2");
+  await recoverToSynced(rigs[1], "meeting-p2");
+  rigs[0].transport.reconnect();
+  rigs[1].transport.reconnect();
+  await quiesce(() => stateOf(rigs[0].ledger));
+  await quiesce(() => stateOf(rigs[1].ledger));
+
+  assertSendDiscipline(sendLog);
+  for (const rig of rigs) {
+    const snap = rig.ledger.getSnapshot();
+    expect(snap.status).toBe("synced");
+    expect(snap.content).toBe(server.content);
+    expect(snap.unsavedRecords).toHaveLength(0);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Mounted seam subset — the REAL hook through NotesTransportProvider.
 // ---------------------------------------------------------------------------
