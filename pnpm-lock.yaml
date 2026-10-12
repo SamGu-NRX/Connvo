@@ -282,6 +282,9 @@ importers:
       fast-check:
         specifier: 3.22.0
         version: 3.22.0
+      ical.js:
+        specifier: ^2.2.1
+        version: 2.2.1
       jest-axe:
         specifier: ^11.0.0
         version: 11.0.0
@@ -4552,6 +4555,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  ical.js@2.2.1:
+    resolution: {integrity: sha512-yK/UlPbEs316igb/tjRgbFA8ZV75rCsBJp/hWOatpyaPNlgw0dGDmU+FoicOcwX4xXkeXOkYiOmCqNPFpNPkQg==}
 
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
@@ -11050,6 +11056,8 @@ snapshots:
       '@babel/runtime': 7.28.4
     optionalDependencies:
       typescript: 5.9.3
+
+  ical.js@2.2.1: {}
 
   iconv-lite@0.6.3:
     dependencies:

@@ -17,6 +17,7 @@ export function benchPathPassesThrough(
   env: {
     benchFlag?: string;
     realCallFlag?: string;
+    afterCallFlag?: string;
     nodeEnv?: string;
     vercelEnv?: string;
     /** Vercel sets VERCEL=1 on every deployment, preview included. */
@@ -33,7 +34,15 @@ export function benchPathPassesThrough(
   // not "production", so the production checks alone could expose the page
   // without sign-in if someone set the flags there.
   if (env.vercel) return false;
-  return env.realCallFlag === "1" && /^\/app\/call\/[^/]+$/.test(pathname);
+  if (env.realCallFlag === "1" && /^\/app\/call\/[^/]+$/.test(pathname)) return true;
+  // The after-call pages in the same local eval setup (all three flags on):
+  // the harness reaches them signed in with the test identities, which the
+  // dummy WorkOS config cannot do. Their data is guarded by Convex itself.
+  return (
+    env.realCallFlag === "1" &&
+    env.afterCallFlag === "1" &&
+    /^\/app\/meetings(\/[^/]+)?$/.test(pathname)
+  );
 }
 
 // CALL-PLAN.md D3 (eval-only): with NEXT_PUBLIC_CONNVO_TEST_AUTH=1 the two
@@ -75,6 +84,7 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
     benchPathPassesThrough(request.nextUrl.pathname, {
       benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,
       realCallFlag: process.env.NEXT_PUBLIC_CONNVO_REAL_CALL,
+      afterCallFlag: process.env.NEXT_PUBLIC_CONNVO_AFTER_CALL,
       vercel: process.env.VERCEL,
       nodeEnv: process.env.NODE_ENV,
       vercelEnv: process.env.VERCEL_ENV,

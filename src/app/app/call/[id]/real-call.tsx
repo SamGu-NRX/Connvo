@@ -13,13 +13,20 @@
  */
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Component, useCallback, useMemo, type ReactNode } from "react";
+import {
+  Component,
+  useCallback,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useConvex, useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
+import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
 import {
@@ -77,6 +84,13 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   const me = useQuery(
     api.users.queries.getCurrentUser,
     isAuthenticated ? {} : "skip",
+  );
+  // After the person leaves, the page shows what the meeting recorded
+  // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
+  const [ended, setEnded] = useState(false);
+  const onScreenChange = useCallback(
+    (screen: "lobby" | "call" | "ended") => setEnded(screen === "ended"),
+    [],
   );
 
   const createTransport = useCallback(
@@ -142,12 +156,15 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
             return url.toString();
           }}
           exitHref="/app"
+          onScreenChange={onScreenChange}
+          endedActions={<OpenRecapLink meetingId={meetingId} />}
         />
       </div>
       <aside
         aria-label="Meeting notes"
         className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
       >
+        {ended ? <EndedRecap meetingId={meetingId} /> : null}
         <NotesBoundary>
           <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
         </NotesBoundary>

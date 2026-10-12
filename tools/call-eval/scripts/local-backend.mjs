@@ -87,6 +87,10 @@ function launchInTmux(session, file, env, command) {
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
+// --after-call turns the after-call screens on for this run: the Convex env
+// CONNVO_AFTER_CALL and next's NEXT_PUBLIC_CONNVO_AFTER_CALL. Without it
+// both are written as "0", so a previous run's setting never lingers.
+const afterCall = flag("after-call");
 // ------------------------------------------------- slim harness tree + convex.json override
 // The full app tree can exceed the local backend's 2 s module-load budget on a
 // contended 2-core box. The harness only needs the call/meeting/messaging
@@ -391,6 +395,7 @@ function assertLocalDeployment() {
     envSets: [
       { name: EVAL_ENV_WORKOS_CLIENT_ID, value: DUMMY_WORKOS_CLIENT_ID },
       { name: EVAL_ENV_TEST_JWKS, value: jwksDataUri },
+      { name: "CONNVO_AFTER_CALL", value: afterCall ? "1" : "0" },
     ],
     envSet: runEnvSet,
   });
@@ -509,6 +514,7 @@ const serving = (/** @type {string} */ code) => code.startsWith("2") || code.sta
     NEXT_PUBLIC_CONNVO_CALL_BENCH: "1",
     // The real call page, signaling over this backend (convex/meetings/webrtc/mesh.ts).
     NEXT_PUBLIC_CONNVO_REAL_CALL: "1",
+    NEXT_PUBLIC_CONNVO_AFTER_CALL: afterCall ? "1" : "0",
     WORKOS_CLIENT_ID: DUMMY_WORKOS_CLIENT_ID,
     WORKOS_API_KEY: DUMMY_WORKOS_API_KEY,
     // authkit-nextjs reads the redirect URI only from the NEXT_PUBLIC_ name.

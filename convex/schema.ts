@@ -21,11 +21,13 @@ import { systemTables } from "./schema/system";
 import { offlineTables } from "./schema/offline";
 import { legacyTables } from "./schema/legacy";
 import { userSettings } from "./schema/userSettings";
+import { historyTables } from "./schema/history";
 
 export default defineSchema({
   ...userTables,
   ...interestTables,
   ...meetingTables,
+  ...historyTables,
   ...transcriptTables,
   ...aiTables,
   ...matchingTables,
