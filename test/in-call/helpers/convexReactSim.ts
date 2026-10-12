@@ -6,7 +6,7 @@
  * until its first read completes, then the latest result; a resolved
  * mutation is followed by a query resync.
  */
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useSyncExternalStore } from "react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import type { BatchApplyNoteOperationsResponse } from "@/hooks/notes/types";
@@ -95,6 +95,29 @@ export class ConvexReactSim {
   /** Make the transport identity change on every render (see useMutation). */
   churn = false;
 
+  private connected = true;
+  private readonly connectionListeners = new Set<() => void>();
+
+  /** Take the simulated socket down or bring it back. */
+  setConnected(connected: boolean): void {
+    this.connected = connected;
+    this.connectionListeners.forEach((listener) => listener());
+  }
+
+  useConvexConnectionState(): {
+    isWebSocketConnected: boolean;
+    hasEverConnected: boolean;
+  } {
+    const connected = useSyncExternalStore(
+      (listener) => {
+        this.connectionListeners.add(listener);
+        return () => this.connectionListeners.delete(listener);
+      },
+      () => this.connected,
+    );
+    return { isWebSocketConnected: connected, hasEverConnected: true };
+  }
+
   private readonly mutate = async (
     batch: OutgoingBatch,
   ): Promise<BatchApplyNoteOperationsResponse> => {
@@ -106,6 +129,17 @@ export class ConvexReactSim {
     if (this.failNextBatches > 0) {
       this.failNextBatches--;
       throw new Error("simulated network failure (ECONNRESET)");
+    }
+    // Like ConvexReactClient: a mutation made while disconnected waits for
+    // the reconnect instead of failing.
+    while (!this.connected) {
+      await new Promise<void>((resolve) => {
+        const once = () => {
+          this.connectionListeners.delete(once);
+          resolve();
+        };
+        this.connectionListeners.add(once);
+      });
     }
     const args = batch as unknown as {
       meetingId: Id<"meetings">;

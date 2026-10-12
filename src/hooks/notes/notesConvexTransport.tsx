@@ -10,6 +10,9 @@
  *  - a completed read with no notes row is normalized to the version-0 empty
  *    snapshot — the ledger can then diff from a defined empty base instead of
  *    deadlocking on "loading";
+ *  - the client's connection state is reported to the ledger (after a short
+ *    grace), because Convex queues mutations while disconnected instead of
+ *    failing them: without it an outage would read as "saving";
  *  - `batchApplyNoteOperations` carries per-op identity (clientOpId /
  *    clientSequence) and the batch-level clientId; no `expectedVersion` is
  *    sent — concurrency resolves through server-side transforms.
@@ -24,9 +27,10 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexConnectionState, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { NotesTransportProvider } from "./notesTransport";
@@ -35,6 +39,34 @@ import type {
   NotesServerSnapshot,
   NotesTransport,
 } from "./types";
+
+/**
+ * How long the socket must stay down before the notes say "Offline". The
+ * Convex client reconnects from short blips by itself (its first retry is
+ * within a second); flashing "Offline" for those would be noise. Chosen by
+ * judgment, not measured.
+ */
+const OFFLINE_AFTER_MS = 1500;
+
+/**
+ * Whether the Convex client is connected, reported offline only after the
+ * socket has been down for OFFLINE_AFTER_MS. Before the first connection the
+ * page is still loading, which is not offline.
+ */
+function useConnectedAfterGrace(): boolean {
+  const { isWebSocketConnected, hasEverConnected } = useConvexConnectionState();
+  const down = hasEverConnected && !isWebSocketConnected;
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    if (!down) {
+      setOnline(true);
+      return;
+    }
+    const timer = setTimeout(() => setOnline(false), OFFLINE_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [down]);
+  return online;
+}
 
 /** A completed read for a meeting with no notes row yet. */
 const ROWLESS_SNAPSHOT: NotesServerSnapshot = {
@@ -51,7 +83,9 @@ type QueryResult = {
   clientAcks?: NotesServerSnapshot["clientAcks"];
 } | null;
 
-function normalizeSnapshot(raw: QueryResult | undefined): NotesServerSnapshot | undefined {
+function normalizeSnapshot(
+  raw: QueryResult | undefined,
+): NotesServerSnapshot | undefined {
   if (raw === undefined) return undefined; // loading — the ledger waits
   if (raw === null) return ROWLESS_SNAPSHOT; // completed read, no row yet
   return {
@@ -71,10 +105,27 @@ export function NotesConvexTransportProvider({
   clientId: string;
   children: ReactNode;
 }) {
-  const raw = useQuery(api.notes.queries.getMeetingNotes, { meetingId, clientId });
-  const applyMutation = useMutation(api.notes.mutations.batchApplyNoteOperations);
+  const raw = useQuery(api.notes.queries.getMeetingNotes, {
+    meetingId,
+    clientId,
+  });
+  const applyMutation = useMutation(
+    api.notes.mutations.batchApplyNoteOperations,
+  );
 
-  const listenerRef = useRef<((snapshot: NotesServerSnapshot | undefined) => void) | null>(null);
+  const online = useConnectedAfterGrace();
+  const onlineRef = useRef(online);
+  onlineRef.current = online;
+  const connectionListenerRef = useRef<((online: boolean) => void) | null>(
+    null,
+  );
+  useEffect(() => {
+    connectionListenerRef.current?.(online);
+  }, [online]);
+
+  const listenerRef = useRef<
+    ((snapshot: NotesServerSnapshot | undefined) => void) | null
+  >(null);
   const snapshotRef = useRef<NotesServerSnapshot | undefined>(undefined);
   const snapshot = useMemo(() => normalizeSnapshot(raw), [raw]);
   snapshotRef.current = snapshot;
@@ -108,12 +159,22 @@ export function NotesConvexTransportProvider({
         };
       },
       applyBatch,
+      subscribeConnection: (onChange) => {
+        connectionListenerRef.current = onChange;
+        onChange(onlineRef.current);
+        return () => {
+          if (connectionListenerRef.current === onChange)
+            connectionListenerRef.current = null;
+        };
+      },
       close: () => {},
     }),
     [applyBatch],
   );
 
   return (
-    <NotesTransportProvider transport={transport}>{children}</NotesTransportProvider>
+    <NotesTransportProvider transport={transport}>
+      {children}
+    </NotesTransportProvider>
   );
 }

@@ -32,6 +32,7 @@ vi.mock("convex/react", () => {
   return {
     useQuery: (query: unknown, args: QueryArgs) => sim().useQuery(query, args),
     useMutation: () => sim().useMutation(),
+    useConvexConnectionState: () => sim().useConvexConnectionState(),
   } as unknown as Record<string, unknown>;
 });
 
@@ -193,5 +194,40 @@ describe("MeetingNotesPanel — review sequences through the default provider", 
     );
     await badgeShows(/Synced/i);
     expect(screen.getByTestId("notes-editor")).toHaveValue("XacY");
+  });
+});
+
+describe("MeetingNotesPanel — connection state through the default provider", () => {
+  it("says Offline while the socket is down, keeps typing, and saves when it is back", async () => {
+    const { backend, a } = await twoPeople("offline");
+    const sim = convexSim.current as ConvexReactSim;
+    render(<MeetingNotesPanel meetingId={a.meetingId} />);
+    await badgeShows(/Synced/i);
+
+    sim.setConnected(false);
+    // The grace period first: a blip is not an outage.
+    await waitFor(
+      () =>
+        expect(screen.getByTestId("notes-status")).toHaveTextContent(
+          /Offline/i,
+        ),
+      {
+        timeout: 4000,
+      },
+    );
+    typeAndCommit("written while offline");
+    expect(screen.getByTestId("notes-editor")).toHaveValue(
+      "written while offline",
+    );
+    await badgeShows(/Offline/i);
+    expect(await serverText(backend, a.meetingId)).toBe("");
+
+    sim.setConnected(true);
+    await waitFor(async () =>
+      expect(await serverText(backend, a.meetingId)).toBe(
+        "written while offline",
+      ),
+    );
+    await badgeShows(/Synced/i);
   });
 });

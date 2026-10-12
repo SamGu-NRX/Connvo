@@ -99,6 +99,13 @@ export interface NotesTransport {
     clientId: string,
     batch: { operations: NotesBatchOp[]; expectedVersion?: number },
   ): Promise<BatchApplyNoteOperationsResponse>;
+  /**
+   * Optional: report whether the connection to the server is up. A transport
+   * whose client queues writes while disconnected (Convex does) never fails a
+   * send, so without this the ledger could only say "saving" through an
+   * outage. Called with the current state on subscribe, then on each change.
+   */
+  subscribeConnection?(onChange: (online: boolean) => void): () => void;
   close(): void;
 }
 

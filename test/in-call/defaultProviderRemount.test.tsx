@@ -45,6 +45,7 @@ vi.mock("convex/react", () => {
   return {
     useQuery: (query: unknown, args: QueryArgs) => sim().useQuery(query, args),
     useMutation: () => sim().useMutation(),
+    useConvexConnectionState: () => sim().useConvexConnectionState(),
   } as unknown as Record<string, unknown>;
 });
 

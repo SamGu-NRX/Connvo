@@ -237,6 +237,7 @@ export class NotesLedger {
   private flushRequested = false;
   private transport: NotesTransport | null = null;
   private unsubscribeTransport: (() => void) | undefined;
+  private unsubscribeConnection: (() => void) | undefined;
   private transportOnline = true;
   private destroyed = true;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -312,6 +313,10 @@ export class NotesLedger {
       this.clientId,
       this.ingest,
     );
+    this.unsubscribeConnection?.();
+    this.unsubscribeConnection = transport.subscribeConnection?.(
+      this.onConnection,
+    );
     // Restored pending work (or a buffer ahead of its base) must flush even
     // when the meeting has no notes row yet — the query returns null until
     // the first batch, so waiting for a defined ingest would deadlock the
@@ -382,8 +387,18 @@ export class NotesLedger {
     this.persist();
     this.unsubscribeTransport?.();
     this.unsubscribeTransport = undefined;
+    this.unsubscribeConnection?.();
+    this.unsubscribeConnection = undefined;
     this.transport = null;
   }
+
+  /** The transport's connection state: offline holds sends; online runs them. */
+  private onConnection = (online: boolean): void => {
+    if (this.destroyed || online === this.transportOnline) return;
+    this.transportOnline = online;
+    if (online) this.runRequestedFlush();
+    this.commit();
+  };
 
   /** Call on every textarea change; debounces a flush internally. */
   onEdit = (text: string): void => {

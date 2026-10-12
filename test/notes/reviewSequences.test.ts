@@ -280,3 +280,35 @@ describe("r2 review sequences", () => {
     expect(ledger.getSnapshot().status).toBe("synced");
   });
 });
+
+describe("connection state from the transport", () => {
+  test("offline holds sends and shows offline; online sends what was typed", async () => {
+    const storage = memStorage();
+    const transport = new ScriptedTransport();
+    let report: (online: boolean) => void = () => {};
+    (
+      transport as unknown as { subscribeConnection: unknown }
+    ).subscribeConnection = (onChange: (online: boolean) => void) => {
+      report = onChange;
+      onChange(true);
+      return () => {};
+    };
+    const ledger = makeLedger(storage);
+    ledger.start(transport);
+    await seedSynced(ledger, transport, "base");
+
+    report(false);
+    expect(ledger.getSnapshot().status).toBe("offline");
+    ledger.onEdit("base more");
+    ledger.flushNow();
+    await tick();
+    expect(transport.calls).toHaveLength(0);
+    expect(ledger.getSnapshot().status).toBe("offline");
+
+    report(true);
+    await tick();
+    expect(transport.calls).toHaveLength(1);
+    const ops = transport.calls[0]!.operations.map((e) => e.operation);
+    expect(applyBatchOps("base", ops)).toBe("base more");
+  });
+});
