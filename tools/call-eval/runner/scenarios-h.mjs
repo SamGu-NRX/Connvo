@@ -593,8 +593,21 @@ export async function scenario_H_15(ctx) {
   }
   for (const [name, block] of [["5%", recovery5], ["15%", recovery15]]) {
     if (block.fps < 10) {
-      throw new ScenarioError(`H-15: A/V did not recover after ${name} loss (${block.fps} fps)`, block);
+      throw new ScenarioError(`H-15: video did not recover after ${name} loss (${block.fps} fps)`, block);
     }
+  }
+  // "A/V recovers": audio too. B must hear A's 440 Hz tone again within 3 s
+  // of the last shaping profile being cleared.
+  const toneDeadline = Date.now() + 3000;
+  let tone = null;
+  for (;;) {
+    tone = await sampleRemoteTone(peerB, "A", 400);
+    if (toneMatches(tone, 440)) break;
+    if (Date.now() > toneDeadline) {
+      const heard = tone ? `${tone.peakHz} Hz (rms ${tone.rms})` : "silence";
+      throw new ScenarioError(`H-15: audio did not recover after 15% loss (heard ${heard}, expected 440 Hz)`, { tone });
+    }
+    await H(200);
   }
 
   return {
@@ -603,7 +616,9 @@ export async function scenario_H_15(ctx) {
     recovery5,
     loss15,
     recovery15,
-    proof: "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; recovery fps healthy with profile cleared",
+    toneAfterHz: tone?.peakHz,
+    shaperB: ctx.shaperFor("B").stats(),
+    proof: "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared",
   };
 }
 

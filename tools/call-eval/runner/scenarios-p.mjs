@@ -140,12 +140,12 @@ async function tabTo(peer, id) {
 
 /** P-03 — every control is reachable and operable by keyboard, with visible focus */
 export async function scenario_P_03(ctx) {
+  /** @type {any[]} */
+  const results = [];
   const opened = await openState(ctx, "connected");
   const peer = opened.peer;
   try {
     await peer.page.setViewportSize({ width: 1440, height: 900 });
-    /** @type {any[]} */
-    const results = [];
     /** @param {string} id @param {string} key @param {() => Promise<unknown>} effect */
     const operate = async (id, key, effect) => {
       await peer.page.evaluate(() => /** @type {HTMLElement} */ (document.activeElement)?.blur());
@@ -180,10 +180,33 @@ export async function scenario_P_03(ctx) {
       return waitFor(peer, phaseIs("left"), { timeoutMs: 5000, describe: "phase left" });
     });
     await operate("join-call", "Enter", () => waitFor(peer, phaseIs("connected"), { timeoutMs: 30000, describe: "rejoined" }));
-    return { controls: results };
   } finally {
     await opened.close();
   }
+
+  // The failed-capture state: retry-media must be reachable and operable by
+  // keyboard too. A runs the full Chromium build with no fake-UI flag, so its
+  // camera prompt is really denied; granting and pressing Enter must clear
+  // the error.
+  const denied = await ctx.launchPeer("A", {}, undefined, { fullChromium: true });
+  try {
+    await denied.page.setViewportSize({ width: 1440, height: 900 });
+    await denied.page.waitForSelector('[data-testid="retry-media"]', { timeout: 20000 });
+    await denied.page.evaluate(() => /** @type {HTMLElement} */ (document.activeElement)?.blur());
+    await tabTo(denied, "retry-media");
+    const indicator = await denied.page.evaluate(`(${focusIndicator})()`);
+    if (!indicator.visible) throw new ScenarioError("P-03: retry-media has no visible focus indicator", indicator);
+    await denied.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
+    await denied.page.keyboard.press("Enter");
+    await waitFor(denied, `() => !document.querySelector('[data-testid="retry-media"]') && !document.querySelector('[data-testid="call-error"]')?.textContent`, {
+      timeoutMs: 15000,
+      describe: "retry-media by keyboard clears the capture error",
+    });
+    results.push({ id: "retry-media", key: "Enter", indicator, observed: "capture error cleared" });
+  } finally {
+    await denied.close();
+  }
+  return { controls: results };
 }
 
 /** P-04 — prefers-reduced-motion removes non-essential motion */
