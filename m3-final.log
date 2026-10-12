@@ -1,19 +1,19 @@
-=== PNPM_BOOT 03:34:40 ===
+=== PNPM_BOOT 03:35:59 ===
 
 added 1 package in 1s
 9.15.9
-=== CLONE 03:34:43 ===
+=== CLONE 03:36:02 ===
 Cloning into 'repo'...
 1242d1c test(history): mounted proofs for the flagged meetings routes
-=== INSTALL 03:34:45 ===
+=== INSTALL 03:36:05 ===
 + tailwindcss 4.1.16
 + tsx 4.20.6
 + typescript 5.9.3
 + vitest 4.0.4
 
-Done in 22.2s using pnpm v9.15.9
+Done in 25.8s using pnpm v9.15.9
 INSTALL_EXIT=0
-=== TYPECHECK 03:35:08 ===
+=== TYPECHECK 03:36:32 ===
 src/app/app/meetings/[id]/page.tsx(77,9): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
 src/app/app/meetings/[id]/page.tsx(80,42): error TS2339: Property 'history' does not exist on type '{ audit: { logging: { getAuditLogs: FunctionReference<"query", "public", { action?: string | undefined; actorUserId?: Id<"users"> | undefined; resourceType?: string | undefined; resourceId?: string | undefined; limit?: number | undefined; }, { ...; }, string | undefined>; }; }; ... 14 more ...; users: { ...; }; }'.
 src/app/app/meetings/meetings-pages.test.ts(32,46): error TS2769: No overload matches this call.
@@ -95,7 +95,7 @@ test/test.setup.mts(1,23): error TS2688: Cannot find type definition file for 'v
 test/test.setup.mts(3,36): error TS2339: Property 'glob' does not exist on type 'ImportMeta'.
  ELIFECYCLE  Command failed with exit code 2.
 TYPECHECK_EXIT=0
-=== TESTRUN 03:35:31 ===
+=== TESTRUN 03:36:56 ===
 
 [90mstderr[2m | convex/types/__tests__/monitoringTools.test.ts[2m > [22m[2mType System Monitoring Tools[2m > [22m[2mMaintenance Recommendations[2m > [22m[2mshould prioritize critical issues
 [22m[39mFailed to save report history: Error: ENOENT: no such file or directory, open '/home/user/work/repo/.kiro/type-system-reports.json'
@@ -115,25 +115,25 @@ TYPECHECK_EXIT=0
   path: [32m'/home/user/work/repo/.kiro/type-system-reports.json'[39m
 }
 
- [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/monitoringTools.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 24[2mms[22m[39m
- [32m✓[39m [30m[42m convex [49m[39m test/convex/openapiExamples.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 78[2mms[22m[39m
- [31m❯[39m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 313[2mms[22m[39m
-     [32m✓[39m renders nothing for the meetings list route[32m 94[2mms[22m[39m
-     [32m✓[39m renders nothing for the meeting detail route[32m 60[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/types/__tests__/monitoringTools.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m test/convex/openapiExamples.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [31m❯[39m [30m[43m frontend [49m[39m src/app/app/meetings/meetings-pages.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 469[2mms[22m[39m
+     [32m✓[39m renders nothing for the meetings list route[32m 102[2mms[22m[39m
+     [32m✓[39m renders nothing for the meeting detail route[32m 69[2mms[22m[39m
      [32m✓[39m renders the loading skeleton before the first page arrives[32m 11[2mms[22m[39m
-     [32m✓[39m renders the empty state when the caller has no meetings[32m 4[2mms[22m[39m
-     [32m✓[39m renders meeting items with titles, badges and links from the contract shape[32m 131[2mms[22m[39m
-     [32m✓[39m renders the loading skeleton while history resolves[32m 2[2mms[22m[39m
-[31m     [31m×[31m renders title, recap, calendar export and stay-in-touch from the history payload[39m[32m 5[2mms[22m[39m
+     [32m✓[39m renders the empty state when the caller has no meetings[32m 6[2mms[22m[39m
+     [32m✓[39m renders meeting items with titles, badges and links from the contract shape[32m 266[2mms[22m[39m
+     [32m✓[39m renders the loading skeleton while history resolves[32m 3[2mms[22m[39m
+[31m     [31m×[31m renders title, recap, calendar export and stay-in-touch from the history payload[39m[32m 7[2mms[22m[39m
 [31m     [31m×[31m hides calendar export for meetings without a scheduled time[39m[32m 2[2mms[22m[39m
-[31m     [31m×[31m notes when everyone has opted in to stay in touch[39m[32m 1[2mms[22m[39m
- [32m✓[39m [30m[42m convex [49m[39m convex/insights/insights.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 100[2mms[22m[39m
- [32m✓[39m [30m[42m convex [49m[39m convex/matching/matching.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 86[2mms[22m[39m
- [32m✓[39m [30m[42m convex [49m[39m convex/prompts/prompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 32[2mms[22m[39m
- [32m✓[39m [30m[42m convex [49m[39m convex/users/onboarding.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 29[2mms[22m[39m
- [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 21[2mms[22m[39m
- [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/ics.ical.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m [30m[43m frontend [49m[39m src/components/history/MeetingRecap.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+[31m     [31m×[31m notes when everyone has opted in to stay in touch[39m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/insights/insights.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 112[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/matching/matching.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 103[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/prompts/prompts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m [30m[42m convex [49m[39m convex/users/onboarding.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/view.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/lib/history/ics.ical.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[43m frontend [49m[39m src/components/history/MeetingRecap.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
  [32m✓[39m [30m[43m frontend [49m[39m src/components/mvp/navigation-gating.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
 
 [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 5 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
@@ -202,9 +202,9 @@ undefined
 
 [2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m22 passed[39m[22m[90m (24)[39m
 [2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m290 passed[39m[22m[90m (295)[39m
-[2m   Start at [22m 03:35:32
-[2m   Duration [22m 4.75s[2m (transform 1.13s, setup 181ms, collect 1.28s, tests 1.81s, environment 217ms, prepare 63ms)[22m
+[2m   Start at [22m 03:36:57
+[2m   Duration [22m 5.37s[2m (transform 1.24s, setup 204ms, collect 1.44s, tests 2.15s, environment 215ms, prepare 71ms)[22m
 
  ELIFECYCLE  Command failed with exit code 1.
 TESTRUN_EXIT=0
-=== M3_DONE 03:35:36 ===
+=== M3_DONE 03:37:02 ===
