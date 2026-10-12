@@ -1,0 +1,95 @@
+/*
+ * Call room motion and the dark stage. The app has no shared easing tokens,
+ * so the two curves live here, scoped to the call.
+ */
+.room {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --stage: #0e1716;
+  --tile: #16211f;
+  --ink: #e7f0ee;
+  --ink-muted: #9fb3ae;
+  --live: #34d399;
+  --warn: #7dd3fc;
+}
+
+/* A person joining: fades and settles in, rather than popping in. */
+.tile {
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+}
+@starting-style {
+  .tile {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.tile[data-dim="true"] {
+  opacity: 0.55;
+}
+
+/* State notices (connecting, reconnecting) drop in from just above. */
+.notice {
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+}
+@starting-style {
+  .notice {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Screens that replace each other (lobby, call, ended) crossfade. */
+.screen {
+  transition: opacity 200ms var(--ease-out);
+}
+@starting-style {
+  .screen {
+    opacity: 0;
+  }
+}
+
+/* Press feedback for every control on the stage. */
+.press {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/*
+ * The voice line: a 2px rule along the bottom of a tile whose length follows
+ * that person's microphone level, written straight to `transform` each frame.
+ */
+.voiceLine {
+  transform-origin: left center;
+  transform: scaleX(0);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    .tile,
+    .notice {
+      transform: none;
+    }
+  }
+  .tile,
+  .notice {
+    transition: opacity 200ms ease;
+  }
+  .press:active {
+    transform: none;
+  }
+  /* The level still shows, by brightness rather than movement. */
+  .voiceLine {
+    transform: scaleX(1);
+    will-change: opacity;
+  }
+}

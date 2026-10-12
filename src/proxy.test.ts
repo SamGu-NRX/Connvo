@@ -154,6 +154,30 @@ describe("production build", () => {
   });
 });
 
+describe("real call page in the local eval setup", () => {
+  it("passes /app/call/<id> only with both flags on outside production", () => {
+    const on = { benchFlag: "1", realCallFlag: "1", nodeEnv: "development" };
+    expect(benchPathPassesThrough("/app/call/m1", on)).toBe(true);
+    expect(benchPathPassesThrough("/app/call/m1", { ...on, realCallFlag: undefined })).toBe(false);
+    expect(benchPathPassesThrough("/app/call/m1", { ...on, benchFlag: undefined })).toBe(false);
+    expect(benchPathPassesThrough("/app/call/m1", { ...on, nodeEnv: "production" })).toBe(false);
+    expect(benchPathPassesThrough("/app/call/m1", { ...on, vercelEnv: "production" })).toBe(false);
+  });
+
+  it("never passes other /app paths, even with both flags on", () => {
+    const on = { benchFlag: "1", realCallFlag: "1", nodeEnv: "development" };
+    for (const path of ["/app", "/app/call", "/app/call/", "/app/call/m1/x", "/app/dashboard", "/app/callx/m1"]) {
+      expect(benchPathPassesThrough(path, on)).toBe(false);
+    }
+  });
+
+  it("a production build keeps WorkOS on the call page with both flags on", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_CONNVO_REAL_CALL", "1");
+    expect(proxy(requestAt("/app/call/m1?as=A"), event)).toBe(mocks.AUTH_SENTINEL);
+  });
+});
+
 describe("no API carve-out", () => {
   it("the test-auth token route keeps the middleware with the bench flag on", () => {
     for (const path of ["/api/test-auth/token", "/api/test-auth/token?user=A", "/api/convex/token"]) {

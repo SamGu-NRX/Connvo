@@ -4,7 +4,18 @@ import React, { useEffect } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import type { CallType } from "@/types/call";
 
+import { RealCall } from "./real-call";
+
+// Real calls stay off until Sam decides (CALL-PLAN "Production wiring"):
+// without NEXT_PUBLIC_CONNVO_REAL_CALL=1 this page keeps redirecting to the
+// simulated call, exactly as before.
+const REAL_CALL = process.env.NEXT_PUBLIC_CONNVO_REAL_CALL === "1";
+
 export default function CallPage() {
+  return REAL_CALL ? <RealCall /> : <SimulatedCallRedirect />;
+}
+
+function SimulatedCallRedirect() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();

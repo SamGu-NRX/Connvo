@@ -14,12 +14,15 @@ const BENCH_PREFIX = "/dev/call-bench";
  */
 export function benchPathPassesThrough(
   pathname: string,
-  env: { benchFlag?: string; nodeEnv?: string; vercelEnv?: string },
+  env: { benchFlag?: string; realCallFlag?: string; nodeEnv?: string; vercelEnv?: string },
 ): boolean {
   if (env.benchFlag !== "1") return false;
   if (env.nodeEnv === "production") return false;
   if (env.vercelEnv === "production") return false;
-  return pathname === BENCH_PREFIX || pathname.startsWith(`${BENCH_PREFIX}/`);
+  if (pathname === BENCH_PREFIX || pathname.startsWith(`${BENCH_PREFIX}/`)) return true;
+  // The real call page in its local eval setup (bench identity, reference
+  // signaling): only with BOTH flags on, and only /app/call/<id>.
+  return env.realCallFlag === "1" && /^\/app\/call\/[^/]+$/.test(pathname);
 }
 
 const handleAuth = authkitMiddleware({
@@ -38,6 +41,7 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (
     benchPathPassesThrough(request.nextUrl.pathname, {
       benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,
+      realCallFlag: process.env.NEXT_PUBLIC_CONNVO_REAL_CALL,
       nodeEnv: process.env.NODE_ENV,
       vercelEnv: process.env.VERCEL_ENV,
     })
