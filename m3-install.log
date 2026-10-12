@@ -1,0 +1,15 @@
+=== PNPM_BOOT 03:34:40 ===
+
+added 1 package in 1s
+9.15.9
+=== CLONE 03:34:43 ===
+Cloning into 'repo'...
+1242d1c test(history): mounted proofs for the flagged meetings routes
+=== INSTALL 03:34:45 ===
++ tailwindcss 4.1.16
++ tsx 4.20.6
++ typescript 5.9.3
++ vitest 4.0.4
+
+Done in 22.2s using pnpm v9.15.9
+INSTALL_EXIT=0
