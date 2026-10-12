@@ -1,0 +1,72 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+(node:45367) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ RUN  v4.0.4 <repo>
+
+ ❯  frontend  src/app/api/test-auth/token/route.test.ts (3 tests | 1 failed) 11ms
+     × refuses on any Vercel deployment, even with the local-build marker 10ms
+     ✓ refuses a production build without the local-build marker 0ms
+     ✓ is not found when test auth is off 0ms
+ ❯  frontend  src/lib/call/transports/p2p/convex-signaling.test.ts (11 tests | 1 failed) 695ms
+     ✓ welcomes with the others present, not this session 54ms
+     ✓ reports a reloaded peer as leaving and joining again 51ms
+     ✓ holds a signal that arrives before presence shows its sender, then delivers it 53ms
+     ✓ drops a signal from a session the peer has replaced 51ms
+     ✓ sends to the peer's current session and leaves out null candidate fields 53ms
+     × acknowledges a signal whose sender never appears, after a short hold 64ms
+     ✓ reports a refused join as rejected with the server's words 53ms
+     ✓ does not retry a join the server refused for another reason 105ms
+     ✓ reports a session replaced by another tab, and one that expired 104ms
+     ✓ reports lost when heartbeats stop answering 54ms
+     ✓ leaving says so to the server and reports nothing 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL   frontend  src/app/api/test-auth/token/route.test.ts > test-auth token route > refuses on any Vercel deployment, even with the local-build marker
+AssertionError: expected 500 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 500
+
+ ❯ src/app/api/test-auth/token/route.test.ts:25:26
+     23|       vi.stubEnv("VERCEL_ENV", vercelEnv);
+     24|       const res = await GET(request());
+     25|       expect(res.status).toBe(403);
+       |                          ^
+     26|       expect(await res.text()).toMatch(/Vercel/);
+     27|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL   frontend  src/lib/call/transports/p2p/convex-signaling.test.ts > convexSignaling unknown senders > acknowledges a signal whose sender never appears, after a short hold
+AssertionError: expected [] to deeply equal [ 's-ghost' ]
+
+- Expected
++ Received
+
+- [
+-   "s-ghost",
+- ]
++ []
+
+ ❯ src/lib/call/transports/p2p/convex-signaling.test.ts:225:21
+    223|     expect(acked()).toEqual([]); // still within the hold
+    224|     await vi.advanceTimersByTimeAsync(UNKNOWN_SENDER_HOLD_MS + HEARTBE…
+    225|     expect(acked()).toEqual(["s-ghost"]);
+       |                     ^
+    226|     expect(rec.signals).toEqual([]);
+    227|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 12 passed (14)
+   Start at  12:49:55
+   Duration  802ms (transform 44ms, setup 0ms, collect 66ms, tests 706ms, environment 0ms, prepare 4ms)
+

@@ -78,7 +78,12 @@ export const WebRTCSessionV = {
     micOn: v.optional(v.boolean()),
     cameraOn: v.optional(v.boolean()),
     closedReason: v.optional(
-      v.union(v.literal("left"), v.literal("replaced"), v.literal("expired")),
+      v.union(
+        v.literal("left"),
+        v.literal("replaced"),
+        v.literal("expired"),
+        v.literal("ended"),
+      ),
     ),
     createdAt: v.number(),
     updatedAt: v.number(),

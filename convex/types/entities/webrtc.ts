@@ -36,7 +36,7 @@ export interface WebRTCSession {
   lastHeartbeatAt?: number;
   micOn?: boolean;
   cameraOn?: boolean;
-  closedReason?: "left" | "replaced" | "expired";
+  closedReason?: "left" | "replaced" | "expired" | "ended";
   createdAt: number;
   updatedAt: number;
 }

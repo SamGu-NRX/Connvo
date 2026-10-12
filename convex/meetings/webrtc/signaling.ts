@@ -10,8 +10,10 @@
  */
 
 import { internalMutation } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
 import { metadataRecordV } from "@convex/lib/validators";
+import { createError } from "@convex/lib/errors";
 import {
   WebRTCApiResponseV,
   webrtcSessionStateV,
@@ -70,11 +72,13 @@ export const updateSessionStateInternal = internalMutation({
   args: {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
+    // The authenticated caller; only the session's owner may change it.
+    userId: v.id("users"),
     state: webrtcSessionStateV,
     metadata: v.optional(metadataRecordV),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, sessionId, state, metadata }) => {
+  handler: async (ctx, { meetingId, sessionId, userId, state, metadata }) => {
     const session: WebRTCSession | null = await ctx.db
       .query("webrtcSessions")
       .withIndex("by_meeting_and_session", (q) =>
@@ -82,6 +86,12 @@ export const updateSessionStateInternal = internalMutation({
       )
       .unique();
 
+    if (session && session.userId !== userId) {
+      throw createError.forbidden("Access denied: not your call session", {
+        meetingId,
+        sessionId,
+      });
+    }
     if (session) {
       await ctx.db.patch(session._id, {
         state: state as WebRTCSessionState,
@@ -94,8 +104,13 @@ export const updateSessionStateInternal = internalMutation({
   },
 });
 
+/** Rows of each kind one cleanup run deletes before scheduling the next. */
+export const CLEANUP_BATCH = 500;
+
 /**
- * Cleanup old WebRTC signals and sessions
+ * Cleanup old WebRTC signals and closed or failed sessions, CLEANUP_BATCH of
+ * each kind per run. A full batch schedules another run, so any backlog is
+ * worked through without one transaction reading all of it.
  */
 export const cleanupOldWebRTCData = internalMutation({
   args: {
@@ -111,7 +126,7 @@ export const cleanupOldWebRTCData = internalMutation({
     const oldSignals: WebRTCSignal[] = await ctx.db
       .query("webrtcSignals")
       .withIndex("by_timestamp", (q) => q.lt("timestamp", cutoff))
-      .take(2000);
+      .take(CLEANUP_BATCH);
 
     for (const signal of oldSignals) {
       await ctx.db.delete(signal._id);
@@ -124,18 +139,30 @@ export const cleanupOldWebRTCData = internalMutation({
         .withIndex("by_state_and_updatedAt", (q) =>
           q.eq("state", "closed").lt("updatedAt", cutoff),
         )
-        .collect(),
+        .take(CLEANUP_BATCH),
       ctx.db
         .query("webrtcSessions")
         .withIndex("by_state_and_updatedAt", (q) =>
           q.eq("state", "failed").lt("updatedAt", cutoff),
         )
-        .collect(),
+        .take(CLEANUP_BATCH),
     ]);
     const oldSessions: WebRTCSession[] = [...closedSessions, ...failedSessions];
 
     for (const session of oldSessions) {
       await ctx.db.delete(session._id);
+    }
+
+    if (
+      oldSignals.length === CLEANUP_BATCH ||
+      closedSessions.length === CLEANUP_BATCH ||
+      failedSessions.length === CLEANUP_BATCH
+    ) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.meetings.webrtc.signaling.cleanupOldWebRTCData,
+        { olderThanMs },
+      );
     }
 
     return {

@@ -22,7 +22,12 @@ export const webrtcTables = {
     micOn: v.optional(v.boolean()),
     cameraOn: v.optional(v.boolean()),
     closedReason: v.optional(
-      v.union(v.literal("left"), v.literal("replaced"), v.literal("expired")),
+      v.union(
+        v.literal("left"),
+        v.literal("replaced"),
+        v.literal("expired"),
+        v.literal("ended"),
+      ),
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -30,9 +35,12 @@ export const webrtcTables = {
     .index("by_meeting", ["meetingId"])
     .index("by_user", ["userId"])
     .index("by_user_and_meeting", ["userId", "meetingId"])
+    .index("by_meeting_user_and_state", ["meetingId", "userId", "state"])
     .index("by_meeting_and_session", ["meetingId", "sessionId"])
     .index("by_meeting_and_state", ["meetingId", "state"])
     .index("by_state", ["state"])
+    // The stale-session sweep reads only expired heartbeats.
+    .index("by_state_and_heartbeat", ["state", "lastHeartbeatAt"])
     // Composite index for cleanup queries on state + updatedAt
     .index("by_state_and_updatedAt", ["state", "updatedAt"]),
 
@@ -72,7 +80,13 @@ export const webrtcTables = {
     .index("by_timestamp", ["timestamp"])
     .index("by_processed", ["processed"])
     .index("by_processed_and_timestamp", ["processed", "timestamp"])
-    .index("by_target_session_and_processed", ["toSessionId", "processed"])
+    // A session's unread queue. Session ids come from the client, so the
+    // meeting comes first: another meeting cannot crowd this range.
+    .index("by_meeting_target_session_and_processed", [
+      "meetingId",
+      "toSessionId",
+      "processed",
+    ])
     .index("by_meeting_target_and_processed", [
       "meetingId",
       "toUserId",
