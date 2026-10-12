@@ -8,7 +8,7 @@
  * per read, which capped the observable rate under load.
  */
 import { describe, expect, it } from "vitest";
-import { matchPeerColor, measureFps, toneMatches, toneIsSilent, waitForSilence } from "./page-helpers.mjs";
+import { matchPeerColor, measureFps, toneMatches, toneIsSilent, waitForLiveMedia, waitForSilence } from "./page-helpers.mjs";
 import { decodeToneHz } from "../lib/decoders.mjs";
 
 /** 0.5 s of a pure tone at 48 kHz (decodeToneHz caps its window at 12000 samples). */
@@ -140,5 +140,38 @@ describe("waitForSilence (H-03)", () => {
     const result = await waitForSilence(async () => ((t += 150), { rms: 0.4, peakHz: 440 }), { deadlineMs: 1000, now: () => t });
     expect(result.silent).toBe(false);
     expect(result.afterMs).toBeGreaterThanOrEqual(1000);
+  });
+});
+
+describe("waitForLiveMedia (H-07, H-08, H-09 recovery)", () => {
+  const rightColor = async () => ({ ok: true, label: "A" });
+
+  it("rejects a frozen last frame even though its colour is right", async () => {
+    // Known input: the tile keeps A's colour but the counter never advances,
+    // which the old colour-only recovery check accepted.
+    await expect(
+      waitForLiveMedia(fakePeerAt(0), "A", { timeoutMs: 300, label: "A", readColor: rightColor }),
+    ).rejects.toThrow(/not live/);
+  });
+
+  it("accepts the right colour with frames advancing at 30 fps", async () => {
+    const live = await waitForLiveMedia(fakePeerAt(30), "A", { timeoutMs: 300, label: "A", readColor: rightColor });
+    expect(live.fps).toBeGreaterThan(29);
+  });
+
+  it("rejects advancing frames of the wrong person", async () => {
+    await expect(
+      waitForLiveMedia(fakePeerAt(30), "A", {
+        timeoutMs: 300,
+        label: "A",
+        readColor: async () => ({ ok: true, label: "B" }),
+      }),
+    ).rejects.toThrow(/not live/);
+  });
+
+  it("rejects a stream that advances below the bar", async () => {
+    await expect(
+      waitForLiveMedia(fakePeerAt(10), "A", { timeoutMs: 300, label: "A", readColor: rightColor }),
+    ).rejects.toThrow(/not live/);
   });
 });
