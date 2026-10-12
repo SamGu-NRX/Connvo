@@ -36,6 +36,28 @@ export function benchPathPassesThrough(
   return env.realCallFlag === "1" && /^\/app\/call\/[^/]+$/.test(pathname);
 }
 
+// CALL-PLAN.md D3 (eval-only): with NEXT_PUBLIC_CONNVO_TEST_AUTH=1 the two
+// test-auth surfaces reach their own handlers instead of WorkOS, because the
+// local backend's dummy WorkOS config cannot create a session. Never in a
+// production build, never on any Vercel deployment (previews included), and
+// only these exact paths; every other request keeps WorkOS.
+const TEST_AUTH_PROXY_PATHS = new Set(["/dev/auth-proof", "/api/test-auth/token"]);
+
+export function testAuthProxyExempt(
+  pathname: string,
+  env: {
+    NEXT_PUBLIC_CONNVO_TEST_AUTH?: string;
+    VERCEL_ENV?: string;
+    VERCEL?: string;
+    NODE_ENV?: string;
+  },
+): boolean {
+  if (env.NEXT_PUBLIC_CONNVO_TEST_AUTH !== "1") return false;
+  if (env.VERCEL) return false;
+  if (env.VERCEL_ENV === "production" || env.NODE_ENV === "production") return false;
+  return TEST_AUTH_PROXY_PATHS.has(pathname);
+}
+
 const handleAuth = authkitMiddleware({
   middlewareAuth: {
     enabled: true,
@@ -58,6 +80,9 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
       vercelEnv: process.env.VERCEL_ENV,
     })
   ) {
+    return NextResponse.next();
+  }
+  if (testAuthProxyExempt(request.nextUrl.pathname, process.env)) {
     return NextResponse.next();
   }
   return handleAuth(request, event);

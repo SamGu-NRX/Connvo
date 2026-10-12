@@ -173,7 +173,7 @@ export class GetStreamProvider implements IVideoProvider {
   ): Promise<VideoRoomConfig> {
     const roomId = `stream_${meetingId}_${Date.now()}`;
 
-    const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
+    const call = await getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
     await call.create({
       data: {
         created_by_id: config.organizerId,
@@ -217,7 +217,7 @@ export class GetStreamProvider implements IVideoProvider {
 
   async deleteRoom(roomId: string): Promise<boolean> {
     try {
-      const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
+      const call = await getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
       await call.delete();
 
       console.log(`GetStream call ${roomId} deleted`);
@@ -233,7 +233,7 @@ export class GetStreamProvider implements IVideoProvider {
     userId: Id<"users">,
     role: "host" | "participant",
   ): Promise<string> {
-    const token = createStreamToken(userId, {
+    const token = await createStreamToken(userId, {
       exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
       iat: Math.floor(Date.now() / 1000),
       user_id: userId,
@@ -245,7 +245,7 @@ export class GetStreamProvider implements IVideoProvider {
   }
 
   async startRecording(roomId: string): Promise<{ recordingId: string }> {
-    const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
+    const call = await getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
     const recordingResponse = await call.startRecording({
       mode: "available",
       audio_only: false,
