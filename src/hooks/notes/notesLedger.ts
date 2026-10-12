@@ -342,7 +342,12 @@ export class NotesLedger {
     this.destroyed = true;
     this.clearDebounce();
     const composed = this.composedText();
-    if (this.buffer !== composed) {
+    // Only words the user typed and nobody has sent are unsent. When the
+    // buffer holds none, it is just the last text typed, and the composed
+    // view may have moved past it (a remote snapshot, or a sent record):
+    // treating that gap as unsent words would turn it into a delete of the
+    // other person's text on the next flush.
+    if (this.bufferHoldsUnsentWords && this.buffer !== composed) {
       if ([...this.records.values()].some(isUnsaved)) {
         // Words stay buffered: with live records the composed view is
         // speculative, and ops diffed over it would carry effects above

@@ -27,127 +27,13 @@
  * double-apply.
  */
 
-import { useEffect, useReducer } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { describe, expect, it, vi } from "vitest";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
-import type { BatchApplyNoteOperationsResponse } from "@/hooks/notes/types";
-import {
-  NotesBackend,
-  type BackendParticipant,
-  type OutgoingBatch,
-} from "../notes/harness/backend";
+import { NotesBackend } from "../notes/harness/backend";
 import { setupParticipant } from "../notes/matrixHarness";
-
-type SimFace = BackendParticipant["face"];
-
-/** Raw getMeetingNotes result shape (what Convex's useQuery would return). */
-type RawQueryResult = {
-  content: string;
-  version: number;
-  headSequence?: number;
-  clientAcks?: Array<{ clientOpId: string; clientSequence: number }>;
-} | null;
-
-interface QueryArgs {
-  meetingId: Id<"meetings">;
-  clientId: string;
-}
-
-/** Every applyBatch attempt the shim observed, including rejected ones. */
-interface AttemptedBatch {
-  clientId: string;
-  clientOpIds: string[];
-}
-
-/**
- * The convex/react hook shim. One instance per test = one fake deployment.
- * `failNextBatches` rejects sends before the server sees them (a network
- * loss), like the matrix harness's ECONNRESET fault.
- */
-class ConvexReactSim {
-  private readonly entries = new Map<
-    string,
-    {
-      args: QueryArgs;
-      value: RawQueryResult | undefined;
-      listeners: Set<() => void>;
-    }
-  >();
-  failNextBatches = 0;
-  attemptedBatches: AttemptedBatch[] = [];
-
-  constructor(
-    private readonly backend: NotesBackend,
-    private readonly face: SimFace,
-  ) {}
-
-  useQuery(_query: unknown, args: QueryArgs): RawQueryResult | undefined {
-    const key = `${String(args.meetingId)}|${args.clientId}`;
-    let entry = this.entries.get(key);
-    if (!entry) {
-      entry = { args, value: undefined, listeners: new Set() };
-      this.entries.set(key, entry);
-    }
-    const captured = entry;
-    const [, bump] = useReducer((x: number) => x + 1, 0);
-    useEffect(() => {
-      captured.listeners.add(bump);
-      void this.refreshEntry(key);
-      return () => {
-        captured.listeners.delete(bump);
-      };
-    }, [key]);
-    return captured.value;
-  }
-
-  useMutation(): (batch: OutgoingBatch) => Promise<BatchApplyNoteOperationsResponse> {
-    return async (batch: OutgoingBatch) => {
-      this.attemptedBatches.push({
-        clientId: (batch as unknown as { clientId: string }).clientId,
-        clientOpIds: batch.operations.map((op) => op.clientOpId),
-      });
-      if (this.failNextBatches > 0) {
-        this.failNextBatches--;
-        throw new Error("simulated network failure (ECONNRESET)");
-      }
-      const args = batch as unknown as {
-        meetingId: Id<"meetings">;
-        clientId: string;
-      };
-      const response = (await this.backend.applyBatch(
-        this.face,
-        args.meetingId,
-        args.clientId,
-        batch,
-        { push: false },
-      )) as BatchApplyNoteOperationsResponse;
-      await this.refreshAll();
-      return response;
-    };
-  }
-
-  /** Re-runs the real query for one registered entry and notifies. */
-  private async refreshEntry(key: string): Promise<void> {
-    const entry = this.entries.get(key);
-    if (!entry) return;
-    const raw = (await this.face.query(api.notes.queries.getMeetingNotes, {
-      meetingId: entry.args.meetingId,
-      clientId: entry.args.clientId,
-    })) as RawQueryResult;
-    entry.value = raw;
-    entry.listeners.forEach((listener) => listener());
-  }
-
-  /** Mutation completed → resync every live query (Convex invalidation). */
-  private async refreshAll(): Promise<void> {
-    for (const key of [...this.entries.keys()]) {
-      await this.refreshEntry(key);
-    }
-  }
-}
+import { ConvexReactSim, type QueryArgs } from "./helpers/convexReactSim";
 
 /** Hoisted holder so the vi.mock factory can reach the per-test instance. */
 const convexSim = vi.hoisted(() => ({
@@ -286,8 +172,6 @@ describe("MeetingNotesPanel — default provider (production wiring) mounted pro
     expect(applied).toHaveLength(2);
     const appliedIds = applied.map((op) => op.clientOpId);
     expect(new Set(appliedIds).size).toBe(2);
-    expect(new Set(appliedIds)).toEqual(
-      new Set([alphaOpId, lostClientOpId]),
-    );
+    expect(new Set(appliedIds)).toEqual(new Set([alphaOpId, lostClientOpId]));
   });
 });

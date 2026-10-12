@@ -111,6 +111,51 @@ describe("r2 review sequences", () => {
     expect(serverText).toContain("alpha");
   });
 
+  test("S1b: the same ledger stopped and started again (a hook effect re-run) keeps the remote word", async () => {
+    const storage = memStorage();
+    const transport = new ScriptedTransport();
+    const ledger = makeLedger(storage);
+    ledger.start(transport);
+    await seedSynced(ledger, transport, "base");
+
+    ledger.onEdit("base alpha");
+    transport.serverText = "base bravo";
+    transport.serverVersion = 2;
+    transport.headSequence = 2;
+    transport.deliver({
+      content: "base bravo",
+      version: 2,
+      headSequence: 2,
+      clientAcks: [],
+    });
+    await tick();
+
+    // React re-runs the hook's effect: destroy() then start() on the SAME
+    // instance (a transport identity change, or StrictMode's double effect).
+    ledger.destroy();
+    ledger.start(transport);
+    await tick();
+    transport.deliver({
+      content: "base bravo",
+      version: 2,
+      headSequence: 2,
+      clientAcks: [],
+    });
+    await tick();
+    ledger.flushNow();
+    await tick();
+
+    const sent = transport.calls.flatMap((call) =>
+      call.operations.map((e) => e.operation),
+    );
+    expect(
+      sent.every((op) => op.type === "insert" || (op.length ?? 0) === 0),
+    ).toBe(true);
+    const serverText = applyBatchOps("base bravo", sent);
+    expect(serverText).toContain("bravo");
+    expect(serverText).toContain("alpha");
+  });
+
   test("S2: a replacement transforms as one hunk against multi-region remote changes", async () => {
     const storage = memStorage();
     const transport = new ScriptedTransport();
