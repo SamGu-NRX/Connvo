@@ -121,9 +121,11 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
     );
   }
   // The shared notes sit beside the call on wide screens and below it on
-  // narrow ones; they work in the lobby too, before anyone joins.
+  // narrow ones; they work in the lobby too, before anyone joins. On phones
+  // the app shell's floating navigation covers the bottom of the screen, so
+  // the page leaves room to scroll the notes clear of it.
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+    <div className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
       <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
         <CallRoom
           meetingId={meetingId}
