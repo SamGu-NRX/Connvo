@@ -87,6 +87,16 @@ if (!baseUrl) {
     stdio: ["ignore", "ignore", "inherit"],
     detached: true,
   });
+  // A time cap (SIGALRM) or SIGTERM must not orphan the detached server.
+  for (const signal of /** @type {const} */ (["SIGALRM", "SIGTERM", "SIGINT"])) {
+    process.on(signal, () => {
+      try {
+        if (next?.pid) process.kill(-next.pid, "SIGTERM");
+      } finally {
+        process.exit(124);
+      }
+    });
+  }
   await waitForHttp(`${baseUrl}/dev/call-bench/reference?as=A&autojoin=0`, 180000);
 }
 
