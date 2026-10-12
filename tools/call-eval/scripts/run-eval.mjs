@@ -10,6 +10,7 @@
  *     [--seeds=1,2 | 1..20] \
  *     [--suite=H|P|all] \
  *     [--base-url=https://<origin>] \
+ *     [--page=bench|real] [--signaling=reference|convex] \
  *     [--list]
  *
  * Transport resolution:
@@ -21,6 +22,10 @@
  *   runner-spawned signaling server fed --jwks-file / --members-file per the
  *   H-14 design note (docs/plan/handoffs/connvo-call-harness-f1.md), and its
  *   ws:// address is passed to the page additively as ?signal=.
+ *
+ * --signaling=convex (with --page=real) signals over the local Convex backend
+ * that scripts/local-backend.mjs starts: a fresh meeting per scenario, the
+ * signed-in test users A..O, and H-14 wired in.
  *
  * Suite wiring: H-14 is excluded from the default/all suite of this shard
  * (its verification machinery ships; the scenario itself needs a live local
@@ -84,11 +89,13 @@ for (const arg of args) {
 }
 
 const suite = (flags.suite ?? "H").toUpperCase();
+const signaling = flags.signaling ?? "reference";
+if (!["reference", "convex"].includes(signaling)) throw new Error(`--signaling must be reference or convex (got "${flags.signaling}")`);
 if (!["H", "P", "ALL"].includes(suite)) throw new Error(`--suite must be H, P or ALL (got "${flags.suite}")`);
 // Defaults (no --scenarios / "all" / ranges) select the WIRED suite of this
 // shard; explicitly NAMED scenarios run as requested — the escape hatch.
 const fullUniverse = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
-const wired = new Set(wiredScenarioIds(suite));
+const wired = new Set(wiredScenarioIds(suite, { signaling }));
 const rawScenarios = flags.scenarios;
 let scenarios;
 if (rawScenarios && !rawScenarios.includes("..") && rawScenarios !== "all") {
@@ -117,7 +124,8 @@ console.log(`call-eval: transports=${transports.join(",")} scenarios=${scenarios
 const page = flags.page ?? "bench";
 if (!["bench", "real"].includes(page)) throw new Error(`--page must be bench or real (got "${page}")`);
 if (page === "real" && !baseUrl) throw new Error("--page=real needs --base-url");
-const { results, wallMs, resultsPath, summaryPath } = await runScenarios({ transports, scenarios, seeds, baseUrl, page, log: console.log });
+if (signaling === "convex" && page !== "real") throw new Error("--signaling=convex needs --page=real");
+const { results, wallMs, resultsPath, summaryPath } = await runScenarios({ transports, scenarios, seeds, baseUrl, page, signaling, log: console.log });
 console.log(`results: ${resultsPath}`);
 console.log(`summary: ${summaryPath}`);
 const failed = results.filter((r) => !r.pass);

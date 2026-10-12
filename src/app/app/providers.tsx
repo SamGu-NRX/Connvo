@@ -7,7 +7,8 @@ import StreamVideoProvider from "@/providers/StreamClientProvider";
 import { ConvexClientProvider } from "@/providers/ConvexClientProvider";
 
 // The real call page in its local eval setup (bench and real-call flags both
-// on) runs with no Convex deployment and no Stream keys, like the call bench.
+// on) runs with no Stream keys, like the call bench. Convex, when configured,
+// comes from the root provider (src/app/providers.tsx).
 const CALL_EVAL =
   process.env.NODE_ENV !== "production" &&
   process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH === "1" &&
