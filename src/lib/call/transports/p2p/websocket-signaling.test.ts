@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SignalingHandlers } from "./signaling";
@@ -83,9 +84,10 @@ describe("websocketSignaling", () => {
   });
 
   it("reports a lost connection when pongs stop arriving", async () => {
+    // Fake only the heartbeat clock; openWith still waits on real timeouts.
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
     const h = handlers();
     const { socket } = await openWith(h);
-    vi.useFakeTimers();
     vi.advanceTimersByTime(2000);
     expect(socket.sent.at(-1)).toEqual({ type: "ping" });
     vi.advanceTimersByTime(6000);
@@ -93,9 +95,10 @@ describe("websocketSignaling", () => {
   });
 
   it("keeps the connection while pongs arrive", async () => {
+    // Fake only the heartbeat clock; openWith still waits on real timeouts.
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
     const h = handlers();
     const { socket } = await openWith(h);
-    vi.useFakeTimers();
     for (let i = 0; i < 10; i++) {
       vi.advanceTimersByTime(2000);
       socket.receive({ type: "pong" });
