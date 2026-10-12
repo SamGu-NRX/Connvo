@@ -1,7 +1,7 @@
 # Harness self-proof
 
 Command: `pnpm call-eval:self-proof -- --seeds=1..5 --variant-seeds=1 --variant-scenarios=target`
-Wall time so far: 626.4 s (complete); peers run sequentially, scenario by scenario.
+Wall time so far: 630.3 s (complete); peers run sequentially, scenario by scenario.
 Host: darwin arm64, 12 CPUs, node v26.5.0. No Convex, no sign-in.
 
 ## reference
@@ -61,5 +61,5 @@ Failures:
 
 ## Reference timings
 
-- p95 time to first remote frame (H-01): 1327 ms (n=5); bar 3000 ms.
-- p95 recovery after H-07's 10 s drop: 7014 ms (n=5); bar 8000 ms.
+- p95 time to first remote frame (H-01): 2997 ms (n=5); bar 3000 ms.
+- p95 recovery after H-07's 10 s drop: 7010 ms (n=5); bar 8000 ms.
