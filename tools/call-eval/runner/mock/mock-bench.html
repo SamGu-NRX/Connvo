@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Connvo call bench (mock)</title>
+<style>
+  :root {
+    --bg: #111827;
+    --panel: #1f2937;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --accent: #60a5fa;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --err: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, sans-serif;
+  }
+  main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 1.1rem; margin: 0 0 8px; }
+  [data-call-phase-tag] { font-weight: 600; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible, video:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .videos { display: flex; gap: 12px; flex-wrap: wrap; }
+  .local, .remote {
+    background: var(--panel);
+    border-radius: 10px;
+    padding: 8px;
+    width: 320px;
+    max-width: 100%;
+  }
+  video { width: 100%; aspect-ratio: 4 / 3; background: #0b1220; border-radius: 6px; display: block; }
+  .meta { color: var(--muted); font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; }
+  .dot.live { animation: pulse 1.6s ease-in-out infinite; }
+  .dot.warn { background: var(--warn); }
+  .dot.err { background: var(--err); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  [data-call-error] { color: var(--err); margin: 8px 0; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #374151; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+  .avatar.missing { background: repeating-linear-gradient(45deg, #1f2937, #1f2937 6px, #374151 6px, #374151 12px); }
+  ul.participants { list-style: none; margin: 0; padding: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+  .ended-panel { color: var(--muted); }
+  @media (max-width: 480px) {
+    .local, .remote { width: 100%; }
+    main { padding: 8px; }
+    button { padding: 10px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main data-call-phase="idle" data-testid="call-root">
+  <h1>Connvo call bench <span class="meta" data-call-phase-tag>(idle)</span></h1>
+  <p class="meta" data-testid="bench-identity"></p>
+  <section data-testid="call-error" data-call-error hidden></section>
+  <section class="controls" data-testid="call-controls">
+    <button data-testid="join-call" type="button">Join call</button>
+    <button data-testid="toggle-mic" type="button" aria-pressed="false">Toggle microphone</button>
+    <button data-testid="toggle-camera" type="button" aria-pressed="false">Toggle camera</button>
+    <button data-testid="switch-camera" type="button">Switch camera</button>
+    <button data-testid="leave-call" type="button">Leave call</button>
+    <button data-testid="retry-media" type="button" hidden>Retry media</button>
+  </section>
+  <section class="videos">
+    <div class="local" data-testid="local-tile">
+      <video data-testid="local-video" autoplay playsinline muted aria-label="Your camera preview"></video>
+      <div class="meta"><span class="avatar" data-testid="local-avatar">A</span> <span data-testid="local-name">You</span></div>
+    </div>
+    <ul class="participants" data-testid="participants"></ul>
+    <p class="ended-panel" data-testid="ended-panel" hidden>Call ended.</p>
+    <p class="meta" data-testid="lobby-panel">Waiting to join…</p>
+  </section>
+</main>
+<script type="module">
+const qs = new URLSearchParams(location.search);
+const ME = qs.get("as") || "A";
+const MEETING = qs.get("meeting") || "bench-meeting";
+const DISPLAY_NAME = qs.get("name") || ME;
+const DELAY_JOIN = Number(qs.get("delayJoin") || 0);
+const FORCED_STATE = qs.get("state") || null;
+
+const root = document.querySelector('[data-testid="call-root"]');
+const errorBox = document.querySelector('[data-testid="call-error"]');
+const retryBtn = document.querySelector('[data-testid="retry-media"]');
+const lobbyPanel = document.querySelector('[data-testid="lobby-panel"]');
+const endedPanel = document.querySelector('[data-testid="ended-panel"]');
+const localVideo = document.querySelector('[data-testid="local-video"]');
+const participantsList = document.querySelector('[data-testid="participants"]');
+
+document.querySelector('[data-testid="bench-identity"]').textContent =
+  `identity: ${ME}${DISPLAY_NAME !== ME ? ` (${DISPLAY_NAME})` : ""} · meeting: ${MEETING}`;
+document.querySelector('[data-testid="local-name"]').textContent = DISPLAY_NAME;
+const localAvatar = document.querySelector('[data-testid="local-avatar"]');
+if (qs.get("avatar") === "0") {
+  localAvatar.textContent = "";
+  localAvatar.classList.add("missing");
+} else {
+  localAvatar.textContent = ME;
+}
+
+let ws = null;
+let wsUp = false;
+let joined = false;
+let localStream = null;
+let captureReady = false;
+let everConnected = false;
+let phase = "idle";
+let joinTimer = null;
+const peers = new Map(); // participantId -> { pc, polite, makingOffer, ignoreOffer, isSettingRemoteAnswerPending, tile, video }
+const pendingPeerPresents = [];
+let pcSeq = 0;
+
+const setPhase = (next) => {
+  phase = next;
+  root.setAttribute("data-call-phase", next);
+  document.querySelector("[data-call-phase-tag]").textContent = `(${next})`;
+  lobbyPanel.hidden = next !== "idle" && next !== "joining";
+  if (next === "joining") lobbyPanel.textContent = "Joining…";
+  endedPanel.hidden = next !== "left";
+};
+
+const setError = (text, retryable) => {
+  if (text) {
+    errorBox.textContent = text;
+    errorBox.hidden = false;
+    retryBtn.hidden = !retryable;
+  } else {
+    errorBox.textContent = "";
+    errorBox.hidden = true;
+    retryBtn.hidden = true;
+  }
+};
+
+// HONEST phase reporting (harness contract): `connected` only when every
+// peer connection is fully connected; a joined solo participant with live
+// media and signaling counts as connected; after a first connection any
+// downgrade is `reconnecting`, never a lie back to `connected`.
+function computePhase() {
+  if (!joined) return;
+  const pcs = [...peers.values()].map((p) => p.pc);
+  const anyDown = pcs.some(
+    (pc) =>
+      pc.connectionState !== "connected" ||
+      pc.iceConnectionState === "disconnected" ||
+      pc.iceConnectionState === "failed" ||
+      pc.iceConnectionState === "closed",
+  );
+  let next;
+  if (!wsUp || (pcs.length > 0 && anyDown)) {
+    next = everConnected ? "reconnecting" : "joining";
+  } else if (pcs.length === 0) {
+    next = captureReady ? "connected" : "joining";
+  } else {
+    next = "connected";
+  }
+  if (next === "connected") everConnected = true;
+  if (next !== phase) setPhase(next);
+}
+
+function politeFor(peerId) {
+  return ME > peerId; // deterministic: higher id is polite
+}
+
+function ensureTile(peerId) {
+  let tile = document.querySelector(`[data-testid="remote-media"][data-participant-id="${peerId}"]`);
+  if (!tile) {
+    const li = document.createElement("li");
+    li.className = "remote";
+    li.setAttribute("data-testid", "remote-media");
+    li.setAttribute("data-participant-id", peerId);
+    li.setAttribute("data-audio-muted", "false");
+    li.setAttribute("data-video-off", "false");
+    li.innerHTML =
+      `<video autoplay playsinline aria-label="Remote video from ${peerId}"></video>` +
+      `<div class="meta"><span class="avatar">${peerId}</span> <span>${peerId}</span> ` +
+      `<span class="dot live" aria-hidden="true"></span></div>`;
+    participantsList.appendChild(li);
+    tile = li;
+  }
+  return tile;
+}
+
+function disposePeer(peerId) {
+  const p = peers.get(peerId);
+  if (!p) return;
+  console.debug(`[bench] dispose ${peerId} pc=${p.pc.__benchId}`);
+  try {
+    p.pc.close();
+  } catch { /* already closed */ }
+  if (p.tile) p.tile.remove(); // backfilled reference — the H-10 orphan bug
+  peers.delete(peerId);
+  computePhase();
+}
+
+function attachTracksToTracklessSenders(p, stream) {
+  // Signaling-before-media race: an answer may have been sent before local
+  // capture was ready, leaving trackless senders. Attach when capture lands.
+  if (!stream) return;
+  for (const sender of p.pc.getSenders()) {
+    if (!sender.track) {
+      const track = stream.getTracks().find((t) => t.kind === (sender.__kind || "video")) ||
+        stream.getTracks().find((t) => t.kind === "video") ||
+        stream.getTracks().find((t) => t.kind === "audio");
+      if (track) {
+        sender.__kind = sender.__kind || track.kind;
+        sender.replaceTrack(track).catch(() => {});
+      }
+    }
+  }
+}
+
+function createPeer(peerId) {
+  const pc = new RTCPeerConnection();
+  pc.__benchId = ++pcSeq;
+  console.debug(`[bench] create ${peerId} pc=${pc.__benchId}`);
+  const p = {
+    pc,
+    polite: politeFor(peerId),
+    makingOffer: false,
+    ignoreOffer: false,
+    isSettingRemoteAnswerPending: false,
+    tile: ensureTile(peerId), // assign the element so disposePeer can remove it
+  };
+  peers.set(peerId, p);
+
+  if (localStream) {
+    for (const track of localStream.getTracks()) {
+      pc.addTrack(track, localStream);
+    }
+  } else {
+    // Trackless senders keep the m-lines alive until capture is ready.
+    pc.addTransceiver("video", { direction: "sendrecv" });
+    pc.addTransceiver("audio", { direction: "sendrecv" });
+  }
+
+  pc.onicecandidate = ({ candidate }) => {
+    if (candidate) sendSignal(peerId, { candidate: candidate.toJSON() });
+  };
+  pc.ontrack = ({ track, streams }) => {
+    const tile = ensureTile(peerId);
+    const video = tile.querySelector("video");
+    const stream = streams[0] || new MediaStream([track]);
+    if (video.srcObject !== stream) video.srcObject = stream;
+    track.addEventListener("ended", () => computePhase());
+    computePhase();
+  };
+  pc.onconnectionstatechange = () => {
+    console.debug(`[bench] pc ${pc.__benchId} (${peerId}) connection=${pc.connectionState} ice=${pc.iceConnectionState}`);
+    computePhase();
+  };
+  pc.oniceconnectionstatechange = () => computePhase();
+  pc.onnegotiationneeded = async () => {
+    try {
+      p.makingOffer = true;
+      await pc.setLocalDescription();
+      sendSignal(peerId, { description: pc.localDescription });
+    } catch (err) {
+      console.debug("[bench] negotiation error", err?.message);
+    } finally {
+      p.makingOffer = false;
+    }
+  };
+  return p;
+}
+
+// A `failed` pc is revived by the ICE restart already in flight (ours on
+// socket-open, or the peer's restart offer) — replacing it here orphans that
+// restart: the new pc waits for an offer while the peer answers the old one,
+// and media never resumes. `closed` is the only state that means "gone".
+function onPeerPresent(peerId) {
+  if (peerId === ME) return;
+  if (!joined) {
+    pendingPeerPresents.push(peerId);
+    return;
+  }
+  const existing = peers.get(peerId);
+  console.debug(`[bench] present ${peerId} existing=${existing ? existing.pc.__benchId + ":" + existing.pc.connectionState : "none"}`);
+  if (existing && existing.pc.connectionState !== "closed") return;
+  if (existing) disposePeer(peerId);
+  createPeer(peerId);
+}
+
+async function onSignal(from, payload) {
+  const p = peers.get(from) || createPeer(from);
+  const pc = p.pc;
+  try {
+    if (payload.description) {
+      const offerCollision =
+        payload.description.type === "offer" && (p.makingOffer || pc.signalingState !== "stable");
+      p.ignoreOffer = !p.polite && offerCollision;
+      if (p.ignoreOffer) return;
+      p.isSettingRemoteAnswerPending = payload.description.type === "answer";
+      await pc.setRemoteDescription(payload.description);
+      p.isSettingRemoteAnswerPending = false;
+      // Flush candidates buffered while remoteDescription was unset.
+      const pending = p.pendingCandidates || [];
+      p.pendingCandidates = [];
+      for (const c of pending) {
+        try {
+          await pc.addIceCandidate(c);
+        } catch (err) {
+          if (!p.ignoreOffer) throw err;
+        }
+      }
+      if (payload.description.type === "offer") {
+        await pc.setLocalDescription();
+        sendSignal(from, { description: pc.localDescription });
+      }
+    } else if (payload.candidate) {
+      if (pc.remoteDescription) {
+        try {
+          await pc.addIceCandidate(payload.candidate);
+        } catch (err) {
+          if (!p.ignoreOffer) throw err;
+        }
+      } else {
+        // Buffer until the remote description lands (trickle race).
+        p.pendingCandidates = p.pendingCandidates || [];
+        p.pendingCandidates.push(payload.candidate);
+      }
+    }
+  } catch (err) {
+    console.debug("[bench] signal error", from, err?.message);
+  }
+  computePhase();
+}
+
+function sendSignal(to, payload) {
+  if (ws && wsUp) wsSend({ type: "signal", to, from: ME, payload });
+}
+
+let wsSend = (obj) => {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj));
+};
+
+function connectWS() {
+  return new Promise((resolve, reject) => {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    ws = new WebSocket(`${proto}://${location.host}/signal`);
+    ws.onopen = () => {
+      wsUp = true;
+      wsSend({ type: "join", meeting: MEETING, participant: ME, name: DISPLAY_NAME });
+      heartbeatLoop();
+      resolve();
+    };
+    ws.onerror = () => {};
+    ws.onclose = () => {
+      wsUp = false;
+      computePhase();
+      if (joined && phase !== "left") scheduleReconnect();
+    };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      switch (msg.type) {
+        case "peers":
+          for (const pid of msg.participants) onPeerPresent(pid);
+          computePhase();
+          break;
+        case "present":
+          onPeerPresent(msg.participant);
+          computePhase();
+          break;
+        case "signal":
+          onSignal(msg.from, msg.payload);
+          break;
+        case "state": {
+          const tile = document.querySelector(`[data-testid="remote-media"][data-participant-id="${msg.participant}"]`);
+          if (tile) {
+            if (msg.state.audioMuted !== undefined) tile.setAttribute("data-audio-muted", String(msg.state.audioMuted));
+            if (msg.state.videoOff !== undefined) tile.setAttribute("data-video-off", String(msg.state.videoOff));
+          }
+          break;
+        }
+        case "left":
+          disposePeer(msg.participant);
+          break;
+        case "reject":
+          setError(msg.reason, false);
+          setPhase("failed");
+          break;
+        case "bye":
+          wsUp = false;
+          computePhase();
+          break;
+      }
+    };
+  });
+}
+
+let reconnectTimer = null;
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setInterval(async () => {
+    if (wsUp || phase === "left") {
+      clearInterval(reconnectTimer);
+      reconnectTimer = null;
+      return;
+    }
+    try {
+      await connectWS();
+      // Our ICE restart rides the fresh socket; the peer's restart offer is
+      // answered by the revived (non-replaced) pc.
+      for (const p of peers.values()) {
+        try {
+          p.pc.restartIce();
+        } catch { /* mid-restart */ }
+      }
+    } catch { /* retry on the next tick */ }
+  }, 1000);
+}
+
+function heartbeatLoop() {
+  if (heartbeatLoop.timer) clearInterval(heartbeatLoop.timer);
+  heartbeatLoop.timer = setInterval(() => {
+    if (wsUp) wsSend({ type: "heartbeat" });
+  }, 2000);
+}
+
+async function capture() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+  localStream = stream;
+  localVideo.srcObject = stream;
+  captureReady = true;
+  return stream;
+}
+
+function broadcastState() {
+  const audioTrack = localStream?.getAudioTracks()[0];
+  const videoTrack = localStream?.getVideoTracks()[0];
+  wsSend({
+    type: "state",
+    from: ME,
+    state: {
+      audioMuted: audioTrack ? audioTrack.enabled === false : undefined,
+      videoOff: videoTrack ? videoTrack.readyState === "ended" : undefined,
+    },
+  });
+}
+
+async function join() {
+  setError(null);
+  setPhase("joining");
+  try {
+    if (!localStream) await capture();
+  } catch (err) {
+    // H-06: actionable error + retryable (retry-media visible).
+    setError(
+      `Microphone and camera access was denied (${err?.name || "error"}). Allow access to join this call.`,
+      err?.name === "NotAllowedError",
+    );
+    setPhase("failed");
+    return;
+  }
+  await connectWS();
+  joined = true;
+  // Flush presents that arrived before joining completed.
+  while (pendingPeerPresents.length) {
+    onPeerPresent(pendingPeerPresents.shift());
+  }
+  computePhase();
+  for (const p of peers.values()) attachTracksToTracklessSenders(p, localStream);
+}
+
+function leave() {
+  for (const [peerId] of peers) disposePeer(peerId);
+  for (const track of localStream?.getTracks() || []) track.stop(); // H-11: capture tracks end
+  localStream = null;
+  captureReady = false;
+  localVideo.srcObject = null;
+  joined = false;
+  if (ws) {
+    try {
+      wsSend({ type: "leave", participant: ME });
+      ws.close();
+    } catch { /* already closed */ }
+  }
+  wsUp = false;
+  setPhase("left");
+}
+
+document.querySelector('[data-testid="join-call"]').addEventListener("click", () => join());
+document.querySelector('[data-testid="leave-call"]').addEventListener("click", () => leave());
+retryBtn.addEventListener("click", () => join());
+
+document.querySelector('[data-testid="toggle-mic"]').addEventListener("click", (e) => {
+  const track = localStream?.getAudioTracks()[0];
+  if (!track) return;
+  track.enabled = !track.enabled;
+  e.currentTarget.setAttribute("aria-pressed", String(!track.enabled));
+  broadcastState();
+});
+
+document.querySelector('[data-testid="toggle-camera"]').addEventListener("click", async (e) => {
+  const track = localStream?.getVideoTracks()[0];
+  if (!track) return;
+  if (track.readyState !== "ended") {
+    track.stop(); // H-04: the capture track truly ends (camera released)
+    e.currentTarget.setAttribute("aria-pressed", "true");
+    broadcastState();
+  } else {
+    // Reacquire and replace the fake camera track.
+    try {
+      const fresh = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+      const newTrack = fresh.getVideoTracks()[0];
+      for (const p of peers.values()) {
+        const sender = p.pc.getSenders().find((s) => s.track?.kind === "video" || s.__kind === "video");
+        if (sender) await sender.replaceTrack(newTrack);
+      }
+      localStream.addTrack(newTrack);
+      e.currentTarget.setAttribute("aria-pressed", "false");
+      broadcastState();
+    } catch (err) {
+      setError(`Camera restart failed (${err?.name || "error"}).`, false);
+    }
+  }
+});
+
+// H-05: second fake device via canvas capture (second-camera color band).
+let secondCameraOn = false;
+let secondCanvasTimer = null;
+document.querySelector('[data-testid="switch-camera"]').addEventListener("click", async (e) => {
+  const videoTrack = localStream?.getVideoTracks()[0];
+  if (!videoTrack) return;
+  if (!secondCameraOn) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 320;
+    canvas.height = 240;
+    const ctx = canvas.getContext("2d");
+    let counter = 0;
+    secondCanvasTimer = setInterval(() => {
+      ctx.fillStyle = "rgb(170,40,170)";
+      ctx.fillRect(0, 0, 320, 200);
+      ctx.fillStyle = "rgb(235,235,235)";
+      ctx.fillRect(0, 200, 320, 40);
+      ctx.fillStyle = "rgb(20,20,20)";
+      const bits = (counter & 4095).toString(2).padStart(12, "0");
+      for (let i = 0; i < 12; i++) {
+        if (bits[i] === "1") ctx.fillRect(24 + i * 12, 200, 12, 40);
+      }
+      ctx.fillRect(8, 200, 16, 40);
+      ctx.fillRect(168, 200, 16, 40);
+      counter++;
+    }, 33);
+    const canvasStream = canvas.captureStream(30);
+    const canvasTrack = canvasStream.getVideoTracks()[0];
+    for (const p of peers.values()) {
+      const sender = p.pc.getSenders().find((s) => s.track?.kind === "video" || s.__kind === "video");
+      if (sender) await sender.replaceTrack(canvasTrack);
+    }
+    const idx = localStream.getVideoTracks().indexOf(videoTrack);
+    localStream.removeTrack(videoTrack);
+    videoTrack.stop();
+    localStream.addTrack(canvasTrack);
+    secondCameraOn = true;
+    e.currentTarget.setAttribute("aria-pressed", "true");
+  } else {
+    clearInterval(secondCanvasTimer);
+    try {
+      const fresh = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+      const newTrack = fresh.getVideoTracks()[0];
+      for (const p of peers.values()) {
+        const sender = p.pc.getSenders().find((s) => s.track?.kind === "video" || s.__kind === "video");
+        if (sender) await sender.replaceTrack(newTrack);
+      }
+      const old = localStream.getVideoTracks()[0];
+      if (old) localStream.removeTrack(old);
+      localStream.addTrack(newTrack);
+      secondCameraOn = false;
+      e.currentTarget.setAttribute("aria-pressed", "false");
+    } catch (err) {
+      setError(`Camera switch-back failed (${err?.name || "error"}).`, false);
+    }
+  }
+  broadcastState();
+});
+
+setPhase("idle");
+if (qs.get("autojoin") !== "0") {
+  if (DELAY_JOIN > 0) {
+    joinTimer = setTimeout(() => join(), DELAY_JOIN);
+  } else {
+    join();
+  }
+}
+
+// P-01 support: deterministic visual states driven by ?state=<name>.
+if (FORCED_STATE === "failed") {
+  setTimeout(() => {
+    setError("Connection failed (forced state for polish checks).", false);
+    setPhase("failed");
+  }, 1500);
+}
+if (FORCED_STATE === "reconnecting") {
+  setTimeout(() => setPhase("reconnecting"), 1500);
+}
+if (FORCED_STATE === "ended") {
+  setTimeout(() => {
+    joined = false;
+    setPhase("left");
+  }, 1500);
+}
+</script>
+</body>
+</html>
