@@ -23,6 +23,22 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, write
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Pure decision logic + guard discipline, unit-tested in
+// local-backend-core.test.mjs. The script wires real I/O into these.
+import {
+  DUMMY_WORKOS_CLIENT_ID,
+  EVAL_ENV_TEST_JWKS,
+  EVAL_ENV_WORKOS_CLIENT_ID,
+  HARNESS_INCLUDE_DIRS,
+  LOCAL_TEST_ISSUER,
+  applyConvexJsonOverride as overrideConvexJsonOnDisk,
+  applyDeploymentEnv,
+  deploymentPortFromUrl,
+  deploymentRefusalMessage,
+  pickConvexUrlFromEnvText,
+  resolveSelectedDeployment,
+} from "./local-backend-core.mjs";
+
 const EVAL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = path.resolve(EVAL_DIR, "../..");
 const LOCAL_DIR = path.join(EVAL_DIR, ".local");
@@ -30,8 +46,6 @@ const KEY_DIR = path.join(LOCAL_DIR, "keys");
 const OUT_DIR = path.join(EVAL_DIR, "out");
 const STATE_PATH = path.join(OUT_DIR, "state.json");
 
-const LOCAL_TEST_ISSUER = "https://connvo-local-test.invalid";
-const DUMMY_WORKOS_CLIENT_ID = "client_connvo_local_dummy";
 const CONV_TMUX = "conn-eval";
 const NEXT_TMUX = "conn-eval-next";
 
@@ -45,13 +59,8 @@ const flag = (name) => args.includes(`--${name}`);
 // convex.json is restored by `--stop`.
 const CONVEX_JSON = path.join(REPO, "convex.json");
 const HARNESS_DIR = path.join(REPO, "convex-harness");
-const HARNESS_INCLUDE_DIRS = [
-  "auth", "users", "meetings", "participants", "messaging", "realtime",
-  "transcripts", "matching", "interests", "settings", "system",
-  "schema", "lib", "types", "environments", "_generated",
-  "devEval", // eval seed mutation (devEval/seed) invoked in step 4/6
-];
-const HARNESS_EXTERNAL = ["@stream-io/video-react-sdk", "openai"];
+// HARNESS_INCLUDE_DIRS / HARNESS_EXTERNAL live in local-backend-core.mjs
+// (unit-tested: the allowlist must accept the devEval seed module).
 
 function buildHarnessTree() {
   rmSync(HARNESS_DIR, { recursive: true, force: true });
@@ -68,18 +77,11 @@ function buildHarnessTree() {
 }
 
 function applyConvexJsonOverride() {
-  const original = readFileSync(CONVEX_JSON, "utf8");
-  const j = JSON.parse(original);
-  if (j.functions === "convex-harness") return null; // already overridden by a prior run
-  j.functions = "convex-harness";
-  j.node = { ...(j.node ?? {}), "18": true, externalDependencies: HARNESS_EXTERNAL };
-  // Back up BEFORE touching the repo file, and create out/ first (it is
-  // otherwise only created at the end of the run) so a failed backup can
-  // never leave a modified convex.json without a restorable original.
-  mkdirSync(OUT_DIR, { recursive: true });
-  writeFileSync(path.join(OUT_DIR, "convex.json.orig"), original);
-  writeFileSync(CONVEX_JSON, JSON.stringify(j, null, 2) + "\n");
-  return original;
+  // Override + backup-before-modify discipline live in local-backend-core.mjs
+  // (unit-tested: the backup must exist even when out/ is absent); this
+  // wrapper supplies the real paths.
+  const { changed, original } = overrideConvexJsonOnDisk({ convexJsonPath: CONVEX_JSON, outDir: OUT_DIR });
+  return changed ? original : null;
 }
 
 function restoreConvexJson() {
@@ -90,23 +92,6 @@ function restoreConvexJson() {
     console.log("[backend] convex.json restored to the repo version");
   }
   rmSync(HARNESS_DIR, { recursive: true, force: true });
-}
-
-// Wait for a quiet CPU window before the first push: co-tenant test suites on
-// this shared 2-core box (Playwright fleets, tsc runs) starve the backend's
-// hardcoded 2 s module-load budget.
-async function waitForQuiet(maxMs = 40 * 60_000) {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    const load = parseInt(readFileSync("/proc/loadavg", "utf8").split(" ")[0], 10);
-    const chromes = sh("pgrep -f chrome-headless | wc -l", { capture: true, allowFail: true }).stdout.trim();
-    const tsc = sh("pgrep -f 'tsc --noEmit' | wc -l", { capture: true, allowFail: true }).stdout.trim();
-    if (load < 2 && Number(chromes) < 3 && Number(tsc) === 0) return true;
-    if (Date.now() % 60_000 < 3_000) console.log(`[backend] waiting for a quiet CPU window (load ${load}, ${chromes} browsers)…`);
-    await new Promise((r) => setTimeout(r, 5_000));
-  }
-  console.log("[backend] no quiet window arrived; pushing anyway");
-  return false;
 }
 
 const nextPort = Number((args.find((a) => a.startsWith("--port=")) ?? "--port=3000").split("=")[1]) || 3000;
@@ -205,7 +190,6 @@ const authKeyB64 = Buffer.from(JSON.stringify(priv)).toString("base64");
 console.log("[backend] 2/6 convex local deployment (anonymous, no account)");
 buildHarnessTree();
 applyConvexJsonOverride();
-await waitForQuiet();
 if (!tmuxRunning(CONV_TMUX)) {
   mkdirSync(LOCAL_DIR, { recursive: true });
   sh(`tmux new-session -d -s ${CONV_TMUX} "bash -c 'cd ${REPO} && npx convex dev --typecheck=disable 2>&1 | tee ${LOCAL_DIR}/convex-dev.log'"`);
@@ -220,8 +204,11 @@ console.log("[backend] waiting for convex dev (first run downloads the local bac
 while (Date.now() < deadline) {
   const envLocal = path.join(REPO, ".env.local");
   if (existsSync(envLocal)) {
-    const m = readFileSync(envLocal, "utf8").match(/^CONVEX_URL=(.+)$/m);
-    if (m) convexUrl = m[1].trim();
+    // Convex 1.28.x writes NEXT_PUBLIC_CONVEX_URL on a Next.js tree (legacy
+    // CONVEX_URL tolerated) — reading only CONVEX_URL timed out a fresh
+    // checkout even with the backend up.
+    const picked = pickConvexUrlFromEnvText(readFileSync(envLocal, "utf8"));
+    if (picked) convexUrl = picked.value;
   }
   const logPath = path.join(LOCAL_DIR, "convex-dev.log");
   const log = existsSync(logPath) ? readFileSync(logPath, "utf8") : "";
@@ -244,16 +231,9 @@ console.log(`[backend] convex deployment up: ${convexUrl}`);
 // Deployment guard: `convex env set` writes into whichever deployment the
 // convex CLI selects (CONVEX_DEPLOYMENT env, else .env.local). Eval env vars
 // must never land on anything but the local anonymous backend.
-function resolveSelectedDeployment() {
-  if (process.env.CONVEX_DEPLOYMENT) {
-    return { source: "environment", value: process.env.CONVEX_DEPLOYMENT };
-  }
+function readEnvLocalIfPresent() {
   const envLocalPath = path.join(REPO, ".env.local");
-  if (existsSync(envLocalPath)) {
-    const m = readFileSync(envLocalPath, "utf8").match(/^CONVEX_DEPLOYMENT=(.+)$/m);
-    if (m) return { source: ".env.local", value: m[1].trim().replace(/^["']|["']$/g, "") };
-  }
-  return { source: "unset", value: null };
+  return existsSync(envLocalPath) ? readFileSync(envLocalPath, "utf8") : null;
 }
 
 function localBackendAnswers(port) {
@@ -261,45 +241,45 @@ function localBackendAnswers(port) {
   return code !== "" && code !== "000"; // any HTTP status proves a live backend
 }
 
+/** @param {string} name @param {string} value */
+function runEnvSet(name, value) {
+  sh(`npx convex env set ${name} '${value}'`, { capture: true });
+}
+
 function assertLocalDeployment() {
-  const dep = resolveSelectedDeployment();
-  const problems = [];
-  if (!dep.value) {
-    problems.push("CONVEX_DEPLOYMENT is not set in the environment or .env.local, so the target deployment cannot be identified");
-  } else if (!dep.value.startsWith("anonymous")) {
-    // Anonymous deployments are the local backend's own (CLI versions spell
-    // the prefix "anonymous:" or "anonymous-"); anything else can be a cloud
-    // deployment the CLI would write eval env vars into.
-    problems.push(`CONVEX_DEPLOYMENT from ${dep.source} is "${dep.value}", not an anonymous local deployment`);
-  }
-  let port = 3210;
-  try {
-    // The status check's "url~deployment" form is tolerated the same way.
-    port = Number(new URL((convexUrl ?? "http://127.0.0.1:3210").split("~")[0]).port) || 3210;
-  } catch {}
-  if (!localBackendAnswers(port)) {
-    problems.push(`no local backend answered on 127.0.0.1:${port}`);
-  }
-  if (problems.length > 0) {
-    console.error(
-      "[backend] REFUSING to run 'convex env set': the selected deployment could not be verified as the local anonymous one:\n" +
-        problems.map((p) => `  - ${p}`).join("\n") +
-        "\n[backend] Eval env vars must never land on a shared or cloud backend. Start the local backend first (rerun this script) or fix CONVEX_DEPLOYMENT/.env.local.",
-    );
+  const port = deploymentPortFromUrl(convexUrl);
+  // Guard-then-set (refusal BEFORE any `convex env set`) lives in
+  // local-backend-core.mjs (unit-tested: a non-local deployment must never
+  // reach the env-set calls); this wrapper supplies the real I/O and
+  // process behavior.
+  const result = applyDeploymentEnv({
+    deployment: () => resolveSelectedDeployment({ envValue: process.env.CONVEX_DEPLOYMENT, envLocalContent: readEnvLocalIfPresent() }),
+    backendAnswered: () => localBackendAnswers(port),
+    port,
+    envSets: [
+      { name: EVAL_ENV_WORKOS_CLIENT_ID, value: DUMMY_WORKOS_CLIENT_ID },
+      { name: EVAL_ENV_TEST_JWKS, value: jwksDataUri },
+    ],
+    envSet: runEnvSet,
+  });
+  if (!result.ok) {
+    console.error(deploymentRefusalMessage(result.problems));
     process.exit(1);
   }
-  console.log(`[backend] deployment guard ok: ${dep.value} answering on 127.0.0.1:${port}`);
+  console.log(`[backend] deployment guard ok: ${result.deployment.value} answering on 127.0.0.1:${result.port}`);
 }
 
 // Deployment env: dummy WorkOS client id (D2) + the harness JWKS provider.
+// Guard runs first; on a non-local target it refuses and exits 1 before any
+// env write happens (guard iii, unit-tested).
 console.log("[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)");
 assertLocalDeployment();
-sh(`npx convex env set WORKOS_CLIENT_ID ${DUMMY_WORKOS_CLIENT_ID}`, { capture: true });
-sh(`npx convex env set CONNVO_LOCAL_TEST_JWKS '${jwksDataUri}'`, { capture: true });
 
 // Re-push so the backend re-evaluates auth.config with the new env, then seed.
+// --typecheck=disable: same as the first push — the default typechecking
+// would re-run tsc on this shared box mid-run.
 console.log("[backend] 4/6 re-push + seed");
-sh("npx convex dev --once", { capture: true });
+sh("npx convex dev --once --typecheck=disable", { capture: true });
 const seedOut = sh("npx convex run devEval/seed", { capture: true }).stdout;
 let seedJson = null;
 try {
