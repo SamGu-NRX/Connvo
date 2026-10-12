@@ -48,6 +48,4 @@ tools/call-eval/out/
 tools/call-eval/.local/
 tools/call-eval/fixtures/*.y4m
 tools/call-eval/fixtures/*.wav
-# self-proof run state: the checkpoint is per-run; results/summary are committed
-tools/call-eval/self-proof/checkpoint.jsonl
 convex-harness/
