@@ -414,3 +414,75 @@ describe("reference signaling server", () => {
     child.kill();
   }, 15000);
 });
+
+describe("bench mode (--bench=1): self-sufficient minting", () => {
+  it("starts with no JWKS or members file and mints the bench subjects over the same verify path", async () => {
+    const child = spawnServer(["--port=9307", "--variant=reference", "--bench=1"]);
+    servers.push(child);
+    const ready = await waitForReady(child);
+    // Bench mode is additive to the pinned ready line: mint announces the
+    // local mint endpoint (the old line stayed byte-identical otherwise).
+    expect(ready).toEqual({ ok: true, port: 9307, variant: "reference", mint: true });
+
+    // The mint issues the bench subjects, and the subject IS the harness id:
+    // rooms, welcome.selfId, event logs and scenario lookups all say A/B
+    // (the old flow minted local-test-a while scenarios looked for A).
+    const res = await fetch("http://127.0.0.1:9307/mint", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ user: "A" }),
+    });
+    expect(res.status).toBe(200);
+    const minted = await res.json();
+    expect(minted.subject).toBe("A");
+    expect(typeof minted.token).toBe("string");
+
+    const a = new WsClient("ws://127.0.0.1:9307");
+    await a.opened;
+    a.send({ type: "hello", token: minted.token, meetingId: "any-meeting" });
+    const welcome = await a.next();
+    expect(welcome.type).toBe("welcome");
+    expect(welcome.selfId).toBe("A");
+    a.close();
+    child.kill();
+  }, 15000);
+
+  it("fails closed: unknown users cannot mint, foreign keys cannot hello, and non-bench servers have no mint", async () => {
+    const child = spawnServer(["--port=9308", "--variant=reference", "--bench=1"]);
+    servers.push(child);
+    await waitForReady(child);
+
+    // Only the fixed bench subjects mint.
+    const stranger = await fetch("http://127.0.0.1:9308/mint", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ user: "Q" }),
+    });
+    expect(stranger.status).toBe(403);
+
+    // A token signed with a foreign key (the test fixture's key, not the
+    // server's in-process key) is a bad signature — bench mode still
+    // verifies signatures, it just owns the key.
+    const forged = new WsClient("ws://127.0.0.1:9308");
+    await forged.opened;
+    forged.send({ type: "hello", token: tokenFor(privateJwk, "A"), meetingId: "any-meeting" });
+    const rejection = await forged.next();
+    expect(rejection.type).toBe("error");
+    expect(rejection.code).toBe("auth");
+    await forged.closed; // the 4004 close arrives after the error message
+    expect(forged.closedCode).toBe(4004);
+
+    // A non-bench server has no mint route: the backend flow stays the only
+    // path to tokens there (H-14's machinery).
+    const plain = spawnOnPort(9309);
+    await waitForReady(plain);
+    const noMint = await fetch("http://127.0.0.1:9309/mint", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ user: "A" }),
+    });
+    expect(noMint.status).toBe(404);
+    plain.kill();
+    child.kill();
+  }, 15000);
+});

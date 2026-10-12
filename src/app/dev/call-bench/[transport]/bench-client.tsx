@@ -166,6 +166,20 @@ export function BenchClient({
         meetingId,
         selfId,
         identityToken: async () => {
+          // Bench runs mint on the signaling server itself (no Convex, no
+          // JWKS, no backend): swap the signal URL's ws scheme for http and
+          // POST the participant id — the minted subject IS that id. The
+          // backend-minted route stays for runs without a signal override.
+          if (signalUrl) {
+            const res = await fetch(`${signalUrl.replace(/^ws/, "http")}/mint`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ user: participant }),
+            });
+            if (!res.ok) throw new Error(`bench mint unavailable (${res.status})`);
+            const data = (await res.json()) as { token: string };
+            return data.token;
+          }
           const res = await fetch(`/api/test-auth/token?user=${participant}`);
           if (!res.ok) throw new Error(`test-auth token unavailable (${res.status})`);
           const data = (await res.json()) as { token: string };
@@ -184,7 +198,7 @@ export function BenchClient({
       });
       setPhase("failed");
     }
-  }, [capture, events, meetingId, participant, publishLocalState, selfId, transportName]);
+  }, [capture, events, meetingId, participant, publishLocalState, selfId, signalUrl, transportName]);
 
   // Auto-join (H scenarios) with the P-05 slow-join delay.
   useEffect(() => {

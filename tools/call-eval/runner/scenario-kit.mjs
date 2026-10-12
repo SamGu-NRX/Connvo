@@ -57,13 +57,15 @@ export const phaseIs = (phase) =>
   `() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase') === '${phase}'`;
 
 export async function waitAttr(peer, participantId, attr, value, timeoutMs) {
-  const v = await waitFor(
+  // The predicate compares the exact expected value: waitFor resolves on
+  // truthiness, and getAttribute returns the string "false" — which IS
+  // truthy — so a truthiness wait would satisfy a muted check instantly.
+  await waitFor(
     peer,
-    `() => document.querySelector('[data-testid="remote-media"][data-participant-id="${participantId}"]')?.getAttribute('${attr}')`,
+    `() => document.querySelector('[data-testid="remote-media"][data-participant-id="${participantId}"]')?.getAttribute('${attr}') === '${value}'`,
     { timeoutMs, describe: `${attr}=${value} on ${participantId}` },
   );
-  if (v !== value) throw new ScenarioError(`${peer.peerId}: ${attr} was "${v}", expected "${value}"`);
-  return v;
+  return value;
 }
 
 export async function click(peer, testId) {

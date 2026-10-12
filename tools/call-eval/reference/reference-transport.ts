@@ -77,6 +77,8 @@ interface PeerEntry {
   /** ICE candidates that arrived before the remote description was set. */
   pendingCandidates: RTCIceCandidateInit[];
   publishedStream: boolean;
+  /** Highest inbound framesDecoded observed — the decoder-output evidence the connected phase requires. */
+  decodedFrames: number;
 }
 
 export function createReferenceTransport(
@@ -94,6 +96,7 @@ export function createReferenceTransport(
   let localState: LocalCallState = { micOn: true, cameraOn: true };
   let lastToken: string | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let decodedPollTimer: ReturnType<typeof setInterval> | null = null;
   const peers = new Map<string, PeerEntry>();
 
   function setPhase(next: CallPhase): void {
@@ -103,7 +106,71 @@ export function createReferenceTransport(
 
   function fail(kind: "auth" | "network" | "media" | "unknown", message: string, retryable: boolean): void {
     events?.onError({ kind, message, retryable });
+    stopDecodedPoll();
     if (phase !== "left") setPhase("failed");
+  }
+
+  /** True when at least one remote peer exists, every peer is ICE-connected,
+   * and every peer's decoder has produced at least one frame. */
+  function meshReadyForConnected(): boolean {
+    if (peers.size === 0) return false;
+    for (const [, entry] of peers) {
+      if (entry.pc.connectionState !== "connected") return false;
+      if (entry.decodedFrames <= 0) return false;
+    }
+    return true;
+  }
+
+  function maybeConnected(): void {
+    if ((phase === "joining" || phase === "reconnecting") && meshReadyForConnected()) {
+      stopDecodedPoll();
+      setPhase("connected");
+    }
+  }
+
+  /** Reads each peer's browser-side framesDecoded counter — real decoder
+   * output, not a phase shortcut — and flips to connected when the whole
+   * mesh has media. */
+  async function pollDecodedFrames(): Promise<void> {
+    for (const [, entry] of peers) {
+      if (entry.decodedFrames > 0) continue;
+      try {
+        const stats = await entry.pc.getStats();
+        stats.forEach((report) => {
+          const r = report as unknown as {
+            type?: string;
+            kind?: string;
+            mediaType?: string;
+            framesDecoded?: number;
+          };
+          if (
+            r.type === "inbound-rtp" &&
+            (r.kind === "video" || r.mediaType === "video") &&
+            typeof r.framesDecoded === "number" &&
+            r.framesDecoded > entry.decodedFrames
+          ) {
+            entry.decodedFrames = r.framesDecoded;
+          }
+        });
+      } catch {
+        /* the pc can close mid-poll; the next tick retries */
+      }
+    }
+    maybeConnected();
+  }
+
+  function startDecodedPoll(): void {
+    if (decodedPollTimer) return;
+    decodedPollTimer = setInterval(() => {
+      if (phase === "joining" || phase === "reconnecting") void pollDecodedFrames();
+    }, 250);
+  }
+
+  function stopDecodedPoll(): void {
+    if (decodedPollTimer) {
+      clearInterval(decodedPollTimer);
+      decodedPollTimer = null;
+    }
   }
 
   function wsSend(message: SignalingUp): void {
@@ -149,6 +216,7 @@ export function createReferenceTransport(
       initiator: ctx.selfId > participantId,
       pendingCandidates: [],
       publishedStream: false,
+      decodedFrames: 0,
     };
     peers.set(participantId, entry);
 
@@ -163,10 +231,16 @@ export function createReferenceTransport(
       events?.onRemoteStream({ participantId, stream });
     };
     pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connected") {
+        // ICE is up; the connected phase still waits for decoded output
+        // (the poll flips it once framesDecoded advances).
+        void pollDecodedFrames();
+      }
       if (pc.connectionState === "failed") {
         // A failed media link recovers through the signaling reconnect path
         // (the mesh is rebuilt after the fresh welcome), not by faking states.
         setPhase(phase === "left" ? phase : "reconnecting");
+        startDecodedPoll();
       }
     };
 
@@ -257,7 +331,11 @@ export function createReferenceTransport(
             events.onRemoteJoined({ participantId });
           }
         }
-        if (phase !== "connected") setPhase("connected");
+        // The signaling hello alone is NOT "connected" — that shortcut let
+        // H-12 pass before any media flowed. The phase flips only when the
+        // mesh is ICE-connected with decoded remote frames (the poll).
+        startDecodedPoll();
+        void pollDecodedFrames();
         break;
       }
       case "peer-joined": {
@@ -335,6 +413,7 @@ export function createReferenceTransport(
       events = transportEvents;
       leaving = false;
       setPhase("joining");
+      startDecodedPoll();
       await joinSocket();
     },
 
@@ -361,6 +440,7 @@ export function createReferenceTransport(
     },
 
     async leave(): Promise<void> {
+      stopDecodedPoll();
       if (defect === "never-close") {
         // H-11 defect: close is a no-op — the signaling socket and every
         // wrapped peer connection stay open after leaving.

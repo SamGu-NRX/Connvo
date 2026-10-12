@@ -54,11 +54,14 @@ export default async function CallBenchPage({
   // address here (port fallback means the port is not known ahead of time).
   const signalUrl = signalUrlFromParam(query.signal);
 
+  // One identity scheme end to end: the subject the token carries IS the
+  // harness participant id (A/B) — the bench signaling server mints exactly
+  // this sub, and rooms/event logs/scenarios all use it.
   return (
     <BenchClient
       transportName={transport}
       participant={participant}
-      selfId={`local-test-${participant.toLowerCase()}`}
+      selfId={participant}
       meetingId={meetingId}
       displayName={name}
       delayJoinMs={delayJoinMs}

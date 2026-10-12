@@ -112,19 +112,33 @@ export class RunContext {
     if (!referenceVariantFor(this.transport) || this.signaling) return;
     this.signaling = await startReferenceSignaling({
       transport: this.transport,
+      // No seeded state fixture -> self-sufficient bench mode (clean
+      // checkout); a fixture opts back into the backend-mode JWKS/members
+      // flow the H-14 machinery pins.
+      bench: !this._signalingStatePath,
       ...(this._signalingStatePath ? { statePath: this._signalingStatePath } : {}),
       log: this.log,
     });
     this.signalUrl = this.signaling.signalUrl;
-    this.seededMeetingId = JSON.parse(fs.readFileSync(this.signaling.membersPath, "utf8")).meetingId;
+    if (this.signaling.benchMode) {
+      // Bench mode accepts any meeting id, so scenarios keep their fresh
+      // per-seed ids (isolation below); the seeded meeting only exists in
+      // backend mode, where the manifest pins it.
+      this.seededMeetingId = null;
+    } else {
+      const membersPath = this.signaling.membersPath;
+      if (typeof membersPath !== "string") throw new Error("backend signaling started without a members manifest");
+      this.seededMeetingId = JSON.parse(fs.readFileSync(membersPath, "utf8")).meetingId;
+    }
     this.log(`reference transport "${this.transport}": bench URL ${this.url}${this.benchPath}, signaling ${this.signalUrl}`);
   }
 
   /** Fresh meeting per scenario-seed for isolation. */
   newMeeting(name) {
-    // The reference signaling server fail-closes membership against one
-    // pinned meetingId — per-scenario ids would be rejected. Isolation there
-    // comes from the server's re-hello socket replacement instead.
+    // Backend mode: the reference signaling server fail-closes membership
+    // against one pinned meetingId — per-scenario ids would be rejected.
+    // Bench mode (no manifest) always uses fresh per-scenario ids. Isolation
+    // in both cases comes from the server's re-hello socket replacement.
     this.meetingId = this.seededMeetingId ?? `${name}-${this.transport}-s${this.seed}-${Date.now()}`;
     this.relay?.reset();
     return this.meetingId;

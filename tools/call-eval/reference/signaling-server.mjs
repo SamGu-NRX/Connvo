@@ -22,6 +22,13 @@
  * unknown meetings/subjects with a named auth error, which is what H-14
  * asserts on the reference transport.
  *
+ *
+ * Bench mode (--bench=1) is the self-sufficient eval default: the server
+ * generates its own RS256 keypair in-process and mints the bench identities
+ * (subjects A and B) at POST /mint, so a clean checkout runs the H scenarios
+ * with no Convex backend, no JWKS file and no seeded state. The membership
+ * check accepts any meeting id and only the fixed bench subjects. Eval-only,
+ * loopback-only, per-run keys.
  * The no-audio / never-close / no-reconnect variants behave identically to
  * `reference` on the wire: their breakage lives in the client
  * (tools/call-eval/reference/client.mjs), which receives the same variant
@@ -32,7 +39,7 @@
  */
 
 import http from "node:http";
-import { createPublicKey, verify as cryptoVerify } from "node:crypto";
+import { createPublicKey, generateKeyPairSync, sign as cryptoSign, verify as cryptoVerify } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { WebSocketServer } from "ws";
 
@@ -68,18 +75,28 @@ if (!VARIANTS.includes(variant)) {
   fail(`--variant must be one of: ${VARIANTS.join(", ")}`);
 }
 
-const jwksPath = arg("jwks-file") ?? process.env.CONNVO_LOCAL_TEST_JWKS_FILE;
-if (!jwksPath || !existsSync(jwksPath)) {
-  fail(`JWKS not found (${jwksPath ?? "none given"}); pass --jwks-file or set CONNVO_LOCAL_TEST_JWKS_FILE`);
-}
+// Bench mode (--bench=1) is self-sufficient: the server mints the bench
+// identities itself, so no JWKS is loaded.
+const bench = arg("bench") === "1";
+const jwksPath = bench ? null : (arg("jwks-file") ?? process.env.CONNVO_LOCAL_TEST_JWKS_FILE);
 let publicKey;
-try {
-  const jwks = JSON.parse(readFileSync(jwksPath, "utf8"));
-  const jwk = jwks.keys.find((k) => k.kty === "RSA");
-  if (!jwk) fail("JWKS has no RSA key");
-  publicKey = createPublicKey({ key: jwk, format: "jwk" });
-} catch (err) {
-  fail(`JWKS unreadable: ${err.message}`);
+/** @type {import("node:crypto").KeyPairKeyObjectResult | null} */
+let benchKeys = null;
+if (bench) {
+  benchKeys = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  publicKey = benchKeys.publicKey;
+} else {
+  if (!jwksPath || !existsSync(jwksPath)) {
+    fail(`JWKS not found (${jwksPath ?? "none given"}); pass --jwks-file or set CONNVO_LOCAL_TEST_JWKS_FILE`);
+  }
+  try {
+    const jwks = JSON.parse(readFileSync(jwksPath, "utf8"));
+    const jwk = jwks.keys.find((k) => k.kty === "RSA");
+    if (!jwk) fail("JWKS has no RSA key");
+    publicKey = createPublicKey({ key: jwk, format: "jwk" });
+  } catch (err) {
+    fail(`JWKS unreadable: ${err.message}`);
+  }
 }
 
 // Membership manifest: {"meetingId": "...", "members": ["local-test-a", ...]}.
@@ -87,7 +104,12 @@ try {
 // otherwise so a runner wiring bug cannot silently pass outsiders.
 const membersPath = arg("members-file");
 let membership = null;
-if (membersPath) {
+if (bench) {
+  // One identity scheme end to end: the bench subjects ARE the harness ids
+  // A/B — tokens, rooms, event logs and scenario lookups all use them. Any
+  // meeting id is accepted; the runner's scenarios own the meeting ids.
+  membership = { meetingId: null, members: ["A", "B"] };
+} else if (membersPath) {
   try {
     membership = JSON.parse(readFileSync(membersPath, "utf8"));
     if (!membership?.meetingId || !Array.isArray(membership.members)) {
@@ -182,6 +204,53 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ ok: true, dropped: who }));
     return;
   }
+  // Bench identity minting: the bench page swaps its signal URL's ws scheme
+  // for http and POSTs {user} here — no Convex, no JWKS file, no seeded
+  // state. Fail closed: only the fixed bench subjects mint, and only in
+  // bench mode.
+  if (req.method === "OPTIONS" && url.pathname === "/mint") {
+    res.writeHead(204, {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-headers": "content-type",
+    });
+    res.end();
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/mint") {
+    /** @param {number} status @param {string} error */
+    const deny = (status, error) => {
+      res.writeHead(status, { "content-type": "application/json", "access-control-allow-origin": "*" });
+      res.end(JSON.stringify({ ok: false, error }));
+    };
+    if (!bench || !benchKeys) {
+      deny(404, "mint requires --bench=1");
+      return;
+    }
+    /** @type {Uint8Array[]} */
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => {
+      let user = null;
+      try {
+        user = JSON.parse(Buffer.concat(chunks).toString("utf8"))?.user ?? null;
+      } catch {
+        /* malformed body handled below */
+      }
+      if (!membership.members.includes(user)) {
+        deny(403, `mint: unknown bench user ${JSON.stringify(user ?? null)}`);
+        return;
+      }
+      const nowS = Math.floor(Date.now() / 1000);
+      /** @param {object} o */
+      const enc = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+      const input = `${enc({ alg: "RS256", typ: "JWT" })}.${enc({ sub: user, iss: LOCAL_TEST_ISSUER, iat: nowS, exp: nowS + 600 })}`;
+      const sig = cryptoSign("sha256", Buffer.from(input), benchKeys.privateKey).toString("base64url");
+      res.writeHead(200, { "content-type": "application/json", "access-control-allow-origin": "*" });
+      res.end(JSON.stringify({ ok: true, subject: user, token: `${input}.${sig}` }));
+    });
+    return;
+  }
   if (url.searchParams.get("events")) {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true, variant, port: addr.port, sessionEvents }));
@@ -268,7 +337,14 @@ wss.on("connection", (socket) => {
       socket.close(4005, "no meeting id");
       return;
     }
-    if (variant !== "outsider-allowed") {
+    if (bench) {
+      const allowed = membership.members.includes(verdict.subject);
+      if (!allowed) {
+        socket.send(JSON.stringify({ type: "error", code: "auth", message: `signaling rejected: ${verdict.subject} is not a bench participant` }));
+        socket.close(4006, "not a participant");
+        return;
+      }
+    } else if (variant !== "outsider-allowed") {
       const allowed = membership && membership.meetingId === meetingId && membership.members.includes(verdict.subject);
       if (!allowed) {
         // Named rejection — H-14 renders this message in [data-testid="call-error"].
@@ -323,5 +399,5 @@ wss.on("connection", (socket) => {
 
 server.listen(port, "127.0.0.1", () => {
   // Exactly one JSON line when ready (pinned).
-  console.log(JSON.stringify({ ok: true, port: server.address().port, variant }));
+  console.log(JSON.stringify({ ok: true, port: server.address().port, variant, ...(bench ? { mint: true } : {}) }));
 });

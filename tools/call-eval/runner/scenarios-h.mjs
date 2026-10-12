@@ -350,7 +350,7 @@ export async function scenario_H_09(ctx) {
   await installColorHook(peerB); // the no-ghost media check decodes through the hook
 
   await peerA.page.reload({ waitUntil: "domcontentloaded" }); // same URL: auto-rejoin
-  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000, describe: "reloaded A reconnected" });
+  await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "reloaded A reconnected" });
   await waitForValue(peerB, tileCount("A"), (n) => n === 1, {
     timeoutMs: 20000,
     describe: "B sees exactly one A tile",
@@ -438,11 +438,23 @@ export async function scenario_H_12(ctx, { seed }) {
   const a = flip ? "B" : "A";
   const b = flip ? "A" : "B";
   const { peerA, peerB } = await joinPair(ctx, { a, b });
+  await assertProbePresent(peerA);
+  await assertProbePresent(peerB);
+  await installColorHook(peerA);
+  await installColorHook(peerB);
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000, describe: `${a} connected` });
   await waitFor(peerB, phaseIs("connected"), { timeoutMs: 30000, describe: `${b} connected` });
+  // The transport's connected phase now requires ICE plus decoded frames,
+  // but the scenario still proves it directly: sampled fps must be positive
+  // on both tiles (the reviewed defect passed H-12 on phase alone).
+  const fpsA = await measureFps(peerA, "B", 2000);
+  const fpsB = await measureFps(peerB, "A", 2000);
+  if (fpsA.fps <= 0 || fpsB.fps <= 0) {
+    throw new ScenarioError(`H-12: remote frames did not advance (${a}: ${fpsA.fps} fps, ${b}: ${fpsB.fps} fps)`);
+  }
   await peerA.close();
   await peerB.close();
-  return { order: `${a}-first`, bothConnected: true };
+  return { order: `${a}-first`, bothConnected: true, fps: { [a]: fpsA.fps, [b]: fpsB.fps } };
 }
 
 /** H-13 — five leave/rejoin cycles: live connection and track counts return to baseline */

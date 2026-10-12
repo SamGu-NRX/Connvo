@@ -232,6 +232,7 @@ describe("reference signaling machinery", () => {
       expect(health.status).toBe(200);
       expect(JSON.parse(health.body)).toEqual({ ok: true, variant: "reference", port: handle.port });
       // The manifest was derived and written next to state.json.
+      if (typeof handle.membersPath !== "string") throw new Error("backend start must produce a members manifest");
       const manifest = JSON.parse(fs.readFileSync(handle.membersPath, "utf8"));
       expect(manifest.members).toEqual(["local-test-a", "local-test-b", "local-test-c"]);
       expect(manifest.members).not.toContain("local-test-o");

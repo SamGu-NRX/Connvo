@@ -86,15 +86,25 @@ export function deriveMembersManifest(state) {
   return { meetingId: state.meetingId, members };
 }
 
-/** Pinned CLI argv. membersPath omitted only for the outsider-allowed variant.
+/** Pinned CLI argv. Bench mode omits both files (self-sufficient minting);
+ * non-bench requires the JWKS, and the members manifest is omitted only for
+ * the outsider-allowed variant.
  *
- * @param {{ port: number, variant: string, jwksPath: string, membersPath?: string | null }} opts
+ * @param {{ port: number, variant: string, bench?: boolean, jwksPath?: string | null, membersPath?: string | null }} opts
  * @returns {string[]}
  */
 export function buildSignalingArgs(opts) {
-  const { port, variant, jwksPath, membersPath } = opts;
+  const { port, variant, bench = false, jwksPath, membersPath } = opts;
   if (!Number.isInteger(port) || port < SIGNALING_PORT_MIN || port > SIGNALING_PORT_MAX) {
     throw new Error(`signaling port must be an integer in [${SIGNALING_PORT_MIN}..${SIGNALING_PORT_MAX}], got ${port}`);
+  }
+  if (bench) {
+    // Self-sufficient bench mode: no JWKS, no members manifest — the server
+    // generates its own keypair and mints the bench identities (A/B) itself.
+    return [`--port=${port}`, `--variant=${variant}`, `--bench=1`];
+  }
+  if (!jwksPath) {
+    throw new Error("signaling argv: jwksPath is required outside bench mode");
   }
   const args = [`--port=${port}`, `--variant=${variant}`, `--jwks-file=${jwksPath}`];
   if (membersPath) args.push(`--members-file=${membersPath}`);
@@ -181,11 +191,13 @@ function waitForReady(child, timeoutMs) {
  * @param {string} [opts.statePath] out/state.json (members derivation source)
  * @param {string | null} [opts.membersPath] explicit manifest override (tests)
  * @param {string | null} [opts.jwksPath] explicit JWKS override (tests)
+ * @param {boolean} [opts.bench] self-sufficient bench mode (default true; explicit paths force backend mode)
  * @param {number} [opts.readyTimeoutMs] per-attempt readiness budget
  * @param {(message: string) => void} [opts.log] progress logger
  * @returns {Promise<{
  *   port: number, variant: string, signalUrl: string,
- *   membersPath: string, jwksPath: string, stop: () => void,
+ *   membersPath: string | null, jwksPath: string | null, benchMode: boolean,
+ *   stop: () => void,
  *   sessionEvents: () => Promise<Array<{ participant: string, reason: string, at: number }>>,
  *   dropParticipant: (participantId: string) => Promise<void>,
  * }>}
@@ -195,41 +207,62 @@ export async function startReferenceSignaling({
   statePath = STATE_PATH,
   membersPath = null,
   jwksPath = null,
+  bench = true,
   readyTimeoutMs = 4000,
   log = () => {},
 } = {}) {
   const variant = transport ? referenceVariantFor(transport) : null;
   if (!variant) throw new Error(`"${transport}" is not a reference transport`);
 
-  if (!jwksPath) jwksPath = resolveJwksPath();
-  if (!membersPath) {
-    if (!fs.existsSync(statePath)) {
-      throw new Error(
-        `state.json not found at ${statePath} — the members manifest derives from its seeded users. ` +
-          "Run `pnpm call-eval:backend` first (H-14 verification machinery, handoff design note).",
-      );
+  // Bench mode is the default: the server mints the bench identities (A/B)
+  // itself, so a clean checkout runs the scenarios with nothing else running.
+  // Passing either explicit path opts back into the backend flow (the
+  // H-14/auth machinery's JWKS + seeded-members contract).
+  const benchMode = bench && !membersPath && !jwksPath;
+  if (!benchMode) {
+    if (!jwksPath) jwksPath = resolveJwksPath();
+    if (!membersPath) {
+      if (!fs.existsSync(statePath)) {
+        throw new Error(
+          `state.json not found at ${statePath} — the members manifest derives from its seeded users. ` +
+            "Run `pnpm call-eval:backend` first (H-14 verification machinery, handoff design note).",
+        );
+      }
+      const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
+      const manifest = deriveMembersManifest(state);
+      const outDir = path.dirname(statePath);
+      fs.mkdirSync(outDir, { recursive: true });
+      membersPath = path.join(outDir, `members-${transport}.json`);
+      fs.writeFileSync(membersPath, JSON.stringify(manifest, null, 2));
+      log(`signaling members manifest for ${variant}: meeting "${manifest.meetingId}", ${manifest.members.length} participants -> ${membersPath}`);
     }
-    const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
-    const manifest = deriveMembersManifest(state);
-    const outDir = path.dirname(statePath);
-    fs.mkdirSync(outDir, { recursive: true });
-    membersPath = path.join(outDir, `members-${transport}.json`);
-    fs.writeFileSync(membersPath, JSON.stringify(manifest, null, 2));
-    log(`signaling members manifest for ${variant}: meeting "${manifest.meetingId}", ${manifest.members.length} participants -> ${membersPath}`);
   }
 
   // checkJs narrowing cannot prove the assignments above; this guard also
   // makes a null jwks/members path fail loudly instead of spawning the server
   // with a literal `--jwks-file=null` argv.
-  if (typeof membersPath !== "string" || typeof jwksPath !== "string") {
+  if (!benchMode && (typeof membersPath !== "string" || typeof jwksPath !== "string")) {
     throw new Error("internal: members/JWKS paths must be resolved before the signaling server starts");
   }
 
   let lastError = null;
   for (let port = SIGNALING_PORT_MIN; port <= SIGNALING_PORT_MAX; port++) {
-    const child = spawn(process.execPath, [SERVER_PATH, ...buildSignalingArgs({ port, variant, jwksPath, membersPath })], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    const child = spawn(
+      process.execPath,
+      [
+        SERVER_PATH,
+        ...buildSignalingArgs({
+          port,
+          variant,
+          bench: benchMode,
+          jwksPath: benchMode ? undefined : jwksPath,
+          membersPath: benchMode ? undefined : membersPath,
+        }),
+      ],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
     try {
       const ready = await waitForReady(child, readyTimeoutMs);
       log(`reference signaling server up: variant=${ready.variant} ws://127.0.0.1:${ready.port}`);
@@ -239,6 +272,10 @@ export async function startReferenceSignaling({
         signalUrl: `ws://127.0.0.1:${ready.port}`,
         membersPath,
         jwksPath,
+        // Bench mode mints the bench identities (A/B) itself and accepts any
+        // meeting id — null paths and this flag tell RunContext to keep its
+        // per-scenario meeting ids instead of reading a seeded manifest.
+        benchMode,
         // H-10/H-11 evidence: the server's GET /?events=1 returns its
         // in-memory departure log (the mock relay's sessionEvents
         // equivalent).
