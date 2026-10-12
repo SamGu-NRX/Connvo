@@ -1,7 +1,8 @@
 /**
  * M4 property suite (docs/notes-ledger-f1/design.md §5 "Property (M4)").
  *
- * Fixed seed recorded in file + output; `numRuns: 10_000` on both properties.
+ * Fixed seed recorded in file + output; `numRuns: 1_000` on both properties by
+ * default (NOTES_PROPERTY_RUNS=10000 for the full run; see NUM_RUNS).
  *
  * P1 — single client: random edit sequences (insert/delete/replace at random
  * positions) × random faults (offline windows, drop before apply, drop after
@@ -70,7 +71,13 @@ import type { Id } from "@convex/_generated/dataModel";
 
 /** The recorded seed — change it deliberately and record the change. */
 const SEED = 20261011;
-const NUM_RUNS = 10_000;
+/**
+ * 1,000 cases per property by default, so a plain run of the in-call project
+ * takes about a minute; NOTES_PROPERTY_RUNS=10000 restores the full run. The
+ * 10,000-case proof is test/notes/realServer.property.test.ts, against the
+ * real notes server rather than this light model.
+ */
+const NUM_RUNS = 1_000;
 const MOUNTED_NUM_RUNS = 200;
 /** Dev smoke override: NOTES_PROPERTY_RUNS=<n> shrinks every property. */
 const runsOverride = process.env.NOTES_PROPERTY_RUNS
