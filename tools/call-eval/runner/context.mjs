@@ -152,6 +152,10 @@ export class RunContext {
     // in both cases comes from the server's re-hello socket replacement.
     this.meetingId = this.seededMeetingId ?? `${name}-${this.transport}-s${this.seed}-${Date.now()}`;
     this.relay?.reset();
+    // Relay forcing is per scenario: H-07 or H-15 turn it on, and it must
+    // not leak into every scenario that runs after them.
+    this._relayEnabled = false;
+    this._relayConfigCache.clear();
     return this.meetingId;
   }
 
