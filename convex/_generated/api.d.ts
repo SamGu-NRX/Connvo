@@ -62,6 +62,7 @@ import type * as meetings_stream_streamHandlers from "../meetings/stream/streamH
 import type * as meetings_stream_streamHelpers from "../meetings/stream/streamHelpers.js";
 import type * as meetings_stream_webhooks from "../meetings/stream/webhooks.js";
 import type * as meetings_webrtc_index from "../meetings/webrtc/index.js";
+import type * as meetings_webrtc_mesh from "../meetings/webrtc/mesh.js";
 import type * as meetings_webrtc_rooms from "../meetings/webrtc/rooms.js";
 import type * as meetings_webrtc_signaling from "../meetings/webrtc/signaling.js";
 import type * as migrations_createMissingProfiles from "../migrations/createMissingProfiles.js";
@@ -220,6 +221,7 @@ declare const fullApi: ApiFromModules<{
   "meetings/stream/streamHelpers": typeof meetings_stream_streamHelpers;
   "meetings/stream/webhooks": typeof meetings_stream_webhooks;
   "meetings/webrtc/index": typeof meetings_webrtc_index;
+  "meetings/webrtc/mesh": typeof meetings_webrtc_mesh;
   "meetings/webrtc/rooms": typeof meetings_webrtc_rooms;
   "meetings/webrtc/signaling": typeof meetings_webrtc_signaling;
   "migrations/createMissingProfiles": typeof migrations_createMissingProfiles;

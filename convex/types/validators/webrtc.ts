@@ -74,6 +74,12 @@ export const WebRTCSessionV = {
     userId: v.id("users"),
     state: webrtcSessionStateV,
     metadata: v.optional(metadataRecordV),
+    lastHeartbeatAt: v.optional(v.number()),
+    micOn: v.optional(v.boolean()),
+    cameraOn: v.optional(v.boolean()),
+    closedReason: v.optional(
+      v.union(v.literal("left"), v.literal("replaced"), v.literal("expired")),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   }),
@@ -108,7 +114,8 @@ export const WebRTCSignalV = {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     fromUserId: v.id("users"),
-    toUserId: v.optional(v.id("users")), // null for broadcast signals
+    toUserId: v.optional(v.id("users")), // legacy; the call mesh always sets both targets
+    toSessionId: v.optional(v.string()),
     type: webrtcSignalTypeV,
     // Discriminated union: SDP or ICE candidate data based on type
     data: v.union(
