@@ -58,8 +58,18 @@ export function useNotesLedger(
     [ledger],
   );
   const getSnapshot = useCallback(() => ledger.getSnapshot(), [ledger]);
+  // Recovery-free server snapshot: restored pending work must never leak
+  // into the hydration render (a mismatch when recovery data exists).
+  const getServerSnapshot = useCallback(
+    () => ledger.getServerSnapshot(),
+    [ledger],
+  );
 
-  const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const state = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   return useMemo(
     () => ({
