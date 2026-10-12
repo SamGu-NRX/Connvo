@@ -51,6 +51,14 @@ export default defineConfig({
         },
         resolve: commonResolve,
       },
+      {
+        test: {
+          name: "matching-eval",
+          include: ["tools/matching-eval/tests/**/*.test.ts"],
+          environment: "node",
+        },
+        resolve: commonResolve,
+      },
     ],
   },
   resolve: commonResolve,
