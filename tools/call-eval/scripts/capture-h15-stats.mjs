@@ -21,7 +21,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { RunContext } from "../runner/context.mjs";
-import { joinPair, measureFps } from "../runner/scenario-kit.mjs";
+import { joinPair } from "../runner/scenario-kit.mjs";
+import { measureFps } from "../runner/page-helpers.mjs";
 
 const EVAL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(EVAL_DIR, "self-proof", "h15-getstats");

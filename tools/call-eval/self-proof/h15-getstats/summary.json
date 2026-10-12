@@ -1,0 +1,76 @@
+{
+  "capturedAt": "2026-10-12T09:08:04.426Z",
+  "transport": "reference",
+  "seed": 3,
+  "baseUrl": "http://localhost:3311",
+  "windows": [
+    {
+      "label": "baseline",
+      "lossPct": null,
+      "delayMs": 0,
+      "windowMs": 5078,
+      "samples": 11,
+      "deltaPacketsReceived": 0,
+      "deltaPacketsLost": 0,
+      "bytesReceived": 0,
+      "rttMeanMs": 2,
+      "selectedPairTypes": [
+        "host/host"
+      ],
+      "sampledFps": 37.8,
+      "phase": "connected",
+      "rawFile": "raw-baseline.json"
+    },
+    {
+      "label": "loss-5pct",
+      "lossPct": null,
+      "delayMs": 300,
+      "windowMs": 6059,
+      "samples": 13,
+      "deltaPacketsReceived": 0,
+      "deltaPacketsLost": 0,
+      "bytesReceived": 0,
+      "rttMeanMs": 2,
+      "selectedPairTypes": [
+        "host/host"
+      ],
+      "sampledFps": 29.4,
+      "phase": "connected",
+      "rawFile": "raw-loss-5pct.json"
+    },
+    {
+      "label": "recovery",
+      "lossPct": null,
+      "delayMs": 0,
+      "windowMs": 4039,
+      "samples": 9,
+      "deltaPacketsReceived": 0,
+      "deltaPacketsLost": 0,
+      "bytesReceived": 0,
+      "rttMeanMs": 1,
+      "selectedPairTypes": [
+        "host/host"
+      ],
+      "sampledFps": 29.8,
+      "phase": "connected",
+      "rawFile": "raw-recovery.json"
+    },
+    {
+      "label": "loss-15pct",
+      "lossPct": null,
+      "delayMs": 300,
+      "windowMs": 6071,
+      "samples": 13,
+      "deltaPacketsReceived": 0,
+      "deltaPacketsLost": 0,
+      "bytesReceived": 0,
+      "rttMeanMs": 1,
+      "selectedPairTypes": [
+        "host/host"
+      ],
+      "sampledFps": 31.9,
+      "phase": "connected",
+      "rawFile": "raw-loss-15pct.json"
+    }
+  ]
+}

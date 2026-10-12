@@ -1,0 +1,9 @@
+The capture in this directory is NOT evidence. All four windows recorded
+received=0 lost=0 lossPct=null while the same connections demonstrably
+decoded ~30 fps (rawStatsSample's inbound filter matched no reports on the
+current probe globals). The third capture run crashed on a bad diagnostic
+(references process inside the page evaluate) and was reverted. Fix
+direction: align the sampler with page-helpers.mjs readRtpStats /
+collectRtpStatsWindow (the scenarios' own working path), then re-capture.
+NOTES-h15-loss-method.md:29-41 therefore remains UNBACKED by committed
+evidence as of this branch.

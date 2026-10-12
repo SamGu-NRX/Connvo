@@ -1,0 +1,184 @@
+[
+  {
+    "tMs": 0,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 503,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 1008,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 1511,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 2014,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 2518,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 3034,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 3541,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 4044,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 4557,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 5062,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 5569,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  },
+  {
+    "tMs": 6071,
+    "inbound": [],
+    "pairs": [
+      {
+        "localCandidateId": "I/T8mMHL/",
+        "remoteCandidateId": "ISbaWx32p",
+        "currentRoundTripTime": 0.001,
+        "nominated": true,
+        "localType": "host",
+        "remoteType": "host"
+      }
+    ]
+  }
+]
