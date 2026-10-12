@@ -162,6 +162,8 @@ export async function pageDiagnostics(peer) {
       tiles: [...document.querySelectorAll('[data-testid="remote-media"]')].map((t) => t.getAttribute("data-participant-id")),
       pcs: pcs.map((pc) => `${pc.signalingState}/${pc.iceConnectionState}/${pc.connectionState}`),
       candidates,
+      // The p2p transport's bench-only event trace, when present.
+      log: (w.__connvoCallLog || []).slice(-30),
     };
   });
 }

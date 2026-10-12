@@ -1,0 +1,410 @@
+[
+  {
+    "scenario": "P-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": false,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"951 connect as A\",\"980 welcome []\",\"983 peer-joined B\",\"983 B build peer (local tracks: 2)\",\"989 B negotiationneeded (stable)\",\"994 B got offer in stable (collision)\",\"996 B sent offer\",\"997 B applied offer; now have-remote-offer\",\"997 B gathering gathering\",\"997 B gathering new\",\"1000 B remote candidate added\",\"1000 B gathering gathering\",\"1001 B remote candidate added\",\"6985 B got offer in stable\",\"6986 B applied offer; now have-remote-offer\",\"6987 B remote candidate added\",\"12986 B negotiationneeded (stable)\",\"12986 B got offer in stable (collision)\",\"12987 B sent offer\",\"12987 B applied offer; now have-remote-offer\",\"12989 B remote candidate added\",\"18985 B negotiationneeded (stable)\",\"18985 B got offer in stable (collision)\",\"18986 B sent offer\",\"18986 B applied offer; now have-remote-offer\",\"18987 B remote candidate added\",\"24985 B got offer in stable\",\"24986 B applied offer; now have-remote-offer\",\"24987 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"6988 A got answer in have-local-offer\",\"6988 A applied answer; now stable\",\"7108 A gathering complete\",\"7108 A local candidate end\",\"12985 A negotiationneeded (stable)\",\"12986 A sent offer\",\"12986 A gathering gathering\",\"12986 A local candidate host\",\"12988 A got offer in have-local-offer (collision) ignored\",\"12989 A got answer in have-local-offer\",\"12990 A applied answer; now stable\",\"13108 A gathering complete\",\"13108 A local candidate end\",\"18984 A negotiationneeded (stable)\",\"18985 A sent offer\",\"18985 A gathering gathering\",\"18985 A local candidate host\",\"18987 A got offer in have-local-offer (collision) ignored\",\"18988 A got answer in have-local-offer\",\"18989 A applied answer; now stable\",\"19108 A gathering complete\",\"19108 A local candidate end\",\"24984 A negotiationneeded (stable)\",\"24985 A sent offer\",\"24985 A gathering gathering\",\"24985 A local candidate host\",\"24988 A got answer in have-local-offer\",\"24989 A applied answer; now stable\",\"25109 A gathering complete\",\"25109 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"951 connect as A\",\"980 welcome []\",\"983 peer-joined B\",\"983 B build peer (local tracks: 2)\",\"989 B negotiationneeded (stable)\",\"994 B got offer in stable (collision)\",\"996 B sent offer\",\"997 B applied offer; now have-remote-offer\",\"997 B gathering gathering\",\"997 B gathering new\",\"1000 B remote candidate added\",\"1000 B gathering gathering\",\"1001 B remote candidate added\",\"6985 B got offer in stable\",\"6986 B applied offer; now have-remote-offer\",\"6987 B remote candidate added\",\"12986 B negotiationneeded (stable)\",\"12986 B got offer in stable (collision)\",\"12987 B sent offer\",\"12987 B applied offer; now have-remote-offer\",\"12989 B remote candidate added\",\"18985 B negotiationneeded (stable)\",\"18985 B got offer in stable (collision)\",\"18986 B sent offer\",\"18986 B applied offer; now have-remote-offer\",\"18987 B remote candidate added\",\"24985 B got offer in stable\",\"24986 B applied offer; now have-remote-offer\",\"24987 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"6988 A got answer in have-local-offer\",\"6988 A applied answer; now stable\",\"7108 A gathering complete\",\"7108 A local candidate end\",\"12985 A negotiationneeded (stable)\",\"12986 A sent offer\",\"12986 A gathering gathering\",\"12986 A local candidate host\",\"12988 A got offer in have-local-offer (collision) ignored\",\"12989 A got answer in have-local-offer\",\"12990 A applied answer; now stable\",\"13108 A gathering complete\",\"13108 A local candidate end\",\"18984 A negotiationneeded (stable)\",\"18985 A sent offer\",\"18985 A gathering gathering\",\"18985 A local candidate host\",\"18987 A got offer in have-local-offer (collision) ignored\",\"18988 A got answer in have-local-offer\",\"18989 A applied answer; now stable\",\"19108 A gathering complete\",\"19108 A local candidate end\",\"24984 A negotiationneeded (stable)\",\"24985 A sent offer\",\"24985 A gathering gathering\",\"24985 A local candidate host\",\"24988 A got answer in have-local-offer\",\"24989 A applied answer; now stable\",\"25109 A gathering complete\",\"25109 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:54:18)\n    at async scenario_P_01 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:87:20)"
+    },
+    "ms": 33806
+  },
+  {
+    "scenario": "P-01",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": false,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"992 welcome []\",\"995 peer-joined B\",\"995 B build peer (local tracks: 2)\",\"1002 B negotiationneeded (stable)\",\"1006 B got offer in stable (collision)\",\"1008 B sent offer\",\"1008 B applied offer; now have-remote-offer\",\"1008 B gathering gathering\",\"1008 B gathering new\",\"1012 B remote candidate added\",\"1012 B gathering gathering\",\"1012 B remote candidate added\",\"6997 B got offer in stable\",\"6998 B applied offer; now have-remote-offer\",\"6999 B remote candidate added\",\"12998 B negotiationneeded (stable)\",\"12998 B got offer in stable (collision)\",\"12999 B sent offer\",\"12999 B applied offer; now have-remote-offer\",\"13000 B remote candidate added\",\"18998 B negotiationneeded (stable)\",\"18998 B got offer in stable (collision)\",\"18999 B sent offer\",\"18999 B applied offer; now have-remote-offer\",\"19000 B remote candidate added\",\"24998 B negotiationneeded (stable)\",\"24998 B got offer in stable (collision)\",\"24999 B sent offer\",\"24999 B applied offer; now have-remote-offer\",\"25001 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/udp/none\",\"host/tcp/none\"],\"remote\":[]}],\"log\":[\"7000 A applied answer; now stable\",\"7112 A gathering complete\",\"7112 A local candidate end\",\"12996 A negotiationneeded (stable)\",\"12997 A sent offer\",\"12997 A gathering gathering\",\"12998 A local candidate host\",\"12999 A got offer in have-local-offer (collision) ignored\",\"13000 A got answer in have-local-offer\",\"13001 A applied answer; now stable\",\"13127 A gathering complete\",\"13127 A local candidate end\",\"18996 A negotiationneeded (stable)\",\"18998 A sent offer\",\"18998 A gathering gathering\",\"18998 A local candidate host\",\"18999 A got offer in have-local-offer (collision) ignored\",\"19001 A got answer in have-local-offer\",\"19001 A applied answer; now stable\",\"19126 A gathering complete\",\"19126 A local candidate end\",\"24996 A negotiationneeded (stable)\",\"24998 A sent offer\",\"24998 A gathering gathering\",\"24998 A local candidate host\",\"25000 A got offer in have-local-offer (collision) ignored\",\"25001 A got answer in have-local-offer\",\"25002 A applied answer; now stable\",\"25126 A gathering complete\",\"25126 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"992 welcome []\",\"995 peer-joined B\",\"995 B build peer (local tracks: 2)\",\"1002 B negotiationneeded (stable)\",\"1006 B got offer in stable (collision)\",\"1008 B sent offer\",\"1008 B applied offer; now have-remote-offer\",\"1008 B gathering gathering\",\"1008 B gathering new\",\"1012 B remote candidate added\",\"1012 B gathering gathering\",\"1012 B remote candidate added\",\"6997 B got offer in stable\",\"6998 B applied offer; now have-remote-offer\",\"6999 B remote candidate added\",\"12998 B negotiationneeded (stable)\",\"12998 B got offer in stable (collision)\",\"12999 B sent offer\",\"12999 B applied offer; now have-remote-offer\",\"13000 B remote candidate added\",\"18998 B negotiationneeded (stable)\",\"18998 B got offer in stable (collision)\",\"18999 B sent offer\",\"18999 B applied offer; now have-remote-offer\",\"19000 B remote candidate added\",\"24998 B negotiationneeded (stable)\",\"24998 B got offer in stable (collision)\",\"24999 B sent offer\",\"24999 B applied offer; now have-remote-offer\",\"25001 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/udp/none\",\"host/tcp/none\"],\"remote\":[]}],\"log\":[\"7000 A applied answer; now stable\",\"7112 A gathering complete\",\"7112 A local candidate end\",\"12996 A negotiationneeded (stable)\",\"12997 A sent offer\",\"12997 A gathering gathering\",\"12998 A local candidate host\",\"12999 A got offer in have-local-offer (collision) ignored\",\"13000 A got answer in have-local-offer\",\"13001 A applied answer; now stable\",\"13127 A gathering complete\",\"13127 A local candidate end\",\"18996 A negotiationneeded (stable)\",\"18998 A sent offer\",\"18998 A gathering gathering\",\"18998 A local candidate host\",\"18999 A got offer in have-local-offer (collision) ignored\",\"19001 A got answer in have-local-offer\",\"19001 A applied answer; now stable\",\"19126 A gathering complete\",\"19126 A local candidate end\",\"24996 A negotiationneeded (stable)\",\"24998 A sent offer\",\"24998 A gathering gathering\",\"24998 A local candidate host\",\"25000 A got offer in have-local-offer (collision) ignored\",\"25001 A got answer in have-local-offer\",\"25002 A applied answer; now stable\",\"25126 A gathering complete\",\"25126 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_01 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:87:20)"
+    },
+    "ms": 30792
+  },
+  {
+    "scenario": "P-01",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"956 connect as A\",\"993 welcome []\",\"996 peer-joined B\",\"996 B build peer (local tracks: 2)\",\"1003 B negotiationneeded (stable)\",\"1008 B got offer in stable (collision)\",\"1009 B sent offer\",\"1009 B applied offer; now have-remote-offer\",\"1010 B gathering gathering\",\"1010 B gathering new\",\"1013 B remote candidate added\",\"1013 B gathering gathering\",\"1014 B remote candidate added\",\"6999 B got offer in stable\",\"7000 B applied offer; now have-remote-offer\",\"7001 B remote candidate added\",\"12999 B got offer in stable\",\"13000 B applied offer; now have-remote-offer\",\"13001 B remote candidate added\",\"18999 B negotiationneeded (stable)\",\"19000 B got offer in stable (collision)\",\"19000 B sent offer\",\"19001 B applied offer; now have-remote-offer\",\"19002 B remote candidate added\",\"24999 B negotiationneeded (stable)\",\"24999 B got offer in stable (collision)\",\"25000 B sent offer\",\"25001 B applied offer; now have-remote-offer\",\"25002 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"7001 A got answer in have-local-offer\",\"7002 A applied answer; now stable\",\"7116 A gathering complete\",\"7116 A local candidate end\",\"12998 A negotiationneeded (stable)\",\"12998 A sent offer\",\"12999 A gathering gathering\",\"12999 A local candidate host\",\"13001 A got answer in have-local-offer\",\"13002 A applied answer; now stable\",\"13116 A gathering complete\",\"13116 A local candidate end\",\"18998 A negotiationneeded (stable)\",\"18999 A sent offer\",\"18999 A gathering gathering\",\"19000 A local candidate host\",\"19000 A got offer in have-local-offer (collision) ignored\",\"19002 A got answer in have-local-offer\",\"19002 A applied answer; now stable\",\"19115 A gathering complete\",\"19115 A local candidate end\",\"24997 A negotiationneeded (stable)\",\"24998 A sent offer\",\"24999 A gathering gathering\",\"24999 A local candidate host\",\"25000 A got offer in have-local-offer (collision) ignored\",\"25002 A got answer in have-local-offer\",\"25003 A applied answer; now stable\",\"25117 A gathering complete\",\"25117 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"956 connect as A\",\"993 welcome []\",\"996 peer-joined B\",\"996 B build peer (local tracks: 2)\",\"1003 B negotiationneeded (stable)\",\"1008 B got offer in stable (collision)\",\"1009 B sent offer\",\"1009 B applied offer; now have-remote-offer\",\"1010 B gathering gathering\",\"1010 B gathering new\",\"1013 B remote candidate added\",\"1013 B gathering gathering\",\"1014 B remote candidate added\",\"6999 B got offer in stable\",\"7000 B applied offer; now have-remote-offer\",\"7001 B remote candidate added\",\"12999 B got offer in stable\",\"13000 B applied offer; now have-remote-offer\",\"13001 B remote candidate added\",\"18999 B negotiationneeded (stable)\",\"19000 B got offer in stable (collision)\",\"19000 B sent offer\",\"19001 B applied offer; now have-remote-offer\",\"19002 B remote candidate added\",\"24999 B negotiationneeded (stable)\",\"24999 B got offer in stable (collision)\",\"25000 B sent offer\",\"25001 B applied offer; now have-remote-offer\",\"25002 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"7001 A got answer in have-local-offer\",\"7002 A applied answer; now stable\",\"7116 A gathering complete\",\"7116 A local candidate end\",\"12998 A negotiationneeded (stable)\",\"12998 A sent offer\",\"12999 A gathering gathering\",\"12999 A local candidate host\",\"13001 A got answer in have-local-offer\",\"13002 A applied answer; now stable\",\"13116 A gathering complete\",\"13116 A local candidate end\",\"18998 A negotiationneeded (stable)\",\"18999 A sent offer\",\"18999 A gathering gathering\",\"19000 A local candidate host\",\"19000 A got offer in have-local-offer (collision) ignored\",\"19002 A got answer in have-local-offer\",\"19002 A applied answer; now stable\",\"19115 A gathering complete\",\"19115 A local candidate end\",\"24997 A negotiationneeded (stable)\",\"24998 A sent offer\",\"24999 A gathering gathering\",\"24999 A local candidate host\",\"25000 A got offer in have-local-offer (collision) ignored\",\"25002 A got answer in have-local-offer\",\"25003 A applied answer; now stable\",\"25117 A gathering complete\",\"25117 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_01 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:87:20)"
+    },
+    "ms": 30743
+  },
+  {
+    "scenario": "P-02",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": {
+      "states": [
+        {
+          "state": "lobby",
+          "violations": 0,
+          "passes": 8
+        },
+        {
+          "state": "connected",
+          "violations": 0,
+          "passes": 12
+        },
+        {
+          "state": "reconnecting",
+          "violations": 0,
+          "passes": 12
+        },
+        {
+          "state": "failed",
+          "violations": 0,
+          "passes": 9
+        },
+        {
+          "state": "ended",
+          "violations": 0,
+          "passes": 6
+        }
+      ],
+      "appShellFindings": [
+        {
+          "state": "lobby",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "connected",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "reconnecting",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "failed",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "ended",
+          "seriousOrCritical": []
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 52963
+  },
+  {
+    "scenario": "P-02",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": {
+      "states": [
+        {
+          "state": "lobby",
+          "violations": 0,
+          "passes": 8
+        },
+        {
+          "state": "connected",
+          "violations": 0,
+          "passes": 12
+        },
+        {
+          "state": "reconnecting",
+          "violations": 0,
+          "passes": 12
+        },
+        {
+          "state": "failed",
+          "violations": 0,
+          "passes": 9
+        },
+        {
+          "state": "ended",
+          "violations": 0,
+          "passes": 6
+        }
+      ],
+      "appShellFindings": [
+        {
+          "state": "lobby",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "connected",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "reconnecting",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "failed",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "ended",
+          "seriousOrCritical": []
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 53200
+  },
+  {
+    "scenario": "P-02",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"956 connect as A\",\"991 welcome []\",\"994 peer-joined B\",\"994 B build peer (local tracks: 2)\",\"1000 B negotiationneeded (stable)\",\"1005 B got offer in stable (collision)\",\"1006 B sent offer\",\"1007 B applied offer; now have-remote-offer\",\"1007 B gathering gathering\",\"1007 B gathering new\",\"1010 B remote candidate added\",\"1010 B gathering gathering\",\"1011 B remote candidate added\",\"6997 B negotiationneeded (stable)\",\"6997 B got offer in stable (collision)\",\"6998 B sent offer\",\"6999 B applied offer; now have-remote-offer\",\"7001 B remote candidate added\",\"12997 B got offer in stable\",\"12997 B applied offer; now have-remote-offer\",\"12998 B remote candidate added\",\"18996 B got offer in stable\",\"18997 B applied offer; now have-remote-offer\",\"18998 B remote candidate added\",\"24997 B negotiationneeded (stable)\",\"24997 B got offer in stable (collision)\",\"24998 B sent offer\",\"24999 B applied offer; now have-remote-offer\",\"25000 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"6999 A got offer in have-local-offer (collision) ignored\",\"7001 A got answer in have-local-offer\",\"7002 A applied answer; now stable\",\"7118 A gathering complete\",\"7118 A local candidate end\",\"12995 A negotiationneeded (stable)\",\"12996 A sent offer\",\"12996 A gathering gathering\",\"12997 A local candidate host\",\"12999 A got answer in have-local-offer\",\"13000 A applied answer; now stable\",\"13118 A gathering complete\",\"13118 A local candidate end\",\"18995 A negotiationneeded (stable)\",\"18996 A sent offer\",\"18996 A gathering gathering\",\"18996 A local candidate host\",\"18999 A got answer in have-local-offer\",\"19000 A applied answer; now stable\",\"19120 A gathering complete\",\"19120 A local candidate end\",\"24996 A negotiationneeded (stable)\",\"24997 A sent offer\",\"24997 A gathering gathering\",\"24997 A local candidate host\",\"24999 A got offer in have-local-offer (collision) ignored\",\"25000 A got answer in have-local-offer\",\"25001 A applied answer; now stable\",\"25120 A gathering complete\",\"25120 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"956 connect as A\",\"991 welcome []\",\"994 peer-joined B\",\"994 B build peer (local tracks: 2)\",\"1000 B negotiationneeded (stable)\",\"1005 B got offer in stable (collision)\",\"1006 B sent offer\",\"1007 B applied offer; now have-remote-offer\",\"1007 B gathering gathering\",\"1007 B gathering new\",\"1010 B remote candidate added\",\"1010 B gathering gathering\",\"1011 B remote candidate added\",\"6997 B negotiationneeded (stable)\",\"6997 B got offer in stable (collision)\",\"6998 B sent offer\",\"6999 B applied offer; now have-remote-offer\",\"7001 B remote candidate added\",\"12997 B got offer in stable\",\"12997 B applied offer; now have-remote-offer\",\"12998 B remote candidate added\",\"18996 B got offer in stable\",\"18997 B applied offer; now have-remote-offer\",\"18998 B remote candidate added\",\"24997 B negotiationneeded (stable)\",\"24997 B got offer in stable (collision)\",\"24998 B sent offer\",\"24999 B applied offer; now have-remote-offer\",\"25000 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"6999 A got offer in have-local-offer (collision) ignored\",\"7001 A got answer in have-local-offer\",\"7002 A applied answer; now stable\",\"7118 A gathering complete\",\"7118 A local candidate end\",\"12995 A negotiationneeded (stable)\",\"12996 A sent offer\",\"12996 A gathering gathering\",\"12997 A local candidate host\",\"12999 A got answer in have-local-offer\",\"13000 A applied answer; now stable\",\"13118 A gathering complete\",\"13118 A local candidate end\",\"18995 A negotiationneeded (stable)\",\"18996 A sent offer\",\"18996 A gathering gathering\",\"18996 A local candidate host\",\"18999 A got answer in have-local-offer\",\"19000 A applied answer; now stable\",\"19120 A gathering complete\",\"19120 A local candidate end\",\"24996 A negotiationneeded (stable)\",\"24997 A sent offer\",\"24997 A gathering gathering\",\"24997 A local candidate host\",\"24999 A got offer in have-local-offer (collision) ignored\",\"25000 A got answer in have-local-offer\",\"25001 A applied answer; now stable\",\"25120 A gathering complete\",\"25120 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_02 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:110:20)"
+    },
+    "ms": 30938
+  },
+  {
+    "scenario": "P-03",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": {
+      "controls": [
+        {
+          "id": "toggle-mic",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Unmute microphone"
+        },
+        {
+          "id": "toggle-mic",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Mute microphone"
+        },
+        {
+          "id": "toggle-camera",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Turn camera on"
+        },
+        {
+          "id": "toggle-camera",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Turn camera off"
+        },
+        {
+          "id": "device-settings",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "popover opened and closed"
+        },
+        {
+          "id": "leave-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "join-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "retry-media",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": false,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "local tracks audio:live, video:live"
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 3714
+  },
+  {
+    "scenario": "P-03",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": false,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"979 peer-joined B\",\"979 B build peer (local tracks: 2)\",\"985 B negotiationneeded (stable)\",\"990 B got offer in stable (collision)\",\"991 B sent offer\",\"992 B applied offer; now have-remote-offer\",\"992 B gathering gathering\",\"992 B gathering new\",\"996 B remote candidate added\",\"996 B gathering gathering\",\"996 B remote candidate added\",\"6982 B got offer in stable\",\"6982 B applied offer; now have-remote-offer\",\"6984 B remote candidate added\",\"12980 B got offer in stable\",\"12981 B applied offer; now have-remote-offer\",\"12982 B negotiationneeded (stable)\",\"12982 B remote candidate added\",\"12983 B sent offer\",\"12986 B got answer in have-local-offer\",\"12986 B applied answer; now stable\",\"12987 B remote candidate added\",\"18981 B got offer in stable\",\"18982 B applied offer; now have-remote-offer\",\"18983 B remote candidate added\",\"24982 B negotiationneeded (stable)\",\"24982 B got offer in stable (collision)\",\"24983 B sent offer\",\"24983 B applied offer; now have-remote-offer\",\"24984 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"7106 A gathering complete\",\"7106 A local candidate end\",\"12979 A negotiationneeded (stable)\",\"12980 A sent offer\",\"12980 A gathering gathering\",\"12980 A local candidate host\",\"12983 A got answer in have-local-offer\",\"12983 A applied answer; now stable\",\"12984 A got offer in stable\",\"12984 A applied offer; now have-remote-offer\",\"12985 A gathering complete\",\"12985 A local candidate end\",\"12986 A local candidate host\",\"18979 A negotiationneeded (stable)\",\"18980 A sent offer\",\"18980 A gathering gathering\",\"18981 A local candidate host\",\"18983 A got answer in have-local-offer\",\"18984 A applied answer; now stable\",\"19106 A gathering complete\",\"19106 A local candidate end\",\"24979 A negotiationneeded (stable)\",\"24981 A sent offer\",\"24981 A gathering gathering\",\"24982 A local candidate host\",\"24983 A got offer in have-local-offer (collision) ignored\",\"24984 A got answer in have-local-offer\",\"24985 A applied answer; now stable\",\"25105 A gathering complete\",\"25105 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"979 peer-joined B\",\"979 B build peer (local tracks: 2)\",\"985 B negotiationneeded (stable)\",\"990 B got offer in stable (collision)\",\"991 B sent offer\",\"992 B applied offer; now have-remote-offer\",\"992 B gathering gathering\",\"992 B gathering new\",\"996 B remote candidate added\",\"996 B gathering gathering\",\"996 B remote candidate added\",\"6982 B got offer in stable\",\"6982 B applied offer; now have-remote-offer\",\"6984 B remote candidate added\",\"12980 B got offer in stable\",\"12981 B applied offer; now have-remote-offer\",\"12982 B negotiationneeded (stable)\",\"12982 B remote candidate added\",\"12983 B sent offer\",\"12986 B got answer in have-local-offer\",\"12986 B applied answer; now stable\",\"12987 B remote candidate added\",\"18981 B got offer in stable\",\"18982 B applied offer; now have-remote-offer\",\"18983 B remote candidate added\",\"24982 B negotiationneeded (stable)\",\"24982 B got offer in stable (collision)\",\"24983 B sent offer\",\"24983 B applied offer; now have-remote-offer\",\"24984 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"7106 A gathering complete\",\"7106 A local candidate end\",\"12979 A negotiationneeded (stable)\",\"12980 A sent offer\",\"12980 A gathering gathering\",\"12980 A local candidate host\",\"12983 A got answer in have-local-offer\",\"12983 A applied answer; now stable\",\"12984 A got offer in stable\",\"12984 A applied offer; now have-remote-offer\",\"12985 A gathering complete\",\"12985 A local candidate end\",\"12986 A local candidate host\",\"18979 A negotiationneeded (stable)\",\"18980 A sent offer\",\"18980 A gathering gathering\",\"18981 A local candidate host\",\"18983 A got answer in have-local-offer\",\"18984 A applied answer; now stable\",\"19106 A gathering complete\",\"19106 A local candidate end\",\"24979 A negotiationneeded (stable)\",\"24981 A sent offer\",\"24981 A gathering gathering\",\"24982 A local candidate host\",\"24983 A got offer in have-local-offer (collision) ignored\",\"24984 A got answer in have-local-offer\",\"24985 A applied answer; now stable\",\"25105 A gathering complete\",\"25105 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_03 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:171:18)"
+    },
+    "ms": 30304
+  },
+  {
+    "scenario": "P-03",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"1015 B build peer (local tracks: 2)\",\"1023 B negotiationneeded (stable)\",\"1026 B got offer in stable (collision)\",\"1028 B sent offer\",\"1028 B applied offer; now have-remote-offer\",\"1028 B gathering gathering\",\"1028 B gathering new\",\"1032 B remote candidate added\",\"1032 B gathering gathering\",\"1032 B remote candidate added\",\"7018 B negotiationneeded (stable)\",\"7018 B got offer in stable (collision)\",\"7019 B sent offer\",\"7020 B applied offer; now have-remote-offer\",\"7022 B remote candidate added\",\"13017 B negotiationneeded (stable)\",\"13017 B got offer in stable (collision)\",\"13019 B sent offer\",\"13019 B applied offer; now have-remote-offer\",\"13021 B remote candidate added\",\"19018 B negotiationneeded (stable)\",\"19018 B got offer in stable (collision)\",\"19019 B sent offer\",\"19020 B applied offer; now have-remote-offer\",\"19021 B remote candidate added\",\"25018 B negotiationneeded (stable)\",\"25018 B got offer in stable (collision)\",\"25019 B sent offer\",\"25020 B applied offer; now have-remote-offer\",\"25021 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"7022 A applied answer; now stable\",\"7146 A gathering complete\",\"7146 A local candidate end\",\"13015 A negotiationneeded (stable)\",\"13016 A sent offer\",\"13016 A gathering gathering\",\"13017 A local candidate host\",\"13019 A got offer in have-local-offer (collision) ignored\",\"13021 A got answer in have-local-offer\",\"13021 A applied answer; now stable\",\"13144 A gathering complete\",\"13144 A local candidate end\",\"19016 A negotiationneeded (stable)\",\"19017 A sent offer\",\"19017 A gathering gathering\",\"19018 A local candidate host\",\"19019 A got offer in have-local-offer (collision) ignored\",\"19021 A got answer in have-local-offer\",\"19022 A applied answer; now stable\",\"19146 A gathering complete\",\"19146 A local candidate end\",\"25016 A negotiationneeded (stable)\",\"25017 A sent offer\",\"25017 A gathering gathering\",\"25018 A local candidate host\",\"25019 A got offer in have-local-offer (collision) ignored\",\"25021 A got answer in have-local-offer\",\"25022 A applied answer; now stable\",\"25146 A gathering complete\",\"25146 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"1015 B build peer (local tracks: 2)\",\"1023 B negotiationneeded (stable)\",\"1026 B got offer in stable (collision)\",\"1028 B sent offer\",\"1028 B applied offer; now have-remote-offer\",\"1028 B gathering gathering\",\"1028 B gathering new\",\"1032 B remote candidate added\",\"1032 B gathering gathering\",\"1032 B remote candidate added\",\"7018 B negotiationneeded (stable)\",\"7018 B got offer in stable (collision)\",\"7019 B sent offer\",\"7020 B applied offer; now have-remote-offer\",\"7022 B remote candidate added\",\"13017 B negotiationneeded (stable)\",\"13017 B got offer in stable (collision)\",\"13019 B sent offer\",\"13019 B applied offer; now have-remote-offer\",\"13021 B remote candidate added\",\"19018 B negotiationneeded (stable)\",\"19018 B got offer in stable (collision)\",\"19019 B sent offer\",\"19020 B applied offer; now have-remote-offer\",\"19021 B remote candidate added\",\"25018 B negotiationneeded (stable)\",\"25018 B got offer in stable (collision)\",\"25019 B sent offer\",\"25020 B applied offer; now have-remote-offer\",\"25021 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/tcp/none\",\"host/udp/none\"],\"remote\":[]}],\"log\":[\"7022 A applied answer; now stable\",\"7146 A gathering complete\",\"7146 A local candidate end\",\"13015 A negotiationneeded (stable)\",\"13016 A sent offer\",\"13016 A gathering gathering\",\"13017 A local candidate host\",\"13019 A got offer in have-local-offer (collision) ignored\",\"13021 A got answer in have-local-offer\",\"13021 A applied answer; now stable\",\"13144 A gathering complete\",\"13144 A local candidate end\",\"19016 A negotiationneeded (stable)\",\"19017 A sent offer\",\"19017 A gathering gathering\",\"19018 A local candidate host\",\"19019 A got offer in have-local-offer (collision) ignored\",\"19021 A got answer in have-local-offer\",\"19022 A applied answer; now stable\",\"19146 A gathering complete\",\"19146 A local candidate end\",\"25016 A negotiationneeded (stable)\",\"25017 A sent offer\",\"25017 A gathering gathering\",\"25018 A local candidate host\",\"25019 A got offer in have-local-offer (collision) ignored\",\"25021 A got answer in have-local-offer\",\"25022 A applied answer; now stable\",\"25146 A gathering complete\",\"25146 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_03 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:171:18)"
+    },
+    "ms": 30344
+  },
+  {
+    "scenario": "P-04",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": false,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": null,
+    "failure": {
+      "message": "P-04: 5 buttons keep transitions under reduced motion",
+      "stack": "ScenarioError: P-04: 5 buttons keep transitions under reduced motion\n    at scenario_P_04 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:325:30)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/run.mjs:94:26)\n    at async runOne (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/run.mjs:73:12)"
+    },
+    "ms": 1622
+  },
+  {
+    "scenario": "P-04",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": false,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": null,
+    "failure": {
+      "message": "P-04: 5 buttons keep transitions under reduced motion",
+      "stack": "ScenarioError: P-04: 5 buttons keep transitions under reduced motion\n    at scenario_P_04 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:325:30)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/run.mjs:94:26)\n    at async runOne (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/run.mjs:73:12)"
+    },
+    "ms": 1552
+  },
+  {
+    "scenario": "P-04",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": null,
+    "failure": {
+      "message": "P-04: 5 buttons keep transitions under reduced motion",
+      "stack": "ScenarioError: P-04: 5 buttons keep transitions under reduced motion\n    at scenario_P_04 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:325:30)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/run.mjs:94:26)\n    at async runOne (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/run.mjs:73:12)"
+    },
+    "ms": 1549
+  },
+  {
+    "scenario": "P-05",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": false,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"958 connect as A\",\"994 welcome []\",\"997 peer-joined B\",\"997 B build peer (local tracks: 2)\",\"1004 B negotiationneeded (stable)\",\"1008 B got offer in stable (collision)\",\"1010 B sent offer\",\"1010 B applied offer; now have-remote-offer\",\"1010 B gathering gathering\",\"1010 B gathering new\",\"1014 B gathering gathering\",\"1014 B remote candidate added\",\"1014 B remote candidate added\",\"7000 B negotiationneeded (stable)\",\"7000 B got offer in stable (collision)\",\"7001 B sent offer\",\"7002 B applied offer; now have-remote-offer\",\"7003 B remote candidate added\",\"13000 B got offer in stable\",\"13000 B applied offer; now have-remote-offer\",\"13001 B remote candidate added\",\"19000 B negotiationneeded (stable)\",\"19000 B got offer in stable (collision)\",\"19001 B sent offer\",\"19001 B applied offer; now have-remote-offer\",\"19002 B remote candidate added\",\"25000 B got offer in stable\",\"25001 B applied offer; now have-remote-offer\",\"25002 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/udp/none\",\"host/tcp/none\"],\"remote\":[]}],\"log\":[\"7001 A got offer in have-local-offer (collision) ignored\",\"7003 A got answer in have-local-offer\",\"7004 A applied answer; now stable\",\"7115 A gathering complete\",\"7115 A local candidate end\",\"12998 A negotiationneeded (stable)\",\"12999 A sent offer\",\"12999 A gathering gathering\",\"12999 A local candidate host\",\"13002 A got answer in have-local-offer\",\"13002 A applied answer; now stable\",\"13114 A gathering complete\",\"13114 A local candidate end\",\"18998 A negotiationneeded (stable)\",\"18999 A sent offer\",\"18999 A gathering gathering\",\"19000 A local candidate host\",\"19001 A got offer in have-local-offer (collision) ignored\",\"19002 A got answer in have-local-offer\",\"19003 A applied answer; now stable\",\"19114 A gathering complete\",\"19114 A local candidate end\",\"24998 A negotiationneeded (stable)\",\"24999 A sent offer\",\"24999 A gathering gathering\",\"25000 A local candidate host\",\"25002 A got answer in have-local-offer\",\"25003 A applied answer; now stable\",\"25114 A gathering complete\",\"25114 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"958 connect as A\",\"994 welcome []\",\"997 peer-joined B\",\"997 B build peer (local tracks: 2)\",\"1004 B negotiationneeded (stable)\",\"1008 B got offer in stable (collision)\",\"1010 B sent offer\",\"1010 B applied offer; now have-remote-offer\",\"1010 B gathering gathering\",\"1010 B gathering new\",\"1014 B gathering gathering\",\"1014 B remote candidate added\",\"1014 B remote candidate added\",\"7000 B negotiationneeded (stable)\",\"7000 B got offer in stable (collision)\",\"7001 B sent offer\",\"7002 B applied offer; now have-remote-offer\",\"7003 B remote candidate added\",\"13000 B got offer in stable\",\"13000 B applied offer; now have-remote-offer\",\"13001 B remote candidate added\",\"19000 B negotiationneeded (stable)\",\"19000 B got offer in stable (collision)\",\"19001 B sent offer\",\"19001 B applied offer; now have-remote-offer\",\"19002 B remote candidate added\",\"25000 B got offer in stable\",\"25001 B applied offer; now have-remote-offer\",\"25002 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/udp/none\",\"host/tcp/none\"],\"remote\":[]}],\"log\":[\"7001 A got offer in have-local-offer (collision) ignored\",\"7003 A got answer in have-local-offer\",\"7004 A applied answer; now stable\",\"7115 A gathering complete\",\"7115 A local candidate end\",\"12998 A negotiationneeded (stable)\",\"12999 A sent offer\",\"12999 A gathering gathering\",\"12999 A local candidate host\",\"13002 A got answer in have-local-offer\",\"13002 A applied answer; now stable\",\"13114 A gathering complete\",\"13114 A local candidate end\",\"18998 A negotiationneeded (stable)\",\"18999 A sent offer\",\"18999 A gathering gathering\",\"19000 A local candidate host\",\"19001 A got offer in have-local-offer (collision) ignored\",\"19002 A got answer in have-local-offer\",\"19003 A applied answer; now stable\",\"19114 A gathering complete\",\"19114 A local candidate end\",\"24998 A negotiationneeded (stable)\",\"24999 A sent offer\",\"24999 A gathering gathering\",\"25000 A local candidate host\",\"25002 A got answer in have-local-offer\",\"25003 A applied answer; now stable\",\"25114 A gathering complete\",\"25114 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_05 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:343:20)"
+    },
+    "ms": 31666
+  },
+  {
+    "scenario": "P-05",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": {
+      "cases": [
+        {
+          "label": "long-name",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "missing-avatar",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "slow-join",
+          "joinMs": 5356,
+          "during": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          },
+          "after": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        }
+      ],
+      "nameLength": 50
+    },
+    "failure": null,
+    "ms": 8344
+  },
+  {
+    "scenario": "P-05",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": null,
+    "failure": {
+      "message": "B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"953 connect as A\",\"987 welcome []\",\"990 peer-joined B\",\"990 B build peer (local tracks: 2)\",\"997 B negotiationneeded (stable)\",\"1002 B got offer in stable (collision)\",\"1003 B sent offer\",\"1004 B applied offer; now have-remote-offer\",\"1004 B gathering gathering\",\"1004 B gathering new\",\"1007 B remote candidate added\",\"1007 B gathering gathering\",\"1007 B remote candidate added\",\"6992 B got offer in stable\",\"6993 B applied offer; now have-remote-offer\",\"6994 B remote candidate added\",\"12991 B got offer in stable\",\"12992 B applied offer; now have-remote-offer\",\"12993 B remote candidate added\",\"18992 B got offer in stable\",\"18993 B applied offer; now have-remote-offer\",\"18994 B remote candidate added\",\"24992 B got offer in stable\",\"24993 B applied offer; now have-remote-offer\",\"24994 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/udp/none\",\"host/tcp/none\"],\"remote\":[]}],\"log\":[\"6991 A gathering gathering\",\"6991 A local candidate host\",\"6994 A got answer in have-local-offer\",\"6995 A applied answer; now stable\",\"7112 A gathering complete\",\"7112 A local candidate end\",\"12990 A negotiationneeded (stable)\",\"12991 A sent offer\",\"12991 A gathering gathering\",\"12992 A local candidate host\",\"12994 A got answer in have-local-offer\",\"12994 A applied answer; now stable\",\"13110 A gathering complete\",\"13110 A local candidate end\",\"18990 A negotiationneeded (stable)\",\"18991 A sent offer\",\"18991 A gathering gathering\",\"18991 A local candidate host\",\"18994 A got answer in have-local-offer\",\"18995 A applied answer; now stable\",\"19111 A gathering complete\",\"19111 A local candidate end\",\"24990 A negotiationneeded (stable)\",\"24991 A sent offer\",\"24991 A gathering gathering\",\"24992 A local candidate host\",\"24994 A got answer in have-local-offer\",\"24995 A applied answer; now stable\",\"25112 A gathering complete\",\"25112 A local candidate end\"]}]",
+      "stack": "ScenarioError: B: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[],\"remote\":[]}],\"log\":[\"953 connect as A\",\"987 welcome []\",\"990 peer-joined B\",\"990 B build peer (local tracks: 2)\",\"997 B negotiationneeded (stable)\",\"1002 B got offer in stable (collision)\",\"1003 B sent offer\",\"1004 B applied offer; now have-remote-offer\",\"1004 B gathering gathering\",\"1004 B gathering new\",\"1007 B remote candidate added\",\"1007 B gathering gathering\",\"1007 B remote candidate added\",\"6992 B got offer in stable\",\"6993 B applied offer; now have-remote-offer\",\"6994 B remote candidate added\",\"12991 B got offer in stable\",\"12992 B applied offer; now have-remote-offer\",\"12993 B remote candidate added\",\"18992 B got offer in stable\",\"18993 B applied offer; now have-remote-offer\",\"18994 B remote candidate added\",\"24992 B got offer in stable\",\"24993 B applied offer; now have-remote-offer\",\"24994 B remote candidate added\"]},{\"peer\":\"B\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"candidates\":[{\"local\":[\"host/udp/none\",\"host/tcp/none\"],\"remote\":[]}],\"log\":[\"6991 A gathering gathering\",\"6991 A local candidate host\",\"6994 A got answer in have-local-offer\",\"6995 A applied answer; now stable\",\"7112 A gathering complete\",\"7112 A local candidate end\",\"12990 A negotiationneeded (stable)\",\"12991 A sent offer\",\"12991 A gathering gathering\",\"12992 A local candidate host\",\"12994 A got answer in have-local-offer\",\"12994 A applied answer; now stable\",\"13110 A gathering complete\",\"13110 A local candidate end\",\"18990 A negotiationneeded (stable)\",\"18991 A sent offer\",\"18991 A gathering gathering\",\"18991 A local candidate host\",\"18994 A got answer in have-local-offer\",\"18995 A applied answer; now stable\",\"19111 A gathering complete\",\"19111 A local candidate end\",\"24990 A negotiationneeded (stable)\",\"24991 A sent offer\",\"24991 A gathering gathering\",\"24992 A local candidate host\",\"24994 A got answer in have-local-offer\",\"24995 A applied answer; now stable\",\"25112 A gathering complete\",\"25112 A local candidate end\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenario-kit.mjs:130:11)\n    at async openState (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:43:18)\n    at async scenario_P_05 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-36/tools/call-eval/runner/scenarios-p.mjs:343:20)"
+    },
+    "ms": 31724
+  }
+]

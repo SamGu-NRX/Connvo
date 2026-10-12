@@ -281,12 +281,23 @@ export async function scenario_P_04(ctx) {
     // interaction get a chance to start.
     for (const id of ["toggle-mic", "toggle-camera", "leave-call"]) await peer.page.hover(`[data-testid="${id}"]`);
     const check = await peer.page.evaluate(() => {
-      const anims = document.getAnimations();
-      const durations = anims.map((a) => {
-        const t = a.effect?.getTiming?.() ?? {};
-        return typeof t.duration === "number" ? t.duration : 0;
-      });
       const mq = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const MOVES = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
+      // Running animations and transitions that move something. A colour or
+      // opacity fade (a hover background, say) is allowed under reduced motion.
+      const anims = document.getAnimations().map((a) => {
+        const anyA = /** @type {any} */ (a);
+        const t = a.effect?.getTiming?.() ?? {};
+        const duration = typeof t.duration === "number" ? t.duration : 0;
+        const props = anyA.transitionProperty
+          ? [String(anyA.transitionProperty)]
+          : (/** @type {any} */ (a.effect)?.getKeyframes?.() ?? []).flatMap((/** @type {object} */ k) =>
+              Object.keys(k).filter((key) => !["offset", "easing", "composite", "computedOffset"].includes(key)),
+            );
+        return { props: [...new Set(props)], duration };
+      });
+      const moving = anims.filter((a) => a.duration > 50 && a.props.some((p) => MOVES.test(p.replace(/([A-Z])/g, "-$1").toLowerCase())));
+      const durations = moving.map((a) => a.duration);
       // Movement only: color and opacity fades stay under reduced motion. A
       // transition counts when its property moves things and its duration is
       // real; Tailwind's transition-none sets the property to none and leaves
@@ -298,7 +309,13 @@ export async function scenario_P_04(ctx) {
         const durs = cs.transitionDuration.split(",").map((x) => parseFloat(x));
         return props.map((prop, i) => ({ prop, s: durs[i % durs.length] })).filter((t) => MOTION.test(t.prop) && t.s > 0.05).map((t) => `${t.prop} ${t.s}s`);
       });
-      return { mq, animationCount: anims.length, maxDurationMs: durations.length ? Math.max(...durations) : 0, transitions };
+      return {
+        mq,
+        animationCount: moving.length,
+        allAnimations: anims.map((a) => `${a.props.join("+")} ${a.duration}ms`),
+        maxDurationMs: durations.length ? Math.max(...durations) : 0,
+        transitions,
+      };
     });
     if (!check.mq) throw new ScenarioError("P-04: reduced-motion media query not active", check);
     if (check.animationCount > 0 && check.maxDurationMs > 50) {

@@ -44,6 +44,20 @@ const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 5000;
 const GIVE_UP_MS = { joining: 30_000, reconnecting: 45_000 } as const;
 
+/**
+ * Bench-only event trace for diagnosing failed joins: the harness reads the
+ * tail of window.__connvoCallLog when a join never connects. Off outside the
+ * eval setup.
+ */
+const TRACE = process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH === "1";
+function trace(message: string): void {
+  if (!TRACE || typeof window === "undefined") return;
+  const w = window as unknown as { __connvoCallLog?: string[] };
+  const log = (w.__connvoCallLog ??= []);
+  log.push(`${Math.round(performance.now())} ${message}`);
+  if (log.length > 300) log.shift();
+}
+
 type Kind = "audio" | "video";
 const KINDS: Kind[] = ["audio", "video"];
 
@@ -153,8 +167,11 @@ export function createP2PTransport({
   }
 
   function enqueue(peer: Peer, step: () => Promise<void>): void {
-    peer.chain = peer.chain.then(step).catch(() => {
-      /* a stale description or candidate; the next negotiation recovers */
+    peer.chain = peer.chain.then(step).catch((err: unknown) => {
+      // A stale description or candidate; the next negotiation recovers.
+      trace(
+        `${peer.id} signal step failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     });
   }
 
@@ -188,8 +205,13 @@ export function createP2PTransport({
     }
 
     pc.onicecandidate = ({ candidate }) => {
+      trace(
+        `${id} local candidate ${candidate ? candidate.type : "end"}${conn ? "" : " (no signaling)"}`,
+      );
       if (candidate) send(id, { candidate: candidate.toJSON() });
     };
+    pc.onicegatheringstatechange = () =>
+      trace(`${id} gathering ${pc.iceGatheringState}`);
     pc.ontrack = ({ track }) => {
       for (const old of peer.remoteStream.getTracks()) {
         if (old.kind === track.kind && old.id !== track.id)
@@ -206,13 +228,18 @@ export function createP2PTransport({
       }
     };
     pc.onnegotiationneeded = async () => {
+      trace(`${id} negotiationneeded (${pc.signalingState})`);
       try {
         peer.makingOffer = true;
         await pc.setLocalDescription();
+        trace(`${id} sent ${pc.localDescription?.type}`);
         if (pc.localDescription)
           send(id, { description: pc.localDescription.toJSON() });
-      } catch {
-        /* the pc closed or a newer negotiation replaced this one */
+      } catch (err) {
+        // The pc closed or a newer negotiation replaced this one.
+        trace(
+          `${id} offer failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
       } finally {
         peer.makingOffer = false;
       }
@@ -248,6 +275,9 @@ export function createP2PTransport({
         (pc.signalingState === "stable" || peer.settingRemoteAnswer);
       const collision = description.type === "offer" && !readyForOffer;
       peer.ignoreOffer = !peer.polite && collision;
+      trace(
+        `${peer.id} got ${description.type} in ${pc.signalingState}${collision ? " (collision)" : ""}${peer.ignoreOffer ? " ignored" : ""}`,
+      );
       if (peer.ignoreOffer) return;
       peer.settingRemoteAnswer = description.type === "answer";
       await pc.setRemoteDescription(description);
@@ -255,6 +285,7 @@ export function createP2PTransport({
       for (const candidate of peer.pendingCandidates.splice(0)) {
         await pc.addIceCandidate(candidate).catch(() => {});
       }
+      trace(`${peer.id} applied ${description.type}; now ${pc.signalingState}`);
       if (description.type === "offer") {
         await pc.setLocalDescription();
         if (pc.localDescription)
@@ -263,11 +294,13 @@ export function createP2PTransport({
       return;
     }
     if (!pc.remoteDescription) {
+      trace(`${peer.id} remote candidate queued`);
       peer.pendingCandidates.push(signal.candidate);
       return;
     }
     try {
       await pc.addIceCandidate(signal.candidate);
+      trace(`${peer.id} remote candidate added`);
     } catch (err) {
       // Candidates for an offer we ignored are expected to fail.
       if (!peer.ignoreOffer) throw err;
@@ -299,6 +332,9 @@ export function createP2PTransport({
   /** A fresh connection to `id`; the tile stays if one already existed. */
   function rebuildPeer(id: string): void {
     const existing = peers.get(id);
+    trace(
+      `${id} ${existing ? "rebuild" : "build"} peer (local tracks: ${currentStream()?.getTracks().length ?? 0})`,
+    );
     if (existing) closePeer(existing);
     else events?.onRemoteJoined({ participantId: id });
     createPeer(id);
@@ -321,6 +357,7 @@ export function createP2PTransport({
       { meetingId: ctx.meetingId, identityToken: ctx.identityToken },
       {
         onWelcome: (present) => {
+          trace(`welcome [${present.join(",")}]${live() ? "" : " (stale)"}`);
           if (!live()) return;
           signalingUp = true;
           reconnectAttempt = 0;
@@ -336,6 +373,7 @@ export function createP2PTransport({
           refreshPhase();
         },
         onPeerJoined: (id) => {
+          trace(`peer-joined ${id}${live() ? "" : " (stale)"}`);
           if (!live()) return;
           rebuildPeer(id);
           // The newcomer has never seen our mute/camera state.
@@ -343,6 +381,7 @@ export function createP2PTransport({
           refreshPhase();
         },
         onPeerLeft: (id) => {
+          trace(`peer-left ${id}${live() ? "" : " (stale)"}`);
           if (!live()) return;
           const peer = peers.get(id);
           if (peer) closePeer(peer);
@@ -363,6 +402,9 @@ export function createP2PTransport({
           if (live()) events?.onRemoteState(state);
         },
         onClosed: (reason) => {
+          trace(
+            `signaling closed: ${reason.kind} ${reason.message}${live() ? "" : " (stale)"}`,
+          );
           if (!live()) return;
           conn = null;
           signalingUp = false;
@@ -396,6 +438,7 @@ export function createP2PTransport({
     name: "p2p",
 
     async connect(context, transportEvents): Promise<void> {
+      trace(`connect as ${context.selfId}`);
       teardownAll(false);
       closeSignaling();
       ctx = context;
