@@ -7,6 +7,8 @@
  *    noteOps row in the same transaction as the text change
  *  - results[] echo per-op identity; failedOps carry index + identity + reason
  *  - idempotent dedupe on (meetingId, clientId, clientOpId)
+ *  - a wholly duplicate batch replay leaves the notes row's version,
+ *    updatedAt and content untouched; a mix batch still bumps once
  *  - getMeetingNotes headSequence + clientAcks watermarks with clientId
  *  - legacy shapes and auth behavior byte-identical without identity
  *
@@ -373,6 +375,99 @@ describe("notes operation identity & watermark (F1 M1)", () => {
     });
     const note = await getStoredNote(t, meetingId);
     expect(note?.content).toBe("X");
+  });
+
+  test("4d. a wholly duplicate batch replay leaves the notes row untouched: no version bump, no updatedAt change, no reapply", async () => {
+    const t = createTestEnvironment();
+    const meetingId = await setupMeetingWithParticipants(t, ["alice-wa"]);
+    const alice = asAuthed(t, "alice-wa");
+
+    // Identical payload for both sends — the second call is the retry.
+    const batch = {
+      meetingId,
+      clientId: "client-a",
+      operations: [
+        {
+          operation: { type: "insert" as const, position: 0, content: "AB" },
+          clientSequence: 0,
+          clientOpId: "op-1",
+        },
+        {
+          operation: { type: "insert" as const, position: 2, content: "CD" },
+          clientSequence: 1,
+          clientOpId: "op-2",
+        },
+      ],
+    };
+
+    const first = await alice.mutation(
+      api.notes.mutations.batchApplyNoteOperations,
+      batch,
+    );
+    expect(first.results.map((r) => r.deduped)).toEqual([undefined, undefined]);
+
+    const stored = await getStoredNote(t, meetingId);
+    expect(stored?.content).toBe("ABCD");
+    expect(stored?.version).toBe(1);
+    const versionAfterFirst = stored?.version;
+    const updatedAtAfterFirst = stored?.updatedAt;
+
+    // Guarantee any stray re-patch would observe a later clock than the first
+    // apply, so the updatedAt equality below has teeth.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    // Retrying the IDENTICAL batch dedupes every op and must leave stored
+    // state exactly as it was — the version is the watermark fresh reads
+    // adopt, and a no-text-change replay must not advance it.
+    const replay = await alice.mutation(
+      api.notes.mutations.batchApplyNoteOperations,
+      batch,
+    );
+
+    expect(replay.results.map((r) => r.deduped)).toEqual([true, true]);
+    expect(replay.results.map((r) => r.serverSequence)).toEqual(
+      first.results.map((r) => r.serverSequence),
+    );
+    // The response reports the stored (unbumped) version, like the single-op
+    // dedupe echo.
+    expect(replay.newVersion).toBe(versionAfterFirst);
+
+    const afterReplay = await getStoredNote(t, meetingId);
+    expect(afterReplay?.version).toBe(versionAfterFirst);
+    expect(afterReplay?.updatedAt).toBe(updatedAtAfterFirst);
+    expect(afterReplay?.content).toBe("ABCD");
+
+    // A MIX batch — one duplicate, one new op — still applies the new op and
+    // bumps the version exactly once. The duplicate goes first: skipping it
+    // must not disturb the content basis the new op applies against.
+    const followUp = await alice.mutation(
+      api.notes.mutations.batchApplyNoteOperations,
+      {
+        meetingId,
+        clientId: "client-a",
+        operations: [
+          {
+            operation: { type: "insert", position: 0, content: "GARBAGE" },
+            clientSequence: 0,
+            clientOpId: "op-1",
+          },
+          {
+            operation: { type: "insert", position: 4, content: "EF" },
+            clientSequence: 2,
+            clientOpId: "op-3",
+          },
+        ],
+      },
+    );
+
+    expect(followUp.results.map((r) => r.deduped)).toEqual([true, undefined]);
+    expect(followUp.newVersion).toBe((versionAfterFirst ?? 0) + 1);
+
+    const afterFollowUp = await getStoredNote(t, meetingId);
+    expect(afterFollowUp?.version).toBe((versionAfterFirst ?? 0) + 1);
+    expect(afterFollowUp?.content).toBe("ABCDEF");
+    const rows = await getStoredIdentityRows(t, meetingId, "client-a", "op-1");
+    expect(rows).toHaveLength(1);
   });
 
   test("5. headSequence is the max noteOps sequence, 0 when none exist", async () => {
