@@ -1,0 +1,28 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v4.0.4 <repo>
+
+stderr | convex/meetings/webrtc/mesh.test.ts > review fixes > B1: a participant cannot mark another participant's session failed
+WebRTC connection failure: ice_failed {
+  meetingId: '10006;meetings',
+  sessionId: 'session-a-1',
+  userId: '10001;users',
+  errorDetails: undefined
+}
+
+stderr | convex/meetings/webrtc/mesh.test.ts > review fixes > B1: a participant cannot mark another participant's session failed
+WebRTC connection failure: ice_failed {
+  meetingId: '10006;meetings',
+  sessionId: 'session-a-1',
+  userId: '10000;users',
+  errorDetails: undefined
+}
+
+ ✓  convex  convex/meetings/webrtc/mesh.test.ts (26 tests) 254ms
+
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  12:50:05
+   Duration  467ms (transform 126ms, setup 37ms, collect 96ms, tests 254ms, environment 24ms, prepare 2ms)
+

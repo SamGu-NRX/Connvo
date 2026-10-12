@@ -1,0 +1,56 @@
+[
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 1174,
+      "timeToFirstRemoteFrameMs": 1285,
+      "timeToFirstRemoteFrameMsReverse": 1287,
+      "fpsAtoB": 34.5,
+      "fpsBtoA": 31.5,
+      "colourMsAseesB": 1288,
+      "colourMsBseesA": 1289
+    },
+    "failure": null,
+    "ms": 11316
+  },
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 1245,
+      "timeToFirstRemoteFrameMs": 1351,
+      "timeToFirstRemoteFrameMsReverse": 1354,
+      "fpsAtoB": 32.7,
+      "fpsBtoA": 31.5,
+      "colourMsAseesB": 1355,
+      "colourMsBseesA": 1357
+    },
+    "failure": null,
+    "ms": 11384
+  },
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 1340,
+      "timeToFirstRemoteFrameMs": 1450,
+      "timeToFirstRemoteFrameMsReverse": 1453,
+      "fpsAtoB": 34.9,
+      "fpsBtoA": 33.9,
+      "colourMsAseesB": 1455,
+      "colourMsBseesA": 1457
+    },
+    "failure": null,
+    "ms": 11490
+  }
+]

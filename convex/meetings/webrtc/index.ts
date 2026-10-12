@@ -9,16 +9,8 @@
  * Compliance: steering/convex_rules.mdc - Proper module organization
  */
 
-// Re-export WebRTC signaling functions
+// Internal WebRTC signaling functions; the public call mesh API is ./mesh.ts.
 export {
-  createWebRTCSession,
-  exchangeSessionDescription,
-  exchangeICECandidate,
-  getPendingSignals,
-  markSignalsProcessed,
-  updateSessionState,
-  getActiveSessions,
-  closeSession,
   storeConnectionMetrics,
   updateSessionStateInternal,
   cleanupOldWebRTCData,

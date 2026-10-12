@@ -42,3 +42,13 @@ convex-spec-*.yaml
 /.clerk/
 .specstory
 log.txt
+
+# call-eval local artifacts (task connvo-call-harness-f1)
+tools/call-eval/out/
+tools/call-eval/.local/
+tools/call-eval/fixtures/*.y4m
+tools/call-eval/fixtures/*.wav
+convex-harness/
+
+# Self-proof resume checkpoint: a local working file, rebuilt by each run.
+tools/call-eval/self-proof/checkpoint.jsonl

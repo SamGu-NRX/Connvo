@@ -1,0 +1,49 @@
+call-eval: transports=p2p scenarios=14 seeds=3 baseUrl=http://localhost:3035
+▶ H-01 seed 1 on p2p
+H-01 join 1801 ms, first frame 1911/1913 ms, fps 33.9/32.9
+▶ H-01 seed 2 on p2p
+H-01 join 1343 ms, first frame 1450/1452 ms, fps 32.9/34.3
+▶ H-01 seed 3 on p2p
+H-01 join 1343 ms, first frame 1348/1349 ms, fps 33.5/32.5
+▶ H-02 seed 1 on p2p
+▶ H-02 seed 2 on p2p
+▶ H-02 seed 3 on p2p
+▶ H-03 seed 1 on p2p
+▶ H-03 seed 2 on p2p
+▶ H-03 seed 3 on p2p
+▶ H-04 seed 1 on p2p
+▶ H-04 seed 2 on p2p
+▶ H-04 seed 3 on p2p
+▶ H-05 seed 1 on p2p
+▶ H-05 seed 2 on p2p
+▶ H-05 seed 3 on p2p
+▶ H-06 seed 1 on p2p
+▶ H-06 seed 2 on p2p
+▶ H-06 seed 3 on p2p
+▶ H-07 seed 1 on p2p
+▶ H-07 seed 2 on p2p
+▶ H-07 seed 3 on p2p
+▶ H-08 seed 1 on p2p
+▶ H-08 seed 2 on p2p
+▶ H-08 seed 3 on p2p
+▶ H-09 seed 1 on p2p
+▶ H-09 seed 2 on p2p
+▶ H-09 seed 3 on p2p
+▶ H-10 seed 1 on p2p
+▶ H-10 seed 2 on p2p
+▶ H-10 seed 3 on p2p
+▶ H-11 seed 1 on p2p
+▶ H-11 seed 2 on p2p
+▶ H-11 seed 3 on p2p
+▶ H-12 seed 1 on p2p
+▶ H-12 seed 2 on p2p
+▶ H-12 seed 3 on p2p
+▶ H-13 seed 1 on p2p
+▶ H-13 seed 2 on p2p
+▶ H-13 seed 3 on p2p
+▶ H-14 seed 1 on p2p
+▶ H-14 seed 2 on p2p
+▶ H-14 seed 3 on p2p
+results: <repo>/tools/call-eval/out/results.json
+summary: <repo>/tools/call-eval/out/summary.md
+done in 442.4s — 42/42 passed

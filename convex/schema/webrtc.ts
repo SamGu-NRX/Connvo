@@ -16,15 +16,31 @@ export const webrtcTables = {
       v.literal("closed"),
     ),
     metadata: v.optional(metadataRecordV),
+    // Call mesh (convex/meetings/webrtc/mesh.ts): presence heartbeat, the
+    // participant's announced mic/camera state, and why a session closed.
+    lastHeartbeatAt: v.optional(v.number()),
+    micOn: v.optional(v.boolean()),
+    cameraOn: v.optional(v.boolean()),
+    closedReason: v.optional(
+      v.union(
+        v.literal("left"),
+        v.literal("replaced"),
+        v.literal("expired"),
+        v.literal("ended"),
+      ),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_meeting", ["meetingId"])
     .index("by_user", ["userId"])
     .index("by_user_and_meeting", ["userId", "meetingId"])
+    .index("by_meeting_user_and_state", ["meetingId", "userId", "state"])
     .index("by_meeting_and_session", ["meetingId", "sessionId"])
     .index("by_meeting_and_state", ["meetingId", "state"])
     .index("by_state", ["state"])
+    // The stale-session sweep reads only expired heartbeats.
+    .index("by_state_and_heartbeat", ["state", "lastHeartbeatAt"])
     // Composite index for cleanup queries on state + updatedAt
     .index("by_state_and_updatedAt", ["state", "updatedAt"]),
 
@@ -32,7 +48,10 @@ export const webrtcTables = {
     meetingId: v.id("meetings"),
     sessionId: v.string(),
     fromUserId: v.id("users"),
-    toUserId: v.optional(v.id("users")), // null for broadcast signals
+    toUserId: v.optional(v.id("users")), // legacy; the call mesh always sets both targets
+    // The receiving session. Addressing a session, not a user, keeps a
+    // reloaded tab from receiving offers meant for the tab it replaced.
+    toSessionId: v.optional(v.string()),
     type: v.union(v.literal("sdp"), v.literal("ice")),
     // SDP or ICE candidate data
     data: v.union(
@@ -61,6 +80,13 @@ export const webrtcTables = {
     .index("by_timestamp", ["timestamp"])
     .index("by_processed", ["processed"])
     .index("by_processed_and_timestamp", ["processed", "timestamp"])
+    // A session's unread queue. Session ids come from the client, so the
+    // meeting comes first: another meeting cannot crowd this range.
+    .index("by_meeting_target_session_and_processed", [
+      "meetingId",
+      "toSessionId",
+      "processed",
+    ])
     .index("by_meeting_target_and_processed", [
       "meetingId",
       "toUserId",

@@ -52,6 +52,23 @@ crons.interval(
   {},
 );
 
+// Call mesh: close sessions whose heartbeat stopped when nobody else in the
+// meeting is heartbeating to do it (convex/meetings/webrtc/mesh.ts).
+crons.interval(
+  "sweep stale call sessions",
+  { minutes: 1 },
+  internal.meetings.webrtc.mesh.sweepStaleSessions,
+  {},
+);
+
+// Call signaling: delete signals and closed sessions older than a day.
+crons.interval(
+  "cleanup old webrtc data",
+  { hours: 1 },
+  internal.meetings.webrtc.signaling.cleanupOldWebRTCData,
+  { olderThanMs: 24 * 60 * 60 * 1000 },
+);
+
 // Matching jobs are not registered here to avoid reference errors.
 
 export default crons;

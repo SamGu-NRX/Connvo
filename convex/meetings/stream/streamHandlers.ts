@@ -8,6 +8,7 @@
 
 import { internalMutation } from "@convex/_generated/server";
 import { internal } from "@convex/_generated/api";
+import { closeMeetingSessions } from "@convex/meetings/webrtc/mesh";
 import {
   StreamApiResponseV,
   StreamWebhookPayloadV,
@@ -103,6 +104,7 @@ export const handleCallSessionEnded = internalMutation({
         state: "concluded",
         updatedAt: Date.now(),
       });
+      await closeMeetingSessions(ctx, meeting._id);
 
       const meetingState = await ctx.db
         .query("meetingState")
