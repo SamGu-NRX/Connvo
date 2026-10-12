@@ -251,10 +251,14 @@ export function createReferenceTransport(
         void pollDecodedFrames();
       }
       if (pc.connectionState === "failed") {
-        // A failed media link recovers through the signaling reconnect path
-        // (the mesh is rebuilt after the fresh welcome), not by faking states.
+        // A failed media link while signaling is still up: nothing else will
+        // rebuild it, so restart ICE (the initiator re-offers; the other side
+        // asks it to). The self-proof caught the gap: in H-06, 2 of 15 seeds
+        // reached ICE "failed" on both sides and sat in reconnecting forever.
         setPhase(phase === "left" ? phase : "reconnecting");
+        entry.decodedFrames = 0;
         startDecodedPoll();
+        if (defect !== "no-reconnect") pc.restartIce();
       }
     };
 
