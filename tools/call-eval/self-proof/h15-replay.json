@@ -1,0 +1,191 @@
+[
+  {
+    "scenario": "H-15",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "label": "baseline",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 0,
+        "rttMs": 2,
+        "fps": 35.8,
+        "phase": "connected"
+      },
+      "loss5": {
+        "label": "5%",
+        "lossPct": 5,
+        "delayMs": 300,
+        "deltaLost": 12,
+        "rttMs": 602,
+        "fps": 26.1,
+        "phase": "connected"
+      },
+      "recovery5": {
+        "label": "recovery-5%",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 0,
+        "rttMs": 226,
+        "fps": 31.9,
+        "phase": "connected"
+      },
+      "loss15": {
+        "label": "15%",
+        "lossPct": 15,
+        "delayMs": 300,
+        "deltaLost": 29,
+        "rttMs": 603,
+        "fps": 3.7,
+        "phase": "connected"
+      },
+      "recovery15": {
+        "label": "recovery-15%",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 3,
+        "rttMs": 1,
+        "fps": 37.5,
+        "phase": "connected"
+      },
+      "toneAfterHz": 437.6,
+      "shaperB": {
+        "forwarded": 8913,
+        "dropped": 393,
+        "droppedUp": 188,
+        "droppedDown": 205,
+        "uplinks": 2
+      },
+      "proof": "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared"
+    },
+    "ms": 41405
+  },
+  {
+    "scenario": "H-15",
+    "transport": "reference",
+    "seed": 2,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "label": "baseline",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 0,
+        "rttMs": 2,
+        "fps": 28.9,
+        "phase": "connected"
+      },
+      "loss5": {
+        "label": "5%",
+        "lossPct": 5,
+        "delayMs": 300,
+        "deltaLost": 12,
+        "rttMs": 604,
+        "fps": 32.2,
+        "phase": "connected"
+      },
+      "recovery5": {
+        "label": "recovery-5%",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 0,
+        "rttMs": 5,
+        "fps": 34.9,
+        "phase": "connected"
+      },
+      "loss15": {
+        "label": "15%",
+        "lossPct": 15,
+        "delayMs": 300,
+        "deltaLost": 31,
+        "rttMs": 431,
+        "fps": 3,
+        "phase": "connected"
+      },
+      "recovery15": {
+        "label": "recovery-15%",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 3,
+        "rttMs": 2,
+        "fps": 35.2,
+        "phase": "connected"
+      },
+      "toneAfterHz": 437.6,
+      "shaperB": {
+        "forwarded": 7860,
+        "dropped": 404,
+        "droppedUp": 197,
+        "droppedDown": 207,
+        "uplinks": 2
+      },
+      "proof": "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared"
+    },
+    "ms": 41416
+  },
+  {
+    "scenario": "H-15",
+    "transport": "reference",
+    "seed": 3,
+    "pass": true,
+    "measurements": {
+      "baseline": {
+        "label": "baseline",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 0,
+        "rttMs": 1,
+        "fps": 40.3,
+        "phase": "connected"
+      },
+      "loss5": {
+        "label": "5%",
+        "lossPct": 5,
+        "delayMs": 300,
+        "deltaLost": 8,
+        "rttMs": 604,
+        "fps": 34.9,
+        "phase": "connected"
+      },
+      "recovery5": {
+        "label": "recovery-5%",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": 2,
+        "rttMs": 226,
+        "fps": 31.2,
+        "phase": "connected"
+      },
+      "loss15": {
+        "label": "15%",
+        "lossPct": 15,
+        "delayMs": 300,
+        "deltaLost": 33,
+        "rttMs": 453,
+        "fps": 27.8,
+        "phase": "connected"
+      },
+      "recovery15": {
+        "label": "recovery-15%",
+        "lossPct": 0,
+        "delayMs": 0,
+        "deltaLost": -12,
+        "rttMs": 189,
+        "fps": 36.9,
+        "phase": "connected"
+      },
+      "toneAfterHz": 437.3,
+      "shaperB": {
+        "forwarded": 10395,
+        "dropped": 509,
+        "droppedUp": 175,
+        "droppedDown": 334,
+        "uplinks": 2
+      },
+      "proof": "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared"
+    },
+    "ms": 42935
+  }
+]
