@@ -437,3 +437,43 @@ export async function waitForSilence(sample, { deadlineMs, now = Date.now }) {
     if (afterMs >= deadlineMs) return { silent: false, afterMs, last };
   }
 }
+
+/**
+ * Wait until `participantId`'s tile shows live media: the right colour AND
+ * frames advancing at `minFps` or more over a 1 s window (observed counter
+ * advances). A frozen last frame keeps the right colour, so the reviewed
+ * recovery checks, which read colour alone, passed on stuck media.
+ * Resolves with `liveAt`, when the passing 1 s window began.
+ * @param {{ page: { evaluate: Function } }} peer
+ * @param {string} participantId
+ * @param {{ timeoutMs: number, minFps?: number, label?: string | null,
+ *   readColor?: () => Promise<{ ok?: boolean, label?: string } | null>,
+ *   readFps?: () => Promise<number> }} opts
+ */
+export async function waitForLiveMedia(peer, participantId, { timeoutMs, minFps = 15, label = null, readColor, readFps }) {
+  const color =
+    readColor ??
+    (() =>
+      peer.page.evaluate(
+        `(async () => { const c = await window.__decodeRemoteColor(${JSON.stringify(participantId)}); return c ? { ok: c.ok, label: c.label } : null; })()`,
+      ));
+  const fpsOf = readFps ?? (async () => (await measureFps(peer, participantId, 1000)).fps);
+  const deadline = Date.now() + timeoutMs;
+  /** @type {{ color: unknown, fps: number | null }} */
+  let last = { color: null, fps: null };
+  for (;;) {
+    const c = await color();
+    if (c?.ok && (!label || c.label === label)) {
+      const windowStart = Date.now();
+      const fps = await fpsOf();
+      last = { color: c, fps };
+      if (fps >= minFps) return { liveAt: windowStart, fps, label: c.label };
+    } else {
+      last = { color: c, fps: null };
+    }
+    if (Date.now() > deadline) {
+      throw new Error(`${participantId}'s media not live within ${timeoutMs} ms: need the right colour and >= ${minFps} fps over 1 s (last ${JSON.stringify(last)})`);
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
