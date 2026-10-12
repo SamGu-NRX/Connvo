@@ -1,9 +1,160 @@
-=== M3B START 04:20:05 ===
+=== M3B3 START 04:33:51 ===
+=== PNPM BOOTSTRAP 04:33:51 ===
+PNPM_VERSION=9.15.9
 From https://github.com/SamGu-NRX/Connvo
  * branch            obv/connvo-after-call-f1-ui -> FETCH_HEAD
 Switched to a new branch 'obv-verify'
 branch 'obv-verify' set up to track 'origin/obv/connvo-after-call-f1-ui'.
 VERIFYING HEAD f9cbc3ba7357acd8e1f593fb43fcc89f603ae9d8
-=== INSTALL 04:20:08 ===
-/home/user/work/m3b-chain.sh: line 44: pnpm: command not found
-INSTALL_EXIT=127
+=== INSTALL 04:33:56 ===
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1044
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1044, reused 0, downloaded 7, added 2
+Progress: resolved 1044, reused 0, downloaded 17, added 2
+Progress: resolved 1044, reused 0, downloaded 73, added 69
+Progress: resolved 1044, reused 0, downloaded 158, added 152
+Progress: resolved 1044, reused 0, downloaded 230, added 219
+Progress: resolved 1044, reused 0, downloaded 400, added 386
+Progress: resolved 1044, reused 0, downloaded 401, added 386
+Progress: resolved 1044, reused 0, downloaded 416, added 400
+Progress: resolved 1044, reused 0, downloaded 416, added 401
+Progress: resolved 1044, reused 0, downloaded 471, added 462
+Progress: resolved 1044, reused 0, downloaded 542, added 537
+Progress: resolved 1044, reused 0, downloaded 549, added 539
+Progress: resolved 1044, reused 0, downloaded 556, added 544
+Progress: resolved 1044, reused 0, downloaded 557, added 544
+Progress: resolved 1044, reused 0, downloaded 560, added 546
+Progress: resolved 1044, reused 0, downloaded 562, added 547
+Progress: resolved 1044, reused 0, downloaded 632, added 628
+Progress: resolved 1044, reused 0, downloaded 651, added 645
+Progress: resolved 1044, reused 0, downloaded 660, added 645
+Progress: resolved 1044, reused 0, downloaded 676, added 660
+Progress: resolved 1044, reused 0, downloaded 720, added 707
+Progress: resolved 1044, reused 0, downloaded 779, added 764
+Progress: resolved 1044, reused 0, downloaded 795, added 779
+Progress: resolved 1044, reused 0, downloaded 948, added 938
+Progress: resolved 1044, reused 0, downloaded 1028, added 1018
+Progress: resolved 1044, reused 0, downloaded 1044, added 1044, done
+.../node_modules/protobufjs postinstall$ node scripts/postinstall
+.../core-js@3.46.0/node_modules/core-js postinstall$ node -e "try{require('./postinstall')}catch(e){}"
+.../node_modules/unrs-resolver postinstall$ napi-postinstall unrs-resolver 1.11.1 check
+.../sharp@0.34.4/node_modules/sharp install$ node install/check.js
+.../esbuild@0.25.4/node_modules/esbuild postinstall$ node install.js
+.../node_modules/protobufjs postinstall: Done
+.../core-js@3.46.0/node_modules/core-js postinstall: Thank you for using core-js ( https://github.com/zloirock/core-js ) for polyfilling JavaScript standard library!
+.../core-js@3.46.0/node_modules/core-js postinstall: The project needs your help! Please consider supporting core-js:
+.../core-js@3.46.0/node_modules/core-js postinstall: > https://opencollective.com/core-js 
+.../core-js@3.46.0/node_modules/core-js postinstall: > https://patreon.com/zloirock 
+.../core-js@3.46.0/node_modules/core-js postinstall: > https://boosty.to/zloirock 
+.../core-js@3.46.0/node_modules/core-js postinstall: > bitcoin: bc1qlea7544qtsmj2rayg0lthvza9fau63ux0fstcz 
+.../core-js@3.46.0/node_modules/core-js postinstall: I highly recommend reading this: https://github.com/zloirock/core-js/blob/master/docs/2023-02-14-so-whats-next.md 
+.../core-js@3.46.0/node_modules/core-js postinstall: Done
+.../esbuild@0.25.11/node_modules/esbuild postinstall$ node install.js
+.../node_modules/unrs-resolver postinstall: Done
+.../esbuild@0.25.4/node_modules/esbuild postinstall: Done
+.../esbuild@0.25.11/node_modules/esbuild postinstall: Done
+.../sharp@0.34.4/node_modules/sharp install: Done
+
+dependencies:
++ @convex-dev/rate-limiter 0.2.14
++ @convex-dev/workos 0.0.1
++ @hookform/resolvers 5.2.2
++ @next/swc-wasm-nodejs 16.0.1
++ @radix-ui/react-accordion 1.2.12
++ @radix-ui/react-alert-dialog 1.1.15
++ @radix-ui/react-aspect-ratio 1.1.7
++ @radix-ui/react-avatar 1.1.10
++ @radix-ui/react-checkbox 1.3.3
++ @radix-ui/react-collapsible 1.1.12
++ @radix-ui/react-context-menu 2.2.16
++ @radix-ui/react-dialog 1.1.15
++ @radix-ui/react-dropdown-menu 2.1.16
++ @radix-ui/react-hover-card 1.1.15
++ @radix-ui/react-label 2.1.7
++ @radix-ui/react-menubar 1.1.16
++ @radix-ui/react-navigation-menu 1.2.14
++ @radix-ui/react-popover 1.1.15
++ @radix-ui/react-progress 1.1.7
++ @radix-ui/react-radio-group 1.3.8
++ @radix-ui/react-scroll-area 1.2.10
++ @radix-ui/react-select 2.2.6
++ @radix-ui/react-separator 1.1.7
++ @radix-ui/react-slider 1.3.6
++ @radix-ui/react-slot 1.2.3
++ @radix-ui/react-switch 1.2.6
++ @radix-ui/react-tabs 1.1.13
++ @radix-ui/react-toast 1.2.15
++ @radix-ui/react-toggle 1.1.10
++ @radix-ui/react-toggle-group 1.1.11
++ @radix-ui/react-tooltip 1.2.8
++ @stream-io/node-sdk 0.7.15
++ @stream-io/video-react-sdk 1.24.3
++ @svgr/webpack 8.1.0
++ @tabler/icons-react 3.35.0
++ @tailwindcss/postcss 4.1.16
++ @types/d3 7.4.3
++ @typescript-eslint/parser 8.46.2
++ @vercel/analytics 1.5.0
++ @workos-inc/authkit-nextjs 2.10.0
++ @workos-inc/authkit-react 0.13.0
++ @workos-inc/node 7.72.0
++ autoprefixer 10.4.21
++ canvas-confetti 1.9.4
++ chart.js 4.5.1
++ class-variance-authority 0.7.1
++ clsx 2.1.1
++ cmdk 1.1.1
++ convex 1.28.0
++ d3 7.9.0
++ date-fns 4.1.0
++ dotenv 17.2.3
++ dotenv-expand 12.0.3
++ embla-carousel-react 8.6.0
++ gsap 3.13.0
++ input-otp 1.4.2
++ lenis 1.3.13
++ lucide-react 0.548.0
++ motion 12.23.24
++ next-themes 0.4.6
++ openai 6.7.0
++ react-chartjs-2 5.3.1
++ react-day-picker 9.11.1
++ react-hook-form 7.65.0
++ react-resizable-panels 3.0.6
++ recharts 3.3.0
++ sonner 2.0.7
++ tailwind-merge 3.3.1
++ tailwindcss-animate 1.0.7
++ vaul 1.1.2
++ zod 4.1.12
+
+devDependencies:
++ @edge-runtime/vm 5.0.0
++ @eslint/eslintrc 3.3.1
++ @redocly/cli 2.9.0
++ @types/canvas-confetti 1.9.0
++ @types/js-yaml 4.0.9
++ @types/node 24.9.2
++ @types/react 19.2.2
++ @types/react-dom 19.2.2
++ convex-helpers 0.1.104
++ convex-test 0.0.38
++ eslint 9.38.0
++ eslint-config-next 16.0.1
++ ical.js 2.2.1
++ js-yaml 4.1.0
++ next 16.0.1
++ postcss 8.5.6
++ prettier 3.6.2
++ prettier-plugin-tailwindcss 0.7.1
++ react 19.2.0
++ react-dom 19.2.0
++ tailwindcss 4.1.16
++ tsx 4.20.6
++ typescript 5.9.3
++ vitest 4.0.4
+
+Done in 28.8s using pnpm v9.15.9
+INSTALL_EXIT=0
