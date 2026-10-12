@@ -29,7 +29,7 @@ function fakePeerAt(fps) {
       evaluate: async (_fn, arg) => {
         const out = [];
         for (let t = 0; t < arg.ms; t += 10) out.push({ t, counter: Math.floor((t * fps) / 1000) % 4096 });
-        return out;
+        return { samples: out, timeOrigin: Date.now() };
       },
     },
   };
@@ -54,7 +54,7 @@ describe("measureFps", () => {
   });
 
   it("reports no tile as 0 fps", async () => {
-    const peer = { peerId: "A", page: { evaluate: async () => [] } };
+    const peer = { peerId: "A", page: { evaluate: async () => ({ samples: [], timeOrigin: 0 }) } };
     expect((await measureFps(peer, "B", 1000)).fps).toBe(0);
   });
 });
@@ -145,33 +145,46 @@ describe("waitForSilence (H-03)", () => {
 
 describe("waitForLiveMedia (H-07, H-08, H-09 recovery)", () => {
   const rightColor = async () => ({ ok: true, label: "A" });
+  const soon = () => Date.now() + 300;
 
   it("rejects a frozen last frame even though its colour is right", async () => {
     // Known input: the tile keeps A's colour but the counter never advances,
     // which the old colour-only recovery check accepted.
     await expect(
-      waitForLiveMedia(fakePeerAt(0), "A", { timeoutMs: 300, label: "A", readColor: rightColor }),
+      waitForLiveMedia(fakePeerAt(0), "A", { deadlineAt: soon(), label: "A", readColor: rightColor }),
     ).rejects.toThrow(/not live/);
   });
 
-  it("accepts the right colour with frames advancing at 30 fps", async () => {
-    const live = await waitForLiveMedia(fakePeerAt(30), "A", { timeoutMs: 300, label: "A", readColor: rightColor });
+  it("accepts the right colour with frames advancing at 30 fps, timed from the first advance", async () => {
+    const before = Date.now();
+    const live = await waitForLiveMedia(fakePeerAt(30), "A", { deadlineAt: soon(), label: "A", readColor: rightColor });
     expect(live.fps).toBeGreaterThan(29);
+    expect(live.liveAt).toBeGreaterThanOrEqual(before);
   });
 
   it("rejects advancing frames of the wrong person", async () => {
     await expect(
-      waitForLiveMedia(fakePeerAt(30), "A", {
-        timeoutMs: 300,
-        label: "A",
-        readColor: async () => ({ ok: true, label: "B" }),
-      }),
+      waitForLiveMedia(fakePeerAt(30), "A", { deadlineAt: soon(), label: "A", readColor: async () => ({ ok: true, label: "B" }) }),
     ).rejects.toThrow(/not live/);
   });
 
   it("rejects a stream that advances below the bar", async () => {
     await expect(
-      waitForLiveMedia(fakePeerAt(10), "A", { timeoutMs: 300, label: "A", readColor: rightColor }),
+      waitForLiveMedia(fakePeerAt(10), "A", { deadlineAt: soon(), label: "A", readColor: rightColor }),
     ).rejects.toThrow(/not live/);
+  });
+
+  it("rejects a window that opens before the deadline when the first advance comes after it", async () => {
+    // Known input: the 1 s window starts 200 ms before the deadline, but the
+    // first frame that moves arrives 300 ms after it.
+    const deadlineAt = Date.now() + 200;
+    await expect(
+      waitForLiveMedia(fakePeerAt(30), "A", {
+        deadlineAt,
+        label: "A",
+        readColor: rightColor,
+        readFps: async () => ({ fps: 30, firstAdvanceAt: deadlineAt + 300 }),
+      }),
+    ).rejects.toThrow(/after the deadline/);
   });
 });

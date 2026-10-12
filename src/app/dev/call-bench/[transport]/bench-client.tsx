@@ -68,6 +68,9 @@ export function BenchClient({
   const [remotes, setRemotes] = useState<Map<string, RemoteTileState>>(new Map());
   const [micOn, setMicOn] = useState(true);
   const [cameraOn, setCameraOn] = useState(true);
+  // streamRef is a ref, so capturing a stream re-renders nothing; this
+  // counter does, so the preview's ref callback attaches the new stream.
+  const [, setLocalVersion] = useState(0);
 
   const transportRef = useRef<CallTransport | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -150,6 +153,7 @@ export function BenchClient({
     }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
     streamRef.current = stream;
+    setLocalVersion((v) => v + 1);
     return stream;
   }, []);
 
@@ -380,7 +384,7 @@ export function BenchClient({
           <div
             role="alert"
             data-testid="call-error"
-            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800"
           >
             {error.message}
           </div>
