@@ -5,14 +5,14 @@
     "seed": 1,
     "pass": true,
     "measurements": {
-      "joinMs": 2990,
-      "timeToFirstRemoteFrameMs": 2997,
-      "timeToFirstRemoteFrameMsReverse": 2999,
-      "fpsAtoB": 35.3,
-      "fpsBtoA": 35.1
+      "joinMs": 968,
+      "timeToFirstRemoteFrameMs": 974,
+      "timeToFirstRemoteFrameMsReverse": 976,
+      "fpsAtoB": 37.3,
+      "fpsBtoA": 36.1
     },
     "failure": null,
-    "ms": 13045
+    "ms": 11026
   },
   {
     "scenario": "H-02",
@@ -20,11 +20,11 @@
     "seed": 1,
     "pass": true,
     "measurements": {
-      "aHearsB": 657.1,
-      "bHearsA": 438.2
+      "aHearsB": 656.7,
+      "bHearsA": 437.8
     },
     "failure": null,
-    "ms": 2219
+    "ms": 1947
   },
   {
     "scenario": "H-03",
@@ -32,13 +32,13 @@
     "seed": 1,
     "pass": true,
     "measurements": {
-      "muteFlipMs": 72,
-      "silentAfterMs": 455,
-      "unmuteFlipMs": 17,
-      "restoredToneHz": 436.4
+      "muteFlipMs": 57,
+      "silentAfterMs": 448,
+      "unmuteFlipMs": 9,
+      "restoredToneHz": 434.9
     },
     "failure": null,
-    "ms": 2789
+    "ms": 2694
   },
   {
     "scenario": "H-04",
@@ -46,11 +46,11 @@
     "seed": 1,
     "pass": true,
     "measurements": {
-      "offFlipMs": 39,
-      "resumedFps": 31.6
+      "offFlipMs": 55,
+      "resumedFps": 32.2
     },
     "failure": null,
-    "ms": 5246
+    "ms": 5224
   },
   {
     "scenario": "H-05",
@@ -58,14 +58,14 @@
     "seed": 1,
     "pass": true,
     "measurements": {
-      "fpsBefore": 32.8,
-      "fpsDuring": 34.3,
-      "fpsAfter": 35.2,
+      "fpsBefore": 45.2,
+      "fpsDuring": 29.4,
+      "fpsAfter": 37.9,
       "phase": true,
       "colorDistance": 1
     },
     "failure": null,
-    "ms": 7016
+    "ms": 7048
   },
   {
     "scenario": "H-06",
@@ -76,10 +76,10 @@
       "errorText": "Microphone and camera access was denied (NotAllowedError). Allow access to join this call.",
       "phaseDenied": "failed",
       "joinedAfterRetry": true,
-      "fpsBseesA": 33.1
+      "fpsBseesA": 35.8
     },
     "failure": null,
-    "ms": 4263
+    "ms": 3651
   },
   {
     "scenario": "H-07",
@@ -95,36 +95,36 @@
         }
       ],
       "shaperB": {
-        "forwarded": 1112,
-        "dropped": 50,
-        "droppedUp": 46,
-        "droppedDown": 4,
+        "forwarded": 1072,
+        "dropped": 52,
+        "droppedUp": 47,
+        "droppedDown": 5,
         "uplinks": 8
       },
       "drops": [
         {
           "durationS": 3,
-          "recoveryMs": 1980,
+          "recoveryMs": 1993,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 10,
-          "recoveryMs": 6884,
+          "recoveryMs": 6936,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 30,
-          "recoveryMs": 3211,
+          "recoveryMs": 3042,
           "tilesA": 1,
           "tilesB": 1
         }
       ],
-      "recovery10sMs": 6884
+      "recovery10sMs": 6936
     },
     "failure": null,
-    "ms": 59555
+    "ms": 59301
   },
   {
     "scenario": "H-08",
@@ -132,19 +132,19 @@
     "seed": 1,
     "pass": true,
     "measurements": {
-      "recoveryMs": 1163,
+      "recoveryMs": 1179,
       "restartedPcs": 2,
       "ufragsBefore": {
         "A": [
-          "tCmF"
+          "EkMe"
         ],
         "B": [
-          "Hxm5"
+          "ziwh"
         ]
       }
     },
     "failure": null,
-    "ms": 3321
+    "ms": 3177
   },
   {
     "scenario": "H-09",
@@ -155,7 +155,7 @@
       "ghostTiles": 1
     },
     "failure": null,
-    "ms": 12578
+    "ms": 12495
   },
   {
     "scenario": "H-10",
@@ -169,27 +169,27 @@
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796319899
+          "at": 1791805247234
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796331509
+          "at": 1791805258727
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796331522
+          "at": 1791805258730
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796333192
+          "at": 1791805259746
         }
       ]
     },
     "failure": null,
-    "ms": 1710
+    "ms": 1150
   },
   {
     "scenario": "H-11",
@@ -207,27 +207,27 @@
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796331522
+          "at": 1791805258730
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796333192
+          "at": 1791805259746
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796333349
+          "at": 1791805259904
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796334365
+          "at": 1791805260933
         }
       ]
     },
     "failure": null,
-    "ms": 3034
+    "ms": 3029
   },
   {
     "scenario": "H-12",
@@ -238,12 +238,12 @@
       "order": "A-first",
       "bothConnected": true,
       "fps": {
-        "AseesB": 33.8,
-        "BseesA": 38.8
+        "AseesB": 35.9,
+        "BseesA": 32.2
       }
     },
     "failure": null,
-    "ms": 5036
+    "ms": 5032
   },
   {
     "scenario": "H-13",
@@ -261,7 +261,7 @@
       }
     },
     "failure": null,
-    "ms": 2842
+    "ms": 2793
   },
   {
     "scenario": "H-02",
@@ -272,7 +272,7 @@
     "failure": {
       "message": "H-02: A heard silence, expected 660±10 Hz from B"
     },
-    "ms": 4037
+    "ms": 4014
   },
   {
     "scenario": "H-03",
@@ -283,7 +283,7 @@
     "failure": {
       "message": "H-03: unmute did not restore the 440 Hz tone (last silence)"
     },
-    "ms": 4128
+    "ms": 4098
   },
   {
     "scenario": "H-11",
@@ -294,7 +294,18 @@
     "failure": {
       "message": "H-11: wrapped connections not closed ({\"live\":1,\"opened\":1}, 1 pcs)"
     },
-    "ms": 1044
+    "ms": 982
+  },
+  {
+    "scenario": "H-13",
+    "transport": "reference-never-close",
+    "seed": 1,
+    "pass": false,
+    "measurements": null,
+    "failure": {
+      "message": "A: cycle 2: A rejoined not reached within 30000 ms"
+    },
+    "ms": 31438
   },
   {
     "scenario": "H-07",
@@ -305,7 +316,7 @@
     "failure": {
       "message": "B: honest reconnecting during 3s drop not reached within 15000 ms"
     },
-    "ms": 16093
+    "ms": 15962
   },
   {
     "scenario": "H-01",
@@ -313,14 +324,14 @@
     "seed": 2,
     "pass": true,
     "measurements": {
-      "joinMs": 987,
-      "timeToFirstRemoteFrameMs": 993,
-      "timeToFirstRemoteFrameMsReverse": 995,
-      "fpsAtoB": 32.3,
-      "fpsBtoA": 33.3
+      "joinMs": 937,
+      "timeToFirstRemoteFrameMs": 942,
+      "timeToFirstRemoteFrameMsReverse": 945,
+      "fpsAtoB": 36.9,
+      "fpsBtoA": 34.9
     },
     "failure": null,
-    "ms": 11027
+    "ms": 10979
   },
   {
     "scenario": "H-01",
@@ -328,14 +339,14 @@
     "seed": 3,
     "pass": true,
     "measurements": {
-      "joinMs": 1442,
-      "timeToFirstRemoteFrameMs": 1447,
-      "timeToFirstRemoteFrameMsReverse": 1449,
-      "fpsAtoB": 35.5,
-      "fpsBtoA": 32.1
+      "joinMs": 979,
+      "timeToFirstRemoteFrameMs": 985,
+      "timeToFirstRemoteFrameMsReverse": 988,
+      "fpsAtoB": 37.5,
+      "fpsBtoA": 39.4
     },
     "failure": null,
-    "ms": 11476
+    "ms": 11026
   },
   {
     "scenario": "H-01",
@@ -343,14 +354,14 @@
     "seed": 4,
     "pass": true,
     "measurements": {
-      "joinMs": 1041,
-      "timeToFirstRemoteFrameMs": 1046,
-      "timeToFirstRemoteFrameMsReverse": 1048,
-      "fpsAtoB": 34.5,
-      "fpsBtoA": 34.3
+      "joinMs": 993,
+      "timeToFirstRemoteFrameMs": 999,
+      "timeToFirstRemoteFrameMsReverse": 1003,
+      "fpsAtoB": 35.1,
+      "fpsBtoA": 31.9
     },
     "failure": null,
-    "ms": 11075
+    "ms": 11035
   },
   {
     "scenario": "H-01",
@@ -358,14 +369,14 @@
     "seed": 5,
     "pass": true,
     "measurements": {
-      "joinMs": 986,
-      "timeToFirstRemoteFrameMs": 990,
-      "timeToFirstRemoteFrameMsReverse": 992,
-      "fpsAtoB": 34.5,
-      "fpsBtoA": 37.9
+      "joinMs": 1000,
+      "timeToFirstRemoteFrameMs": 1004,
+      "timeToFirstRemoteFrameMsReverse": 1006,
+      "fpsAtoB": 38.3,
+      "fpsBtoA": 33.5
     },
     "failure": null,
-    "ms": 11041
+    "ms": 11036
   },
   {
     "scenario": "H-02",
@@ -373,11 +384,11 @@
     "seed": 2,
     "pass": true,
     "measurements": {
-      "aHearsB": 657,
-      "bHearsA": 437.9
+      "aHearsB": 657.9,
+      "bHearsA": 438.1
     },
     "failure": null,
-    "ms": 1934
+    "ms": 1919
   },
   {
     "scenario": "H-02",
@@ -386,31 +397,31 @@
     "pass": true,
     "measurements": {
       "aHearsB": 656.7,
-      "bHearsA": 437.6
+      "bHearsA": 437.9
     },
     "failure": null,
-    "ms": 1889
+    "ms": 1881
   },
   {
     "scenario": "H-02",
     "transport": "reference",
     "seed": 4,
-    "pass": true,
-    "measurements": {
-      "aHearsB": 657.4,
-      "bHearsA": 434.9
-    },
-    "failure": null,
-    "ms": 2533
-  },
-  {
-    "scenario": "H-02",
-    "transport": "reference",
-    "seed": 5,
     "pass": true,
     "measurements": {
       "aHearsB": 656.7,
       "bHearsA": 438.1
+    },
+    "failure": null,
+    "ms": 1875
+  },
+  {
+    "scenario": "H-02",
+    "transport": "reference",
+    "seed": 5,
+    "pass": true,
+    "measurements": {
+      "aHearsB": 656.5,
+      "bHearsA": 437.9
     },
     "failure": null,
     "ms": 1891
@@ -421,13 +432,13 @@
     "seed": 2,
     "pass": true,
     "measurements": {
-      "muteFlipMs": 69,
-      "silentAfterMs": 453,
+      "muteFlipMs": 47,
+      "silentAfterMs": 422,
       "unmuteFlipMs": 17,
       "restoredToneHz": 436.4
     },
     "failure": null,
-    "ms": 2708
+    "ms": 2697
   },
   {
     "scenario": "H-03",
@@ -435,13 +446,13 @@
     "seed": 3,
     "pass": true,
     "measurements": {
-      "muteFlipMs": 44,
-      "silentAfterMs": 414,
-      "unmuteFlipMs": 25,
-      "restoredToneHz": 436.5
+      "muteFlipMs": 34,
+      "silentAfterMs": 422,
+      "unmuteFlipMs": 6,
+      "restoredToneHz": 434.9
     },
     "failure": null,
-    "ms": 2661
+    "ms": 2667
   },
   {
     "scenario": "H-03",
@@ -449,13 +460,13 @@
     "seed": 4,
     "pass": true,
     "measurements": {
-      "muteFlipMs": 21,
-      "silentAfterMs": 444,
-      "unmuteFlipMs": 6,
+      "muteFlipMs": 28,
+      "silentAfterMs": 425,
+      "unmuteFlipMs": 13,
       "restoredToneHz": 436.7
     },
     "failure": null,
-    "ms": 2693
+    "ms": 2686
   },
   {
     "scenario": "H-03",
@@ -463,10 +474,10 @@
     "seed": 5,
     "pass": true,
     "measurements": {
-      "muteFlipMs": 44,
-      "silentAfterMs": 427,
-      "unmuteFlipMs": 13,
-      "restoredToneHz": 438.3
+      "muteFlipMs": 27,
+      "silentAfterMs": 415,
+      "unmuteFlipMs": 23,
+      "restoredToneHz": 436.5
     },
     "failure": null,
     "ms": 2667
@@ -477,11 +488,11 @@
     "seed": 2,
     "pass": true,
     "measurements": {
-      "offFlipMs": 29,
-      "resumedFps": 33.9
+      "offFlipMs": 55,
+      "resumedFps": 37.2
     },
     "failure": null,
-    "ms": 5183
+    "ms": 5214
   },
   {
     "scenario": "H-04",
@@ -489,11 +500,11 @@
     "seed": 3,
     "pass": true,
     "measurements": {
-      "offFlipMs": 23,
-      "resumedFps": 36.2
+      "offFlipMs": 28,
+      "resumedFps": 35.2
     },
     "failure": null,
-    "ms": 5196
+    "ms": 5207
   },
   {
     "scenario": "H-04",
@@ -501,11 +512,11 @@
     "seed": 4,
     "pass": true,
     "measurements": {
-      "offFlipMs": 69,
-      "resumedFps": 34.9
+      "offFlipMs": 65,
+      "resumedFps": 31.1
     },
     "failure": null,
-    "ms": 5212
+    "ms": 5243
   },
   {
     "scenario": "H-04",
@@ -513,11 +524,11 @@
     "seed": 5,
     "pass": true,
     "measurements": {
-      "offFlipMs": 23,
-      "resumedFps": 37.4
+      "offFlipMs": 40,
+      "resumedFps": 33.4
     },
     "failure": null,
-    "ms": 5173
+    "ms": 5259
   },
   {
     "scenario": "H-05",
@@ -525,14 +536,14 @@
     "seed": 2,
     "pass": true,
     "measurements": {
-      "fpsBefore": 31.7,
-      "fpsDuring": 32.7,
-      "fpsAfter": 34.8,
+      "fpsBefore": 31.8,
+      "fpsDuring": 29,
+      "fpsAfter": 33.8,
       "phase": true,
       "colorDistance": 1
     },
     "failure": null,
-    "ms": 7018
+    "ms": 7027
   },
   {
     "scenario": "H-05",
@@ -540,44 +551,44 @@
     "seed": 3,
     "pass": true,
     "measurements": {
-      "fpsBefore": 39.6,
-      "fpsDuring": 39.9,
-      "fpsAfter": 32.3,
+      "fpsBefore": 39.9,
+      "fpsDuring": 33.9,
+      "fpsAfter": 30.3,
       "phase": true,
       "colorDistance": 1
     },
     "failure": null,
-    "ms": 7028
+    "ms": 7047
   },
   {
     "scenario": "H-05",
     "transport": "reference",
     "seed": 4,
+    "pass": true,
+    "measurements": {
+      "fpsBefore": 34.4,
+      "fpsDuring": 41.9,
+      "fpsAfter": 35.8,
+      "phase": true,
+      "colorDistance": 1
+    },
+    "failure": null,
+    "ms": 7056
+  },
+  {
+    "scenario": "H-05",
+    "transport": "reference",
+    "seed": 5,
     "pass": true,
     "measurements": {
       "fpsBefore": 35.8,
-      "fpsDuring": 39.5,
-      "fpsAfter": 35.3,
+      "fpsDuring": 34.1,
+      "fpsAfter": 35.9,
       "phase": true,
       "colorDistance": 1
     },
     "failure": null,
-    "ms": 7010
-  },
-  {
-    "scenario": "H-05",
-    "transport": "reference",
-    "seed": 5,
-    "pass": true,
-    "measurements": {
-      "fpsBefore": 37.6,
-      "fpsDuring": 33,
-      "fpsAfter": 32.8,
-      "phase": true,
-      "colorDistance": 1
-    },
-    "failure": null,
-    "ms": 7048
+    "ms": 7042
   },
   {
     "scenario": "H-06",
@@ -588,10 +599,10 @@
       "errorText": "Microphone and camera access was denied (NotAllowedError). Allow access to join this call.",
       "phaseDenied": "failed",
       "joinedAfterRetry": true,
-      "fpsBseesA": 33.7
+      "fpsBseesA": 43.9
     },
     "failure": null,
-    "ms": 3638
+    "ms": 3235
   },
   {
     "scenario": "H-06",
@@ -602,7 +613,7 @@
       "errorText": "Microphone and camera access was denied (NotAllowedError). Allow access to join this call.",
       "phaseDenied": "failed",
       "joinedAfterRetry": true,
-      "fpsBseesA": 35.7
+      "fpsBseesA": 37
     },
     "failure": null,
     "ms": 2657
@@ -616,10 +627,10 @@
       "errorText": "Microphone and camera access was denied (NotAllowedError). Allow access to join this call.",
       "phaseDenied": "failed",
       "joinedAfterRetry": true,
-      "fpsBseesA": 33.1
+      "fpsBseesA": 34.2
     },
     "failure": null,
-    "ms": 2672
+    "ms": 2740
   },
   {
     "scenario": "H-06",
@@ -630,10 +641,10 @@
       "errorText": "Microphone and camera access was denied (NotAllowedError). Allow access to join this call.",
       "phaseDenied": "failed",
       "joinedAfterRetry": true,
-      "fpsBseesA": 37
+      "fpsBseesA": 37.2
     },
     "failure": null,
-    "ms": 2654
+    "ms": 2722
   },
   {
     "scenario": "H-07",
@@ -649,7 +660,7 @@
         }
       ],
       "shaperB": {
-        "forwarded": 1107,
+        "forwarded": 1068,
         "dropped": 51,
         "droppedUp": 46,
         "droppedDown": 5,
@@ -658,27 +669,27 @@
       "drops": [
         {
           "durationS": 3,
-          "recoveryMs": 1990,
+          "recoveryMs": 2024,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 10,
-          "recoveryMs": 6885,
+          "recoveryMs": 6936,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 30,
-          "recoveryMs": 3195,
+          "recoveryMs": 2922,
           "tilesA": 1,
           "tilesB": 1
         }
       ],
-      "recovery10sMs": 6885
+      "recovery10sMs": 6936
     },
     "failure": null,
-    "ms": 59498
+    "ms": 59414
   },
   {
     "scenario": "H-07",
@@ -694,36 +705,36 @@
         }
       ],
       "shaperB": {
-        "forwarded": 1045,
-        "dropped": 54,
+        "forwarded": 1076,
+        "dropped": 50,
         "droppedUp": 46,
-        "droppedDown": 8,
+        "droppedDown": 4,
         "uplinks": 8
       },
       "drops": [
         {
           "durationS": 3,
-          "recoveryMs": 1975,
+          "recoveryMs": 2003,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 10,
-          "recoveryMs": 6988,
+          "recoveryMs": 7006,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 30,
-          "recoveryMs": 2888,
+          "recoveryMs": 2957,
           "tilesA": 1,
           "tilesB": 1
         }
       ],
-      "recovery10sMs": 6988
+      "recovery10sMs": 7006
     },
     "failure": null,
-    "ms": 59326
+    "ms": 59475
   },
   {
     "scenario": "H-07",
@@ -739,7 +750,7 @@
         }
       ],
       "shaperB": {
-        "forwarded": 1043,
+        "forwarded": 1080,
         "dropped": 51,
         "droppedUp": 46,
         "droppedDown": 5,
@@ -748,27 +759,27 @@
       "drops": [
         {
           "durationS": 3,
-          "recoveryMs": 1975,
+          "recoveryMs": 2012,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 10,
-          "recoveryMs": 6996,
+          "recoveryMs": 7064,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 30,
-          "recoveryMs": 2890,
+          "recoveryMs": 2933,
           "tilesA": 1,
           "tilesB": 1
         }
       ],
-      "recovery10sMs": 6996
+      "recovery10sMs": 7064
     },
     "failure": null,
-    "ms": 59369
+    "ms": 59675
   },
   {
     "scenario": "H-07",
@@ -784,36 +795,36 @@
         }
       ],
       "shaperB": {
-        "forwarded": 1058,
-        "dropped": 53,
-        "droppedUp": 47,
-        "droppedDown": 6,
+        "forwarded": 1060,
+        "dropped": 49,
+        "droppedUp": 46,
+        "droppedDown": 3,
         "uplinks": 8
       },
       "drops": [
         {
           "durationS": 3,
-          "recoveryMs": 1975,
+          "recoveryMs": 2011,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 10,
-          "recoveryMs": 7010,
+          "recoveryMs": 6912,
           "tilesA": 1,
           "tilesB": 1
         },
         {
           "durationS": 30,
-          "recoveryMs": 2890,
+          "recoveryMs": 2947,
           "tilesA": 1,
           "tilesB": 1
         }
       ],
-      "recovery10sMs": 7010
+      "recovery10sMs": 6912
     },
     "failure": null,
-    "ms": 59425
+    "ms": 59607
   },
   {
     "scenario": "H-08",
@@ -821,19 +832,19 @@
     "seed": 2,
     "pass": true,
     "measurements": {
-      "recoveryMs": 1161,
+      "recoveryMs": 1189,
       "restartedPcs": 2,
       "ufragsBefore": {
         "A": [
-          "V6oU"
+          "OEPg"
         ],
         "B": [
-          "R9s0"
+          "7QZ5"
         ]
       }
     },
     "failure": null,
-    "ms": 3272
+    "ms": 3293
   },
   {
     "scenario": "H-08",
@@ -841,19 +852,19 @@
     "seed": 3,
     "pass": true,
     "measurements": {
-      "recoveryMs": 1161,
+      "recoveryMs": 1178,
       "restartedPcs": 2,
       "ufragsBefore": {
         "A": [
-          "rkBJ"
+          "mX05"
         ],
         "B": [
-          "fkl3"
+          "4nht"
         ]
       }
     },
     "failure": null,
-    "ms": 3167
+    "ms": 3131
   },
   {
     "scenario": "H-08",
@@ -861,19 +872,19 @@
     "seed": 4,
     "pass": true,
     "measurements": {
-      "recoveryMs": 1160,
+      "recoveryMs": 1195,
       "restartedPcs": 2,
       "ufragsBefore": {
         "A": [
-          "27Dl"
+          "dQBD"
         ],
         "B": [
-          "WeIz"
+          "xX/i"
         ]
       }
     },
     "failure": null,
-    "ms": 3147
+    "ms": 3152
   },
   {
     "scenario": "H-08",
@@ -881,19 +892,19 @@
     "seed": 5,
     "pass": true,
     "measurements": {
-      "recoveryMs": 1161,
+      "recoveryMs": 1189,
       "restartedPcs": 2,
       "ufragsBefore": {
         "A": [
-          "SuD3"
+          "atU5"
         ],
         "B": [
-          "CYIp"
+          "jzbX"
         ]
       }
     },
     "failure": null,
-    "ms": 3148
+    "ms": 3138
   },
   {
     "scenario": "H-09",
@@ -904,7 +915,7 @@
       "ghostTiles": 1
     },
     "failure": null,
-    "ms": 12878
+    "ms": 12327
   },
   {
     "scenario": "H-09",
@@ -915,7 +926,7 @@
       "ghostTiles": 1
     },
     "failure": null,
-    "ms": 12546
+    "ms": 12490
   },
   {
     "scenario": "H-09",
@@ -926,7 +937,7 @@
       "ghostTiles": 1
     },
     "failure": null,
-    "ms": 12516
+    "ms": 12326
   },
   {
     "scenario": "H-09",
@@ -937,7 +948,7 @@
       "ghostTiles": 1
     },
     "failure": null,
-    "ms": 12562
+    "ms": 12518
   },
   {
     "scenario": "H-10",
@@ -951,27 +962,27 @@
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796789243
-        },
-        {
-          "participant": "A",
-          "reason": "disconnected",
-          "at": 1791796800732
+          "at": 1791805745062
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796800734
+          "at": 1791805756556
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796801864
+          "at": 1791805756556
+        },
+        {
+          "participant": "A",
+          "reason": "disconnected",
+          "at": 1791805757575
         }
       ]
     },
     "failure": null,
-    "ms": 1216
+    "ms": 1161
   },
   {
     "scenario": "H-10",
@@ -983,24 +994,24 @@
       "tileGone": true,
       "sessionEvents": [
         {
-          "participant": "B",
+          "participant": "A",
           "reason": "disconnected",
-          "at": 1791796800734
+          "at": 1791805756556
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796801864
+          "at": 1791805757575
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796802023
+          "at": 1791805757737
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796803011
+          "at": 1791805758724
         }
       ]
     },
@@ -1019,27 +1030,27 @@
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796802023
+          "at": 1791805757737
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796803011
+          "at": 1791805758724
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796803167
+          "at": 1791805758879
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796804201
+          "at": 1791805759851
         }
       ]
     },
     "failure": null,
-    "ms": 1169
+    "ms": 1107
   },
   {
     "scenario": "H-10",
@@ -1053,27 +1064,27 @@
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796803167
+          "at": 1791805758879
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796804201
+          "at": 1791805759851
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796804361
+          "at": 1791805760008
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796805446
+          "at": 1791805760997
         }
       ]
     },
     "failure": null,
-    "ms": 1210
+    "ms": 1127
   },
   {
     "scenario": "H-11",
@@ -1091,27 +1102,27 @@
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796804361
+          "at": 1791805760008
         },
         {
           "participant": "A",
           "reason": "disconnected",
-          "at": 1791796805446
+          "at": 1791805760997
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796805606
+          "at": 1791805761154
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796806650
+          "at": 1791805762154
         }
       ]
     },
     "failure": null,
-    "ms": 3073
+    "ms": 3012
   },
   {
     "scenario": "H-11",
@@ -1124,32 +1135,32 @@
         "ended"
       ],
       "getStatsCallsStable": true,
-      "getStatsCalls": 3,
+      "getStatsCalls": 2,
       "sessionEvents": [
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796805606
+          "at": 1791805761154
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796806650
+          "at": 1791805762154
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796808714
+          "at": 1791805764195
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796809732
+          "at": 1791805765209
         }
       ]
     },
     "failure": null,
-    "ms": 3010
+    "ms": 3020
   },
   {
     "scenario": "H-11",
@@ -1162,32 +1173,32 @@
         "ended"
       ],
       "getStatsCallsStable": true,
-      "getStatsCalls": 3,
+      "getStatsCalls": 2,
       "sessionEvents": [
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796808714
+          "at": 1791805764195
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796809732
+          "at": 1791805765209
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796811751
+          "at": 1791805767235
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796812792
+          "at": 1791805768256
         }
       ]
     },
     "failure": null,
-    "ms": 3036
+    "ms": 3015
   },
   {
     "scenario": "H-11",
@@ -1200,32 +1211,32 @@
         "ended"
       ],
       "getStatsCallsStable": true,
-      "getStatsCalls": 3,
+      "getStatsCalls": 2,
       "sessionEvents": [
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796811751
+          "at": 1791805767235
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796812792
+          "at": 1791805768256
         },
         {
           "participant": "B",
           "reason": "disconnected",
-          "at": 1791796814810
+          "at": 1791805770278
         },
         {
           "participant": "A",
           "reason": "left",
-          "at": 1791796816018
+          "at": 1791805771309
         }
       ]
     },
     "failure": null,
-    "ms": 3228
+    "ms": 3031
   },
   {
     "scenario": "H-12",
@@ -1236,24 +1247,8 @@
       "order": "B-first",
       "bothConnected": true,
       "fps": {
-        "BseesA": 35.9,
-        "AseesB": 32.8
-      }
-    },
-    "failure": null,
-    "ms": 5249
-  },
-  {
-    "scenario": "H-12",
-    "transport": "reference",
-    "seed": 3,
-    "pass": true,
-    "measurements": {
-      "order": "A-first",
-      "bothConnected": true,
-      "fps": {
-        "AseesB": 31.3,
-        "BseesA": 30.8
+        "BseesA": 37.7,
+        "AseesB": 35.2
       }
     },
     "failure": null,
@@ -1262,18 +1257,34 @@
   {
     "scenario": "H-12",
     "transport": "reference",
+    "seed": 3,
+    "pass": true,
+    "measurements": {
+      "order": "A-first",
+      "bothConnected": true,
+      "fps": {
+        "AseesB": 31.8,
+        "BseesA": 33.3
+      }
+    },
+    "failure": null,
+    "ms": 5040
+  },
+  {
+    "scenario": "H-12",
+    "transport": "reference",
     "seed": 4,
     "pass": true,
     "measurements": {
       "order": "B-first",
       "bothConnected": true,
       "fps": {
-        "BseesA": 30.8,
-        "AseesB": 36.4
+        "BseesA": 32.3,
+        "AseesB": 34.9
       }
     },
     "failure": null,
-    "ms": 5049
+    "ms": 5042
   },
   {
     "scenario": "H-12",
@@ -1284,12 +1295,12 @@
       "order": "A-first",
       "bothConnected": true,
       "fps": {
-        "AseesB": 29.8,
-        "BseesA": 35.4
+        "AseesB": 31.3,
+        "BseesA": 37.4
       }
     },
     "failure": null,
-    "ms": 5080
+    "ms": 5038
   },
   {
     "scenario": "H-13",
@@ -1307,7 +1318,7 @@
       }
     },
     "failure": null,
-    "ms": 2794
+    "ms": 2834
   },
   {
     "scenario": "H-13",
@@ -1325,7 +1336,7 @@
       }
     },
     "failure": null,
-    "ms": 2978
+    "ms": 2812
   },
   {
     "scenario": "H-13",
@@ -1343,7 +1354,7 @@
       }
     },
     "failure": null,
-    "ms": 2838
+    "ms": 2782
   },
   {
     "scenario": "H-13",
@@ -1361,6 +1372,6 @@
       }
     },
     "failure": null,
-    "ms": 2883
+    "ms": 2809
   }
 ]

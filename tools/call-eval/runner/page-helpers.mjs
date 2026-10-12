@@ -229,7 +229,7 @@ export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
  */
 export async function measureFps(peer, participantId, ms = 5000) {
   const bundleSrc = await decoderBundle();
-  const samples = await peer.page.evaluate(
+  const sampled = await peer.page.evaluate(
     /** @param {{ participantId: string, ms: number, bundleSrc: string }} arg */
     async ({ participantId, ms, bundleSrc }) => {
       const w = /** @type {any} */ (window);
@@ -242,7 +242,7 @@ export async function measureFps(peer, participantId, ms = 5000) {
       const video = document
         .querySelector(`[data-testid="remote-media"][data-participant-id="${participantId}"]`)
         ?.querySelector("video");
-      if (!video) return [];
+      if (!video) return { samples: [], timeOrigin: performance.timeOrigin };
       const canvas = document.createElement("canvas");
       canvas.width = 320;
       canvas.height = 240;
@@ -277,11 +277,21 @@ export async function measureFps(peer, participantId, ms = 5000) {
           video.requestVideoFrameCallback(onFrame);
         }
       });
-      return out.sort((x, y) => x.t - y.t);
+      // timeOrigin turns page timestamps into wall-clock time for the caller.
+      return { samples: out.sort((x, y) => x.t - y.t), timeOrigin: performance.timeOrigin };
     },
     { participantId, ms, bundleSrc },
   );
-  if (samples.length < 3) return { fps: 0, samples: samples.length, implausible: true };
+  const samples = sampled.samples;
+  // Wall-clock time of the first frame whose counter moved, or null.
+  let firstAdvanceAt = null;
+  for (let i = 1; i < samples.length; i++) {
+    if (samples[i].counter !== samples[i - 1].counter) {
+      firstAdvanceAt = Math.round(sampled.timeOrigin + samples[i].t);
+      break;
+    }
+  }
+  if (samples.length < 3) return { fps: 0, samples: samples.length, implausible: true, firstAdvanceAt };
   const { computeFps } = initDecodersInNode(bundleSrc);
   const plausible = (v) => Number.isFinite(v) && v > 0 && v <= 60;
   let computed = computeFps(samples);
@@ -290,7 +300,7 @@ export async function measureFps(peer, participantId, ms = 5000) {
     computed = robustFps(samples);
     implausible = !plausible(computed);
   }
-  return { fps: Number(computed.toFixed(1)), samples: samples.length, implausible };
+  return { fps: Number(computed.toFixed(1)), samples: samples.length, implausible, firstAdvanceAt };
 }
 
 /** Median of plausible per-step rates (mod-4096 wrap aware). */
@@ -442,38 +452,44 @@ export async function waitForSilence(sample, { deadlineMs, now = Date.now }) {
 /**
  * Wait until `participantId`'s tile shows live media: the right colour AND
  * frames advancing at `minFps` or more over a 1 s window (observed counter
- * advances). A frozen last frame keeps the right colour, so the reviewed
- * recovery checks, which read colour alone, passed on stuck media.
- * Resolves with `liveAt`, when the passing 1 s window began.
+ * advances). A frozen last frame keeps the right colour, so colour alone
+ * passed recovery checks on stuck media.
+ *
+ * Recovery is timed from the first advancing frame itself, and that frame
+ * must land by `deadlineAt`: a window that opened just before the deadline
+ * cannot count frames that arrived after it.
  * @param {{ page: { evaluate: Function } }} peer
  * @param {string} participantId
- * @param {{ timeoutMs: number, minFps?: number, label?: string | null,
+ * @param {{ deadlineAt: number, minFps?: number, label?: string | null,
  *   readColor?: () => Promise<{ ok?: boolean, label?: string } | null>,
- *   readFps?: () => Promise<number> }} opts
+ *   readFps?: () => Promise<{ fps: number, firstAdvanceAt: number | null }> }} opts
  */
-export async function waitForLiveMedia(peer, participantId, { timeoutMs, minFps = 15, label = null, readColor, readFps }) {
+export async function waitForLiveMedia(peer, participantId, { deadlineAt, minFps = 15, label = null, readColor, readFps }) {
   const color =
     readColor ??
     (() =>
       peer.page.evaluate(
         `(async () => { const c = await window.__decodeRemoteColor(${JSON.stringify(participantId)}); return c ? { ok: c.ok, label: c.label } : null; })()`,
       ));
-  const fpsOf = readFps ?? (async () => (await measureFps(peer, participantId, 1000)).fps);
-  const deadline = Date.now() + timeoutMs;
-  /** @type {{ color: unknown, fps: number | null }} */
-  let last = { color: null, fps: null };
+  const fpsOf = readFps ?? (() => measureFps(peer, participantId, 1000));
+  /** @type {{ color: unknown, fps: number | null, firstAdvanceAt: number | null }} */
+  let last = { color: null, fps: null, firstAdvanceAt: null };
   for (;;) {
     const c = await color();
     if (c?.ok && (!label || c.label === label)) {
-      const windowStart = Date.now();
-      const fps = await fpsOf();
-      last = { color: c, fps };
-      if (fps >= minFps) return { liveAt: windowStart, fps, label: c.label };
+      const { fps, firstAdvanceAt } = await fpsOf();
+      last = { color: c, fps, firstAdvanceAt };
+      if (fps >= minFps && firstAdvanceAt != null) {
+        if (firstAdvanceAt > deadlineAt) {
+          throw new Error(`${participantId}'s first advancing frame came ${firstAdvanceAt - deadlineAt} ms after the deadline`);
+        }
+        return { liveAt: firstAdvanceAt, fps, label: c.label };
+      }
     } else {
-      last = { color: c, fps: null };
+      last = { color: c, fps: null, firstAdvanceAt: null };
     }
-    if (Date.now() > deadline) {
-      throw new Error(`${participantId}'s media not live within ${timeoutMs} ms: need the right colour and >= ${minFps} fps over 1 s (last ${JSON.stringify(last)})`);
+    if (Date.now() > deadlineAt) {
+      throw new Error(`${participantId}'s media not live by the deadline: need the right colour and >= ${minFps} fps over 1 s (last ${JSON.stringify(last)})`);
     }
     await new Promise((r) => setTimeout(r, 100));
   }

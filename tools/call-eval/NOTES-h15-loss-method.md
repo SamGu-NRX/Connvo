@@ -22,36 +22,41 @@
 
 | Seed | Block | Loss | Delay | packetsLost delta | RTT | B's fps of A | Phase |
 |---|---|---|---|---|---|---|---|
-| 1 | baseline | 0% | 0 ms | +0 | 2 ms | 35.8 | connected |
-| 1 | 5% | 5% | 300 ms | +12 | 602 ms | 26.1 | connected |
-| 1 | recovery-5% | 0% | 0 ms | +0 | 226 ms | 31.9 | connected |
-| 1 | 15% | 15% | 300 ms | +29 | 603 ms | 3.7 | connected |
-| 1 | recovery-15% | 0% | 0 ms | +3 | 1 ms | 37.5 | connected |
-| 1 | tone after 15% | | | | | 437.6 Hz | |
-| 2 | baseline | 0% | 0 ms | +0 | 2 ms | 28.9 | connected |
-| 2 | 5% | 5% | 300 ms | +12 | 604 ms | 32.2 | connected |
-| 2 | recovery-5% | 0% | 0 ms | +0 | 5 ms | 34.9 | connected |
-| 2 | 15% | 15% | 300 ms | +31 | 431 ms | 3 | connected |
-| 2 | recovery-15% | 0% | 0 ms | +3 | 2 ms | 35.2 | connected |
-| 2 | tone after 15% | | | | | 437.6 Hz | |
-| 3 | baseline | 0% | 0 ms | +0 | 1 ms | 40.3 | connected |
-| 3 | 5% | 5% | 300 ms | +8 | 604 ms | 34.9 | connected |
-| 3 | recovery-5% | 0% | 0 ms | +2 | 226 ms | 31.2 | connected |
-| 3 | 15% | 15% | 300 ms | +33 | 453 ms | 27.8 | connected |
-| 3 | recovery-15% | 0% | 0 ms | -12 | 189 ms | 36.9 | connected |
-| 3 | tone after 15% | | | | | 437.3 Hz | |
+| 1 | baseline | 0% | 0 ms | +0 | 4 ms | 34.9 | connected |
+| 1 | 5% | 5% | 300 ms | +10 | 605 ms | 25.8 | connected |
+| 1 | recovery-5% | 0% | 0 ms | +0 | 77 ms | 37.6 | connected |
+| 1 | 15% | 15% | 300 ms | +26 | 345 ms | 3.4 | connected |
+| 1 | recovery-15% | 0% | 0 ms | +0 | 2 ms | 35.4 | connected |
+| 2 | baseline | 0% | 0 ms | +0 | 2 ms | 37.2 | connected |
+| 2 | 5% | 5% | 300 ms | +6 | 603 ms | 18.5 | connected |
+| 2 | recovery-5% | 0% | 0 ms | +0 | 154 ms | 32.2 | connected |
+| 2 | 15% | 15% | 300 ms | +27 | 303 ms | 1.7 | connected |
+| 2 | recovery-15% | 0% | 0 ms | +0 | 227 ms | 33.2 | connected |
+| 3 | baseline | 0% | 0 ms | +0 | 1 ms | 31.1 | connected |
+| 3 | 5% | 5% | 300 ms | +5 | 603 ms | 13.3 | connected |
+| 3 | recovery-5% | 0% | 0 ms | +0 | 152 ms | 33.6 | connected |
+| 3 | 15% | 15% | 300 ms | +24 | 337 ms | 1.7 | connected |
+| 3 | recovery-15% | 0% | 0 ms | +0 | 78 ms | 33.1 | connected |
+
+Audio after each loss block, measured from the moment that block's shaping
+cleared (the bar is 440 Hz within 3 s):
+
+| Seed | After 5% | After 15% |
+|---|---|---|
+| 1 | 438.2 Hz after 494 ms | 438.2 Hz after 482 ms |
+| 2 | 437.4 Hz after 481 ms | 436.7 Hz after 446 ms |
+| 3 | 437.9 Hz after 490 ms | 438.3 Hz after 482 ms |
 
 How to read it:
-- Shaping reaches RTP: packetsLost rises under loss and RTT jumps from
-  1-2 ms to about 430-600 ms. The 15% windows read lower RTT than 600 ms
-  because RTCP reports are lost too, so fewer fresh RTT samples land.
-- The call stays connected through both loss levels; video drops to 3-4 fps
-  at 15% on some seeds and recovers to 35+ fps once the profile clears, and
-  B hears A's 440 Hz tone again within 3 s.
-- A recovery block can show RTT left over from the shaped window (189-226
-  ms), because RTT is averaged over the window right after clearing. A
-  negative packetsLost delta (seed 3) is RTP's own counting: late packets
-  that arrive after being counted lost reduce the total.
+- Shaping reaches RTP: packetsLost rises by 5-27 under loss, and RTT jumps
+  from 1-4 ms to about 600 ms at 5% and 300-345 ms at 15%. The 15% windows
+  read lower RTT because RTCP reports are lost too, so fewer fresh RTT
+  samples land.
+- The call stays connected through both loss levels. Video drops to
+  1.7-3.4 fps at 15% and comes back to 32-38 fps once the profile clears,
+  and B hears A's 440 Hz tone again about 0.5 s after each block clears.
+- A recovery block can show RTT left over from the shaped window (77-227
+  ms), because RTT is averaged over the window right after clearing.
 
 ## Rejected alternatives
 

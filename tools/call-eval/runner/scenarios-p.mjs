@@ -255,11 +255,15 @@ export async function scenario_P_03(ctx) {
     if (!indicator.visible) throw new ScenarioError("P-03: retry-media has no visible focus indicator", indicator);
     await denied.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
     await denied.page.keyboard.press("Enter");
-    await waitFor(denied, `() => !document.querySelector('[data-testid="retry-media"]') && !document.querySelector('[data-testid="call-error"]')?.textContent`, {
-      timeoutMs: 15000,
-      describe: "retry-media by keyboard clears the capture error",
-    });
-    results.push({ id: "retry-media", key: "Enter", indicator, observed: "capture error cleared" });
+    // The error clears before capture resolves, so a cleared error proves
+    // nothing. The retry worked only when a live local capture track exists.
+    const tracks = await waitForValue(
+      denied,
+      `() => { const s = document.querySelector('[data-testid="local-video"]')?.srcObject; return s ? s.getTracks().map((t) => t.kind + ':' + t.readyState) : []; }`,
+      (/** @type {string[]} */ t) => t.some((x) => x.endsWith(":live")),
+      { timeoutMs: 15000, describe: "a live local capture track after retry-media by keyboard" },
+    );
+    results.push({ id: "retry-media", key: "Enter", indicator, observed: `local tracks ${tracks.join(", ")}` });
   } finally {
     await denied.close();
   }
@@ -283,7 +287,10 @@ export async function scenario_P_04(ctx) {
         return typeof t.duration === "number" ? t.duration : 0;
       });
       const mq = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      // Movement only: color and opacity fades stay under reduced motion.
+      // Movement only: color and opacity fades stay under reduced motion. A
+      // transition counts when its property moves things and its duration is
+      // real; Tailwind's transition-none sets the property to none and leaves
+      // the duration, which the reviewed check misread as motion.
       const MOTION = /^(all|transform|translate|scale|rotate|top|left|right|bottom|margin.*|inset.*)$/;
       const transitions = [...document.querySelectorAll("button")].flatMap((b) => {
         const cs = getComputedStyle(b);

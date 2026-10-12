@@ -308,7 +308,7 @@ export async function scenario_H_07(ctx, { seed }) {
     });
     // Media resumes: B sees A's colour with frames advancing, not a frozen
     // last frame.
-    const live = await waitForLiveMedia(peerB, "A", { timeoutMs: left(deadline), label: "A" });
+    const live = await waitForLiveMedia(peerB, "A", { deadlineAt: deadline, label: "A" });
     const recoveryMs = live.liveAt - restoreAt;
     if (recoveryMs > 10000) {
       throw new ScenarioError(`H-07: recovery took ${recoveryMs} ms after the ${durationS}s drop; the bar is 10 s`);
@@ -361,8 +361,8 @@ export async function scenario_H_08(ctx) {
     });
   }
   // Frames must keep advancing both ways, not just show the right colour.
-  const liveB = await waitForLiveMedia(peerA, "B", { timeoutMs: left(deadline), label: "B" });
-  const liveA = await waitForLiveMedia(peerB, "A", { timeoutMs: left(deadline), label: "A" });
+  const liveB = await waitForLiveMedia(peerA, "B", { deadlineAt: deadline, label: "B" });
+  const liveA = await waitForLiveMedia(peerB, "A", { deadlineAt: deadline, label: "A" });
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: left(deadline), describe: "A phase connected within 10 s" });
   await waitFor(peerB, phaseIs("connected"), { timeoutMs: left(deadline), describe: "B phase connected within 10 s" });
   const recoveryMs = Math.max(liveA.liveAt, liveB.liveAt) - t0;
@@ -388,7 +388,7 @@ export async function scenario_H_09(ctx) {
   }
   // The one A tile is live after the ghost window: advancing frames, not a
   // stale last frame.
-  await waitForLiveMedia(peerB, "A", { timeoutMs: 3000, label: "A" });
+  await waitForLiveMedia(peerB, "A", { deadlineAt: Date.now() + 3000, label: "A" });
   return { ghostTiles };
 }
 
@@ -551,7 +551,26 @@ export async function scenario_H_15(ctx) {
     const fps = await measureFps(peerB, "A", 3000);
     const phase = await peerB.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
     ctx.shaperFor("B").applyProfile({ lossPct: 0, delayMs: 0 });
-    return { label, lossPct, delayMs, deltaLost: stats.deltaLost, rttMs: stats.rttMs, fps: fps.fps, phase };
+    return { label, lossPct, delayMs, deltaLost: stats.deltaLost, rttMs: stats.rttMs, fps: fps.fps, phase, clearedAt: Date.now() };
+  }
+
+  /**
+   * "A/V recovers": audio too. Right after a loss block clears, B must hear
+   * A's 440 Hz tone again within 3 s of that moment.
+   * @param {string} name @param {number} clearedAt
+   */
+  async function toneBack(name, clearedAt) {
+    const deadline = clearedAt + 3000;
+    let tone = null;
+    for (;;) {
+      tone = await sampleRemoteTone(peerB, "A", 400);
+      if (toneMatches(tone, 440)) return { hz: tone.peakHz, afterMs: Date.now() - clearedAt };
+      if (Date.now() > deadline) {
+        const heard = tone ? `${tone.peakHz} Hz (rms ${tone.rms})` : "silence";
+        throw new ScenarioError(`H-15: audio did not recover within 3 s after ${name} loss (heard ${heard}, expected 440 Hz)`, { tone });
+      }
+      await H(200);
+    }
   }
 
   const baseline = await proofBlock("baseline", 0, 0, 4000);
@@ -566,6 +585,7 @@ export async function scenario_H_15(ctx) {
       loss5,
     );
   }
+  const tone5 = await toneBack("5%", loss5.clearedAt);
   const recovery5 = await proofBlock("recovery-5%", 0, 0, 4000);
 
   const loss15 = await proofBlock("15%", 15, 300);
@@ -575,6 +595,7 @@ export async function scenario_H_15(ctx) {
       loss15,
     );
   }
+  const tone15 = await toneBack("15%", loss15.clearedAt);
   const recovery15 = await proofBlock("recovery-15%", 0, 0, 4000);
 
   for (const [name, block] of [["5%", loss5], ["15%", loss15]]) {
@@ -587,27 +608,14 @@ export async function scenario_H_15(ctx) {
       throw new ScenarioError(`H-15: video did not recover after ${name} loss (${block.fps} fps)`, block);
     }
   }
-  // "A/V recovers": audio too. B must hear A's 440 Hz tone again within 3 s
-  // of the last shaping profile being cleared.
-  const toneDeadline = Date.now() + 3000;
-  let tone = null;
-  for (;;) {
-    tone = await sampleRemoteTone(peerB, "A", 400);
-    if (toneMatches(tone, 440)) break;
-    if (Date.now() > toneDeadline) {
-      const heard = tone ? `${tone.peakHz} Hz (rms ${tone.rms})` : "silence";
-      throw new ScenarioError(`H-15: audio did not recover after 15% loss (heard ${heard}, expected 440 Hz)`, { tone });
-    }
-    await H(200);
-  }
-
   return {
     baseline,
     loss5,
     recovery5,
     loss15,
     recovery15,
-    toneAfterHz: tone?.peakHz,
+    toneAfter5: tone5,
+    toneAfter15: tone15,
     shaperB: ctx.shaperFor("B").stats(),
     proof: "packetsLost delta > 0 and RTT >= 250 ms under 300 ms shaping; video fps and the 440 Hz tone recover with the profile cleared",
   };
