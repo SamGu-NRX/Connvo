@@ -15,7 +15,20 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** @param {string} row Transported result row (plain JSON-able). */
+/**
+ * One completed matrix run, matching the runner's result shape.
+ * @typedef {Object} CheckpointRow
+ * @property {string} scenario
+ * @property {string} transport
+ * @property {number} seed
+ * @property {boolean} pass
+ * @property {string | null} passCondition
+ * @property {any} measurements
+ * @property {{ message: string, stack: string | null } | null} failure
+ * @property {number | null} ms
+ */
+
+/** @param {CheckpointRow} row Transported result row (plain JSON-able). */
 function serializeRow(row) {
   return JSON.stringify({
     scenario: row.scenario,
@@ -29,7 +42,7 @@ function serializeRow(row) {
   });
 }
 
-/** @param {string} file Absolute checkpoint path (JSONL). */
+/** @param {string} file Absolute checkpoint path (JSONL). @param {CheckpointRow} row */
 export function appendCheckpoint(file, row) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   // A crash mid-append leaves a partial last line WITHOUT its newline. Cut
