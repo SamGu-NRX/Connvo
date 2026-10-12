@@ -822,5 +822,81 @@ describe("After-call history data layer", () => {
         "Older Meeting",
       ]);
     });
+
+    test("stable keyset cursor: insertion after page 1 shows up eventually and never duplicates (review race)", async () => {
+      // Directed sequence: B and C exist; page 1 returns B with a cursor
+      // keyed on B's meeting time + id; a newer meeting A then arrives;
+      // page 2 from that cursor returns C and never B again, and A shows
+      // up on the next fresh walk instead of being hidden by the race.
+      const b = await createTestMeetingWithParticipants(
+        t,
+        {},
+        1,
+        { title: "Meeting B", scheduledAt: 2000, duration: 600 },
+        {},
+      );
+      const hostUserId = b.participantIds[0];
+      const hostWorkosId = b.participantWorkosIds[0];
+      await createTestMeetingWithParticipants(
+        t,
+        {},
+        0,
+        { title: "Meeting C", scheduledAt: 1000, duration: 600 },
+        {
+          organizerOverride: { userId: hostUserId, workosUserId: hostWorkosId },
+        },
+      );
+
+      const caller = identityFor(hostWorkosId);
+      const page1 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 1, cursor: null },
+      });
+      expect(page1.page.map((item: any) => item.meeting.title)).toEqual([
+        "Meeting B",
+      ]);
+      expect(page1.isDone).toBe(false);
+
+      // A newer meeting A arrives AFTER page 1 was served.
+      await createTestMeetingWithParticipants(
+        t,
+        {},
+        0,
+        { title: "Meeting A", scheduledAt: 3000, duration: 600 },
+        {
+          organizerOverride: { userId: hostUserId, workosUserId: hostWorkosId },
+        },
+      );
+
+      // Page 2 from B's keyset cursor: C is next; B never repeats.
+      const page2 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 1, cursor: page1.continueCursor },
+      });
+      expect(page2.page.map((item: any) => item.meeting.title)).toEqual([
+        "Meeting C",
+      ]);
+      const page3 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 1, cursor: page2.continueCursor },
+      });
+      expect(page3.page).toHaveLength(0);
+      expect(page3.isDone).toBe(true);
+
+      // A is not lost: a fresh walk from the top surfaces it, and a full
+      // page shows every meeting exactly once in meeting-time order.
+      const fresh1 = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 1, cursor: null },
+      });
+      expect(fresh1.page.map((item: any) => item.meeting.title)).toEqual([
+        "Meeting A",
+      ]);
+      const full = await caller.query(api.history.queries.listMyMeetings, {
+        paginationOpts: { numItems: 10, cursor: null },
+      });
+      expect(full.page.map((item: any) => item.meeting.title)).toEqual([
+        "Meeting A",
+        "Meeting B",
+        "Meeting C",
+      ]);
+      expect(full.isDone).toBe(true);
+    });
   });
 });
