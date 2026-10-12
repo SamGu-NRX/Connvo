@@ -9,11 +9,14 @@
  * externalDependencies in the repo tree). This script measures exactly that
  * shape of cost, offline, repeatably:
  *
- *   1. Bundle every convex/ module as an entry with esbuild (the same bundler
- *      family the Convex CLI uses): platform=node, format=esm, code-splitting
- *      on, tsconfig paths honored — so each function module's closure is fully
- *      materialized, and a `dynamic import()` of an npm dep lands in its own
- *      chunk that the entry does NOT evaluate at load time.
+ *   1. Bundle every convex/ module as an entry with esbuild, mirroring the
+ *      Convex 1.28.0 CLI bundler: platform=node, format=esm, splitting=false,
+ *      tsconfig paths honored — so each function module's closure is fully
+ *      materialized in ONE output file, and a dynamic `import()` of an npm dep
+ *      keeps its bytes in that file (they PARSE at module load) while its
+ *      top-level INITIALIZATION is deferred to the first call that awaits it.
+ *      These are PROXY numbers for what the backend pays at push time; a real
+ *      deployment push must confirm the end-to-end effect.
  *   2. In a FRESH node process per run, time `await import(<entry bundle>)`
  *      with hrtime around the import only (node startup excluded).
  *   3. --runs per module (default 3); report median / min / max.
@@ -59,6 +62,11 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(SCRIPT_DIR, "..", "..", ".."); // tools/call-eval/verification -> repo root
 const OUT = path.resolve(args.out ?? path.join(REPO, "tools/call-eval/out", `module-loads-${LABEL}`));
 const BUNDLES = path.join(OUT, "bundles");
+
+// Sample load BEFORE any heavy work (esbuild resolution, bundling, imports) so
+// drift during the run is visible; the end sample is taken after the last
+// module finishes.
+const loadavgStart = os.loadavg();
 
 // ------------------------------------------------------------------ esbuild
 // Resolve esbuild out of the pnpm store installed here (pnpm 10 blocked its
@@ -192,7 +200,12 @@ for (const entry of selected) {
       bundle: true,
       platform: "node",
       format: "esm",
-      splitting: true,
+      // Convex 1.28.0's bundler pins splitting:false: a dynamic import()'s
+      // bytes stay in this single output file and parse at module load; only
+      // their top-level initialization is deferred. splitting:true would hide
+      // those bytes in a side chunk the entry never parses, understating the
+      // entry's load cost and the byte accounting.
+      splitting: false,
       outdir: outDir,
       outExtension: { ".js": ".mjs" },
       tsconfig: path.join(REPO, "tsconfig.json"),
@@ -249,7 +262,7 @@ const summary = {
   node: process.version,
   cpus: os.cpus().length,
   platform: `${os.platform()} ${os.arch()}`,
-  loadavgStart: os.loadavg(),
+  loadavgStart,
   loadavgEnd: loadEnd,
   runsPerModule: RUNS,
   esbuild: esbuild.version,
@@ -272,6 +285,7 @@ md.push("");
 md.push(`- node \`${summary.node}\`, ${summary.cpus} cpus, \`${summary.platform}\``);
 md.push(`- loadavg 1m/5m/15m: start \`${summary.loadavgStart.map((x) => x.toFixed(2)).join(" / ")}\`, end \`${summary.loadavgEnd.map((x) => x.toFixed(2)).join(" / ")}\``);
 md.push(`- ${summary.runsPerModule} runs per module, fresh node process per run; values below are medians of \`await import()\` of the esbuild bundle (node startup excluded).`);
+md.push(`- **PROXY numbers**: esbuild \`splitting: false\` mirrors the Convex 1.28.0 bundler (deferred-import bytes parse at module load; only their initialization is deferred), but node import time here is not the backend's module-load time. A real deployment push must confirm these deltas before they are treated as facts about the backend.`);
 md.push(`- ${results.length} modules; ${errs.length} with bundle/import errors${errs.length ? ` (see results.json — packages that will not evaluate under the node platform are expected to appear here)` : ""}.`);
 md.push(`- Sum of medians over error-free modules: **${(rows.reduce((s, r) => s + r.med, 0) / 1000).toFixed(2)} s** (upper bound on serial whole-tree load).`);
 md.push("");
