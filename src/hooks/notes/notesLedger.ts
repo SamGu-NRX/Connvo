@@ -21,8 +21,12 @@
  */
 
 import type { Id } from "@convex/_generated/dataModel";
-import { applyOperations, diffToSiblingOps } from "./notesDiff";
-import { transformOperationSequence } from "@convex/notes/operations";
+import {
+  applyBatchOps,
+  applyOperations,
+  diffToHunks,
+  transformHunksToSiblingOps,
+} from "./notesDiff";
 import type {
   BatchApplyNoteOperationsResponse,
   NotesBatchOp,
@@ -63,6 +67,12 @@ export interface NotesLedgerOptions {
   clientId: string;
   /** Debounce for keystroke flushes; 0 sends on the next microtask-ish tick. */
   debounceMs?: number;
+  /**
+   * How long a sent batch may stay unsettled before its records flip
+   * VISIBLY to "unconfirmed" and the batch slot is released so later edits
+   * can send. 0 (the default) disables the deadline.
+   */
+  sendTimeoutMs?: number;
   /** Recovery store; defaults to sessionStorage when available. */
   storage?: Storage | null;
   now?: () => number;
@@ -196,6 +206,7 @@ export class NotesLedger {
   readonly clientId: string;
 
   private readonly debounceMs: number;
+  private readonly sendTimeoutMs: number;
   private readonly storage: Storage | null;
   private readonly now: () => number;
   private readonly generateId: () => number;
@@ -229,12 +240,15 @@ export class NotesLedger {
   private transportOnline = true;
   private destroyed = true;
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  private sendDeadlineTimer: ReturnType<typeof setTimeout> | undefined;
   private snapshotCache: UseNotesLedgerResult | undefined;
+  private serverSnapshotCache: UseNotesLedgerResult | undefined;
 
   constructor(options: NotesLedgerOptions) {
     this.meetingId = options.meetingId;
     this.clientId = options.clientId;
     this.debounceMs = options.debounceMs ?? DEFAULT_DEBOUNCE_MS;
+    this.sendTimeoutMs = options.sendTimeoutMs ?? 0;
     this.storage = options.storage === undefined ? defaultStorage() : options.storage;
     this.now = options.now ?? (() => Date.now());
     this.generateId = options.generateId ?? Math.random;
@@ -257,6 +271,34 @@ export class NotesLedger {
       this.snapshotCache = this.buildSnapshot();
     }
     return this.snapshotCache;
+  };
+
+  /**
+   * Server-safe snapshot for React hydration (useSyncExternalStore's third
+   * argument): deterministic, recovery-free — restored pending work or a
+   * recovery buffer must never leak into the SERVER render, or the
+   * client's first render would mismatch the HTML. Recovery still applies:
+   * after hydration React switches to getSnapshot, and start()'s recovery
+   * flush runs on mount.
+   */
+  getServerSnapshot = (): UseNotesLedgerResult => {
+    if (this.serverSnapshotCache === undefined) {
+      this.serverSnapshotCache = {
+        content: "",
+        version: -1,
+        isLoading: true,
+        status: "loading",
+        unconfirmedCount: 0,
+        unsavedRecords: [],
+        bufferedContent: "",
+        isEditing: false,
+        onEdit: this.onEdit,
+        flushNow: this.flushNow,
+        retryConflicts: this.retryConflicts,
+        transportOnline: true,
+      };
+    }
+    return this.serverSnapshotCache;
   };
 
   /** Mount: restore persisted state, then subscribe to server snapshots. */
@@ -308,10 +350,28 @@ export class NotesLedger {
         // them. The remount re-diffs from acked truth after resolution.
         if (!this.bufferHoldsUnsentWords) this.bufferBasis = composed;
         this.bufferHoldsUnsentWords = true;
+      } else if (
+        [...this.records.values()].some(
+          (record) =>
+            record.state === "saved" &&
+            record.serverSequence !== undefined &&
+            record.serverSequence > this.headSequence,
+        )
+      ) {
+        // Same absorption guard as the flush path: the composed view is
+        // ahead of the last incorporated read. Keep the words buffered;
+        // the remount's first ingest rebases and its requested flush
+        // converts from acked truth.
+        if (!this.bufferHoldsUnsentWords) this.bufferBasis = composed;
+        this.bufferHoldsUnsentWords = true;
       } else {
-        const ops = diffToSiblingOps(composed, this.buffer);
-        if (ops.length > 0) this.createRecords(ops);
+        this.rebaseIfSafe();
+        const ops = this.convertBufferToOps(this.composedText());
+        if (ops.length > 0) {
+          this.createRecords(ops);
+        }
         this.bufferHoldsUnsentWords = false;
+        this.bufferBasis = null;
       }
     }
     this.persist();
@@ -590,6 +650,25 @@ export class NotesLedger {
       this.flushRequested = true;
       return;
     }
+    // Saved-but-unabsorbed records (retired by a settle or ack whose
+    // follow-up read has not landed) still sit between baseContent and
+    // the composed view: a diff over the composed view would carry their
+    // effects above the stamped clientSequence, and the server would
+    // re-transform against them (observed: two batches sharing one
+    // clientSequence). Absorb them first — but only onto a read that has
+    // actually incorporated their server sequences; otherwise hold the
+    // words for the next ingest, which rebases and re-fires this flush.
+    const unabsorbed = [...this.records.values()].some(
+      (record) =>
+        record.state === "saved" &&
+        record.serverSequence !== undefined &&
+        record.serverSequence > this.headSequence,
+    );
+    if (unabsorbed) {
+      this.flushRequested = true;
+      return;
+    }
+    this.rebaseIfSafe();
     // Bootstrap/keystroke path: diff the buffer from the current base. With
     // no base yet (a meeting with no notes row), the diff runs from empty
     // content and the first batch creates the row server-side.
@@ -601,21 +680,12 @@ export class NotesLedger {
       this.bufferBasis = null;
     }
     if (this.bufferHoldsUnsentWords && this.buffer !== composed) {
-      // Diff the local edit from its ORIGINAL basis and transform it
-      // against everything that moved since — a remote snapshot that
-      // landed mid-debounce included. Diffing from the moved base instead
-      // would express the local edit as "delete the remote words" and
-      // lose them.
-      const basis = this.bufferBasis ?? composed;
-      const localOps = diffToSiblingOps(basis, this.buffer);
-      const remoteOps =
-        basis === composed ? [] : diffToSiblingOps(basis, composed);
-      const ops = transformOperationSequence(localOps, remoteOps).filter(
-        (op) =>
-          op.type === "insert"
-            ? (op.content ?? "") !== ""
-            : (op.length ?? 0) > 0,
-      );
+      // Shared basis-frame conversion: diff the local edit from its
+      // ORIGINAL basis and transform it as whole hunks against everything
+      // that moved since — a remote snapshot that landed mid-debounce
+      // included. Diffing from the moved base instead would express the
+      // local edit as "delete the remote words" and lose them.
+      const ops = this.convertBufferToOps(composed);
       if (ops.length > 0) {
         const created = this.createRecords(ops);
         this.bufferHoldsUnsentWords = false;
@@ -625,6 +695,52 @@ export class NotesLedger {
       }
     }
     this.flushRequested = false;
+  }
+
+  /**
+   * Shared basis-frame conversion for flush and teardown: diff the buffered
+   * edit from its ORIGINAL basis and transform the resulting hunks as ONE
+   * unit against the drift between that basis and the current composed
+   * view. Both callers share this so a teardown inside a drifted window
+   * persists exactly the edit a flush would have sent (the S1/S3 shapes),
+   * and a replacement transforms without its sibling pair splitting (S2).
+   */
+  private convertBufferToOps(composed: string): NotesOperation[] {
+    if (!this.bufferHoldsUnsentWords || this.buffer === composed) return [];
+    const basis = this.bufferBasis ?? composed;
+    // Remote representation: the MULTI-HUNK decomposition of the drift,
+    // never the collapsed sibling diff — a collapse degenerates into a
+    // whole-text substitution (no common affixes) and the transform basis
+    // is destroyed (the S2 shape). Decomposing the drift hunks without
+    // remote drift yields exactly the real remote operations.
+    const remoteOps = transformHunksToSiblingOps(
+      diffToHunks(basis, composed),
+      [],
+    );
+    const raw = transformHunksToSiblingOps(
+      diffToHunks(basis, this.buffer),
+      remoteOps,
+    );
+    // The drift transform can overshoot the composed frame when remote ops
+    // and local hunks interleave at the text's end; a position beyond the
+    // stamp frame is illegal for the server and produced the rejected
+    // insert(10) on an 8-char document (seed 20261011 path 4). Clamp to
+    // the composed frame — the words land at the frame's edge.
+    const docLen = composed.length;
+    const ops = raw
+      .map((op) => {
+        const position = Math.min(Math.max(op.position, 0), docLen);
+        if (op.type === "insert") return { ...op, position };
+        return {
+          ...op,
+          position,
+          length: Math.min(op.length ?? 0, docLen - position),
+        };
+      })
+      .filter((op) =>
+        op.type === "insert" ? (op.content ?? "") !== "" : (op.length ?? 0) > 0,
+      );
+    return ops;
   }
 
   /** Create ledger records for sibling ops; stamps the base watermark as the
@@ -674,12 +790,48 @@ export class NotesLedger {
       .applyBatch(this.meetingId, this.clientId, payload)
       .then((response) => this.onBatchSettled(response, batch))
       .catch((error: unknown) => this.onBatchFailed(error, batch));
+    this.armSendDeadline(batch);
+  }
+
+  /**
+   * Arm the honest-state deadline for an in-flight batch: records still
+   * "sending" when it fires flip VISIBLY to "unconfirmed" (the client
+   * cannot prove the server incorporated them) and the batch slot is
+   * released so later edits are not blocked on a response that may never
+   * settle. A late response still resolves — its identity echo retires the
+   * records (never a downgrade), and a late rejection still marks them.
+   */
+  private armSendDeadline(batch: NotesLedgerRecord[]): void {
+    if (this.sendTimeoutMs <= 0) return;
+    this.clearSendDeadline();
+    this.sendDeadlineTimer = setTimeout(() => {
+      this.sendDeadlineTimer = undefined;
+      let flipped = false;
+      for (const record of batch) {
+        if (record.state !== "sending") continue;
+        record.state = "unconfirmed";
+        record.failureReason = "send deadline exceeded without a confirmation";
+        flipped = true;
+      }
+      if (flipped) {
+        this.batchInFlight = false;
+        this.commit();
+      }
+    }, this.sendTimeoutMs);
+  }
+
+  private clearSendDeadline(): void {
+    if (this.sendDeadlineTimer !== undefined) {
+      clearTimeout(this.sendDeadlineTimer);
+      this.sendDeadlineTimer = undefined;
+    }
   }
 
   private onBatchSettled(
     response: BatchApplyNoteOperationsResponse,
     batch: NotesLedgerRecord[],
   ): void {
+    this.clearSendDeadline();
     this.batchInFlight = false;
     const applied = new Map<string, number>();
     for (const result of response.results ?? []) {
@@ -692,6 +844,7 @@ export class NotesLedger {
         rejected.set(failedOp.clientOpId, failedOp.reason ?? "rejected by the server");
       }
     }
+
     let savedCount = 0;
     for (const record of batch) {
       // A fresh read may have retired this record first (a lost response
@@ -736,12 +889,14 @@ export class NotesLedger {
   }
 
   private onBatchFailed(error: unknown, batch: NotesLedgerRecord[]): void {
+    this.clearSendDeadline();
     this.batchInFlight = false;
     const failure = describeError(error);
     switch (classifyTransportError(error)) {
       case "conflict":
       case "forbidden": {
-        // A definite server answer — the ops were seen and refused.
+        // A definite server answer — the ops were seen and refused. The
+        // records stay for the conflict surface; retryConflicts re-diffs.
         for (const record of batch) {
           record.state =
             classifyTransportError(error) === "conflict" ? "conflict" : "rejected";
@@ -793,8 +948,30 @@ export class NotesLedger {
    * replayed in creation order (saved ops remain until the rebase absorbs
    * them into the base, so their words never vanish from the view). */
   private composedText(): string {
-    const ops = [...this.records.values()].map((record) => record.op);
-    return applyOperations(this.baseContent, ops);
+    // Mirror the server's batch application. The absorption guards in
+    // flush()/destroy() ensure the map holds at most ONE batch's records:
+    // a new batch is only created after the base has absorbed every
+    // earlier record. Each op of that batch shares one clientSequence
+    // frame, so — exactly like the server — each transforms against the
+    // applied transformed forms of its earlier siblings before applying.
+    let doc = this.baseContent;
+    const ops: NotesOperation[] = [];
+    for (const record of this.records.values()) {
+      // Mirror every op that still fits the base frame — including refused
+      // ones: a transport-level refusal (conflict/rejected from a bounced
+      // batch) must keep the user's words visible until retryConflicts
+      // re-diffs them. An op whose frame no longer fits (the base moved
+      // under a refused op) cannot be applied without throwing; its words
+      // surface through the conflict records and the explicit retry.
+      const op = record.op;
+      const fits =
+        op.type === "insert"
+          ? op.position >= 0 && op.position <= doc.length
+          : op.position >= 0 && op.position + (op.length ?? 0) <= doc.length;
+      if (fits) ops.push(op);
+    }
+    if (ops.length > 0) doc = applyBatchOps(doc, ops);
+    return doc;
   }
 
   private buildSnapshot(): UseNotesLedgerResult {
@@ -842,9 +1019,8 @@ export class NotesLedger {
       // with a state label) without sending a coordinate-unsound op.
       bufferedContent:
         this.bufferHoldsUnsentWords && this.buffer !== composedNow
-          ? diffToSiblingOps(composedNow, this.buffer)
-              .filter((op) => op.type === "insert")
-              .map((op) => op.content ?? "")
+          ? diffToHunks(composedNow, this.buffer)
+              .map((hunk) => hunk.inserted)
               .join("")
           : "",
       // "Editing" means un-retired local work exists: words still in the
