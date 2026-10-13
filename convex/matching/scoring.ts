@@ -10,7 +10,6 @@
 
 import { v } from "convex/values";
 import {
-  action,
   internalAction,
   internalQuery,
 } from "@convex/_generated/server";
@@ -118,7 +117,9 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
  * }
  * ```
  */
-export const calculateCompatibilityScore = action({
+// Internal-only: compatibility scoring reads other users' profile data for
+// arbitrary user ids and must never be invoked directly by clients.
+export const calculateCompatibilityScore = internalAction({
   args: {
     user1Id: v.id("users"),
     user2Id: v.id("users"),

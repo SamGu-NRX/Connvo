@@ -1009,7 +1009,7 @@ export const cleanupOldNoteOperations = internalMutation({
     }
 
     // Keep minimum number of operations per meeting
-    const operationsByMeeting = new Map<string, typeof oldOperations>();
+    const operationsByMeeting = new Map<Id<"meetings">, typeof oldOperations>();
     for (const op of oldOperations) {
       const key = op.meetingId;
       if (!operationsByMeeting.has(key)) {
@@ -1020,9 +1020,30 @@ export const cleanupOldNoteOperations = internalMutation({
 
     let deleted = 0;
     for (const [meetingKey, ops] of operationsByMeeting) {
-      // Sort by sequence and keep the most recent operations
+      // Replay-safety guard: pruning deletes history, and a full replay
+      // (rebaseNotesDocument from sequence 0) rebuilds the document by
+      // applying the remaining ops to an empty string. Without a durable
+      // checkpoint capturing the state at some sequence S, removing any op
+      // makes the replay diverge from the materialized document. So only
+      // prune when a checkpoint exists, and never above its sequence.
+      const newestCheckpoint = await ctx.db
+        .query("offlineCheckpoints")
+        .withIndex("by_meeting_sequence", (q) =>
+          q.eq("meetingId", meetingKey),
+        )
+        .order("desc")
+        .first();
+
+      if (!newestCheckpoint) {
+        continue;
+      }
+
+      // Sort by sequence and keep the most recent operations, further capped
+      // at the newest durable checkpoint sequence.
       ops.sort((a, b) => b.sequence - a.sequence);
-      const toDelete = ops.slice(keepMinimumOps);
+      const toDelete = ops
+        .slice(keepMinimumOps)
+        .filter((op) => op.sequence <= newestCheckpoint.sequence);
 
       for (const op of toDelete) {
         await ctx.db.delete(op._id);

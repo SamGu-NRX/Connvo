@@ -44,7 +44,7 @@ const SaveOnboardingResultV = v.object({
 /**
  * Creates or updates user from WorkOS authentication
  *
- * Upserts a user record based on WorkOS authentication data. If a user with the given WorkOS ID already exists, updates their information; otherwise creates a new user. This is typically called after successful WorkOS authentication to ensure the user exists in the database. Requires authentication token matching the WorkOS user ID being created/updated.
+ * Upserts a user record based on WorkOS authentication data. If a user with the given WorkOS ID already exists, updates their information; otherwise creates a new user. This is typically called after successful WorkOS authentication to ensure the user exists in the database. Requires a verified identity: the WorkOS ID must match the authenticated JWT subject, email/displayName are taken from verified claims when present, and org fields are derived exclusively from verified JWT org claims (client-supplied orgId/orgRole are ignored).
  *
  * @example request
  * ```json
@@ -97,47 +97,52 @@ export const upsertUser = mutation({
       hasDisplayName: !!args.displayName,
     });
 
-    // Use lenient authentication check for bootstrap
-    // Try to get identity, but don't fail if user is not yet provisioned
-    let authIdentity: any = null;
-    try {
-      authIdentity = await ctx.auth.getUserIdentity();
-      console.log("[upsertUser] Auth identity retrieved successfully");
-    } catch (error) {
-      // If identity check fails, still proceed if we have valid args
-      // This can happen during initial user provisioning
-      console.warn("[upsertUser] Auth identity not available during upsertUser", {
-        error: error instanceof Error ? error.message : String(error),
-        hint: "This is normal during first-time user setup. If persisting, check CONVEX_DEPLOYMENT_SETUP.md",
-      });
+    // Require a verified identity UNCONDITIONALLY: anonymous provisioning is
+    // rejected (401). There is deliberately no fallback path.
+    const authIdentity = await ctx.auth.getUserIdentity();
+    if (!authIdentity) {
+      console.warn("[upsertUser] Rejected anonymous upsert attempt");
+      throw createError.unauthorized("Authentication required");
     }
+    console.log("[upsertUser] Auth identity retrieved successfully");
 
-    // Validate that the authenticated user matches the workosUserId being upserted
-    if (authIdentity) {
-      const authenticatedWorkosId = authIdentity.subject;
-      if (authenticatedWorkosId && authenticatedWorkosId !== args.workosUserId) {
-        console.error("[upsertUser] WorkOS ID mismatch", {
-          authenticated: authenticatedWorkosId,
-          requested: args.workosUserId,
-        });
-        throw createError.forbidden("Cannot create user for different WorkOS ID");
-      }
+    // The verified JWT subject is the only authoritative WorkOS user id.
+    const verifiedWorkosUserId = authIdentity.subject;
+    if (!verifiedWorkosUserId) {
+      throw createError.unauthorized("Invalid authentication token");
+    }
+    if (args.workosUserId !== verifiedWorkosUserId) {
+      console.error("[upsertUser] WorkOS ID mismatch", {
+        authenticated: verifiedWorkosUserId,
+        requested: args.workosUserId,
+      });
+      throw createError.forbidden("Cannot create user for different WorkOS ID");
     }
 
     // Validate required fields
-    if (!args.workosUserId || !args.email) {
+    if (!args.email) {
       console.error("[upsertUser] Missing required fields", {
-        hasWorkosUserId: !!args.workosUserId,
-        hasEmail: !!args.email,
+        hasEmail: false,
       });
       throw createError.validation("workosUserId and email are required");
     }
+
+    // Server-side derivation: org membership and role come ONLY from verified
+    // JWT org claims. Client-supplied args.orgId/args.orgRole are accepted for
+    // backward compatibility but always ignored.
+    const verifiedOrgId = (authIdentity.org_id as string | undefined) ?? null;
+    const verifiedOrgRole =
+      (authIdentity.org_role as string | undefined) ?? null;
+    const verifiedEmail = (authIdentity.email as string | undefined) ?? null;
+    const verifiedName = (authIdentity.name as string | undefined) ?? null;
 
     try {
       // Check if user already exists
       const existingUser = await ctx.db
         .query("users")
-        .withIndex("by_workos_id", (q) => q.eq("workosUserId", args.workosUserId))
+        .withIndex("by_workos_id", (q) =>
+          q.eq("workosUserId", verifiedWorkosUserId),
+        )
         .unique();
 
       const now = Date.now();
@@ -148,15 +153,34 @@ export const upsertUser = mutation({
           workosUserId: args.workosUserId,
         });
         
-        // Update existing user
-        await ctx.db.patch(existingUser._id, {
-          email: args.email,
-          displayName: args.displayName,
-          orgId: args.orgId,
-          orgRole: args.orgRole,
+        // Update existing user. email/displayName come from verified identity
+        // claims when present, else keep existing values. NEVER write isActive
+        // here: deactivation must survive re-login (tested property).
+        const email = verifiedEmail ?? existingUser.email;
+        const displayName =
+          verifiedName ?? existingUser.displayName ?? args.displayName;
+        const patch: {
+          email: string;
+          displayName?: string;
+          orgId?: string;
+          orgRole?: string;
+          lastSeenAt: number;
+          updatedAt: number;
+        } = {
+          email,
           lastSeenAt: now,
           updatedAt: now,
-        });
+        };
+        if (displayName !== undefined) {
+          patch.displayName = displayName;
+        }
+        if (verifiedOrgId !== null) {
+          patch.orgId = verifiedOrgId;
+        }
+        if (verifiedOrgRole !== null) {
+          patch.orgRole = verifiedOrgRole;
+        }
+        await ctx.db.patch(existingUser._id, patch);
         
         // Ensure profile exists for existing user
         const existingProfile = await ctx.db
@@ -168,7 +192,7 @@ export const upsertUser = mutation({
           console.log("[upsertUser] Creating missing profile for existing user");
           await ctx.db.insert("profiles", {
             userId: existingUser._id,
-            displayName: args.displayName || args.email.split('@')[0],
+            displayName: displayName || email.split("@")[0],
             languages: [],
             createdAt: now,
             updatedAt: now,
@@ -179,27 +203,29 @@ export const upsertUser = mutation({
         return existingUser._id;
       } else {
         console.log("[upsertUser] Creating new user", {
-          workosUserId: args.workosUserId,
-          email: args.email,
+          workosUserId: verifiedWorkosUserId,
+          email: verifiedEmail ?? args.email,
         });
-        
-        // Create new user
+
+        // Create new user. Org fields come only from verified JWT claims.
+        const email = verifiedEmail ?? args.email;
+        const displayName = verifiedName ?? args.displayName;
         const userId = await ctx.db.insert("users", {
-          workosUserId: args.workosUserId,
-          email: args.email,
-          displayName: args.displayName,
-          orgId: args.orgId,
-          orgRole: args.orgRole,
+          workosUserId: verifiedWorkosUserId,
+          email,
+          displayName,
+          orgId: verifiedOrgId ?? undefined,
+          orgRole: verifiedOrgRole ?? undefined,
           isActive: true,
           lastSeenAt: now,
           createdAt: now,
           updatedAt: now,
         });
-        
+
         // Create default profile for new user
         await ctx.db.insert("profiles", {
           userId: userId,
-          displayName: args.displayName || args.email.split('@')[0],
+          displayName: displayName || email.split("@")[0],
           languages: [],
           createdAt: now,
           updatedAt: now,
@@ -211,7 +237,7 @@ export const upsertUser = mutation({
     } catch (error) {
       console.error("[upsertUser] Database operation failed", {
         error: error instanceof Error ? error.message : String(error),
-        workosUserId: args.workosUserId,
+        workosUserId: verifiedWorkosUserId,
         hint: "Check Convex logs for more details. If auth-related, see CONVEX_DEPLOYMENT_SETUP.md",
       });
       throw error;
@@ -444,7 +470,7 @@ export const updateUserInterests = mutation({
 /**
  * Deactivates user account
  *
- * Marks a user account as inactive, preventing them from accessing the platform. Validates that the user exists and is not already deactivated. In a complete implementation, this would also cancel active meetings, remove from matching queues, and clean up active sessions. Requires the authenticated user to own the account or have admin privileges.
+ * Marks a user account as inactive, preventing them from accessing the platform. Validates that the user exists and is not already deactivated. In the same transaction, cancels the user's waiting matching-queue entries and future scheduled meetings, and writes an audit log entry. Active and concluded meetings are preserved as history. Requires the authenticated user to own the account or have admin privileges.
  *
  * @example request
  * ```json
@@ -519,16 +545,73 @@ export const deactivateUser = mutation({
       throw createError.validation("User is already deactivated");
     }
 
+    const now = Date.now();
+
     // Deactivate user
     await ctx.db.patch(userId, {
       isActive: false,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
 
-    // TODO: In a complete implementation, we would also:
-    // - Cancel any active meetings
-    // - Remove from matching queues
-    // - Clean up active sessions
+    // Lifecycle cleanup runs in the SAME transaction as the isActive flip, so
+    // a deactivated user can neither keep being paired nor keep future
+    // meetings, even if a concurrent matcher reads mid-transaction.
+
+    // 1. Cancel the user's waiting matching-queue entries. Rows are marked
+    //    cancelled (not deleted) to preserve history, matching the
+    //    cancelQueueEntry house pattern.
+    const waitingQueueEntries = await ctx.db
+      .query("matchingQueue")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("status"), "waiting"))
+      .collect();
+
+    for (const entry of waitingQueueEntries) {
+      await ctx.db.patch(entry._id, {
+        status: "cancelled",
+        updatedAt: now,
+      });
+    }
+
+    // 2. Cancel the user's future scheduled meetings. Only not-yet-started
+    //    ("scheduled" with no time or a future time) meetings are cancelled;
+    //    active/concluded history is preserved. No Convex-scheduled functions
+    //    exist for not-yet-started meetings (room creation, transcription, and
+    //    post-processing are scheduled at start/end time), so there are no
+    //    scheduled job handles to cancel here.
+    const scheduledMeetings = await ctx.db
+      .query("meetings")
+      .withIndex("by_organizer_and_state", (q) =>
+        q.eq("organizerId", userId).eq("state", "scheduled"),
+      )
+      .collect();
+
+    let cancelledMeetings = 0;
+    for (const meeting of scheduledMeetings) {
+      if (meeting.scheduledAt === undefined || meeting.scheduledAt > now) {
+        await ctx.db.patch(meeting._id, {
+          state: "cancelled",
+          updatedAt: now,
+        });
+        cancelledMeetings += 1;
+      }
+    }
+
+    // 3. Audit entry (same-transaction, direct-insert house pattern used by
+    //    matching/queue.ts).
+    await ctx.db.insert("auditLogs", {
+      actorUserId: userId,
+      resourceType: "user",
+      resourceId: userId,
+      action: "user_deactivated",
+      metadata: {
+        category: "auth",
+        success: true,
+        cancelledQueueEntries: waitingQueueEntries.length,
+        cancelledMeetings,
+      },
+      timestamp: now,
+    });
 
     return null;
   },

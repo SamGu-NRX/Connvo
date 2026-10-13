@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values";
-import { query, internalQuery } from "@convex/_generated/server";
+import { internalQuery } from "@convex/_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import type { Id } from "@convex/_generated/dataModel";
 
@@ -31,9 +31,9 @@ import {
 } from "@convex/types/entities/embedding";
 
 /**
- * Get embedding by ID (public)
+ * Get embedding by ID (internal)
  */
-export const getEmbedding = query({
+export const getEmbedding = internalQuery({
   args: { embeddingId: v.id("embeddings") },
   returns: v.union(EmbeddingV.full, v.null()),
   handler: async (ctx, args): Promise<Embedding | null> => {
@@ -42,9 +42,9 @@ export const getEmbedding = query({
 });
 
 /**
- * Get embeddings by source (public)
+ * Get embeddings by source (internal)
  */
-export const getEmbeddingsBySource = query({
+export const getEmbeddingsBySource = internalQuery({
   args: {
     sourceType: v.union(
       v.literal("user"),
@@ -71,9 +71,9 @@ export const getEmbeddingsBySource = query({
 });
 
 /**
- * Get embeddings by model (public)
+ * Get embeddings by model (internal)
  */
-export const getEmbeddingsByModel = query({
+export const getEmbeddingsByModel = internalQuery({
   args: {
     model: v.string(),
     paginationOpts: paginationOptsValidator,
@@ -91,9 +91,9 @@ export const getEmbeddingsByModel = query({
 });
 
 /**
- * Perform vector similarity search (public)
+ * Perform vector similarity search (internal)
  */
-export const vectorSimilaritySearch = query({
+export const vectorSimilaritySearch = internalQuery({
   args: {
     queryVector: v.bytes(), // Use ArrayBuffer for performance
     sourceTypes: v.optional(
@@ -166,9 +166,9 @@ export const vectorSimilaritySearch = query({
 });
 
 /**
- * Get embedding analytics (public)
+ * Get embedding analytics (internal)
  */
-export const getEmbeddingAnalytics = query({
+export const getEmbeddingAnalytics = internalQuery({
   args: {},
   returns: EmbeddingAnalyticsV.full,
   handler: async (ctx): Promise<EmbeddingAnalytics> => {
@@ -223,9 +223,9 @@ export const getEmbeddingAnalytics = query({
 });
 
 /**
- * Get vector index metadata (public)
+ * Get vector index metadata (internal)
  */
-export const getVectorIndexMeta = query({
+export const getVectorIndexMeta = internalQuery({
   args: {
     paginationOpts: paginationOptsValidator,
   },

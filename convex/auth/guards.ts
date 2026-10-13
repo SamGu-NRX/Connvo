@@ -32,6 +32,49 @@ export interface AuthIdentity {
 type AuthContext = QueryCtx | MutationCtx | ActionCtx;
 
 /**
+ * Resolves the organization identity used for authorization from VERIFIED
+ * token claims only. Stored document org fields never reach the returned
+ * identity; the helper additionally reports which stored values are UNPROVEN
+ * (present on the document but not corroborated by the current claims) so
+ * callers can quarantine them where writes are possible.
+ *
+ * Corroboration is per field:
+ *  - a stored orgId is corroborated when it equals the claim's org_id;
+ *  - a stored orgRole is corroborated when it equals the claim's org_role and
+ *    the org it is scoped to (document orgId, when present) matches the
+ *    claim's org_id.
+ */
+export function resolveOrgProvenance(
+  claimOrgId: string | null,
+  claimOrgRole: string | null,
+  stored: { orgId?: string; orgRole?: string },
+): {
+  orgId: string | null;
+  orgRole: string | null;
+  unprovenOrgId?: string;
+  unprovenOrgRole?: string;
+} {
+  const unprovenOrgId =
+    stored.orgId !== undefined && stored.orgId !== claimOrgId
+      ? stored.orgId
+      : undefined;
+  const orgScopeMatches =
+    stored.orgId === undefined || stored.orgId === claimOrgId;
+  const unprovenOrgRole =
+    stored.orgRole !== undefined &&
+    (stored.orgRole !== claimOrgRole || !orgScopeMatches)
+      ? stored.orgRole
+      : undefined;
+
+  return {
+    orgId: claimOrgId,
+    orgRole: claimOrgRole,
+    unprovenOrgId,
+    unprovenOrgRole,
+  };
+}
+
+/**
  * Extracts and validates user identity from Convex auth context
  *
  * @param ctx - Convex context (query, mutation, or action)
@@ -62,6 +105,7 @@ export async function requireIdentity(
     displayName?: string | undefined;
     orgId?: string;
     orgRole?: string;
+    isActive?: boolean | undefined;
   } | null = null;
   const hasDb = (ctx as any).db && typeof (ctx as any).db.query === "function";
   if (hasDb) {
@@ -93,16 +137,58 @@ export async function requireIdentity(
     );
   }
 
+  // Deactivated accounts never resolve to an identity, even with a valid JWT:
+  // sessions must stay bound to active users. (Bootstrap above only applies
+  // when NO user doc exists.)
+  if (userDoc.isActive === false) {
+    throw createError.forbidden("Account deactivated");
+  }
+
   const email = identity.email ?? userDoc.email ?? null;
   const name = identity.name ?? userDoc.displayName ?? null;
-  const orgId = (userDoc as any).orgId ?? null;
-  const orgRole = (userDoc as any).orgRole ?? null;
+
+  // ORG PROVENANCE POLICY (verified claims only):
+  // orgId/orgRole on the returned identity ALWAYS come from the current
+  // verified JWT claims (identity.org_id / identity.org_role) — never from
+  // the stored user document. A stored org value is not proof of anything:
+  // a legacy import or a forged write can carry orgRole: "admin" that no
+  // current token vouches for.
+  //
+  // Stored values the current claims do not corroborate ("unproven") are
+  // handled by context:
+  //  - Mutation/write context: moved to legacyOrgId/legacyOrgRole (removed
+  //    from orgId/orgRole) and an "auth" audit event is written, so the
+  //    unproven values can no longer grant or scope any access.
+  //  - Query (read-only) and action (no-DB, runQuery branch) contexts: no
+  //    writes are possible; unproven values are treated as ABSENT for
+  //    authorization — the claim-derived values below are the only ones
+  //    ever returned.
+  const claimOrgId = (identity.org_id as string) || null;
+  const claimOrgRole = (identity.org_role as string) || null;
+  const provenance = resolveOrgProvenance(claimOrgId, claimOrgRole, {
+    orgId: (userDoc as any).orgId,
+    orgRole: (userDoc as any).orgRole,
+  });
+
+  // Quarantine only where this context can actually write (mutations).
+  const canWrite = hasDb && typeof (ctx as any).db.patch === "function";
+  if (
+    canWrite &&
+    (provenance.unprovenOrgId !== undefined ||
+      provenance.unprovenOrgRole !== undefined)
+  ) {
+    await quarantineOrgFields(ctx as MutationCtx, userDoc._id, {
+      orgId: provenance.unprovenOrgId,
+      orgRole: provenance.unprovenOrgRole,
+      claims: { orgId: claimOrgId, orgRole: claimOrgRole },
+    });
+  }
 
   return {
     userId: userDoc._id,
     workosUserId,
-    orgId,
-    orgRole,
+    orgId: provenance.orgId,
+    orgRole: provenance.orgRole,
     email,
     name,
   };
@@ -256,6 +342,64 @@ async function logAuditEvent(
       // Log audit failures but don't block the main operation
       console.error("Failed to log audit event:", error);
     }
+  }
+}
+
+/**
+ * Moves unproven stored org values out of orgId/orgRole into the dedicated
+ * quarantine fields (legacyOrgId/legacyOrgRole) and writes an auth audit
+ * event. Only called from write-capable (mutation) contexts — a query or
+ * action cannot and does not mutate; there the unproven values are simply
+ * treated as absent for authorization. Quarantine bookkeeping failures are
+ * logged but never block the caller: authorization has already switched to
+ * the verified token claims, so the stale values are inert either way.
+ */
+async function quarantineOrgFields(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  unproven: {
+    orgId?: string;
+    orgRole?: string;
+    claims: { orgId: string | null; orgRole: string | null };
+  },
+): Promise<void> {
+  try {
+    const patch: {
+      orgId?: string | undefined;
+      orgRole?: string | undefined;
+      legacyOrgId?: string | undefined;
+      legacyOrgRole?: string | undefined;
+    } = {};
+    if (unproven.orgId !== undefined) {
+      patch.orgId = undefined;
+      patch.legacyOrgId = unproven.orgId;
+    }
+    if (unproven.orgRole !== undefined) {
+      patch.orgRole = undefined;
+      patch.legacyOrgRole = unproven.orgRole;
+    }
+    await ctx.db.patch(userId, patch);
+
+    await logAuditEvent(ctx, {
+      actorUserId: userId,
+      resourceType: "user",
+      resourceId: userId,
+      action: "org_provenance_quarantine",
+      metadata: {
+        quarantinedFields: [
+          unproven.orgId !== undefined ? "orgId" : null,
+          unproven.orgRole !== undefined ? "orgRole" : null,
+        ]
+          .filter((field): field is string => field !== null)
+          .join(","),
+        legacyOrgId: unproven.orgId ?? "",
+        legacyOrgRole: unproven.orgRole ?? "",
+        claimOrgId: unproven.claims.orgId ?? "",
+        claimOrgRole: unproven.claims.orgRole ?? "",
+      },
+    });
+  } catch (error) {
+    console.error("Failed to quarantine unproven org fields:", error);
   }
 }
 

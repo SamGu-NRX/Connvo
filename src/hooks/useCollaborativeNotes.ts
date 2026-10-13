@@ -20,7 +20,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface MeetingNote {
   _id: Id<"meetingNotes">;
@@ -37,6 +37,39 @@ export interface NoteOperation {
   position?: number;
   text?: string;
   length?: number;
+}
+
+/**
+ * Maps the hook's NoteOperation to the NoteV.operation shape that the
+ * server-side note mutations validate (convex/types/validators/note.ts):
+ * insert carries `content`, delete/retain carry `length`, and `position`
+ * is required (calculateOperation omits it for retain, so it defaults to 0).
+ * The fields the server does not know (the hook's raw text field and the
+ * wall-clock timestamp field) must not leak through — they cause validator
+ * rejection.
+ */
+export function toServerOperation(operation: NoteOperation): {
+  type: "insert" | "delete" | "retain";
+  position: number;
+  content?: string;
+  length?: number;
+} {
+  const position = operation.position ?? 0;
+  switch (operation.type) {
+    case "insert":
+      return {
+        type: operation.type,
+        position,
+        content: operation.text ?? "",
+      };
+    case "delete":
+    case "retain":
+      return {
+        type: operation.type,
+        position,
+        length: operation.length ?? 0,
+      };
+  }
 }
 
 export interface UseCollaborativeNotesResult {
@@ -90,6 +123,12 @@ export function useCollaborativeNotes(
 ): UseCollaborativeNotesResult {
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Watermark of the last server sequence this client's local state
+  // incorporates. The notes query carries no sequence info, so it starts at
+  // 0 (no server history incorporated) and advances from mutation
+  // responses — the first observed server state.
+  const clientSequenceRef = useRef(0);
+
   // Query current notes from backend
   const notes = useQuery(
     api.notes.queries.getMeetingNotes,
@@ -105,46 +144,55 @@ export function useCollaborativeNotes(
     setIsSyncing(true);
     
     try {
-      await applyOperationMutation({
+      const result = await applyOperationMutation({
         meetingId,
-        operation: {
-          type: operation.type,
-          position: operation.position,
-          text: operation.text,
-          length: operation.length,
-        },
-        clientTimestamp: Date.now(),
+        operation: toServerOperation(operation),
+        // Watermark: sequence of the last server op the local state
+        // incorporates (see clientSequenceRef below).
+        clientSequence: clientSequenceRef.current,
+        // Optimistic concurrency: the version this hook last observed.
+        expectedVersion: notes?.version,
       });
+      // Advance the watermark: the local state now incorporates the
+      // operation the server just sequenced.
+      if (result && typeof result.serverSequence === "number") {
+        clientSequenceRef.current = result.serverSequence;
+      }
     } catch (err) {
       console.error("Failed to apply note operation:", err);
       throw err;
     } finally {
       setIsSyncing(false);
     }
-  }, [meetingId, applyOperationMutation]);
+  }, [meetingId, applyOperationMutation, notes?.version]);
 
   // Apply multiple operations in batch
   const applyOperations = useCallback(async (operations: NoteOperation[]) => {
     setIsSyncing(true);
     
     try {
-      await batchApplyMutation({
+      const result = await batchApplyMutation({
         meetingId,
-        operations: operations.map(op => ({
-          type: op.type,
-          position: op.position,
-          text: op.text,
-          length: op.length,
+        operations: operations.map((op, index) => ({
+          operation: toServerOperation(op),
+          // After sibling op i is applied server-side, the local state
+          // incorporates it, so each op's clientSequence advances by one to
+          // keep siblings out of each other's concurrent-transform sets.
+          clientSequence: clientSequenceRef.current + index,
         })),
-        clientTimestamp: Date.now(),
+        expectedVersion: notes?.version,
       });
+      const lastResult = result?.results?.[result.results.length - 1];
+      if (lastResult && typeof lastResult.serverSequence === "number") {
+        clientSequenceRef.current = lastResult.serverSequence;
+      }
     } catch (err) {
       console.error("Failed to apply note operations batch:", err);
       throw err;
     } finally {
       setIsSyncing(false);
     }
-  }, [meetingId, batchApplyMutation]);
+  }, [meetingId, batchApplyMutation, notes?.version]);
 
   return {
     notes,

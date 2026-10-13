@@ -84,6 +84,7 @@ export interface StreamSimpleSuccess {
  * Shape of webhook payloads emitted by Stream that we consume.
  */
 export interface StreamWebhookPayload {
+  type?: string;
   call?: {
     id: string;
   };

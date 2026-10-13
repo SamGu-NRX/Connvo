@@ -11,7 +11,7 @@
 import { internalMutation, query } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { Id } from "@convex/_generated/dataModel";
-import { assertMeetingAccess } from "@convex/auth/guards";
+import { assertMeetingAccess, assertOrgAccess } from "@convex/auth/guards";
 import { normalizeRole, permissionsForResource } from "@convex/lib/permissions";
 import { logAudit } from "@convex/lib/audit";
 
@@ -321,5 +321,43 @@ export const revokeSubscriptionPermissions = internalMutation({
     });
 
     return null;
+  },
+});
+
+/**
+ * Registered org-admin access probe
+ *
+ * @summary probeOrgAdminAccess
+ * @description Throws unless the caller's VERIFIED organization claims
+ * (identity.org_id / identity.org_role from the current JWT) grant org-admin
+ * access via assertOrgAccess. Stored user-document org fields are never used
+ * for this decision (see the provenance policy in auth/guards.ts).
+ *
+ * Clients can call this to check admin capability up front (a denial surfaces
+ * as FORBIDDEN instead of failing mid-transaction); the auth test suite uses
+ * it to exercise assertOrgAccess through the registered function tree.
+ *
+ * @example response
+ * ```json
+ * {
+ *   "status": "success",
+ *   "errorMessage": "",
+ *   "errorData": {},
+ *   "value": {
+ *     "orgId": "test-org",
+ *     "orgRole": "admin"
+ *   }
+ * }
+ * ```
+ */
+export const probeOrgAdminAccess = query({
+  args: {},
+  returns: v.object({
+    orgId: v.union(v.string(), v.null()),
+    orgRole: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx) => {
+    const identity = await assertOrgAccess(ctx, "admin");
+    return { orgId: identity.orgId, orgRole: identity.orgRole };
   },
 });

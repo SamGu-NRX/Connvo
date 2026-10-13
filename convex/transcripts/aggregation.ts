@@ -12,6 +12,7 @@ import { internalAction, internalMutation } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { internal } from "@convex/_generated/api";
 import { metadataRecordV } from "@convex/lib/validators";
+import { joinTranscriptText } from "@convex/lib/transcriptText";
 
 /**
  * @summary Clears existing transcript segments for a meeting
@@ -241,7 +242,9 @@ export const aggregateTranscriptSegments = internalAction({
           const smallGap = t.startMs - current.endMs <= GAP_MS;
           if (sameSpeaker && smallGap) {
             current.endMs = t.endMs;
-            current.text = `${current.text} ${t.text}`;
+            // Boundary-aware join: no double spaces when either side already
+            // ends/starts with whitespace
+            current.text = joinTranscriptText(current.text, t.text);
           } else {
             const topics = extractTopics(current.text);
             segments.push({

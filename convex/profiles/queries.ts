@@ -11,6 +11,7 @@
 import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
+import { createError } from "@convex/lib/errors";
 import { Id } from "@convex/_generated/dataModel";
 
 /**
@@ -131,6 +132,43 @@ export const getProfileByUserIdPublic = query({
   ),
   handler: async (ctx, { userId }) => {
     const identity = await requireIdentity(ctx);
+
+    // Scoping policy: the target's profile is visible to the target themself,
+    // to callers sharing the target's orgId, to callers sharing at least one
+    // meeting (meetingParticipants), and to org admins. Everyone else is
+    // rejected so profile discovery stays tenancy-bounded.
+    if (identity.userId !== userId) {
+      const target = await ctx.db.get(userId);
+      const sameOrg =
+        !!identity.orgId && !!target && identity.orgId === target.orgId;
+      const isOrgAdmin = identity.orgRole === "admin";
+
+      let sharesMeeting = false;
+      if (!sameOrg && !isOrgAdmin && target) {
+        const targetParticipations = await ctx.db
+          .query("meetingParticipants")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .collect();
+        for (const participation of targetParticipations) {
+          const shared = await ctx.db
+            .query("meetingParticipants")
+            .withIndex("by_meeting_and_user", (q) =>
+              q
+                .eq("meetingId", participation.meetingId)
+                .eq("userId", identity.userId),
+            )
+            .first();
+          if (shared) {
+            sharesMeeting = true;
+            break;
+          }
+        }
+      }
+
+      if (!sameOrg && !isOrgAdmin && !sharesMeeting) {
+        throw createError.forbidden("Profile is not visible to this caller");
+      }
+    }
 
     const profile = await ctx.db
       .query("profiles")

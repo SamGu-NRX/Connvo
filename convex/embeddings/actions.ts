@@ -11,8 +11,8 @@
 "use node";
 
 import { v } from "convex/values";
-import { action, internalAction } from "@convex/_generated/server";
-import { internal, api } from "@convex/_generated/api";
+import { internalAction } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { ConvexError } from "convex/values";
 
@@ -33,9 +33,9 @@ import { VectorUtils } from "@convex/types/entities/embedding";
 import OpenAI from "openai";
 
 /**
- * Generate embedding for content (public)
+ * Generate embedding for content (internal)
  */
-export const generateEmbedding = action({
+export const generateEmbedding = internalAction({
   args: EmbeddingGenerationV.request,
   returns: EmbeddingGenerationV.result,
   handler: async (ctx, args): Promise<EmbeddingGenerationResult> => {
@@ -309,16 +309,19 @@ export const generateUserProfileEmbedding = internalAction({
     }
 
     // Generate embedding
-    const result = await ctx.runAction(api.embeddings.actions.generateEmbedding, {
-      sourceType: "user",
-      sourceId: args.userId,
-      content,
-      model: "text-embedding-3-small",
-      metadata: {
-        generatedAt: Date.now().toString(),
-        contentLength: content.length.toString(),
+    const result = await ctx.runAction(
+      internal.embeddings.actions.generateEmbedding,
+      {
+        sourceType: "user",
+        sourceId: args.userId,
+        content,
+        model: "text-embedding-3-small",
+        metadata: {
+          generatedAt: Date.now().toString(),
+          contentLength: content.length.toString(),
+        },
       },
-    });
+    );
 
     return result.success ? result.embeddingId : null;
   },
@@ -393,17 +396,20 @@ export const generateMeetingEmbedding = internalAction({
     }
 
     // Generate embedding
-    const result = await ctx.runAction(api.embeddings.actions.generateEmbedding, {
-      sourceType: "meeting",
-      sourceId: args.meetingId,
-      content,
-      model: "text-embedding-3-small",
-      metadata: {
-        generatedAt: Date.now().toString(),
-        contentLength: content.length.toString(),
-        hasTranscript: transcripts.length > 0 ? "true" : "false",
+    const result = await ctx.runAction(
+      internal.embeddings.actions.generateEmbedding,
+      {
+        sourceType: "meeting",
+        sourceId: args.meetingId,
+        content,
+        model: "text-embedding-3-small",
+        metadata: {
+          generatedAt: Date.now().toString(),
+          contentLength: content.length.toString(),
+          hasTranscript: transcripts.length > 0 ? "true" : "false",
+        },
       },
-    });
+    );
 
     return result.success ? result.embeddingId : null;
   },
@@ -424,7 +430,7 @@ export const advancedVectorSearch = internalAction({
 
       // Perform basic vector search using Convex
       const basicResults: SimilaritySearchResult[] = await ctx.runQuery(
-        api.embeddings.queries.vectorSimilaritySearch,
+        internal.embeddings.queries.vectorSimilaritySearch,
         {
           queryVector: args.vector,
           sourceTypes: args.sourceTypes,

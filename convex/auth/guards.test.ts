@@ -8,7 +8,7 @@
  * Compliance: steering/convex_rules.mdc - Follows Convex testing patterns
  */
 
-import { api } from "@convex/_generated/api";
+import { api, internal } from "@convex/_generated/api";
 import { expect, test, describe, beforeEach, afterEach } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
 import {
@@ -57,23 +57,24 @@ describe("Authentication Guards", () => {
     otherUserId = userId2;
 
     // Create test meeting with participants using helper
-    const { meetingId, participantWorkosIds } = await createTestMeetingWithParticipants(
-      t,
-      {},
-      1, // 1 additional participant
-      {
-        title: "Test Meeting",
-        description: "A test meeting for auth testing",
-        scheduledAt: Date.now() + 3600000, // 1 hour from now
-        duration: 1800, // 30 minutes
-      },
-      {
-        organizerOverride: {
-          userId: testUserId,
-          workosUserId: testWorkosUserId,
+    const { meetingId, participantWorkosIds } =
+      await createTestMeetingWithParticipants(
+        t,
+        {},
+        1, // 1 additional participant
+        {
+          title: "Test Meeting",
+          description: "A test meeting for auth testing",
+          scheduledAt: Date.now() + 3600000, // 1 hour from now
+          duration: 1800, // 30 minutes
         },
-      },
-    );
+        {
+          organizerOverride: {
+            userId: testUserId,
+            workosUserId: testWorkosUserId,
+          },
+        },
+      );
     testMeetingId = meetingId;
     participantWorkosId = participantWorkosIds[0];
   });
@@ -233,7 +234,7 @@ describe("Authentication Guards", () => {
 
       // Test accessing own profile
       const profile = await authenticatedT.query(
-        api.users.queries.getUserById,
+        internal.users.queries.getUserById,
         {
           userId: testUserId,
         },
@@ -298,7 +299,9 @@ describe("Authentication Guards", () => {
         expect.fail("Should have thrown FORBIDDEN error");
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        expect(message).toMatch(/Access denied|Insufficient permissions|forbidden/i);
+        expect(message).toMatch(
+          /Access denied|Insufficient permissions|forbidden/i,
+        );
       }
     });
 
@@ -351,12 +354,7 @@ describe("Authentication Guards", () => {
       });
 
       // Perform an operation that should create audit logs (like onboarding)
-      await createTestInterest(
-        t,
-        "javascript",
-        "JavaScript",
-        "skill",
-      );
+      await createTestInterest(t, "javascript", "JavaScript", "skill");
 
       await authenticatedT.mutation(api.users.mutations.saveOnboarding, {
         age: 30,
@@ -376,7 +374,7 @@ describe("Authentication Guards", () => {
 
       // Check audit logs
       const auditPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -390,7 +388,8 @@ describe("Authentication Guards", () => {
 
       // Look for the onboarding audit log
       const onboardingLog = auditPage.logs.find(
-        (log) => log.action === "onboarding.save" && log.metadata.success === true,
+        (log) =>
+          log.action === "onboarding.save" && log.metadata.success === true,
       );
       expect(onboardingLog).toBeDefined();
     });
@@ -407,7 +406,7 @@ describe("Authentication Guards", () => {
 
       // Test audit log queries for different resource types
       const userAuditPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -416,7 +415,7 @@ describe("Authentication Guards", () => {
       );
 
       const meetingAuditPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "meeting",
           resourceId: testMeetingId,
@@ -443,7 +442,7 @@ describe("Authentication Guards", () => {
 
       // Test pagination
       const firstPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -458,7 +457,7 @@ describe("Authentication Guards", () => {
 
       // Querying again should still return results without cursor support
       const secondPage = await authenticatedT.query(
-        api.audit.logging.getAuditLogs,
+        internal.audit.logging.getAuditLogs,
         {
           resourceType: "user",
           resourceId: testUserId,
@@ -601,6 +600,271 @@ describe("Authentication Guards", () => {
       errorResults.forEach((errorResult) => {
         expect(typeof errorResult.error).toBe("string");
       });
+    });
+  });
+
+  describe("Org provenance (verified claims only)", () => {
+    // The provenance policy under test (see guards.ts requireIdentity):
+    // orgId/orgRole used for authorization come from the current verified
+    // token claims ONLY. Stored document org fields that the claims do not
+    // corroborate are quarantined in write contexts (moved to legacy fields
+    // with an audit event) and treated as absent in read/no-DB contexts.
+
+    const createForgedAdminUser = async (email: string) => {
+      // Stored document claims admin, but no token will vouch for it.
+      return createCompleteTestUser(t, {
+        email,
+        displayName: "Forged Admin",
+        orgId: "test-org",
+        orgRole: "admin",
+      });
+    };
+
+    test("denies admin built from a forged/legacy document orgRole when the token carries no org claims, and quarantines the unproven values with an audit trail", async () => {
+      const { userId: forgedUserId, workosUserId: forgedWorkosUserId } =
+        await createForgedAdminUser("forged-admin@example.com");
+
+      // Token WITHOUT organization claims.
+      const noClaimsT = t.withIdentity({
+        subject: forgedWorkosUserId,
+        email: "forged-admin@example.com",
+        name: "Forged Admin",
+      });
+
+      // A successful mutation by this user (owner path) persists the
+      // quarantine writes that requireIdentity performs during resolution.
+      // (A denied mutation would roll the transaction — quarantine included.)
+      await noClaimsT.mutation(api.users.mutations.updateUserProfile, {
+        userId: forgedUserId,
+        displayName: "Self Rename",
+      });
+
+      // Unproven stored values were moved to the quarantine fields.
+      const user = await t.run(async (ctx) => ctx.db.get(forgedUserId));
+      expect(user?.orgId).toBeUndefined();
+      expect(user?.orgRole).toBeUndefined();
+      expect(user?.legacyOrgId).toBe("test-org");
+      expect(user?.legacyOrgRole).toBe("admin");
+
+      // The quarantine is auditable.
+      const auditPage = await noClaimsT.query(
+        internal.audit.logging.getAuditLogs,
+        {
+          resourceType: "user",
+          resourceId: forgedUserId,
+          limit: 10,
+        },
+      );
+      const quarantineLog = auditPage.logs.find(
+        (log) => log.action === "org_provenance_quarantine",
+      );
+      expect(quarantineLog).toBeDefined();
+      expect(quarantineLog?.metadata.quarantinedFields).toBe("orgId,orgRole");
+
+      // assertOrgAccess('admin') through a registered function: denied.
+      let probeError: string | null = null;
+      try {
+        await noClaimsT.query(api.auth.permissions.probeOrgAdminAccess);
+        expect.fail("Should have thrown FORBIDDEN error");
+      } catch (error) {
+        probeError = error instanceof Error ? error.message : String(error);
+      }
+      expect(probeError).toMatch(
+        /forbidden|denied|permission|organization|role/i,
+      );
+
+      // assertOwnershipOrAdmin on another user's resource: denied.
+      let ownershipError: string | null = null;
+      try {
+        await noClaimsT.mutation(api.users.mutations.updateUserProfile, {
+          userId: otherUserId,
+          displayName: "Hacked Name",
+        });
+        expect.fail("Should have thrown FORBIDDEN error");
+      } catch (error) {
+        ownershipError = error instanceof Error ? error.message : String(error);
+      }
+      expect(ownershipError).toMatch(/Access denied|Insufficient permissions/i);
+    });
+
+    test("grants admin through verified org claims even after the stored values were quarantined (valid-claim transition)", async () => {
+      const { userId: forgedUserId, workosUserId: forgedWorkosUserId } =
+        await createForgedAdminUser("claims-transition@example.com");
+
+      // First contact without claims quarantines the stored values.
+      const noClaimsT = t.withIdentity({
+        subject: forgedWorkosUserId,
+        email: "claims-transition@example.com",
+        name: "Forged Admin",
+      });
+      await noClaimsT.mutation(api.users.mutations.updateUserProfile, {
+        userId: forgedUserId,
+        displayName: "Self Rename",
+      });
+      const quarantined = await t.run(async (ctx) => ctx.db.get(forgedUserId));
+      expect(quarantined?.orgId).toBeUndefined();
+
+      // The SAME user now presents a token WITH org claims: admin is granted
+      // from the verified claims alone, not from the (now-quarantined) doc.
+      const claimsAdminT = t.withIdentity({
+        subject: forgedWorkosUserId,
+        email: "claims-transition@example.com",
+        name: "Forged Admin",
+        org_id: "test-org",
+        org_role: "admin",
+      });
+
+      const probe = await claimsAdminT.query(
+        api.auth.permissions.probeOrgAdminAccess,
+      );
+      expect(probe).toEqual({ orgId: "test-org", orgRole: "admin" });
+
+      // assertOwnershipOrAdmin on another user's resource: granted.
+      const profileId = await claimsAdminT.mutation(
+        api.users.mutations.updateUserProfile,
+        {
+          userId: otherUserId,
+          displayName: "Admin Updated Name",
+        },
+      );
+      expect(profileId).toBeDefined();
+    });
+
+    test("revokes admin once the token stops carrying the org claims (removal transition)", async () => {
+      const { userId: forgedUserId, workosUserId: forgedWorkosUserId } =
+        await createForgedAdminUser("removal-transition@example.com");
+
+      // With claims: granted.
+      const claimsAdminT = t.withIdentity({
+        subject: forgedWorkosUserId,
+        email: "removal-transition@example.com",
+        name: "Forged Admin",
+        org_id: "test-org",
+        org_role: "admin",
+      });
+      const probe = await claimsAdminT.query(
+        api.auth.permissions.probeOrgAdminAccess,
+      );
+      expect(probe.orgRole).toBe("admin");
+
+      // Same user, token no longer carries org claims: denied, even though a
+      // stale/forged document could still say admin (here: re-inserted to
+      // prove the document alone never decides).
+      await t.run(async (ctx) =>
+        ctx.db.patch(forgedUserId, { orgId: "test-org", orgRole: "admin" }),
+      );
+
+      const noClaimsT = t.withIdentity({
+        subject: forgedWorkosUserId,
+        email: "removal-transition@example.com",
+        name: "Forged Admin",
+      });
+
+      let probeError: string | null = null;
+      try {
+        await noClaimsT.query(api.auth.permissions.probeOrgAdminAccess);
+        expect.fail("Should have thrown FORBIDDEN error");
+      } catch (error) {
+        probeError = error instanceof Error ? error.message : String(error);
+      }
+      expect(probeError).toMatch(
+        /forbidden|denied|permission|organization|role/i,
+      );
+
+      let ownershipError: string | null = null;
+      try {
+        await noClaimsT.mutation(api.users.mutations.updateUserProfile, {
+          userId: otherUserId,
+          displayName: "Hacked Name",
+        });
+        expect.fail("Should have thrown FORBIDDEN error");
+      } catch (error) {
+        ownershipError = error instanceof Error ? error.message : String(error);
+      }
+      expect(ownershipError).toMatch(/Access denied|Insufficient permissions/i);
+
+      // The re-introduced unproven values were quarantined again by the
+      // denied mutation's identity resolution (rolled back) and by this
+      // successful owner-path mutation.
+      await noClaimsT.mutation(api.users.mutations.updateUserProfile, {
+        userId: forgedUserId,
+        displayName: "Self Rename Again",
+      });
+      const user = await t.run(async (ctx) => ctx.db.get(forgedUserId));
+      expect(user?.orgId).toBeUndefined();
+      expect(user?.legacyOrgRole).toBe("admin");
+    });
+
+    test("treats unproven values as absent in read-only contexts without mutating the document", async () => {
+      const { userId: forgedUserId, workosUserId: forgedWorkosUserId } =
+        await createForgedAdminUser("readonly-forged@example.com");
+
+      const noClaimsT = t.withIdentity({
+        subject: forgedWorkosUserId,
+        email: "readonly-forged@example.com",
+        name: "Forged Admin",
+      });
+
+      // Read-only context: denial without any write.
+      let probeError: string | null = null;
+      try {
+        await noClaimsT.query(api.auth.permissions.probeOrgAdminAccess);
+        expect.fail("Should have thrown FORBIDDEN error");
+      } catch (error) {
+        probeError = error instanceof Error ? error.message : String(error);
+      }
+      expect(probeError).toMatch(
+        /forbidden|denied|permission|organization|role/i,
+      );
+
+      const user = await t.run(async (ctx) => ctx.db.get(forgedUserId));
+      expect(user?.orgId).toBe("test-org"); // untouched
+      expect(user?.orgRole).toBe("admin"); // untouched
+      expect(user?.legacyOrgId).toBeUndefined();
+      expect(user?.legacyOrgRole).toBeUndefined();
+    });
+
+    test("control: stored org values corroborated by the claims are left in place", async () => {
+      const { userId: honestUserId, workosUserId: honestWorkosUserId } =
+        await createCompleteTestUser(t, {
+          email: "honest-member@example.com",
+          displayName: "Honest Member",
+          orgId: "test-org",
+          orgRole: "member",
+        });
+
+      const honestT = t.withIdentity({
+        subject: honestWorkosUserId,
+        email: "honest-member@example.com",
+        name: "Honest Member",
+        org_id: "test-org",
+        org_role: "member",
+      });
+
+      await honestT.mutation(api.users.mutations.updateUserProfile, {
+        userId: honestUserId,
+        displayName: "Self Rename",
+      });
+
+      const user = await t.run(async (ctx) => ctx.db.get(honestUserId));
+      expect(user?.orgId).toBe("test-org");
+      expect(user?.orgRole).toBe("member");
+      expect(user?.legacyOrgId).toBeUndefined();
+      expect(user?.legacyOrgRole).toBeUndefined();
+
+      const auditPage = await honestT.query(
+        internal.audit.logging.getAuditLogs,
+        {
+          resourceType: "user",
+          resourceId: honestUserId,
+          limit: 10,
+        },
+      );
+      expect(
+        auditPage.logs.find(
+          (log) => log.action === "org_provenance_quarantine",
+        ),
+      ).toBeUndefined();
     });
   });
 });
