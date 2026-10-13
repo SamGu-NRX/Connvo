@@ -119,10 +119,17 @@ export function buildCalendarExport(input: CalendarExportInput): string | null {
     `DTSTART:${formatIcsUtc(input.scheduledAt)}`,
   ];
 
-  // DTEND is only emitted when the caller actually knows the duration;
-  // inventing one would put a lie on other people's calendars.
+  // RFC 5545 §3.8.2.2 requires DTEND to be later than DTSTART. Both are
+  // exported at whole-second precision, so omit unrepresentable intervals.
   if (input.durationMs != null) {
-    lines.push(`DTEND:${formatIcsUtc(input.scheduledAt + input.durationMs)}`);
+    const endMs = new Date(input.scheduledAt + input.durationMs).getTime();
+    if (
+      Number.isFinite(input.durationMs) &&
+      input.durationMs > 0 &&
+      Math.floor(endMs / 1000) > Math.floor(input.scheduledAt / 1000)
+    ) {
+      lines.push(`DTEND:${formatIcsUtc(endMs)}`);
+    }
   }
 
   lines.push(`SUMMARY:${escapeIcsText(input.title)}`);

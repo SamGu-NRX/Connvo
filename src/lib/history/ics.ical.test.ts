@@ -39,6 +39,39 @@ const trickyDescription =
   "Second line\nafter CRLF\r\nand commas, semicolons; 😀";
 
 describe("buildCalendarExport parsed by ical.js", () => {
+  it.each([0, -1, -1000, 1, 876, NaN, Infinity, -Infinity, 1e20])(
+    "omits DTEND for an interval that cannot end later: %s ms",
+    (durationMs) => {
+      const vevent = parseToVEvent(
+        buildCalendarExport({
+          meetingId: "invalid-interval",
+          title: "Short meeting",
+          scheduledAt: 1700000000123,
+          durationMs,
+          state: "scheduled",
+          updatedAt: 1700000000123,
+        })!,
+      );
+      expect(timePropertyMs(vevent, "dtstart")).toBe(1700000000000);
+      expect(vevent.getFirstProperty("dtend")).toBeNull();
+    },
+  );
+
+  it("keeps a sub-second duration that crosses the next calendar second", () => {
+    const vevent = parseToVEvent(
+      buildCalendarExport({
+        meetingId: "second-boundary",
+        title: "Short meeting",
+        scheduledAt: 1700000000123,
+        durationMs: 877,
+        state: "scheduled",
+        updatedAt: 1700000000123,
+      })!,
+    );
+    expect(timePropertyMs(vevent, "dtstart")).toBe(1700000000000);
+    expect(timePropertyMs(vevent, "dtend")).toBe(1700000001000);
+  });
+
   it("round-trips summary, uid, start and end instants through the real parser", () => {
     const ics = buildCalendarExport({
       meetingId: "icalcheck-1",
@@ -174,10 +207,19 @@ describe(`buildCalendarExport through ical.js, ${ICAL_PROPERTY_CASES} seeded cas
         Math.floor(scheduledAt / 1000) * 1000,
       );
       expect(timePropertyMs(vevent, "dtend"), label).toBe(
-        durationMs === null
+        durationMs === null ||
+          Math.floor((scheduledAt + durationMs) / 1000) <=
+            Math.floor(scheduledAt / 1000)
           ? null
           : Math.floor((scheduledAt + durationMs) / 1000) * 1000,
       );
+      const end = timePropertyMs(vevent, "dtend");
+      if (end !== null) {
+        expect(
+          end,
+          `${label}: RFC 5545 requires end after start`,
+        ).toBeGreaterThan(timePropertyMs(vevent, "dtstart")!);
+      }
       expect(textProperty(vevent, "status"), label).toBe(
         cancelled ? "CANCELLED" : "TENTATIVE",
       );
