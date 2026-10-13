@@ -30,9 +30,64 @@ import {
   resolveSelectedDeployment,
   seedShapeProblems,
   shellQuote,
+  requireAnonymousStartup,
 } from "./local-backend-core.mjs";
 
 const TEST_JWKS_DATA_URI = "data:application/json;base64,eyJrZXlzIjpbXX0=";
+
+describe("startup target before a pushing Convex command", () => {
+  it("accepts new anonymous setup and the pinned CLI's explicit local names", () => {
+    expect(requireAnonymousStartup({ env: {} })).toBeNull();
+    expect(requireAnonymousStartup({ env: {}, envLocalContent: 'CONVEX_DEPLOYMENT="anonymous:anonymous-swift-hawk" # local\n' }))
+      .toBe("anonymous:anonymous-swift-hawk");
+    expect(requireAnonymousStartup({ env: { CONVEX_DEPLOYMENT: "anonymous-swift-hawk" } }))
+      .toBe("anonymous-swift-hawk");
+  });
+
+  it("refuses inherited cloud selection even with anonymous agent mode", () => {
+    expect(() => requireAnonymousStartup({ env: { CONVEX_AGENT_MODE: "anonymous", CONVEX_DEPLOYMENT: "dev:shared-cloud" } }))
+      .toThrow("CONVEX_DEPLOYMENT is not an anonymous local target");
+  });
+
+  it("refuses cloud selection in either default env file", () => {
+    for (const file of ["envLocalContent", "envContent"]) {
+      expect(() => requireAnonymousStartup({ env: {}, [file]: 'export CONVEX_DEPLOYMENT = "prod:shared-cloud" # selected\n' }))
+        .toThrow("CONVEX_DEPLOYMENT is not an anonymous local target");
+    }
+  });
+
+  it("applies the CLI's process, local-file, default-file precedence", () => {
+    expect(requireAnonymousStartup({
+      env: { CONVEX_DEPLOYMENT: "anonymous:anonymous-process" },
+      envLocalContent: "CONVEX_DEPLOYMENT=dev:shared-cloud",
+      envContent: "CONVEX_DEPLOYMENT=prod:shared-cloud",
+    })).toBe("anonymous:anonymous-process");
+    expect(requireAnonymousStartup({
+      env: {},
+      envLocalContent: "CONVEX_DEPLOYMENT=anonymous:anonymous-local",
+      envContent: "CONVEX_DEPLOYMENT=prod:shared-cloud",
+    })).toBe("anonymous:anonymous-local");
+  });
+
+  it("refuses credential and self-hosted selectors without disclosing values", () => {
+    for (const key of ["CONVEX_DEPLOY_KEY", "CONVEX_DEPLOYMENT_TOKEN", "CONVEX_SELF_HOSTED_URL", "CONVEX_SELF_HOSTED_ADMIN_KEY"]) {
+      for (const opts of [
+        { env: { [key]: "synthetic-private-value" } },
+        { env: {}, envLocalContent: `${key}="synthetic-private-value"` },
+        { env: {}, envContent: `${key}="synthetic-private-value"` },
+      ]) {
+        expect(() => requireAnonymousStartup(opts)).toThrowError(
+          new Error(`[backend] REFUSING to start convex dev: ${key} selects or authenticates a non-anonymous deployment`),
+        );
+      }
+    }
+  });
+
+  it("does not mistake an anonymous type prefix for an anonymous deployment name", () => {
+    expect(() => requireAnonymousStartup({ env: { CONVEX_DEPLOYMENT: "anonymous:shared-cloud" } }))
+      .toThrow("CONVEX_DEPLOYMENT is not an anonymous local target");
+  });
+});
 
 /** @type {string[]} */
 const tmpDirs = [];

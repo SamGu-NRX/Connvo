@@ -43,6 +43,7 @@ import {
   pickConvexUrlFromEnvText,
   pruneTestArtifacts,
   resolveSelectedDeployment,
+  requireAnonymousStartup,
 } from "./local-backend-core.mjs";
 
 // authkit-nextjs constructs the WorkOS client on every middleware hit and
@@ -256,6 +257,14 @@ if (flag("status")) {
 }
 
 // ------------------------------------------------------------------- keys
+// This guard precedes key generation, tree/config writes, and any pushing CLI.
+requireAnonymousStartup({
+  env: process.env,
+  envLocalContent: readEnvLocalIfPresent(),
+  envContent: existsSync(path.join(REPO, ".env"))
+    ? readFileSync(path.join(REPO, ".env"), "utf8")
+    : null,
+});
 console.log("[backend] 1/6 keys");
 const { priv, jwks, regenerated } = ensureKeys({ fresh: flag("fresh") });
 console.log(`[backend] keys ${regenerated ? "regenerated" : "loaded"} (kid connvo-local-test-1)`);

@@ -8,6 +8,40 @@
 
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { parse as parseEnv } from "dotenv";
+
+/**
+ * Convex 1.46 selects process env, then .env.local, then .env BEFORE its
+ * anonymous-mode fallback. Refuse cloud selectors before `convex dev` can
+ * push, not just before the later deployment-env writes. Values stay private.
+ * @param {{ env: NodeJS.ProcessEnv, envLocalContent?: string | null, envContent?: string | null }} opts
+ * @returns {string | null} the explicit local target, or null for a new anonymous deployment
+ */
+export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
+  const effective = { ...env };
+  for (const text of [envLocalContent, envContent]) {
+    for (const [key, value] of Object.entries(parseEnv(text ?? ""))) {
+      if (effective[key] === undefined) effective[key] = value;
+    }
+  }
+  for (const key of [
+    "CONVEX_DEPLOY_KEY",
+    "CONVEX_DEPLOYMENT_TOKEN",
+    "CONVEX_SELF_HOSTED_URL",
+    "CONVEX_SELF_HOSTED_ADMIN_KEY",
+  ]) {
+    if (effective[key]) {
+      throw new Error(`[backend] REFUSING to start convex dev: ${key} selects or authenticates a non-anonymous deployment`);
+    }
+  }
+  const deployment = effective.CONVEX_DEPLOYMENT;
+  // isAnonymousDeployment in the pinned CLI requires the deployment NAME
+  // to start with anonymous-, after any type prefix has been stripped.
+  if (deployment && !/^(?:(?:anonymous|local):)?anonymous-[a-zA-Z0-9-]+$/.test(deployment)) {
+    throw new Error("[backend] REFUSING to start convex dev: CONVEX_DEPLOYMENT is not an anonymous local target");
+  }
+  return deployment || null;
+}
 
 /** @typedef {{ source: "environment" | ".env.local" | "unset", value: string | null }} SelectedDeployment */
 
