@@ -1,0 +1,238 @@
+{
+  "scenario": "quality-n8-s103",
+  "seed": 103,
+  "params": {
+    "count": 8,
+    "arrivalProfile": "staggered",
+    "availabilityMix": {
+      "always_on": 1,
+      "daytime": 0,
+      "short": 0
+    },
+    "staleFraction": 0.1,
+    "rejoinFraction": 0.1,
+    "horizonMs": 7200000,
+    "embedding": {
+      "model": "synthetic-hashed-v1",
+      "dimensions": 64
+    },
+    "cohortCount": 2
+  },
+  "engine": {
+    "cardinality": 2,
+    "totalWeight": 1.5799754723040107
+  },
+  "exact": {
+    "maxCardinality": 3,
+    "maxWeight": 2.358647011322427,
+    "maxWeightAtMaxCardinality": 2.358647011322427
+  },
+  "gaps": {
+    "cardinalityGap": 1,
+    "weightGap": 0.7786715390184162
+  },
+  "enginePairs": [
+    {
+      "i": 1,
+      "j": 3,
+      "score": 0.7907705558436318
+    },
+    {
+      "i": 4,
+      "j": 6,
+      "score": 0.7892049164603788
+    }
+  ],
+  "exactMatching": [
+    {
+      "i": 1,
+      "j": 5,
+      "score": 0.7807057016999321
+    },
+    {
+      "i": 2,
+      "j": 6,
+      "score": 0.7976322400674266
+    },
+    {
+      "i": 3,
+      "j": 7,
+      "score": 0.780309069555068
+    }
+  ],
+  "scores": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0.6460700934212573,
+      0.7907705558436318,
+      0.5581874128676716,
+      0.7807057016999321,
+      0.5629876701882645,
+      0.6962200774559905
+    ],
+    [
+      0,
+      0.6460700934212573,
+      0,
+      0.6352989908732714,
+      0.7132166271006668,
+      0.7242029190364434,
+      0.7976322400674266,
+      0.5907848491373389
+    ],
+    [
+      0,
+      0.7907705558436318,
+      0.6352989908732714,
+      0,
+      0.5870302941643941,
+      0.8240169471867934,
+      0.6102968421139718,
+      0.780309069555068
+    ],
+    [
+      0,
+      0.5581874128676716,
+      0.7132166271006668,
+      0.5870302941643941,
+      0,
+      0.5513769823811929,
+      0.7892049164603788,
+      0.49959042425688116
+    ],
+    [
+      0,
+      0.7807057016999321,
+      0.7242029190364434,
+      0.8240169471867934,
+      0.5513769823811929,
+      0,
+      0.5180242873504041,
+      0.7344930542919103
+    ],
+    [
+      0,
+      0.5629876701882645,
+      0.7976322400674266,
+      0.6102968421139718,
+      0.7892049164603788,
+      0.5180242873504041,
+      0,
+      0.5799413491920744
+    ],
+    [
+      0,
+      0.6962200774559905,
+      0.5907848491373389,
+      0.780309069555068,
+      0.49959042425688116,
+      0.7344930542919103,
+      0.5799413491920744,
+      0
+    ]
+  ],
+  "overlap": [
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true
+    ],
+    [
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+    ],
+    [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true
+    ],
+    [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  ],
+  "userIds": [
+    "10000;users",
+    "10005;users",
+    "10010;users",
+    "10016;users",
+    "10022;users",
+    "10027;users",
+    "10033;users",
+    "10039;users"
+  ],
+  "note": "Smallest counterexample instance: engine allocation vs exhaustive reference over the engine's own score matrix."
+}

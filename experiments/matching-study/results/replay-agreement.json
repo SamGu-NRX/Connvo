@@ -1,0 +1,505 @@
+{
+  "replayedAt": "2026-10-11T02:09:24.175Z",
+  "manifestHashOriginal": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
+  "manifestHashCurrent": "94c2ea95046201f1fa8f5bdecf44ed5a24a5d8c7667e6bae5dbf936280bf75b9",
+  "sourceHashesMatch": true,
+  "scenarios": [
+    {
+      "scenario": "quality-n4-s101",
+      "seed": 101,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 2→2, expired 1→1, cycles 1→1"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "1 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "1 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "exact-reference objectives",
+          "agrees": true,
+          "detail": "exact 2/1.306400 vs original 2/1.306400; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=4)",
+          "agrees": true,
+          "detail": "engine 1/0.852195 vs original 1/0.852195 at shardCount=4"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [3601000,5401000,5401000,5401000,3])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 2,
+          "expiredTotal": 1,
+          "cyclesRun": 1
+        },
+        "replayed": {
+          "matchedTotal": 2,
+          "expiredTotal": 1,
+          "cyclesRun": 1
+        }
+      },
+      "notes": [
+        "regenerated 4 planned entries from seed 101"
+      ]
+    },
+    {
+      "scenario": "quality-n6-s102",
+      "seed": 102,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 2→2, expired 0→0, cycles 1→1"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "1 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "1 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "exact-reference objectives",
+          "agrees": true,
+          "detail": "exact 3/2.393786 vs original 3/2.393786; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=4)",
+          "agrees": true,
+          "detail": "engine 1/0.761639 vs original 1/0.761639 at shardCount=4"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [6001000,6001000,6001000,6001000,2])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 2,
+          "expiredTotal": 0,
+          "cyclesRun": 1
+        },
+        "replayed": {
+          "matchedTotal": 2,
+          "expiredTotal": 0,
+          "cyclesRun": 1
+        }
+      },
+      "notes": [
+        "regenerated 6 planned entries from seed 102"
+      ]
+    },
+    {
+      "scenario": "quality-n8-s103",
+      "seed": 103,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 4→4, expired 1→1, cycles 1→1"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "1 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "2 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "exact-reference objectives",
+          "agrees": true,
+          "detail": "exact 3/2.358647 vs original 3/2.358647; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=4)",
+          "agrees": true,
+          "detail": "engine 2/1.579975 vs original 2/1.579975 at shardCount=4"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [3601000,6301000,6301000,6301000,5])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 4,
+          "expiredTotal": 1,
+          "cyclesRun": 1
+        },
+        "replayed": {
+          "matchedTotal": 4,
+          "expiredTotal": 1,
+          "cyclesRun": 1
+        }
+      },
+      "notes": [
+        "regenerated 8 planned entries from seed 103"
+      ]
+    },
+    {
+      "scenario": "quality-n8-s104-shard1",
+      "seed": 104,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 8→8, expired 0→0, cycles 1→1"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "1 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "4 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "exact-reference objectives",
+          "agrees": true,
+          "detail": "exact 4/3.237318 vs original 4/3.237318; baselines agree"
+        },
+        {
+          "receipt": "engine objective (shardCount=1)",
+          "agrees": true,
+          "detail": "engine 4/3.237318 vs original 4/3.237318 at shardCount=1"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [3601000,6301000,6301000,6301000,8])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 8,
+          "expiredTotal": 0,
+          "cyclesRun": 1
+        },
+        "replayed": {
+          "matchedTotal": 8,
+          "expiredTotal": 0,
+          "cyclesRun": 1
+        }
+      },
+      "notes": [
+        "regenerated 8 planned entries from seed 104"
+      ]
+    },
+    {
+      "scenario": "load-smoke-25-s201",
+      "seed": 201,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 14→14, expired 10→10, cycles 10→10"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "10 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "7 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [4897000,29377000,80929000,80929000,24])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 14,
+          "expiredTotal": 10,
+          "cyclesRun": 10
+        },
+        "replayed": {
+          "matchedTotal": 14,
+          "expiredTotal": 10,
+          "cyclesRun": 10
+        }
+      },
+      "notes": [
+        "regenerated 25 planned entries from seed 201"
+      ]
+    },
+    {
+      "scenario": "load-smoke-50-s202",
+      "seed": 202,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 44→44, expired 5→5, cycles 12→12"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "12 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "22 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [1000,7199000,86401000,86401000,49])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 44,
+          "expiredTotal": 5,
+          "cyclesRun": 12
+        },
+        "replayed": {
+          "matchedTotal": 44,
+          "expiredTotal": 5,
+          "cyclesRun": 12
+        }
+      },
+      "notes": [
+        "regenerated 50 planned entries from seed 202"
+      ]
+    },
+    {
+      "scenario": "load-smoke-100-s203",
+      "seed": 203,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 64→64, expired 35→35, cycles 13→13"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "13 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "32 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [4177000,6985000,34129000,34129000,99])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 64,
+          "expiredTotal": 35,
+          "cyclesRun": 13
+        },
+        "replayed": {
+          "matchedTotal": 64,
+          "expiredTotal": 35,
+          "cyclesRun": 13
+        }
+      },
+      "notes": [
+        "regenerated 100 planned entries from seed 203"
+      ]
+    },
+    {
+      "scenario": "load-full-250-s301",
+      "seed": 301,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 172→172, expired 77→77, cycles 18→18"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "18 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "86 committed pairs match by population plan index"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [4033000,6653800,36346600,39025000,249])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 172,
+          "expiredTotal": 77,
+          "cyclesRun": 18
+        },
+        "replayed": {
+          "matchedTotal": 172,
+          "expiredTotal": 77,
+          "cyclesRun": 18
+        }
+      },
+      "notes": [
+        "regenerated 250 planned entries from seed 301"
+      ]
+    },
+    {
+      "scenario": "load-full-500-s302",
+      "seed": 302,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 346→346, expired 153→153, cycles 19→19"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "19 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "first 100 of 173 committed pairs match by population plan index (capped artifact: prefix + total compared)"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [4105000,6601000,7244200,39543400,499])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 346,
+          "expiredTotal": 153,
+          "cyclesRun": 19
+        },
+        "replayed": {
+          "matchedTotal": 346,
+          "expiredTotal": 153,
+          "cyclesRun": 19
+        }
+      },
+      "notes": [
+        "regenerated 500 planned entries from seed 302"
+      ]
+    },
+    {
+      "scenario": "load-full-1000-s303",
+      "seed": 303,
+      "agreesAll": true,
+      "receipts": [
+        {
+          "receipt": "totals",
+          "agrees": true,
+          "detail": "matched 748→748, expired 251→251, cycles 19→19"
+        },
+        {
+          "receipt": "per-cycle vectors",
+          "agrees": true,
+          "detail": "19 cycles agree elementwise (totalMatches, expiredThisCycle, scoredPairs, averageScore)"
+        },
+        {
+          "receipt": "matched-pair decisions",
+          "agrees": true,
+          "detail": "first 100 of 374 committed pairs match by population plan index (capped artifact: prefix + total compared)"
+        },
+        {
+          "receipt": "waiting receipts",
+          "agrees": true,
+          "detail": "waiting percentiles agree (overall p50/p90/p99/max/count [3968200,6531400,7157800,32451400,999])"
+        }
+      ],
+      "totals": {
+        "matchedTotalAgrees": true,
+        "expiredTotalAgrees": true,
+        "cyclesRunAgrees": true,
+        "original": {
+          "matchedTotal": 748,
+          "expiredTotal": 251,
+          "cyclesRun": 19
+        },
+        "replayed": {
+          "matchedTotal": 748,
+          "expiredTotal": 251,
+          "cyclesRun": 19
+        }
+      },
+      "notes": [
+        "regenerated 1000 planned entries from seed 303"
+      ]
+    }
+  ],
+  "invariantsReplayed": {
+    "passed": 26,
+    "failed": 0
+  },
+  "invariantsPassCountAgrees": true,
+  "receiptFailureCount": 0,
+  "conclusion": "Source and manifest hashes match the recorded run; generator plans, matched-pair decision structure, exact-reference objectives, waiting receipts, and invariant outcomes agree (structural/agreement replay with fresh Convex ids — not a byte-exact reproduction)."
+}

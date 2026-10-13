@@ -1,0 +1,82 @@
+{
+  "scenario": "quality-n6-s102",
+  "seed": 102,
+  "decisionCount": 1,
+  "decisions": [
+    {
+      "user1": "10000;users",
+      "user2": "10026;users",
+      "queue1": "10037;matchingQueue",
+      "queue2": "10045;matchingQueue",
+      "score": 0.7616385203754646,
+      "shard": 2
+    }
+  ],
+  "userIds": [
+    "10000;users",
+    "10007;users",
+    "10014;users",
+    "10020;users",
+    "10026;users",
+    "10032;users"
+  ],
+  "shardMembership": {
+    "10000;users": 2,
+    "10007;users": 1,
+    "10014;users": 1,
+    "10020;users": 0,
+    "10026;users": 2,
+    "10032;users": 3
+  },
+  "waitingRecords": [
+    {
+      "userId": "10000;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750000000000,
+      "resolvedAt": 1750006001000,
+      "outcome": "matched",
+      "waitMs": 6001000
+    },
+    {
+      "userId": "10007;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750001200000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    },
+    {
+      "userId": "10014;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750002400000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    },
+    {
+      "userId": "10020;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750003600000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    },
+    {
+      "userId": "10026;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750004800000,
+      "resolvedAt": 1750006001000,
+      "outcome": "matched",
+      "waitMs": 1201000
+    },
+    {
+      "userId": "10032;users",
+      "availabilityClass": "always_on",
+      "enqueuedAt": 1750006000000,
+      "resolvedAt": null,
+      "outcome": "still-waiting",
+      "waitMs": null
+    }
+  ],
+  "failures": []
+}
