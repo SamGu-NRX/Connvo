@@ -47,6 +47,22 @@ describe("shared shell text contrast", () => {
     });
   }
 
+  it("mobile labels remain readable over the nested glass panel", () => {
+    const source = readFileSync(new URL("src/components/mvp/MobileNavigation.tsx", root), "utf8");
+    const classes = source.match(/className="([^"]*text-\[11px\][^"]*)"/)?.[1];
+    const foreground = classes?.match(/(?:^| )dark:text-(emerald-\d+|white)(?:\/(\d+))?(?: |$)/);
+    if (!foreground) throw new Error("The mobile labels have no dark text color");
+    // The fixed bar has its own GlassPanel over the page's GlassPanel.
+    const nestedGlass = over([255, 255, 255], 0.12 * 0.75,
+      over([255, 255, 255], 0.1,
+        over([255, 255, 255], 0.12 * 0.75,
+          over([255, 255, 255], 0.1, color("slate-900")))));
+    const backdrop = over(color("emerald-500"), 0.2, nestedGlass);
+    const alpha = foreground[2] ? Number(foreground[2]) / 100 : 1;
+    expect(contrast(over(color(foreground[1]), alpha, backdrop), backdrop))
+      .toBeGreaterThanOrEqual(4.5);
+  });
+
   it("the wordmark remains readable when its link fades on hover", () => {
     const source = readFileSync(new URL("src/app/app/layout.tsx", root), "utf8");
     const opacity = Number(source.match(/hover:opacity-(\d+)/)?.[1]) / 100;
@@ -55,4 +71,11 @@ describe("shared shell text contrast", () => {
     expect(contrast(over(color(foreground), opacity, backgrounds.light), backgrounds.light))
       .toBeGreaterThanOrEqual(4.5);
   });
+  it("the synced notes label reaches 4.5:1 on its light card", () => {
+    const source = readFileSync(new URL("src/components/meeting-notes/notesStatus.ts", root), "utf8");
+    const foreground = source.match(/case "synced":[\s\S]*?tone: "text-(emerald-\d+)/)?.[1];
+    if (!foreground) throw new Error("The synced notes label has no emerald text color");
+    expect(contrast(color(foreground), [255, 255, 255])).toBeGreaterThanOrEqual(4.5);
+  });
+
 });

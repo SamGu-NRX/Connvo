@@ -1,0 +1,1343 @@
+{
+  "kind": "static shell fixture, not the full application or after-call proof",
+  "font": "Arial fallback; next/font, providers, routing and motion are serialized as static adapters",
+  "before": "d5be541ce9fdc055d33f0523eb9606071f0e3f55",
+  "after": "source blobs listed below; final caretaker commit on PR #43",
+  "cases": [
+    {
+      "variant": "after",
+      "theme": "light",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "rows": [
+        {
+          "selector": "[data-fixture-text=\"0\"]",
+          "inPage": false,
+          "text": "Overview",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 298,
+          "worst": 4.85,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"1\"]",
+          "inPage": false,
+          "text": "HomeWelcome overview",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 215,
+          "worst": 6.38,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"2\"]",
+          "inPage": false,
+          "text": "Home",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 215,
+          "worst": 6.38,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"3\"]",
+          "inPage": false,
+          "text": "Welcome overview",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 454,
+          "worst": 4.82,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"4\"]",
+          "inPage": false,
+          "text": "DashboardMetrics and insights",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 445,
+          "worst": 6.37,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"5\"]",
+          "inPage": false,
+          "text": "Dashboard",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 445,
+          "worst": 6.37,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"6\"]",
+          "inPage": false,
+          "text": "Metrics and insights",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 506,
+          "worst": 4.82,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"7\"]",
+          "inPage": false,
+          "text": "Profile",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 224,
+          "worst": 4.86,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"8\"]",
+          "inPage": false,
+          "text": "ProfilePersonal details",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 257,
+          "worst": 6.38,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"9\"]",
+          "inPage": false,
+          "text": "Profile",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 257,
+          "worst": 6.38,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"10\"]",
+          "inPage": false,
+          "text": "Personal details",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 405,
+          "worst": 4.86,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"11\"]",
+          "inPage": false,
+          "text": "SettingsPreferences and controls",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 357,
+          "worst": 6.38,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"12\"]",
+          "inPage": false,
+          "text": "Settings",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 357,
+          "worst": 6.38,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"13\"]",
+          "inPage": false,
+          "text": "Preferences and controls",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 596,
+          "worst": 4.86,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"14\"]",
+          "inPage": false,
+          "text": "Connections",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 437,
+          "worst": 4.86,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"15\"]",
+          "inPage": false,
+          "text": "CasualFriendly voice introductions",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 280,
+          "worst": 6.39,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"16\"]",
+          "inPage": false,
+          "text": "Casual",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 280,
+          "worst": 6.39,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"17\"]",
+          "inPage": false,
+          "text": "Friendly voice introductions",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 659,
+          "worst": 4.86,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"18\"]",
+          "inPage": false,
+          "text": "ProfessionalTargeted matches",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 495,
+          "worst": 6.39,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"19\"]",
+          "inPage": false,
+          "text": "Professional",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 495,
+          "worst": 6.39,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"20\"]",
+          "inPage": false,
+          "text": "Targeted matches",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 456,
+          "worst": 4.86,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"21\"]",
+          "inPage": false,
+          "text": "Log out",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 400,
+          "worst": 5.59,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-wordmark]",
+          "inPage": false,
+          "text": "Connvo",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 326,
+          "worst": 5.23,
+          "pass": true
+        }
+      ],
+      "walk": {
+        "forward": [
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Connvo",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 43,
+              "y": 27,
+              "width": 88.015625,
+              "height": 28
+            },
+            "indicator": {
+              "strongPixels": 512,
+              "required": 464,
+              "maxChange": 17.81,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Toggle theme",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 1361,
+              "y": 23,
+              "width": 36,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 401,
+              "required": 288,
+              "maxChange": 3.42,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "HomeWelcome overview",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 123.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 17.82,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "DashboardMetrics and insights",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 167.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 17.82,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "ProfilePersonal details",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 246,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 17.82,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "SettingsPreferences and controls",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 290,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 17.85,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "CasualFriendly voice introductions",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 368.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 17.85,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "ProfessionalTargeted matches",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 412.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 17.85,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Log out",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 51,
+              "y": 863.5,
+              "width": 210,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 1999,
+              "required": 984,
+              "maxChange": 17.93,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Add to calendar",
+            "testid": "calendar-download",
+            "inPage": true,
+            "focusVisible": true,
+            "box": {
+              "x": 319,
+              "y": 0,
+              "width": 130.078125,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 965,
+              "required": 664,
+              "maxChange": 3.42,
+              "pass": true
+            }
+          }
+        ],
+        "backward": [
+          {
+            "tag": "button",
+            "name": "Log out",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "ProfessionalTargeted matches",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "CasualFriendly voice introductions",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "SettingsPreferences and controls",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "ProfilePersonal details",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "DashboardMetrics and insights",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "HomeWelcome overview",
+            "testid": null
+          },
+          {
+            "tag": "button",
+            "name": "Toggle theme",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "Connvo",
+            "testid": null
+          }
+        ],
+        "truncated": false,
+        "reverseMatches": true
+      }
+    },
+    {
+      "variant": "after",
+      "theme": "light",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "rows": [
+        {
+          "selector": "[data-fixture-text=\"22\"]",
+          "inPage": false,
+          "text": "Home",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 180,
+          "worst": 5.59,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"23\"]",
+          "inPage": false,
+          "text": "Profile",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 227,
+          "worst": 5.59,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-wordmark]",
+          "inPage": false,
+          "text": "Connvo",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 326,
+          "worst": 5.24,
+          "pass": true
+        }
+      ],
+      "walk": {
+        "forward": [
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Connvo",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 23,
+              "y": 27,
+              "width": 88.015625,
+              "height": 28
+            },
+            "indicator": {
+              "strongPixels": 512,
+              "required": 464,
+              "maxChange": 17.82,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Toggle theme",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 331,
+              "y": 23,
+              "width": 36,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 401,
+              "required": 288,
+              "maxChange": 3.42,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Add to calendar",
+            "testid": "calendar-download",
+            "inPage": true,
+            "focusVisible": true,
+            "box": {
+              "x": 25,
+              "y": 137,
+              "width": 130.078125,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 965,
+              "required": 664,
+              "maxChange": 3.42,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Home",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 154.0625,
+              "y": 657,
+              "width": 81.859375,
+              "height": 72.5
+            },
+            "indicator": {
+              "strongPixels": 668,
+              "required": 617,
+              "maxChange": 17.93,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Profile",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 154.0625,
+              "y": 585.5,
+              "width": 81.859375,
+              "height": 72.5
+            },
+            "indicator": {
+              "strongPixels": 664,
+              "required": 617,
+              "maxChange": 17.93,
+              "pass": true
+            }
+          }
+        ],
+        "backward": [
+          {
+            "tag": "a",
+            "name": "Home",
+            "testid": null
+          },
+          {
+            "tag": "button",
+            "name": "Add to calendar",
+            "testid": "calendar-download"
+          },
+          {
+            "tag": "button",
+            "name": "Toggle theme",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "Connvo",
+            "testid": null
+          }
+        ],
+        "truncated": false,
+        "reverseMatches": true
+      }
+    },
+    {
+      "variant": "after",
+      "theme": "dark",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "rows": [
+        {
+          "selector": "[data-fixture-text=\"0\"]",
+          "inPage": false,
+          "text": "Overview",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 292,
+          "worst": 7.59,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"1\"]",
+          "inPage": false,
+          "text": "HomeWelcome overview",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 213,
+          "worst": 9.34,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"2\"]",
+          "inPage": false,
+          "text": "Home",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 213,
+          "worst": 9.34,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"3\"]",
+          "inPage": false,
+          "text": "Welcome overview",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 446,
+          "worst": 7.67,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"4\"]",
+          "inPage": false,
+          "text": "DashboardMetrics and insights",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 441,
+          "worst": 9.3,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"5\"]",
+          "inPage": false,
+          "text": "Dashboard",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 441,
+          "worst": 9.3,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"6\"]",
+          "inPage": false,
+          "text": "Metrics and insights",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 497,
+          "worst": 7.58,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"7\"]",
+          "inPage": false,
+          "text": "Profile",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 223,
+          "worst": 7.58,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"8\"]",
+          "inPage": false,
+          "text": "ProfilePersonal details",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 256,
+          "worst": 9.2,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"9\"]",
+          "inPage": false,
+          "text": "Profile",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 256,
+          "worst": 9.3,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"10\"]",
+          "inPage": false,
+          "text": "Personal details",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 400,
+          "worst": 7.49,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"11\"]",
+          "inPage": false,
+          "text": "SettingsPreferences and controls",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 356,
+          "worst": 9.32,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"12\"]",
+          "inPage": false,
+          "text": "Settings",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 356,
+          "worst": 9.32,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"13\"]",
+          "inPage": false,
+          "text": "Preferences and controls",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 588,
+          "worst": 7.49,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"14\"]",
+          "inPage": false,
+          "text": "Connections",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 429,
+          "worst": 7.54,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"15\"]",
+          "inPage": false,
+          "text": "CasualFriendly voice introductions",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 277,
+          "worst": 9.21,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"16\"]",
+          "inPage": false,
+          "text": "Casual",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 277,
+          "worst": 9.21,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"17\"]",
+          "inPage": false,
+          "text": "Friendly voice introductions",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 650,
+          "worst": 7.49,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"18\"]",
+          "inPage": false,
+          "text": "ProfessionalTargeted matches",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 492,
+          "worst": 9.08,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"19\"]",
+          "inPage": false,
+          "text": "Professional",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 492,
+          "worst": 9.08,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"20\"]",
+          "inPage": false,
+          "text": "Targeted matches",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 448,
+          "worst": 7.46,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"21\"]",
+          "inPage": false,
+          "text": "Log out",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 394,
+          "worst": 5.84,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-wordmark]",
+          "inPage": false,
+          "text": "Connvo",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 326,
+          "worst": 8.49,
+          "pass": true
+        }
+      ],
+      "walk": {
+        "forward": [
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Connvo",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 43,
+              "y": 27,
+              "width": 88.015625,
+              "height": 28
+            },
+            "indicator": {
+              "strongPixels": 512,
+              "required": 464,
+              "maxChange": 9.49,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Toggle theme",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 1361,
+              "y": 23,
+              "width": 36,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 401,
+              "required": 288,
+              "maxChange": 3.44,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "HomeWelcome overview",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 123.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 9.38,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "DashboardMetrics and insights",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 167.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1560,
+              "required": 1096,
+              "maxChange": 9.25,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "ProfilePersonal details",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 246,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1558,
+              "required": 1096,
+              "maxChange": 9.25,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "SettingsPreferences and controls",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 290,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1559,
+              "required": 1096,
+              "maxChange": 9.28,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "CasualFriendly voice introductions",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 368.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1559,
+              "required": 1096,
+              "maxChange": 9.16,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "ProfessionalTargeted matches",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 39,
+              "y": 412.5,
+              "width": 234,
+              "height": 40
+            },
+            "indicator": {
+              "strongPixels": 1559,
+              "required": 1096,
+              "maxChange": 9.15,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Log out",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 51,
+              "y": 863.5,
+              "width": 210,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 1518,
+              "required": 984,
+              "maxChange": 9.04,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Add to calendar",
+            "testid": "calendar-download",
+            "inPage": true,
+            "focusVisible": true,
+            "box": {
+              "x": 319,
+              "y": 0,
+              "width": 130.078125,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 961,
+              "required": 664,
+              "maxChange": 3.22,
+              "pass": true
+            }
+          }
+        ],
+        "backward": [
+          {
+            "tag": "button",
+            "name": "Log out",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "ProfessionalTargeted matches",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "CasualFriendly voice introductions",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "SettingsPreferences and controls",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "ProfilePersonal details",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "DashboardMetrics and insights",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "HomeWelcome overview",
+            "testid": null
+          },
+          {
+            "tag": "button",
+            "name": "Toggle theme",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "Connvo",
+            "testid": null
+          }
+        ],
+        "truncated": false,
+        "reverseMatches": true
+      }
+    },
+    {
+      "variant": "after",
+      "theme": "dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "rows": [
+        {
+          "selector": "[data-fixture-text=\"22\"]",
+          "inPage": false,
+          "text": "Home",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 176,
+          "worst": 4.69,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-text=\"23\"]",
+          "inPage": false,
+          "text": "Profile",
+          "fontSize": 11,
+          "need": 4.5,
+          "coveredPixels": 225,
+          "worst": 5.61,
+          "pass": true
+        },
+        {
+          "selector": "[data-fixture-wordmark]",
+          "inPage": false,
+          "text": "Connvo",
+          "fontSize": 14,
+          "need": 4.5,
+          "coveredPixels": 326,
+          "worst": 8.52,
+          "pass": true
+        }
+      ],
+      "walk": {
+        "forward": [
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Connvo",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 23,
+              "y": 27,
+              "width": 88.015625,
+              "height": 28
+            },
+            "indicator": {
+              "strongPixels": 512,
+              "required": 464,
+              "maxChange": 9.49,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Toggle theme",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 331,
+              "y": 23,
+              "width": 36,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 401,
+              "required": 288,
+              "maxChange": 3.47,
+              "pass": true
+            }
+          },
+          {
+            "tag": "button",
+            "role": null,
+            "name": "Add to calendar",
+            "testid": "calendar-download",
+            "inPage": true,
+            "focusVisible": true,
+            "box": {
+              "x": 25,
+              "y": 137,
+              "width": 130.078125,
+              "height": 36
+            },
+            "indicator": {
+              "strongPixels": 964,
+              "required": 664,
+              "maxChange": 3.32,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Home",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 154.0625,
+              "y": 657,
+              "width": 81.859375,
+              "height": 72.5
+            },
+            "indicator": {
+              "strongPixels": 1304,
+              "required": 617,
+              "maxChange": 3.97,
+              "pass": true
+            }
+          },
+          {
+            "tag": "a",
+            "role": null,
+            "name": "Profile",
+            "testid": null,
+            "inPage": false,
+            "focusVisible": true,
+            "box": {
+              "x": 154.0625,
+              "y": 585.5,
+              "width": 81.859375,
+              "height": 72.5
+            },
+            "indicator": {
+              "strongPixels": 1291,
+              "required": 617,
+              "maxChange": 4.85,
+              "pass": true
+            }
+          }
+        ],
+        "backward": [
+          {
+            "tag": "a",
+            "name": "Home",
+            "testid": null
+          },
+          {
+            "tag": "button",
+            "name": "Add to calendar",
+            "testid": "calendar-download"
+          },
+          {
+            "tag": "button",
+            "name": "Toggle theme",
+            "testid": null
+          },
+          {
+            "tag": "a",
+            "name": "Connvo",
+            "testid": null
+          }
+        ],
+        "truncated": false,
+        "reverseMatches": true
+      }
+    }
+  ],
+  "before_measurements": {
+    "light1440_min": 2.65,
+    "light390_min": 3.37,
+    "dark1440_min": 3.62,
+    "dark390_min": 2.54,
+    "source": "Static fixture logs from the same batch, using alpha components and styles; saved before images."
+  },
+  "sourceSha256": {
+    "src/app/app/layout.tsx": "0c1e5746d87f8535e207fd963953d9cf50f2f8047613cf765b44df94dc47eebb",
+    "src/components/mvp/DesktopNavigation.tsx": "f3a06d0f6e922c8ac2d6de2a96b60eca086a4290c1e3798dd3b2a21ed34b2f33",
+    "src/components/mvp/MobileNavigation.tsx": "cf4b119d6335209ec1e89cc03c9bb0ccc5a6370f0d81aa21ff7b42e29a138b6b",
+    "src/app/globals.css": "1c891be7efd2cef63f18d493e0b7204e60388c2e32c80a6e69ae48806275221b"
+  }
+}

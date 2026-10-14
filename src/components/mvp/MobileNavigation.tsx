@@ -30,7 +30,7 @@ export function MobileNavigation() {
           <TransitionLink
             key={item.name}
             href={item.href}
-            className="group relative flex flex-1 flex-col items-center gap-1 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-900/80 transition-colors duration-300 hover:text-emerald-700 dark:text-emerald-100/80 dark:hover:text-emerald-300"
+            className="group relative flex flex-1 flex-col items-center gap-1 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-900/80 transition-colors duration-300 hover:text-emerald-700 dark:text-white dark:hover:text-white"
           >
             {(pathname === item.href ||
               pathname.startsWith(`${item.href}/`)) && (

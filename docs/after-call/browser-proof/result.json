@@ -1,0 +1,1010 @@
+{
+  "baseUrl": "http://localhost:3043",
+  "startedAt": "2026-10-14T16:01:42.679Z",
+  "checks": {
+    "notesInCall": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+    "endedRecap": {
+      "A": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "B": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "sameAsStored": true
+    },
+    "detail": {
+      "A": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "B": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
+      "same": true
+    },
+    "calendar": {
+      "fileName": "budget-review.ics",
+      "summary": "Budget review",
+      "start": "2026-10-14T16:01:42Z"
+    },
+    "keyboard": {
+      "recapWalk": {
+        "1440x900": {
+          "forward": [
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Connvo",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 43,
+                "y": 27,
+                "width": 88.125,
+                "height": 28
+              },
+              "indicator": {
+                "strongPixels": 512,
+                "required": 465,
+                "maxChange": 17.81,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Toggle theme",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 1361,
+                "y": 23,
+                "width": 36,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 401,
+                "required": 288,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "HomeWelcome overview",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 123.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "DashboardMetrics and insights",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 167.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "ProfilePersonal details",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 246,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "SettingsPreferences and controls",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 290,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.85,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "CasualFriendly voice introductions",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 368.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.85,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "ProfessionalTargeted matches",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 412.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.85,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Log out",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 51,
+                "y": 863.5,
+                "width": 210,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 1999,
+                "required": 984,
+                "maxChange": 17.93,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "All meetings",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 469,
+                "y": 57,
+                "width": 99.6875,
+                "height": 20
+              },
+              "indicator": {
+                "strongPixels": 706,
+                "required": 479,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Add to calendar",
+              "testid": "calendar-download",
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 469,
+                "y": 209,
+                "width": 156.03125,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 1477,
+                "required": 768,
+                "maxChange": 14.23,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": "switch",
+              "name": "Stay in touch",
+              "testid": "stay-in-touch-switch",
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 1180,
+                "y": 638,
+                "width": 36,
+                "height": 20
+              },
+              "indicator": {
+                "strongPixels": 438,
+                "required": 224,
+                "maxChange": 14.23,
+                "pass": true
+              }
+            }
+          ],
+          "backward": [
+            {
+              "tag": "button",
+              "name": "Add to calendar",
+              "testid": "calendar-download"
+            },
+            {
+              "tag": "a",
+              "name": "All meetings",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Log out",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "ProfessionalTargeted matches",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "CasualFriendly voice introductions",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "SettingsPreferences and controls",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "ProfilePersonal details",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "DashboardMetrics and insights",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "HomeWelcome overview",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Toggle theme",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Connvo",
+              "testid": null
+            }
+          ],
+          "truncated": false,
+          "reverseMatches": true
+        },
+        "390x844": {
+          "forward": [
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Connvo",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 23.8125,
+                "y": 27,
+                "width": 88.125,
+                "height": 28
+              },
+              "indicator": {
+                "strongPixels": 512,
+                "required": 465,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Toggle theme",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 331,
+                "y": 23,
+                "width": 36,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 401,
+                "required": 288,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "All meetings",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 25,
+                "y": 101,
+                "width": 99.6875,
+                "height": 20
+              },
+              "indicator": {
+                "strongPixels": 706,
+                "required": 479,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Add to calendar",
+              "testid": "calendar-download",
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 25,
+                "y": 209,
+                "width": 156.03125,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 1476,
+                "required": 768,
+                "maxChange": 14.23,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": "switch",
+              "name": "Stay in touch",
+              "testid": "stay-in-touch-switch",
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 308,
+                "y": 658,
+                "width": 36,
+                "height": 20
+              },
+              "indicator": {
+                "strongPixels": 439,
+                "required": 224,
+                "maxChange": 14.23,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Home",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 155.125,
+                "y": 543,
+                "width": 79.734375,
+                "height": 72.5
+              },
+              "indicator": {
+                "strongPixels": 660,
+                "required": 609,
+                "maxChange": 17.93,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Profile",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 155.125,
+                "y": 585.5,
+                "width": 79.734375,
+                "height": 72.5
+              },
+              "indicator": {
+                "strongPixels": 656,
+                "required": 609,
+                "maxChange": 17.93,
+                "pass": true
+              }
+            }
+          ],
+          "backward": [
+            {
+              "tag": "a",
+              "name": "Home",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Stay in touch",
+              "testid": "stay-in-touch-switch"
+            },
+            {
+              "tag": "button",
+              "name": "Add to calendar",
+              "testid": "calendar-download"
+            },
+            {
+              "tag": "a",
+              "name": "All meetings",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Toggle theme",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Connvo",
+              "testid": null
+            }
+          ],
+          "truncated": false,
+          "reverseMatches": true
+        }
+      },
+      "calendar": {
+        "Enter": "budget-review.ics",
+        "Space": "budget-review.ics"
+      },
+      "switchSpace": true,
+      "switchKeepsFocus": true,
+      "listWalk": {
+        "1440x900": {
+          "forward": [
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Connvo",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 42.171875,
+                "y": 27,
+                "width": 88.125,
+                "height": 28
+              },
+              "indicator": {
+                "strongPixels": 512,
+                "required": 465,
+                "maxChange": 17.81,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Toggle theme",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 1361,
+                "y": 23,
+                "width": 36,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 401,
+                "required": 288,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "HomeWelcome overview",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 123.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "DashboardMetrics and insights",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 167.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "ProfilePersonal details",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 246,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "SettingsPreferences and controls",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 290,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.85,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "CasualFriendly voice introductions",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 368.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.85,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "ProfessionalTargeted matches",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 39,
+                "y": 412.5,
+                "width": 234,
+                "height": 40
+              },
+              "indicator": {
+                "strongPixels": 1560,
+                "required": 1096,
+                "maxChange": 17.85,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Log out",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 51,
+                "y": 863.5,
+                "width": 210,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 1999,
+                "required": 984,
+                "maxChange": 17.93,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Budget reviewWed, Oct 14, 2026, 11:01 AM \u00b7 You hostedIn prog",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 470,
+                "y": 0,
+                "width": 766,
+                "height": 70
+              },
+              "indicator": {
+                "strongPixels": 5100,
+                "required": 3344,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Budget reviewWed, Oct 14, 2026, 10:55 AM \u00b7 You hostedIn prog",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 470,
+                "y": 249,
+                "width": 766,
+                "height": 70
+              },
+              "indicator": {
+                "strongPixels": 5100,
+                "required": 3344,
+                "maxChange": 3.43,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 10:55 AM \u00b7 You ",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 470,
+                "y": 320,
+                "width": 766,
+                "height": 70
+              },
+              "indicator": {
+                "strongPixels": 5100,
+                "required": 3344,
+                "maxChange": 3.43,
+                "pass": true
+              }
+            }
+          ],
+          "backward": [
+            {
+              "tag": "a",
+              "name": "Budget reviewWed, Oct 14, 2026, 10:55 AM \u00b7 You hostedIn prog",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Budget reviewWed, Oct 14, 2026, 11:01 AM \u00b7 You hostedIn prog",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Log out",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "ProfessionalTargeted matches",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "CasualFriendly voice introductions",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "SettingsPreferences and controls",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "ProfilePersonal details",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "DashboardMetrics and insights",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "HomeWelcome overview",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Toggle theme",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Connvo",
+              "testid": null
+            }
+          ],
+          "truncated": false,
+          "reverseMatches": true
+        },
+        "390x844": {
+          "forward": [
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Connvo",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 23.8125,
+                "y": 27,
+                "width": 88.125,
+                "height": 28
+              },
+              "indicator": {
+                "strongPixels": 512,
+                "required": 465,
+                "maxChange": 17.82,
+                "pass": true
+              }
+            },
+            {
+              "tag": "button",
+              "role": null,
+              "name": "Toggle theme",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 331,
+                "y": 23,
+                "width": 36,
+                "height": 36
+              },
+              "indicator": {
+                "strongPixels": 401,
+                "required": 288,
+                "maxChange": 3.42,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Budget reviewWed, Oct 14, 2026, 11:01 AM \u00b7 You hostedIn prog",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 26,
+                "y": 198,
+                "width": 338,
+                "height": 90
+              },
+              "indicator": {
+                "strongPixels": 2652,
+                "required": 1712,
+                "maxChange": 3.43,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Budget reviewWed, Oct 14, 2026, 10:55 AM \u00b7 You hostedIn prog",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 26,
+                "y": 289,
+                "width": 338,
+                "height": 90
+              },
+              "indicator": {
+                "strongPixels": 2652,
+                "required": 1712,
+                "maxChange": 3.43,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 10:55 AM \u00b7 You ",
+              "testid": null,
+              "inPage": true,
+              "focusVisible": true,
+              "box": {
+                "x": 26,
+                "y": 380,
+                "width": 338,
+                "height": 90
+              },
+              "indicator": {
+                "strongPixels": 2652,
+                "required": 1712,
+                "maxChange": 3.43,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Home",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 155.125,
+                "y": 654,
+                "width": 79.734375,
+                "height": 72.5
+              },
+              "indicator": {
+                "strongPixels": 660,
+                "required": 609,
+                "maxChange": 17.93,
+                "pass": true
+              }
+            },
+            {
+              "tag": "a",
+              "role": null,
+              "name": "Profile",
+              "testid": null,
+              "inPage": false,
+              "focusVisible": true,
+              "box": {
+                "x": 155.125,
+                "y": 585.5,
+                "width": 79.734375,
+                "height": 72.5
+              },
+              "indicator": {
+                "strongPixels": 656,
+                "required": 609,
+                "maxChange": 17.93,
+                "pass": true
+              }
+            }
+          ],
+          "backward": [
+            {
+              "tag": "a",
+              "name": "Home",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 10:55 AM \u00b7 You ",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Budget reviewWed, Oct 14, 2026, 10:55 AM \u00b7 You hostedIn prog",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Budget reviewWed, Oct 14, 2026, 11:01 AM \u00b7 You hostedIn prog",
+              "testid": null
+            },
+            {
+              "tag": "button",
+              "name": "Toggle theme",
+              "testid": null
+            },
+            {
+              "tag": "a",
+              "name": "Connvo",
+              "testid": null
+            }
+          ],
+          "truncated": false,
+          "reverseMatches": true
+        }
+      },
+      "listRowEnter": true
+    },
+    "stayInTouch": {
+      "bSawAnythingBeforeSayingYes": false,
+      "aSees": "Bob Brown\nb@connvo-local.test",
+      "bSees": "Alice Anderson\na@connvo-local.test"
+    },
+    "listHasMeeting": true,
+    "outsider": {
+      "kind": "refused",
+      "text": "This meeting's recap is only for the people who were in it.",
+      "sawNotes": false
+    }
+  },
+  "pass": true,
+  "meetingId": "m97cxny6j4h1crwc055dc6q0418g98xa"
+}
