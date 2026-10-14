@@ -3,7 +3,10 @@
  * After a call, over Convex, on the real pages: A and B take notes in a call
  * and leave; both see the same recap with those notes; O, who was not in the
  * meeting, cannot open it. Along the way every after-call state is captured
- * at 1440x900 and 390x844 and audited with axe.
+ * at 1440x900 and 390x844 and audited with axe. Where axe cannot judge text
+ * contrast it is measured from pixels, and the recap and list pages are
+ * walked with Tab and Shift+Tab, with the calendar button, the stay-in-touch
+ * switch and a list row activated from the keyboard (a11y-manual.mjs).
  *
  * Needs the local backend and next dev from
  *   node tools/call-eval/scripts/local-backend.mjs --port=3035 --after-call
@@ -19,6 +22,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import ICAL from "ical.js";
 import { createEvalMeeting, storedNotes } from "../runner/convex-signaling.mjs";
 import { tapConvex } from "../runner/convex-tap.mjs";
+import { keyboardWalk, tabTo, textContrast } from "./a11y-manual.mjs";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const flags = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, "").split("=")));
@@ -48,7 +52,9 @@ async function person(id) {
   const tap = await tapConvex(context);
   const page = await context.newPage();
   page.on("pageerror", (e) => console.error(`[pageerror ${id}]`, e.message.slice(0, 200)));
-  return { id, browser, context, page, tap };
+  // A blank page in its own context for decoding screenshots (a11y-manual.mjs).
+  const scratch = await browser.newPage();
+  return { id, browser, context, page, tap, scratch };
 }
 
 async function joinCall(page, meetingId, id) {
@@ -81,10 +87,22 @@ async function leave(page) {
 }
 
 const a11y = [];
-/** Screenshots at both sizes with `focus` in view, and an axe audit of `scope`. */
-async function capture(page, name, { focus, scope }) {
+/**
+ * Screenshots at both sizes with `focus` in view, an axe audit of `scope`,
+ * and a pixel contrast check of every node axe left incomplete.
+ */
+async function capture({ page, scratch }, name, { focus, scope }) {
   await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
+  await page.setViewportSize(VIEWPORTS[0]);
+  const axe = await new AxeBuilder({ page }).include(scope).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  const unjudged = axe.incomplete
+    .filter((v) => v.id === "color-contrast")
+    .flatMap((v) => v.nodes.map((n) => n.target))
+    .filter((t) => t.length === 1 && typeof t[0] === "string")
+    .map((t) => /** @type {string} */ (t[0]));
   const shots = [];
+  /** @type {Record<string, Awaited<ReturnType<typeof textContrast>>>} */
+  const measured = {};
   for (const viewport of VIEWPORTS) {
     await page.setViewportSize(viewport);
     if (focus) {
@@ -100,17 +118,40 @@ async function capture(page, name, { focus, scope }) {
     const file = path.join(shotsDir, `${name}-${viewport.width}x${viewport.height}.png`);
     await page.screenshot({ path: file });
     shots.push(path.relative(REPO, file));
+    measured[`${viewport.width}x${viewport.height}`] = await textContrast(page, scratch, unjudged);
   }
   await page.setViewportSize(VIEWPORTS[0]);
-  const axe = await new AxeBuilder({ page }).include(scope).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+  // The pass rule covers the page's own content; failures in the app shell
+  // around it (sidebar, top bar) are recorded separately.
+  const contrastFailures = Object.values(measured).flat().filter((row) => !row.pass && row.inPage);
+  const shellContrastFailures = Object.values(measured).flat().filter((row) => !row.pass && !row.inPage);
   a11y.push({
     state: name,
     shots,
     violations: axe.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help })),
     passes: axe.passes.length,
     incomplete: axe.incomplete.map((v) => v.id),
+    contrastMeasured: measured,
+    contrastFailures,
+    shellContrastFailures,
   });
-  console.log(`${name}: axe violations=${axe.violations.length}`);
+  console.log(`${name}: axe violations=${axe.violations.length}, measured contrast failures=${contrastFailures.length}`);
+}
+
+/** Every stop on the page, app shell included, shows focus with a 3:1 change, and Shift+Tab retraces Tab. */
+const walkPasses = (walk) => walk.reverseMatches && walk.forward.every((s) => s.focusVisible && s.indicator.pass);
+
+/** Tab and Shift+Tab through the page at both sizes; each focused stop is saved under <out>/focus/. */
+async function walkBothSizes({ page, scratch }, name) {
+  const out = {};
+  fs.mkdirSync(path.join(outDir, "focus"), { recursive: true });
+  for (const viewport of VIEWPORTS) {
+    await page.setViewportSize(viewport);
+    const size = `${viewport.width}x${viewport.height}`;
+    out[size] = await keyboardWalk(page, scratch, { shots: path.join(outDir, "focus", `${name}-${size}`) });
+  }
+  await page.setViewportSize(VIEWPORTS[0]);
+  return out;
 }
 
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
@@ -157,7 +198,7 @@ try {
   const [endedA, endedB] = [await recapNotes(A.page), await recapNotes(B.page)];
   result.checks.endedRecap = { A: endedA, B: endedB, sameAsStored: endedA === stored && endedB === stored };
   if (!result.checks.endedRecap.sameAsStored) fail("ended recap differs from the stored notes");
-  await capture(A.page, "call-ended", { focus: '[data-testid="ended-recap"]', scope: "main" });
+  await capture(A, "call-ended", { focus: '[data-testid="ended-recap"]', scope: "main" });
 
   // The full recap page, for both: the same notes.
   await A.page.click('[data-testid="open-recap"]');
@@ -167,7 +208,7 @@ try {
   const [detailA, detailB] = [await recapNotes(A.page), await recapNotes(B.page)];
   result.checks.detail = { A: detailA, B: detailB, same: detailA === detailB && detailA === stored };
   if (!result.checks.detail.same) fail("recap pages differ");
-  await capture(A.page, "recap", { focus: '[data-testid="meeting-recap"]', scope: "main" });
+  await capture(A, "recap", { focus: '[data-testid="meeting-recap"]', scope: "main" });
 
   // Calendar file: downloaded and read back by ical.js.
   const [download] = await Promise.all([A.page.waitForEvent("download"), A.page.click('[data-testid="calendar-download"]')]);
@@ -181,12 +222,34 @@ try {
   };
   if (result.checks.calendar.summary !== "Budget review") fail("calendar summary wrong");
 
+  // B uses the keyboard only: Tab and Shift+Tab through the recap page, then
+  // Enter and Space on "Add to calendar", each of which should download.
+  result.checks.keyboard = { recapWalk: await walkBothSizes(B, "recap"), calendar: {} };
+  for (const key of ["Enter", "Space"]) {
+    await tabTo(B.page, '[data-testid="calendar-download"]');
+    const [file] = await Promise.all([B.page.waitForEvent("download", { timeout: 10_000 }).catch(() => null), B.page.keyboard.press(key)]);
+    result.checks.keyboard.calendar[key] = file?.suggestedFilename() ?? null;
+  }
+
   // Stay in touch: A says yes and sees nobody; B says yes; each sees the other.
   await A.page.click('[data-testid="stay-in-touch-switch"]');
   await A.page.getByText(/Nobody else has yet/).waitFor({ timeout: 10_000 });
   const bSeesBefore = await B.page.locator('[data-testid="stay-in-touch-contacts"]').count();
-  await capture(A.page, "stay-in-touch-waiting", { focus: '[data-testid="stay-in-touch"]', scope: "main" });
-  await B.page.click('[data-testid="stay-in-touch-switch"]');
+  await capture(A, "stay-in-touch-waiting", { focus: '[data-testid="stay-in-touch"]', scope: "main" });
+  // B flips the switch with Space; focus should still be on it after the save.
+  await tabTo(B.page, '[data-testid="stay-in-touch-switch"]');
+  await B.page.keyboard.press("Space");
+  result.checks.keyboard.switchSpace = await B.page
+    .locator('[data-testid="stay-in-touch-switch"][aria-checked="true"]')
+    .waitFor({ timeout: 10_000 })
+    .then(
+      () => true,
+      () => false,
+    );
+  await B.page.waitForTimeout(500);
+  result.checks.keyboard.switchKeepsFocus = await B.page
+    .locator('[data-testid="stay-in-touch-switch"]')
+    .evaluate((el) => el === document.activeElement);
   await A.page.locator('[data-testid="stay-in-touch-contacts"]').waitFor({ timeout: 10_000 });
   await B.page.locator('[data-testid="stay-in-touch-contacts"]').waitFor({ timeout: 10_000 });
   result.checks.stayInTouch = {
@@ -194,24 +257,34 @@ try {
     aSees: await A.page.locator('[data-testid="stay-in-touch-contacts"]').innerText(),
     bSees: await B.page.locator('[data-testid="stay-in-touch-contacts"]').innerText(),
   };
-  await capture(A.page, "stay-in-touch-both", { focus: '[data-testid="stay-in-touch"]', scope: "main" });
+  await capture(A, "stay-in-touch-both", { focus: '[data-testid="stay-in-touch"]', scope: "main" });
 
   // The list, newest first, with this meeting.
   await A.page.goto(`${baseUrl}/app/meetings?as=A`, { waitUntil: "domcontentloaded" });
   await A.page.locator('[data-testid="meeting-list"]').waitFor({ timeout: 30_000 });
   result.checks.listHasMeeting = (await A.page.locator(`a[href="/app/meetings/${meetingId}"]`).count()) === 1;
-  await capture(A.page, "list", { focus: "main", scope: "main" });
+  await capture(A, "list", { focus: "main", scope: "main" });
+  // The list from the keyboard: walk it, then open the meeting with Enter.
+  result.checks.keyboard.listWalk = await walkBothSizes(A, "list");
+  await tabTo(A.page, `a[href="/app/meetings/${meetingId}"]`);
+  await A.page.keyboard.press("Enter");
+  result.checks.keyboard.listRowEnter = await A.page.waitForURL(`**/app/meetings/${meetingId}`, { timeout: 30_000 }).then(
+    () => true,
+    () => false,
+  );
+  await A.page.goto(`${baseUrl}/app/meetings?as=A`, { waitUntil: "domcontentloaded" });
+  await A.page.locator('[data-testid="meeting-list"]').waitFor({ timeout: 30_000 });
 
   // Loading and error, by holding back or failing the history queries.
   A.tap.holdQueries = ["history/queries:"];
   await A.page.reload({ waitUntil: "domcontentloaded" });
   await A.page.locator('[data-testid="meeting-list-loading"]').waitFor({ timeout: 30_000 });
-  await capture(A.page, "list-loading", { focus: "main", scope: "main" });
+  await capture(A, "list-loading", { focus: "main", scope: "main" });
   A.tap.holdQueries = [];
   A.tap.failQueries = ["history/queries:"];
   await A.page.goto(`${baseUrl}/app/meetings/${meetingId}?as=A`, { waitUntil: "domcontentloaded" });
   await A.page.locator('[data-testid="history-error"]').first().waitFor({ timeout: 30_000 });
-  await capture(A.page, "recap-error", { focus: "main", scope: "main" });
+  await capture(A, "recap-error", { focus: "main", scope: "main" });
 
   // O was not in the meeting: refused; and O's own list is empty.
   const O = await person("O");
@@ -224,10 +297,10 @@ try {
     sawNotes: (await O.page.locator('[data-testid="recap-notes"]').count()) > 0,
   };
   if (result.checks.outsider.kind !== "refused" || result.checks.outsider.sawNotes) fail("O was not refused");
-  await capture(O.page, "recap-not-a-participant", { focus: "main", scope: "main" });
+  await capture(O, "recap-not-a-participant", { focus: "main", scope: "main" });
   await O.page.goto(`${baseUrl}/app/meetings?as=O`, { waitUntil: "domcontentloaded" });
   await O.page.locator('[data-testid="meeting-list-empty"]').waitFor({ timeout: 30_000 });
-  await capture(O.page, "list-empty", { focus: "main", scope: "main" });
+  await capture(O, "list-empty", { focus: "main", scope: "main" });
 
   result.pass =
     result.checks.endedRecap.sameAsStored &&
@@ -235,7 +308,14 @@ try {
     result.checks.listHasMeeting &&
     !result.checks.stayInTouch.bSawAnythingBeforeSayingYes &&
     result.checks.outsider.kind === "refused" &&
-    a11y.every((s) => s.violations.length === 0);
+    a11y.every((s) => s.violations.length === 0 && s.contrastFailures.length === 0) &&
+    Object.values(result.checks.keyboard.recapWalk).every(walkPasses) &&
+    Object.values(result.checks.keyboard.listWalk).every(walkPasses) &&
+    result.checks.keyboard.calendar.Enter !== null &&
+    result.checks.keyboard.calendar.Space !== null &&
+    result.checks.keyboard.switchSpace &&
+    result.checks.keyboard.switchKeepsFocus &&
+    result.checks.keyboard.listRowEnter;
 } catch (err) {
   result.error = err instanceof Error ? err.message : String(err);
   // What each open page showed when it failed.
