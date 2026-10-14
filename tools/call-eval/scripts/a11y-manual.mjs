@@ -157,7 +157,7 @@ export async function textContrast(page, scratch, selectors) {
       pass: covered > 0 && worst >= need,
     });
   }
-  await probeStyle.evaluate((node) => node.remove());
+  await probeStyle.evaluate((/** @type {HTMLElement} */ node) => node.remove());
   return rows;
 }
 
@@ -221,7 +221,7 @@ async function focusChange(page, scratch, savePath) {
     return { x: r.x, y: r.y, width: r.width, height: r.height };
   });
   if (box.width < 1 || box.height < 1) {
-    await probeStyle.evaluate((node) => node.remove());
+    await probeStyle.evaluate((/** @type {HTMLElement} */ node) => node.remove());
     return {
       strongPixels: 0,
       required: 0,
@@ -269,7 +269,7 @@ async function focusChange(page, scratch, savePath) {
   }
   const required = Math.round(2 * 2 * (box.width + box.height));
   if (savePath && strong < required) fs.writeFileSync(savePath.replace(/\.png$/, "-unfocused.png"), plainPng);
-  await probeStyle.evaluate((node) => node.remove());
+  await probeStyle.evaluate((/** @type {HTMLElement} */ node) => node.remove());
   return {
     strongPixels: strong,
     required,
