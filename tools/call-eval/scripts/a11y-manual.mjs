@@ -207,6 +207,11 @@ async function describeFocus(page) {
  * perimeter, the WCAG 2.4.13 minimum area.
  */
 async function focusChange(page, scratch, savePath) {
+  // Compare steady focus styles. The switch's transition-all can otherwise
+  // leave the previous ring in the frame labelled unfocused.
+  const probeStyle = await page.addStyleTag({
+    content: "*, *::before, *::after { transition: none !important; animation: none !important; }",
+  });
   await page.evaluate(() =>
     document.activeElement?.scrollIntoView({ block: "center" }),
   );
@@ -215,7 +220,8 @@ async function focusChange(page, scratch, savePath) {
     const r = document.activeElement.getBoundingClientRect();
     return { x: r.x, y: r.y, width: r.width, height: r.height };
   });
-  if (box.width < 1 || box.height < 1)
+  if (box.width < 1 || box.height < 1) {
+    await probeStyle.evaluate((node) => node.remove());
     return {
       strongPixels: 0,
       required: 0,
@@ -223,6 +229,7 @@ async function focusChange(page, scratch, savePath) {
       pass: false,
       note: "focused element has no size",
     };
+  }
   // Room for the two-band ring: a 2px halo plus a 3px ring, or a 2px
   // outline 2px out.
   const pad = 8;
@@ -241,7 +248,13 @@ async function focusChange(page, scratch, savePath) {
   const handle = await page.evaluateHandle(() => document.activeElement);
   await handle.evaluate((el) => el.blur());
   await page.waitForTimeout(250);
-  const plain = await pixels(scratch, await page.screenshot({ clip }));
+  const plainPng = await page.screenshot({ clip });
+  const plain = await pixels(scratch, plainPng);
+  const blurState = await handle.evaluate((/** @type {HTMLElement} */ el) => ({
+    stillFocused: el === document.activeElement,
+    focusVisible: el.matches(":focus-visible"),
+    shadow: getComputedStyle(el).boxShadow,
+  }));
   // Programmatic focus after keyboard use keeps :focus-visible in Chromium.
   await handle.evaluate((el) => el.focus());
   await page.waitForTimeout(250);
@@ -255,11 +268,14 @@ async function focusChange(page, scratch, savePath) {
     if (c > best) best = c;
   }
   const required = Math.round(2 * 2 * (box.width + box.height));
+  if (savePath && strong < required) fs.writeFileSync(savePath.replace(/\.png$/, "-unfocused.png"), plainPng);
+  await probeStyle.evaluate((node) => node.remove());
   return {
     strongPixels: strong,
     required,
     maxChange: Number(best.toFixed(2)),
-    pass: strong >= required,
+    pass: strong >= required && !blurState.stillFocused,
+    blurState,
   };
 }
 
