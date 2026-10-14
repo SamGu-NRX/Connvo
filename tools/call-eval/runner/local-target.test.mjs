@@ -56,6 +56,7 @@ it("refuses cloud or mismatched URLs before a probe or runner spawn", () => {
   const f = fixture();
   expect(selectedLocalBackend(f)).toEqual({
     deployment: "anonymous:anonymous-probe",
+    name: "anonymous-probe",
     url: "http://127.0.0.1:3210",
   });
   expect(pickConvexUrlFromEnvText("CONVEX_URL=http://127.0.0.1:3210\nNEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210")).toEqual({source: "NEXT_PUBLIC_CONVEX_URL", value: "http://127.0.0.1:3210"});

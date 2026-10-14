@@ -46,9 +46,12 @@ export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
   if (deployment && !anonymousDeploymentName(deployment)) {
     throw new Error("[backend] REFUSING to start convex dev: CONVEX_DEPLOYMENT is not an anonymous local target");
   }
-  const urls = [effective.NEXT_PUBLIC_CONVEX_URL, effective.CONVEX_URL].filter(Boolean);
-  for (const url of urls) requireLoopbackUrl(url);
-  if (urls.length === 2 && urls[0] !== urls[1])
+  // Compare origins, not text: `http://127.0.0.1:3210/` and
+  // `http://127.0.0.1:3210` select the same backend.
+  const origins = [effective.NEXT_PUBLIC_CONVEX_URL, effective.CONVEX_URL]
+    .filter(Boolean)
+    .map((url) => requireLoopbackUrl(url).origin);
+  if (new Set(origins).size > 1)
     throw new Error("[backend] conflicting Convex URL settings");
   return deployment || null;
 }
@@ -76,6 +79,38 @@ export function checkedConvexEnvironment(opts) {
   for (const key of DEPLOYMENT_SELECTORS) clean[key] = "";
   clean.CONVEX_DEPLOYMENT = deployment ?? "";
   clean.CONVEX_AGENT_MODE = "anonymous";
+  return clean;
+}
+
+/**
+ * Environment for `next dev`. Next loads `.env.development.local`, `.env.local`,
+ * `.env.development` and `.env` under the caller's environment, so every
+ * source is checked on its own: a cloud selector, key or URL in any of them is
+ * refused even when another source would shadow it, and all Convex URLs must
+ * share one loopback origin. That origin is then set in the child environment,
+ * where Next never replaces it from a file.
+ * @param {{ env: NodeJS.ProcessEnv, files: Array<string | null> }} opts file contents, highest Next precedence first; null for an absent file
+ * @returns {Record<string, string>}
+ */
+export function checkedNextEnvironment({ env, files }) {
+  const sources = [env, ...files.map((text) => parseEnv(text ?? ""))];
+  for (const source of sources) requireAnonymousStartup({ env: source });
+  const origins = new Set(
+    sources.flatMap((source) =>
+      [source.NEXT_PUBLIC_CONVEX_URL, source.CONVEX_URL].filter(Boolean).map((url) => requireLoopbackUrl(url).origin),
+    ),
+  );
+  if (origins.size > 1) throw new Error("[backend] conflicting Convex URL settings");
+  /** @type {NodeJS.ProcessEnv} */
+  const effective = {};
+  for (const source of sources)
+    for (const [key, value] of Object.entries(source)) if (effective[key] === undefined) effective[key] = value;
+  const clean = checkedConvexEnvironment({ env });
+  clean.CONVEX_DEPLOYMENT = requireAnonymousStartup({ env: effective }) ?? "";
+  for (const origin of origins) {
+    clean.NEXT_PUBLIC_CONVEX_URL = origin;
+    clean.CONVEX_URL = origin;
+  }
   return clean;
 }
 
@@ -315,7 +350,7 @@ export function deploymentPortFromUrl(convexUrl) {
  * Match the pinned CLI's selected project-local anonymous backend, rather
  * than treating an unrelated listener on a guessed port as proof.
  * @param {{ cwd: string, env: NodeJS.ProcessEnv }} opts
- * @returns {{ deployment: string, url: string }}
+ * @returns {{ deployment: string, name: string, url: string }} `name` is what the backend reports at /instance_name
  */
 export function selectedLocalBackend({ cwd, env }) {
   const selected = requireAnonymousStartup({ env });
@@ -330,7 +365,7 @@ export function selectedLocalBackend({ cwd, env }) {
     if (env[key] && requireLoopbackUrl(env[key]).origin !== url)
       throw new Error("[backend] Convex URL does not match selected local backend host and port");
   }
-  return { deployment: `anonymous:${name}`, url };
+  return { deployment: `anonymous:${name}`, name, url };
 }
 
 /**

@@ -33,9 +33,49 @@ import {
   shellQuote,
   requireAnonymousStartup,
   createTmuxLauncher,
+  checkedNextEnvironment,
 } from "./local-backend-core.mjs";
 
 const TEST_JWKS_DATA_URI = "data:application/json;base64,eyJrZXlzIjpbXX0=";
+
+// Synthetic file contents only; no real env file is read.
+describe("Next environment for the self-proof", () => {
+  const caller = { HOME: "/synthetic-home", PATH: "/usr/bin", NODE_OPTIONS: "--require=synthetic-hook", BASH_ENV: "/synthetic/startup.sh" };
+
+  it("refuses a cloud value in any file Next loads, even when the caller's loopback URL would shadow it", () => {
+    const env = { ...caller, NEXT_PUBLIC_CONVEX_URL: "http://127.0.0.1:3210" };
+    for (const [index, text] of [
+      [0, "NEXT_PUBLIC_CONVEX_URL=https://synthetic-cloud.convex.cloud\n"],
+      [2, "CONVEX_URL=https://synthetic-cloud.convex.cloud\n"],
+      [1, "CONVEX_DEPLOY_KEY=synthetic-file-key\n"],
+      [3, "CONVEX_DEPLOYMENT=prod:synthetic-cloud\n"],
+    ]) {
+      /** @type {Array<string | null>} */
+      const files = [null, null, null, null];
+      files[/** @type {number} */ (index)] = /** @type {string} */ (text);
+      expect(() => checkedNextEnvironment({ env, files })).toThrow();
+    }
+  });
+
+  it("refuses loopback URLs in different files that name different origins", () => {
+    expect(() => checkedNextEnvironment({
+      env: caller, files: ["NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210/\n", null, "CONVEX_URL=http://127.0.0.1:3211\n", null],
+    })).toThrow("conflicting Convex URL settings");
+  });
+
+  it("pins the validated origin in Next's environment and passes no hooks", () => {
+    const result = checkedNextEnvironment({
+      env: caller, files: [null, "NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210/\nCONVEX_DEPLOYMENT=anonymous:anonymous-probe\n", null, null],
+    });
+    expect(result.NEXT_PUBLIC_CONVEX_URL).toBe("http://127.0.0.1:3210");
+    expect(result.CONVEX_URL).toBe("http://127.0.0.1:3210");
+    expect(result.CONVEX_DEPLOYMENT).toBe("anonymous:anonymous-probe");
+    expect(result.CONVEX_DEPLOY_KEY).toBe("");
+    expect(result.NODE_OPTIONS).toBeUndefined();
+    expect(result.BASH_ENV).toBeUndefined();
+    expect(result.HOME).toBe("/synthetic-home");
+  });
+});
 
 describe("startup target before a pushing Convex command", () => {
   it("accepts new anonymous setup and the pinned CLI's explicit local names", () => {
@@ -256,6 +296,15 @@ describe("operator fix 1: the deployment URL is read from what the CLI writes", 
   it("rejects conflicting URL spellings", () => {
     const text = "CONVEX_URL=http://127.0.0.1:1111\nNEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210\n";
     expect(() => pickConvexUrlFromEnvText(text)).toThrow("conflicting Convex URL settings");
+  });
+
+  it("treats a trailing slash as the same origin, not a conflict", () => {
+    expect(pickConvexUrlFromEnvText("CONVEX_URL=http://127.0.0.1:3210/\nNEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210\n")).toEqual({
+      source: "NEXT_PUBLIC_CONVEX_URL",
+      value: "http://127.0.0.1:3210",
+    });
+    expect(() => requireAnonymousStartup({ env: { CONVEX_URL: "http://127.0.0.1:3210/", NEXT_PUBLIC_CONVEX_URL: "http://127.0.0.1:3211" } }))
+      .toThrow("conflicting Convex URL settings");
   });
 
   it("falls back to legacy CONVEX_URL", () => {

@@ -25,6 +25,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runScenarios, H_IDS } from "../runner/run.mjs";
+import { checkedNextEnvironment } from "./local-backend-core.mjs";
 import {
   appendCheckpoint,
   checkpointKeys,
@@ -111,9 +112,21 @@ async function waitForHttp(url, timeoutMs) {
 let next = null;
 if (!baseUrl) {
   baseUrl = `http://localhost:${port}`;
+  /** @param {string} name */
+  const envFile = (name) => {
+    const file = path.join(REPO, name);
+    return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
+  };
+  // Refuse cloud selectors, keys and URLs in the caller's environment or any
+  // env file Next loads, and pass only allowlisted settings, so no inherited
+  // URL, key or loader hook (NODE_OPTIONS, BASH_ENV) reaches Next.
+  const nextEnv = checkedNextEnvironment({
+    env: process.env,
+    files: [".env.development.local", ".env.local", ".env.development", ".env"].map(envFile),
+  });
   next = spawn(path.join(REPO, "node_modules", ".bin", "next"), ["dev", "-p", String(port)], {
     cwd: REPO,
-    env: { ...process.env, NEXT_PUBLIC_CONNVO_CALL_BENCH: "1" },
+    env: { ...nextEnv, NEXT_PUBLIC_CONNVO_CALL_BENCH: "1" },
     stdio: ["ignore", "ignore", "inherit"],
     detached: true,
   });
