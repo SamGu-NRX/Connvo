@@ -4,9 +4,12 @@ import {
   mkdirSync,
   readFileSync,
   rmSync,
+  existsSync,
+  readdirSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { afterEach, expect, it } from "vitest";
 import {
@@ -39,14 +42,37 @@ it("defaults to disposable output and requires explicit publication for docs", (
   const out = path.join(repo, "tools/call-eval/out/after-call");
   mkdirSync(out, { recursive: true });
   writeFileSync(path.join(out, "recap.png"), "synthetic image");
-  writeFileSync(path.join(out, "result.json"), JSON.stringify({ pass: true }));
+  writeFileSync(path.join(out, "old-run.png"), "not produced this run");
+  writeFileSync(
+    path.join(out, "result.json"),
+    JSON.stringify({
+      pass: true,
+      captures: ["recap.png", "focus/current.png"],
+    }),
+  );
   writeFileSync(
     path.join(out, "a11y-results.json"),
     JSON.stringify({
       states: [{ shots: ["tools/call-eval/out/after-call/recap.png"] }],
     }),
   );
+  const published = path.join(repo, "docs/after-call/browser-proof");
+  mkdirSync(path.join(published, "focus"), { recursive: true });
+  writeFileSync(path.join(published, "stale.png"), "old");
+  writeFileSync(path.join(published, "focus/stale.png"), "old");
+  writeFileSync(path.join(published, "keep.txt"), "not a capture");
+  mkdirSync(path.join(out, "focus"));
+  writeFileSync(path.join(out, "focus/current.png"), "new focus");
   publishProof(repo, out, out);
+  expect(existsSync(path.join(published, "stale.png"))).toBe(false);
+  expect(existsSync(path.join(published, "old-run.png"))).toBe(false);
+  expect(existsSync(path.join(published, "focus/stale.png"))).toBe(false);
+  expect(readFileSync(path.join(published, "focus/current.png"), "utf8")).toBe(
+    "new focus",
+  );
+  expect(readFileSync(path.join(published, "keep.txt"), "utf8")).toBe(
+    "not a capture",
+  );
   expect(
     JSON.parse(
       readFileSync(
@@ -140,4 +166,23 @@ it("only the specific intentional history scenarios allow their errors", () => {
       "injected-history-error",
     ),
   ).toBe(false);
+});
+
+it("cleans the compile tree when source extraction fails before browser launch", () => {
+  const temporaryRoot = fixture();
+  const script = new URL(
+    "../../../docs/after-call/ended-heading-proof.mjs",
+    import.meta.url,
+  );
+  expect(() =>
+    execFileSync(
+      process.execPath,
+      [fileURLToPath(script), "--source-ref=refs/connvo-test/nonexistent"],
+      {
+        env: { ...process.env, TMPDIR: temporaryRoot },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    ),
+  ).toThrow();
+  expect(readdirSync(temporaryRoot)).toEqual([]);
 });

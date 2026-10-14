@@ -57,6 +57,8 @@ export default defineConfig({
       {
         test: {
           name: "in-call",
+          // Transform AuthKit so the mounted provider test can replace server actions.
+          server: { deps: { inline: ["@workos-inc/authkit-nextjs"] } },
           include: ["test/in-call/**/*.test.{ts,tsx}"],
           environment: "jsdom",
           setupFiles: ["./test/in-call/setup.ts"],

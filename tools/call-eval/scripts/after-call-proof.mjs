@@ -119,6 +119,7 @@ async function capture({ page, scratch }, name, { focus, scope }) {
     await page.waitForTimeout(450);
     const file = path.join(shotsDir, `${name}-${size}.png`);
     await page.screenshot({ path: file });
+    result.captures.push(path.basename(file));
     shots.push(path.relative(REPO, file));
     // axe runs at each size: elements shown only on a phone (the mobile
     // navigation) or only on a desktop are judged where they are visible.
@@ -184,6 +185,8 @@ async function walkBothSizes({ page, scratch }, name) {
     await page.setViewportSize(viewport);
     const size = `${viewport.width}x${viewport.height}`;
     out[size] = await keyboardWalk(page, scratch, { shots: path.join(outDir, "focus", `${name}-${size}`) });
+    for (let i = 0; i < out[size].forward.length; i++)
+      result.captures.push(`focus/${name}-${size}-${String(i + 1).padStart(2, "0")}.png`);
   }
   await page.setViewportSize(VIEWPORTS[0]);
   return out;
@@ -191,7 +194,7 @@ async function walkBothSizes({ page, scratch }, name) {
 
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
 
-const result = { ...proofRevision(REPO), diagnostics, baseUrl, startedAt: new Date().toISOString(), checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
+const result = { ...proofRevision(REPO), diagnostics, baseUrl, startedAt: new Date().toISOString(), captures: /** @type {string[]} */ ([]), checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
 const meetingId = createEvalMeeting("Budget review");
 result.meetingId = meetingId;
 const fail = (msg) => {
@@ -225,10 +228,12 @@ try {
   // Show the actual call-room ring on a control before leaving the stage.
   await tabTo(A.page, '[data-testid="leave-call"]');
   await captureFocusControl(A.page, A.page.locator('[data-testid="leave-call"]').locator('..'), path.join(shotsDir, "call-room-focus.png"));
+  result.captures.push("call-room-focus.png");
 
   // Both leave: the ended screen links to the recap and shows it.
   result.checks.keyboardLeaveHeading = await keyboardLeave(A.page);
   await A.page.screenshot({ path: path.join(shotsDir, "ended-heading-keyboard.png") });
+  result.captures.push("ended-heading-keyboard.png");
   await leave(B.page);
   for (const p of [A, B]) {
     await p.page.locator('[data-testid="open-recap"]').waitFor({ timeout: 10_000 });
@@ -266,7 +271,10 @@ try {
   result.checks.keyboard = { recapWalk: await walkBothSizes(B, "recap"), calendar: {} };
   for (const key of ["Enter", "Space"]) {
     await tabTo(B.page, '[data-testid="calendar-download"]');
-    if (key === "Enter") await captureFocusControl(B.page, B.page.locator('[data-testid="calendar-download"]'), path.join(shotsDir, "calendar-focus-after.png"));
+    if (key === "Enter") {
+      await captureFocusControl(B.page, B.page.locator('[data-testid="calendar-download"]'), path.join(shotsDir, "calendar-focus-after.png"));
+      result.captures.push("calendar-focus-after.png");
+    }
     const [file] = await Promise.all([B.page.waitForEvent("download", { timeout: 10_000 }).catch(() => null), B.page.keyboard.press(key)]);
     result.checks.keyboard.calendar[key] = file?.suggestedFilename() ?? null;
   }
@@ -326,6 +334,7 @@ try {
   await A.page.goto(`${baseUrl}/app/meetings/${meetingId}?as=A`, { waitUntil: "domcontentloaded" });
   await A.page.locator('[data-testid="history-error"]').first().waitFor({ timeout: 30_000 });
   await capture(A, "recap-error", { focus: "main", scope: "main" });
+  A.consoleScenario.current = null;
 
   // O was not in the meeting: refused; and O's own list is empty.
   const O = await person("O");

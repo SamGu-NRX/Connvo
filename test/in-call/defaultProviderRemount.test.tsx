@@ -6,7 +6,7 @@
  * NotesTransportProvider above it, so the panel's own production wiring
  * runs end to end:
  *
- *   MeetingNotesPanel → TransportGuard → DefaultNotesTransportProvider
+ *   MeetingNotesPanel → DefaultNotesTransportProvider
  *     → NotesConvexTransportProvider (the real production bridge)
  *     → convex/react hooks (shimmed at the hook boundary)
  *     → the REAL convex-test notes server (real mutations/queries/OT)

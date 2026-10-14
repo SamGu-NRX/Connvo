@@ -115,17 +115,35 @@ export function publishProof(repo, out, shots) {
   );
   if (result.pass !== true)
     throw new Error("Refusing to publish a failed proof");
-  fs.mkdirSync(destination, { recursive: true });
-  for (const file of fs.readdirSync(shots))
-    if (file.endsWith(".png"))
-      fs.copyFileSync(path.join(shots, file), path.join(destination, file));
-  if (fs.existsSync(path.join(out, "focus")))
-    fs.cpSync(path.join(out, "focus"), path.join(destination, "focus"), {
-      recursive: true,
-    });
+  // The run lists what it wrote; an output directory may contain older captures.
+  if (!Array.isArray(result.captures) || result.captures.length === 0)
+    throw new Error("Passing proof must list its current captures");
+  const produced = new Set(result.captures);
+  const sources = [...produced].map((file) => {
+    if (
+      typeof file !== "string" ||
+      path.isAbsolute(file) ||
+      file.split(/[\\/]/).includes("..") ||
+      !file.endsWith(".png")
+    )
+      throw new Error("Invalid capture path in proof receipt");
+    const source = path.join(file.startsWith("focus/") ? out : shots, file);
+    if (!fs.statSync(source).isFile())
+      throw new Error(`Missing capture: ${file}`);
+    return { file, source };
+  });
   const a11y = JSON.parse(
     fs.readFileSync(path.join(out, "a11y-results.json"), "utf8"),
   );
+  fs.mkdirSync(destination, { recursive: true });
+  for (const file of fs.readdirSync(destination, { recursive: true }))
+    if (file.endsWith(".png") && !produced.has(file))
+      fs.unlinkSync(path.join(destination, file));
+  for (const { file, source } of sources) {
+    const target = path.join(destination, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
   for (const state of a11y.states)
     state.shots = state.shots.map((/** @type {string} */ file) =>
       path.posix.join("docs/after-call/browser-proof", path.basename(file)),

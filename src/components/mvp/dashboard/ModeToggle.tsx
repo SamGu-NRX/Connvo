@@ -14,7 +14,10 @@ export function ModeToggle() {
 
   return (
     <DropdownMenu>
-      {/* This one app-shell menu needs the same ID across streamed SSR and hydration. */}
+      {/* Next 16's local streamed reload changes the /app ancestor useId path
+          before this menu renders, despite matching route/provider branches.
+          See docs/after-call/theme-identity.md. This is the single shell menu;
+          its explicit ID keeps the trigger and popup label paired on hydration. */}
       <DropdownMenuTrigger asChild id="app-theme-trigger">
         <Button variant="ghost" size="icon">
           <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />

@@ -39,7 +39,7 @@ export async function assertEndedHeadingFocus(page) {
           /rgba\([^)]*,\s*0(?:\.0+)?\)/.test(shadow) ||
           /\([^)]*\/\s*0(?:\.0+)?\s*\)/.test(shadow);
         return (
-          !transparent && ((lengths[2] ?? 0) !== 0 || (lengths[3] ?? 0) !== 0)
+          !transparent && lengths.slice(0, 4).some((length) => length !== 0)
         );
       });
     return {
