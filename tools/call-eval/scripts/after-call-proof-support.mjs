@@ -37,6 +37,17 @@ export function proofOutput(repo, flags) {
   return { out, shots };
 }
 
+/** Start each proof without focus captures from an earlier or interrupted run.
+ * @param {string} repo @param {{out?: string, shots?: string}} flags
+ */
+export function prepareProofOutput(repo, flags) {
+  const output = proofOutput(repo, flags);
+  fs.mkdirSync(output.out, { recursive: true });
+  fs.mkdirSync(output.shots, { recursive: true });
+  fs.rmSync(path.join(output.out, "focus"), { recursive: true, force: true });
+  return output;
+}
+
 /** @param {string} text */
 export function safeConsoleText(text) {
   return text.replace(/eyJ[\w-]+\.[\w-]+\.[\w-]+/g, "[redacted token]");
@@ -136,6 +147,7 @@ export function publishProof(repo, out, shots) {
     fs.readFileSync(path.join(out, "a11y-results.json"), "utf8"),
   );
   fs.mkdirSync(destination, { recursive: true });
+  fs.rmSync(path.join(destination, "focus"), { recursive: true, force: true });
   for (const file of fs.readdirSync(destination, { recursive: true }))
     if (file.endsWith(".png") && !produced.has(file))
       fs.unlinkSync(path.join(destination, file));

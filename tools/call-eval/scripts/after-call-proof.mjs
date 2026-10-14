@@ -16,7 +16,7 @@
  */
 import fs from "node:fs";
 import { keyboardLeave, captureFocusControl } from "./after-call-keyboard.mjs";
-import { proofRevision, proofOutput, recordBrowserConsole, unexpectedErrors, publishProof } from "./after-call-proof-support.mjs";
+import { proofRevision, prepareProofOutput, recordBrowserConsole, unexpectedErrors, publishProof } from "./after-call-proof-support.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -29,9 +29,7 @@ import { keyboardWalk, tabTo, textContrast, assertShellMeasurements } from "./a1
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const flags = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, "").split("=")));
 const baseUrl = flags["base-url"] ?? "http://localhost:3035";
-const {out: outDir, shots: shotsDir} = proofOutput(REPO, flags);
-fs.mkdirSync(shotsDir, { recursive: true });
-fs.mkdirSync(outDir, { recursive: true });
+const {out: outDir, shots: shotsDir} = prepareProofOutput(REPO, flags);
 
 const VIEWPORTS = [
   { width: 1440, height: 900 },

@@ -14,6 +14,7 @@ import { execFileSync } from "node:child_process";
 import { afterEach, expect, it } from "vitest";
 import {
   proofOutput,
+  prepareProofOutput,
   proofRevision,
   publishProof,
   unexpectedErrors,
@@ -185,4 +186,42 @@ it("cleans the compile tree when source extraction fails before browser launch",
     ),
   ).toThrow();
   expect(readdirSync(temporaryRoot)).toEqual([]);
+});
+
+it("resets the run focus directory before capture, then replaces published focus", () => {
+  const repo = fixture();
+  const output = prepareProofOutput(repo, {});
+  const focus = path.join(output.out, "focus");
+  mkdirSync(path.join(focus, "old-nested"), { recursive: true });
+  writeFileSync(path.join(focus, "old-nested/recap-12.png"), "interrupted run");
+  writeFileSync(path.join(output.out, "keep.txt"), "other output");
+  prepareProofOutput(repo, {});
+  expect(existsSync(focus)).toBe(false);
+  expect(readFileSync(path.join(output.out, "keep.txt"), "utf8")).toBe(
+    "other output",
+  );
+  mkdirSync(focus);
+  writeFileSync(path.join(focus, "recap-01.png"), "current run");
+  writeFileSync(
+    path.join(output.out, "result.json"),
+    JSON.stringify({
+      pass: true,
+      captures: ["focus/recap-01.png"],
+    }),
+  );
+  writeFileSync(
+    path.join(output.out, "a11y-results.json"),
+    JSON.stringify({ states: [] }),
+  );
+  const published = path.join(repo, "docs/after-call/browser-proof/focus");
+  mkdirSync(path.join(published, "old-nested"), { recursive: true });
+  writeFileSync(
+    path.join(published, "old-nested/recap-12.png"),
+    "old published run",
+  );
+  publishProof(repo, output.out, output.shots);
+  expect(readdirSync(published)).toEqual(["recap-01.png"]);
+  expect(readFileSync(path.join(published, "recap-01.png"), "utf8")).toBe(
+    "current run",
+  );
 });
