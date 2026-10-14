@@ -416,9 +416,9 @@ describe("with the client flag on", () => {
     let release!: () => void;
     const pending = new Promise<void>((resolve) => { release = resolve; });
     const realMutation = people.A.mutation.bind(people.A);
-    const mutation = vi.spyOn(people.A, "mutation").mockImplementation(async (...args) => {
+    const mutation = vi.spyOn(people.A, "mutation").mockImplementation(async (fn, args = {}) => {
       await pending;
-      return realMutation(...args);
+      return realMutation(fn, args);
     });
     render(<MeetingDetail meetingId={meetingId} />);
     const toggle = await screen.findByTestId("stay-in-touch-switch");

@@ -65,6 +65,8 @@ describe("shared shell text contrast", () => {
 
   it("the wordmark keeps full text contrast while hover adds an underline", () => {
     const source = readFileSync(new URL("src/app/app/layout.tsx", root), "utf8");
+    const wordmarkClasses = source.match(/className="([^"]*font-semibold[^"]*)"/)?.[1]?.split(/\s+/);
+    expect(wordmarkClasses).toContain("hover:underline");
     const opacity = source.match(/hover:opacity-(\d+)/)?.[1];
     const alpha = opacity ? Number(opacity) / 100 : 1;
     const foreground = source.match(/text-(emerald-\d+) dark:text/)?.[1];

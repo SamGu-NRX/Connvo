@@ -12,9 +12,10 @@
  *   node tools/call-eval/scripts/local-backend.mjs --port=3035 --after-call
  *
  *   node tools/call-eval/scripts/after-call-proof.mjs --base-url=http://localhost:3035 \
- *     [--shots=docs/after-call/browser-proof/screenshots] [--out=tools/call-eval/verification/<dir>]
+ *     [--shots=docs/after-call/browser-proof] [--out=docs/after-call/browser-proof]
  */
 import fs from "node:fs";
+import { keyboardLeave, captureFocusControl } from "./after-call-keyboard.mjs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,8 +29,8 @@ import { keyboardWalk, tabTo, textContrast, assertShellMeasurements } from "./a1
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const flags = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, "").split("=")));
 const baseUrl = flags["base-url"] ?? "http://localhost:3035";
-const shotsDir = path.resolve(REPO, flags.shots ?? "docs/after-call/browser-proof/screenshots");
-const outDir = path.resolve(REPO, flags.out ?? "tools/call-eval/out/after-call");
+const shotsDir = path.resolve(REPO, flags.shots ?? "docs/after-call/browser-proof");
+const outDir = path.resolve(REPO, flags.out ?? "docs/after-call/browser-proof");
 fs.mkdirSync(shotsDir, { recursive: true });
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -188,7 +189,7 @@ async function walkBothSizes({ page, scratch }, name) {
 
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
 
-const result = { commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim(), baseUrl, startedAt: new Date().toISOString(), checks: {}, pass: false };
+const result = { dirty: execFileSync("git", ["status", "--porcelain"], { cwd: REPO, encoding: "utf8" }).trim().length > 0, commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim(), baseUrl, startedAt: new Date().toISOString(), checks: {}, pass: false };
 const meetingId = createEvalMeeting("Budget review");
 result.meetingId = meetingId;
 const fail = (msg) => {
@@ -221,10 +222,11 @@ try {
   result.checks.notesInCall = stored;
   // Show the actual call-room ring on a control before leaving the stage.
   await tabTo(A.page, '[data-testid="leave-call"]');
-  await A.page.screenshot({ path: path.join(shotsDir, "call-room-focus.png") });
+  await captureFocusControl(A.page, A.page.locator('[data-testid="leave-call"]').locator('..'), path.join(shotsDir, "call-room-focus.png"));
 
   // Both leave: the ended screen links to the recap and shows it.
-  await leave(A.page);
+  result.checks.keyboardLeaveHeading = await keyboardLeave(A.page);
+  await A.page.screenshot({ path: path.join(shotsDir, "ended-heading-keyboard.png") });
   await leave(B.page);
   for (const p of [A, B]) {
     await p.page.locator('[data-testid="open-recap"]').waitFor({ timeout: 10_000 });
@@ -262,6 +264,7 @@ try {
   result.checks.keyboard = { recapWalk: await walkBothSizes(B, "recap"), calendar: {} };
   for (const key of ["Enter", "Space"]) {
     await tabTo(B.page, '[data-testid="calendar-download"]');
+    if (key === "Enter") await captureFocusControl(B.page, B.page.locator('[data-testid="calendar-download"]'), path.join(shotsDir, "calendar-focus-after.png"));
     const [file] = await Promise.all([B.page.waitForEvent("download", { timeout: 10_000 }).catch(() => null), B.page.keyboard.press(key)]);
     result.checks.keyboard.calendar[key] = file?.suggestedFilename() ?? null;
   }
@@ -338,6 +341,7 @@ try {
   await capture(O, "list-empty", { focus: "main", scope: "main" });
 
   result.pass =
+    !result.checks.keyboardLeaveHeading.visibleSpread &&
     result.checks.endedRecap.sameAsStored &&
     result.checks.detail.same &&
     result.checks.listHasMeeting &&
@@ -366,7 +370,7 @@ try {
 } finally {
   await Promise.allSettled(browsers.map((b) => b.close()));
   fs.writeFileSync(path.join(outDir, "result.json"), JSON.stringify(result, null, 2) + "\n");
-  fs.writeFileSync(path.join(shotsDir, "..", "a11y-results.json"), JSON.stringify({ ranAt: result.startedAt, states: a11y }, null, 2) + "\n");
+  fs.writeFileSync(path.join(outDir, "a11y-results.json"), JSON.stringify({ commit: result.commit, dirty: result.dirty, ranAt: result.startedAt, states: a11y }, null, 2) + "\n");
 }
 console.log(`${result.pass ? "PASS" : "FAIL"}${result.error ? `: ${result.error}` : ""}`);
 process.exit(result.pass ? 0 : 1);

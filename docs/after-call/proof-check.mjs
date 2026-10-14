@@ -8,6 +8,10 @@ const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   const scratch = await browser.newPage();
+  await page.setContent('<button tabindex="2">Second</button><button tabindex="1">First</button><button>Last</button><div inert><button>Ignored</button></div>');
+  const ordered = await keyboardWalk(page, scratch);
+  assert.equal(ordered.focusLost, false);
+  assert.deepEqual(ordered.forward.map(stop => stop.name), ['First', 'Second', 'Last']);
   await page.setContent('<button>First</button><button>Second</button><button>Last</button>');
   const complete = await keyboardWalk(page, scratch);
   assert.equal(complete.focusLost, false);

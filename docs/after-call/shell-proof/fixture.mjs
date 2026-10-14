@@ -31,7 +31,7 @@ const stubs = {
 const results = {
   kind: "static shell fixture, not the full application or after-call proof",
   font: "Arial fallback; next/font, providers, routing and motion are serialized as static adapters",
-  before: "alpha d5be541", after: "working tree", cases: [],
+  before: "alpha d5be541", after: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), dirty: execFileSync("git", ["status", "--porcelain"], {encoding:"utf8"}).trim().length > 0, cases: [],
 };
 
 for (const variant of ["before", "after"]) {

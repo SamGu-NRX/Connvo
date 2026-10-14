@@ -299,12 +299,23 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
     body.focus();
     body.removeAttribute("tabindex");
   });
+  // Focusing body gives Chromium a DOM-order starting point. A positive
+  // tabindex needs its first ordered stop selected after keyboard modality.
+  const positive = await page.evaluateHandle(() => Array.from(document.querySelectorAll('a[href],button,input,select,textarea,[tabindex]'))
+    .filter((node) => node instanceof HTMLElement && node.tabIndex > 0 && !node.matches(':disabled') &&
+      !node.closest('[inert],nextjs-portal') && node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden')
+    .sort((a, b) => (a instanceof HTMLElement ? a.tabIndex : 0) - (b instanceof HTMLElement ? b.tabIndex : 0))[0] ?? null);
+  const hasPositive = await positive.evaluate(node => node !== null);
+  if (hasPositive) {
+    await page.keyboard.press("Tab");
+    await positive.evaluate(node => { if (node instanceof HTMLElement) node.focus(); });
+  }
   const forward = [];
   let last = null;
   let truncated = true;
   let focusLost = false;
   for (let i = 0; i < max; i++) {
-    await page.keyboard.press("Tab");
+    if (!hasPositive || i > 0) await page.keyboard.press("Tab");
     await page.waitForTimeout(120);
     const stop = await describeFocus(page);
     // Past the page's last stop: the browser chrome, or next dev's overlay
@@ -316,8 +327,17 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
         const candidates = Array.from(document.querySelectorAll(
           'a[href],button,input,select,textarea,[tabindex]',
         )).filter((node) => node instanceof HTMLElement && node.tabIndex >= 0 &&
-          !node.matches(':disabled') && !node.closest('nextjs-portal') &&
+          !node.matches(':disabled') && !node.closest('[inert],nextjs-portal') &&
           node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden');
+        // Positive tabindex stops precede zero tabindex stops, with DOM
+        // order breaking ties. Inert descendants never take focus.
+        candidates.sort((a, b) => {
+          const left = a instanceof HTMLElement ? a.tabIndex : 0;
+          const right = b instanceof HTMLElement ? b.tabIndex : 0;
+          if (left > 0 && right === 0) return -1;
+          if (left === 0 && right > 0) return 1;
+          return left > 0 && right > 0 ? left - right : 0;
+        });
         return candidates.at(-1) === el;
       });
       focusLost = !reachedLast;
