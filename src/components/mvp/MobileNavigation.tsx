@@ -21,7 +21,7 @@ export function MobileNavigation() {
     );
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center">
+    <nav data-testid="mobile-navigation" className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center">
       <GlassPanel
         padding={false}
         className="pointer-events-auto flex w-[min(92vw,420px)] items-center justify-around rounded-lg px-3 py-2"
@@ -30,7 +30,7 @@ export function MobileNavigation() {
           <TransitionLink
             key={item.name}
             href={item.href}
-            className="group relative flex flex-1 flex-col items-center gap-1 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-900/60 transition-colors duration-300 hover:text-emerald-600 dark:text-emerald-100/60 dark:hover:text-emerald-300"
+            className="group relative flex flex-1 flex-col items-center gap-1 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-900/80 transition-colors duration-300 hover:text-emerald-700 dark:text-emerald-100/80 dark:hover:text-emerald-300"
           >
             {(pathname === item.href ||
               pathname.startsWith(`${item.href}/`)) && (
@@ -44,7 +44,7 @@ export function MobileNavigation() {
                 }}
               />
             )}
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/45 bg-white/70 text-emerald-600 transition-transform duration-200 group-active:scale-95 group-hover:scale-105 dark:border-white/10 dark:bg-white/10 dark:text-emerald-200">
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/45 bg-white/70 text-emerald-700 transition-transform duration-200 group-active:scale-95 group-hover:scale-105 dark:border-white/10 dark:bg-white/10 dark:text-emerald-200">
               <item.icon className="h-4 w-4" />
             </span>
             <span className="relative">{item.name}</span>

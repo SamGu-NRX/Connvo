@@ -127,11 +127,25 @@ async function capture({ page, scratch }, name, { focus, scope }) {
       .flatMap((v) => v.nodes.map((n) => n.target))
       .filter((t) => t.length === 1 && typeof t[0] === "string")
       .map((t) => /** @type {string} */ (t[0]));
-    measured[size] = await textContrast(page, scratch, unjudged);
+    // Measure shell text even when axe has already judged it: these labels
+    // previously failed on every page and must remain part of acceptance.
+    const shellText = await page.locator([
+      '[data-testid="app-wordmark"]',
+      '[data-testid="desktop-navigation"] p',
+      '[data-testid="desktop-navigation"] a > span:last-child > span',
+      '[data-testid="desktop-navigation"] button',
+      '[data-testid="mobile-navigation"] a > span:last-child',
+    ].join(", ")).evaluateAll(
+      (/** @type {{ setAttribute(name: string, value: string): void }[]} */ nodes) =>
+        nodes.map((node, index) => {
+          node.setAttribute("data-shell-contrast", String(index));
+          return `[data-shell-contrast="${index}"]`;
+        }),
+    );
+    measured[size] = await textContrast(page, scratch, [...new Set([...unjudged, ...shellText])]);
   }
   await page.setViewportSize(VIEWPORTS[0]);
-  // The pass rule covers the page's own content; failures in the app shell
-  // around it (sidebar, top bar) are recorded separately.
+  // Keep shell failures separate in the receipt, but fail on either group.
   const contrastFailures = Object.values(measured).flat().filter((row) => !row.pass && row.inPage);
   const shellContrastFailures = Object.values(measured).flat().filter((row) => !row.pass && !row.inPage);
   const violationCount = Object.values(violations).flat().length;
@@ -323,7 +337,7 @@ try {
     result.checks.listHasMeeting &&
     !result.checks.stayInTouch.bSawAnythingBeforeSayingYes &&
     result.checks.outsider.kind === "refused" &&
-    a11y.every((s) => s.violationCount === 0 && s.contrastFailures.length === 0) &&
+    a11y.every((s) => s.violationCount === 0 && s.contrastFailures.length === 0 && s.shellContrastFailures.length === 0) &&
     Object.values(result.checks.keyboard.recapWalk).every(walkPasses) &&
     Object.values(result.checks.keyboard.listWalk).every(walkPasses) &&
     result.checks.keyboard.calendar.Enter !== null &&
