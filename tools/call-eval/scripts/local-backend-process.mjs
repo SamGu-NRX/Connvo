@@ -27,8 +27,10 @@
 // but parses as no known watcher; any member of a watcher's group that was
 // never verified, unless it appeared since the last round while a verified
 // member stayed alive (a fork); and a Node process that exits before its
-// working directory could be read, whose group is re-scanned and refused if a
-// new member appears. A group whose verified members are all gone is refused,
+// working directory could be read while its argv could make it a watcher for
+// this checkout, whose group is re-scanned and refused if a new member
+// appears. A process whose argv rules that out (another checkout's script,
+// inline code) is ignored when it exits, and so is the caller's own work. A group whose verified members are all gone is refused,
 // not signalled, which also covers a group ID taken over by a new process.
 
 import {
@@ -239,7 +241,7 @@ const isFile = (file) => {
  * spaced path into pieces, the entry is the shortest run of pieces naming an
  * existing file, else the run ending in a known entry name.
  * @param {{ args: string[], exact: boolean }} argv @param {string | undefined} cwd
- * @returns {{ inline: true } | { inline: false, entry: string | null, raw: string, after: string[] }}
+ * @returns {{ inline: true } | { inline: false, options: string[], entry: string | null, raw: string, after: string[] }}
  */
 export function nodeEntry({ args, exact }, cwd) {
   let start = 0;
@@ -253,7 +255,8 @@ export function nodeEntry({ args, exact }, cwd) {
     if (NODE_INLINE.test(arg)) return { inline: true };
     if (NODE_VALUE_OPTIONS.has(arg)) start++;
   }
-  if (start >= args.length) return { inline: false, entry: null, raw: "", after: [] };
+  const options = args.slice(0, start);
+  if (start >= args.length) return { inline: false, options, entry: null, raw: "", after: [] };
   const lexical = (/** @type {string} */ raw) =>
     path.isAbsolute(raw) ? path.normalize(raw) : cwd ? path.resolve(cwd, raw) : null;
   let end = start;
@@ -276,7 +279,7 @@ export function nodeEntry({ args, exact }, cwd) {
       // Deleted after start: keep the lexical path.
     }
   }
-  return { inline: false, entry, raw, after: args.slice(end + 1) };
+  return { inline: false, options, entry, raw, after: args.slice(end + 1) };
 }
 
 const NEEDS_CWD = Symbol("needs the working directory");
@@ -303,14 +306,35 @@ function classify(row, argv, cwd, checkout) {
   if (parsed.raw && !parsed.entry) return NEEDS_CWD;
   const named = parsed.entry ?? parsed.raw;
   if (parsed.entry && checkout.wrappers.has(parsed.entry)) return WATCHER;
-  const cli =
-    (CLI_ENTRY.test(named) && parsed.after[0] === "dev") ||
-    (NPX_ENTRY.test(named) && parsed.after[0] === "convex" && parsed.after[1] === "dev");
-  if (cli) return cwd === undefined ? NEEDS_CWD : checkout.inside(cwd) ? WATCHER : HARMLESS;
+  if (isConvexDev(named, parsed.after)) return cwd === undefined ? NEEDS_CWD : checkout.inside(cwd) ? WATCHER : HARMLESS;
   if (path.basename(named) === "local-backend-watch.mjs" && !(parsed.entry && isFile(parsed.entry)))
     return "runs a watch wrapper whose file is gone, so its checkout is unknown";
   return ambiguous();
 }
+
+/**
+ * Whether a Node process that exited before it could be read might have been
+ * a watcher for this checkout, judged only on the argv in the snapshot. Yes
+ * for an entry that resolves (or, deleted, literally points) to this
+ * checkout's wrapper, to a Convex CLI entry running `dev`, or to any script
+ * inside the checkout, and for a relative entry whose arguments include
+ * `dev`, since its working directory is unknown. No for inline code, a REPL,
+ * `--test`, or an absolute entry elsewhere, such as another checkout's
+ * node_modules. A process that set its title is judged on that text.
+ * @param {ProcessRow} row @param {{ args: string[], exact: boolean } | null} argv
+ * @param {{ wrappers: Set<string>, inside: (dir: string) => boolean }} checkout
+ */
+function couldWatch(row, argv, checkout) {
+  if (!argv) return /convex/.test(row.command) && /(?:^|\s)dev(?:\s|$)/.test(row.command);
+  const parsed = nodeEntry(argv, undefined);
+  if (parsed.inline || !parsed.raw || parsed.options.includes("--test")) return false;
+  if (!parsed.entry) return argv.args.includes("dev");
+  return checkout.wrappers.has(parsed.entry) || isConvexDev(parsed.entry, parsed.after) || checkout.inside(parsed.entry);
+}
+
+/** @param {string} entry @param {string[]} after */
+const isConvexDev = (entry, after) =>
+  (CLI_ENTRY.test(entry) && after[0] === "dev") || (NPX_ENTRY.test(entry) && after[0] === "convex" && after[1] === "dev");
 
 /**
  * Processes that could watch this checkout, judged by the script they run:
@@ -322,9 +346,9 @@ function classify(row, argv, cwd, checkout) {
  * whose arguments name these paths runs something else and is ignored.
  *
  * Returns the watchers, the processes it could not classify, and `vanished`:
- * Node processes whose working directory it needed but which exited before it
- * could be read. Those are never taken as absent; the caller re-scans their
- * groups.
+ * Node processes that exited before they could be read and that, by the argv
+ * in the snapshot, could have watched this checkout (see couldWatch). Those
+ * are never taken as absent; the caller re-scans their groups.
  * @param {ProcessRow[]} table @param {string} checkout @param {Observer} [observer]
  * @returns {{ watchers: ProcessRow[], unclassified: Unclassified[], vanished: ProcessRow[] }}
  */
@@ -365,7 +389,9 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
     if (row.zombie || row.uid !== uid || !NODE.test(row.exe)) continue;
     const argv = argvOf(row);
     if (argv === undefined) {
-      vanished.push(row);
+      // Linux: gone before /proc was read. Judge it on the snapshot's text.
+      const pieces = row.command.split(" ").filter(Boolean).slice(1);
+      if (couldWatch(row, { args: pieces, exact: false }, scope)) vanished.push(row);
       continue;
     }
     const verdict = classify(row, argv, undefined, scope);
@@ -379,7 +405,7 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
     const dir = cwd.get(row.pid);
     if (dir !== undefined) record(row, classify(row, argv, dir, scope));
     else if (running.has(identity(row))) unclassified.push({ row, reason: "its working directory could not be read" });
-    else vanished.push(row);
+    else if (couldWatch(row, argv, scope)) vanished.push(row);
   }
   return { watchers, unclassified, vanished };
 }
@@ -521,6 +547,11 @@ export function discoverWatchers({
   const found = new Map();
   /** @type {Map<number, Unclassified>} */
   const unclassified = new Map();
+  // The caller's own work can never make a group suspect: anything in the
+  // process group of the caller or one of its ancestors, which includes their
+  // short-lived children. A detached child leads a group of its own.
+  const callerGroups = new Set([...shielded].map((pid) => byPid.get(pid)?.group));
+  const fromCaller = (/** @type {ProcessRow} */ row) => callerGroups.has(row.group);
   const add = (/** @type {ProcessRow | undefined} */ row) => {
     if (row && !row.zombie && row.pid > 1 && !shielded.has(row.pid)) found.set(row.pid, row);
   };
@@ -562,14 +593,15 @@ export function discoverWatchers({
   /** @type {Suspects} */
   const suspects = new Map();
   for (const [group, before] of carriedSuspects) {
+    if (callerGroups.has(group)) continue;
     const arrivals = live.filter((row) => row.group === group && !before.has(identity(row)) && !found.has(row.pid));
     for (const row of arrivals)
       refuse(row, `appeared in process group ${group} after a Node process there exited before it could be classified`);
     // Keep refusing on retry until the arrivals are gone.
     if (arrivals.length) suspects.set(group, before);
   }
-  for (const gone of vanished) {
-    if (shielded.has(gone.pid)) continue;
+  const suspicious = vanished.filter((gone) => !shielded.has(gone.pid) && !fromCaller(gone));
+  for (const gone of suspicious) {
     for (const row of live)
       if (row.parent === gone.pid && !found.has(row.pid))
         refuse(row, `is a child of Node process ${gone.pid}, which exited before it could be classified`);
@@ -583,7 +615,7 @@ export function discoverWatchers({
     groups,
     unclassified: [...unclassified.values()].filter((item) => !found.has(item.row.pid)),
     suspects,
-    unresolved: vanished.some((gone) => !shielded.has(gone.pid)),
+    unresolved: suspicious.length > 0,
   };
 }
 

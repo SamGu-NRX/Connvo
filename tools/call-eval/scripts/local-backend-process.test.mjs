@@ -860,3 +860,75 @@ it("re-scans the group of a candidate that exited unread, refusing new members a
   expect(settled.unresolved).toBe(false);
   expect([...settled.suspects.keys()]).toEqual([]);
 });
+
+/**
+ * Observer tools for the test: real ps, and an lsof that waits a second
+ * before running, so processes that exit quickly do so between the process
+ * table and the working-directory read.
+ * @param {ReturnType<typeof watcherFixture>} f
+ */
+function slowLsof(f) {
+  const tools = path.join(f.dir, "slow-lsof");
+  chmodSync(writeScript(path.join(tools, "ps"), "#!/bin/sh\nexec /bin/ps \"$@\"\n"), 0o755);
+  chmodSync(writeScript(path.join(tools, "lsof"), "#!/bin/sh\n/bin/sleep 1\nexec /usr/sbin/lsof \"$@\"\n"), 0o755);
+  return tools;
+}
+
+/** Start `script` detached and kill its whole group at cleanup. @param {string} script @param {string} cwd */
+function processTree(script, cwd) {
+  const child = spawn(process.execPath, [script], { cwd, detached: true, stdio: "ignore" });
+  child.unref();
+  const pid = /** @type {number} */ (child.pid);
+  cleanups.push(() => process.kill(-pid, "SIGKILL"));
+  return pid;
+}
+
+it("ignores unrelated short-lived Node processes elsewhere that exit before their working directory is read", async () => {
+  const f = watcherFixture();
+  const other = fixture();
+  const tool = writeScript(path.join(other, "tools", "tool.mjs"), "setTimeout(() => {}, 150);\n");
+  // Keeps starting short-lived processes whose command mentions convex and dev.
+  const spawner = writeScript(path.join(other, "tools", "spawner.mjs"), `
+import { spawn } from 'node:child_process';
+setInterval(() => spawn(process.execPath, [${J(tool)}, '--watch', 'convex', 'dev'], { stdio: 'ignore' }), 30);
+`);
+  const pid = processTree(spawner, other);
+  await settle();
+  await rebuildWithoutWatcher({
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), rebuild: f.rebuild,
+  });
+  expect(f.liveAtRebuild).toEqual([[]]);
+  expect(alive(pid)).toBe(true);
+}, 30_000);
+
+it("ignores a vitest-like process tree in a second checkout whose workers exit during discovery", async () => {
+  const f = watcherFixture();
+  const second = fixture();
+  const esbuild = writeScript(path.join(second, "node_modules", ".pnpm", "esbuild", "bin", "esbuild.mjs"), "setTimeout(() => {}, 2000);\n");
+  const worker = writeScript(path.join(second, "node_modules", "vitest", "dist", "worker.mjs"), `
+import { spawn } from 'node:child_process';
+spawn(process.execPath, [${J(esbuild)}], { stdio: 'ignore' });
+setTimeout(() => process.exit(0), 150);
+`);
+  const runner = writeScript(path.join(second, "node_modules", "vitest", "vitest.mjs"), `
+import { spawn } from 'node:child_process';
+setInterval(() => spawn(process.execPath, ['--conditions', 'node', ${J(worker)}, 'tools/call-eval/runner/convex-signaling.test.mjs', '--mode', 'dev'], { stdio: 'ignore' }), 100);
+`);
+  const pid = processTree(runner, second);
+  await settle();
+  await rebuildWithoutWatcher({
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), rebuild: f.rebuild,
+  });
+  expect(f.liveAtRebuild).toEqual([[]]);
+  expect(alive(pid)).toBe(true);
+}, 30_000);
+
+it("never makes the caller's process group, or its ancestors' groups, suspect", () => {
+  // The caller 100 is in group 90 with its parent 90; 95 is a sibling there and
+  // 121 a short-lived child of the caller. 80 leads the grandparent's group 80.
+  const table = [row(1, 0, 1), row(80, 1, 80), row(90, 80, 90), row(100, 90, 90), row(95, 90, 90), row(121, 100, 90), row(81, 80, 80)];
+  const result = discover({ table, vanished: [row(95, 90, 90), row(121, 100, 90), row(81, 80, 80)] });
+  expect(result.unresolved).toBe(false);
+  expect([...result.suspects.keys()]).toEqual([]);
+  expect(refused(result)).toEqual([]);
+});
