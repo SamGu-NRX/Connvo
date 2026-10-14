@@ -1,7 +1,7 @@
 // Pure decision logic for local-backend.mjs, extracted so the three S0 guard
 // fixes are unit-testable (the script itself is a side-effecting CLI: importing
 // it runs the whole bring-up). Behavior moved here is unchanged; the script
-// wires real I/O (fs, sh, curl) into these functions. Tests:
+// wires real I/O (fs, subprocesses, curl) into these functions. Tests:
 // tools/call-eval/scripts/local-backend-core.test.mjs — each test asserts an
 // invariant that fails on the pre-fix behavior (recon dossier section 2,
 // defects i–iii at parent bbc62fae, fixed at f06669f).
@@ -9,6 +9,12 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parse as parseEnv } from "dotenv";
+
+/** @param {string | undefined | null} value */
+export function anonymousDeploymentName(value) {
+  const name = value?.replace(/^(?:anonymous|local):/, "");
+  return name && /^anonymous-[a-zA-Z0-9-]+$/.test(name) ? name : null;
+}
 
 /**
  * Convex 1.46 selects process env, then .env.local, then .env BEFORE its
@@ -37,10 +43,36 @@ export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
   const deployment = effective.CONVEX_DEPLOYMENT;
   // isAnonymousDeployment in the pinned CLI requires the deployment NAME
   // to start with anonymous-, after any type prefix has been stripped.
-  if (deployment && !/^(?:(?:anonymous|local):)?anonymous-[a-zA-Z0-9-]+$/.test(deployment)) {
+  if (deployment && !anonymousDeploymentName(deployment)) {
     throw new Error("[backend] REFUSING to start convex dev: CONVEX_DEPLOYMENT is not an anonymous local target");
   }
   return deployment || null;
+}
+
+const DEPLOYMENT_SELECTORS = [
+  "CONVEX_DEPLOYMENT", "CONVEX_DEPLOY_KEY", "CONVEX_DEPLOYMENT_TOKEN",
+  "CONVEX_SELF_HOSTED_URL", "CONVEX_SELF_HOSTED_ADMIN_KEY",
+];
+const PROCESS_ENV_KEYS = ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE"];
+
+/**
+ * Pin every selector after applying the CLI's dotenv precedence. Empty
+ * credentials prevent a later dotenv load from choosing another target.
+ * The allowlist excludes BASH_ENV, ENV, NODE_OPTIONS and loader hooks.
+ * @param {{ env: NodeJS.ProcessEnv, envLocalContent?: string | null, envContent?: string | null }} opts
+ * @returns {Record<string, string>}
+ */
+export function checkedConvexEnvironment(opts) {
+  const deployment = requireAnonymousStartup(opts);
+  /** @type {Record<string, string>} */
+  const clean = {};
+  for (const key of [...PROCESS_ENV_KEYS, EVAL_ENV_WORKOS_CLIENT_ID, EVAL_ENV_TEST_JWKS]) {
+    if (opts.env[key] !== undefined) clean[key] = opts.env[key];
+  }
+  for (const key of DEPLOYMENT_SELECTORS) clean[key] = "";
+  clean.CONVEX_DEPLOYMENT = deployment ?? "";
+  clean.CONVEX_AGENT_MODE = "anonymous";
+  return clean;
 }
 
 /**
@@ -48,7 +80,7 @@ export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
  * checked caller. Start env directly, with no intervening shell, and clear
  * that environment before Bash starts. Preserve caller selectors, including
  * empty values that prevent dotenv from falling back to a different target.
- * @param {{ session: string, file: string, cwd: string, callerEnv: NodeJS.ProcessEnv, env: Record<string, string>, command: string }} opts
+ * @param {{ session: string, file: string, cwd: string, callerEnv: NodeJS.ProcessEnv, env: Record<string, string>, command: string | string[] }} opts
  */
 export function createTmuxLauncher({ session, file, cwd, callerEnv, env, command }) {
   /** @type {Record<string, string>} */
@@ -63,6 +95,13 @@ export function createTmuxLauncher({ session, file, cwd, callerEnv, env, command
   }
   Object.assign(launchEnv, env);
   requireAnonymousStartup({ env: launchEnv });
+  if (Array.isArray(command)) {
+    return {
+      args: ["new-session", "-d", "-s", session, "-c", cwd, "--", "/usr/bin/env", "-i",
+        ...Object.entries(launchEnv).map(([key, value]) => `${key}=${value}`), ...command],
+      script: null,
+    };
+  }
   return {
     args: [
       "new-session", "-d", "-s", session, "--",
@@ -278,11 +317,8 @@ export function deploymentGuardProblems({ deployment, backendAnswered, port }) {
   const problems = [];
   if (!deployment.value) {
     problems.push("CONVEX_DEPLOYMENT is not set in the environment or .env.local, so the target deployment cannot be identified");
-  } else if (!deployment.value.startsWith("anonymous")) {
-    // Anonymous deployments are the local backend's own (CLI versions spell
-    // the prefix "anonymous:" or "anonymous-"); anything else can be a cloud
-    // deployment the CLI would write eval env vars into.
-    problems.push(`CONVEX_DEPLOYMENT from ${deployment.source} is "${deployment.value}", not an anonymous local deployment`);
+  } else if (!anonymousDeploymentName(deployment.value)) {
+    problems.push(`CONVEX_DEPLOYMENT from ${deployment.source} is not an anonymous local deployment`);
   }
   if (!backendAnswered) {
     problems.push(`no local backend answered on 127.0.0.1:${port}`);

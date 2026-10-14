@@ -45,7 +45,9 @@ import {
   resolveSelectedDeployment,
   requireAnonymousStartup,
   createTmuxLauncher,
+  checkedConvexEnvironment,
 } from "./local-backend-core.mjs";
+import { rebuildWithoutWatcher, runConvexCommand } from "./local-backend-process.mjs";
 
 // authkit-nextjs constructs the WorkOS client on every middleware hit and
 // throws NoApiKeyProvidedException without a key (:3000 500s — witnessed
@@ -69,14 +71,14 @@ const NEXT_TMUX = `conn-eval-next-${REPO_TAG}`;
 /**
  * Run with the checked caller settings and explicit eval variables. The
  * tmux server's selectors and shell startup environment never reach Bash.
- * @param {string} session @param {string} file @param {Record<string, string>} env @param {string} command
+ * @param {string} session @param {string} file @param {Record<string, string>} env @param {string | string[]} command
  */
 function launchInTmux(session, file, env, command) {
   mkdirSync(LOCAL_DIR, { recursive: true });
   const launcher = createTmuxLauncher({
-    session, file, cwd: REPO, callerEnv: process.env, env, command,
+    session, file, cwd: REPO, callerEnv: convexEnvironment(), env, command,
   });
-  writeFileSync(file, launcher.script, { mode: 0o700 });
+  if (launcher.script !== null) writeFileSync(file, launcher.script, { mode: 0o700 });
   const result = spawnSync("tmux", launcher.args, { cwd: REPO });
   if (result.status !== 0) {
     throw new Error(`[backend] tmux launcher failed for ${session} (exit ${result.status})`);
@@ -150,16 +152,30 @@ function restoreConvexJson() {
 
 const nextPort = Number((args.find((a) => a.startsWith("--port=")) ?? "--port=3000").split("=")[1]) || 3000;
 
-function sh(cmd, opts = {}) {
-  const r = spawnSync("bash", ["-c", cmd], {
+const CONVEX_CLI = path.join(REPO, "node_modules", "convex", "bin", "main.js");
+function convexEnvironment() {
+  return checkedConvexEnvironment({
+    env: process.env, envLocalContent: readEnvLocalIfPresent(),
+    envContent: existsSync(path.join(REPO, ".env")) ? readFileSync(path.join(REPO, ".env"), "utf8") : null,
+  });
+}
+/** @param {string[]} args */
+function convexCommand(args) {
+  const result = runConvexCommand({ node: process.execPath, cli: CONVEX_CLI, args, cwd: REPO, env: convexEnvironment() });
+  if (result.status !== 0) throw new Error(`[backend] Convex command failed (exit ${result.status})`);
+  return result;
+}
+
+/** @param {string} bin @param {string[]} args @param {{capture?: boolean, allowFail?: boolean}} opts */
+function command(bin, args, opts = {}) {
+  const r = spawnSync(bin, args, {
     cwd: REPO,
+    env: { HOME: process.env.HOME, PATH: process.env.PATH, TMPDIR: process.env.TMPDIR, TMUX_TMPDIR: process.env.TMUX_TMPDIR },
     encoding: "utf8",
     stdio: opts.capture ? ["ignore", "pipe", "pipe"] : ["ignore", "inherit", "inherit"],
   });
   if (r.status !== 0 && !opts.allowFail) {
-    console.error(`\n[backend] FAILED (${r.status}): ${cmd}`);
-    if (r.stdout) console.error(r.stdout);
-    if (r.stderr) console.error(r.stderr);
+    console.error(`[backend] ${bin} command failed (exit ${r.status})`);
     process.exit(r.status || 1);
   }
   return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
@@ -179,7 +195,7 @@ function supportedNodeBin() {
   for (const dir of candidates) {
     const bin = path.join(/** @type {string} */ (dir), "node");
     if (!existsSync(bin)) continue;
-    const major = Number(spawnSync(bin, ["-p", "process.versions.node.split('.')[0]"], { encoding: "utf8" }).stdout.trim());
+    const major = Number(spawnSync(bin, ["-p", "process.versions.node.split('.')[0]"], { encoding: "utf8", env: checkedConvexEnvironment({ env: process.env }) }).stdout.trim());
     if ([20, 22, 24].includes(major)) return /** @type {string} */ (dir);
   }
   return null;
@@ -187,7 +203,7 @@ function supportedNodeBin() {
 
 function tmuxRunning(name) {
   // "=name" forces exact matching; a bare -t would prefix-match other sessions.
-  return sh(`tmux has-session -t =${name} 2>/dev/null`, { capture: true, allowFail: true }).status === 0;
+  return command("tmux", ["has-session", "-t", `=${name}`], { capture: true, allowFail: true }).status === 0;
 }
 
 // ---------------------------------------------------------------- keys (D2/D3)
@@ -239,16 +255,16 @@ const SEED_USERS = [
 
 // ------------------------------------------------------------------ stop/status
 if (flag("stop")) {
-  sh(`tmux kill-session -t ${CONV_TMUX} 2>/dev/null; tmux kill-session -t ${NEXT_TMUX} 2>/dev/null`, { allowFail: true });
-  restoreConvexJson();
+  await rebuildWithoutWatcher({ session: CONV_TMUX, rebuild: restoreConvexJson });
+  command("tmux", ["kill-session", "-t", `=${NEXT_TMUX}`], { capture: true, allowFail: true });
   console.log("[backend] stopped (convex dev + next dev tmux sessions killed, convex.json restored)");
   process.exit(0);
 }
 
 if (flag("status")) {
   const state = existsSync(STATE_PATH) ? JSON.parse(readFileSync(STATE_PATH, "utf8")) : null;
-  const { status: conv } = sh(`curl -s -o /dev/null -w '%{http_code}' ${state?.convexUrl?.split("~")[0] ?? "http://127.0.0.1:1"}`, { capture: true, allowFail: true });
-  const { status: next } = sh(`curl -s -o /dev/null -w '%{http_code}' http://localhost:${nextPort}`, { capture: true, allowFail: true });
+  const { status: conv } = command("curl", ["-s", "-o", "/dev/null", "-w", "%{http_code}", state?.convexUrl?.split("~")[0] ?? "http://127.0.0.1:1"], { capture: true, allowFail: true });
+  const { status: next } = command("curl", ["-s", "-o", "/dev/null", "-w", "%{http_code}", `http://localhost:${nextPort}`], { capture: true, allowFail: true });
   console.log(JSON.stringify({ statePath: STATE_PATH, stateFresh: !!state, convexHttp: conv, nextHttp: next, tmux: { conv: tmuxRunning(CONV_TMUX), next: tmuxRunning(NEXT_TMUX) } }, null, 2));
   process.exit(0);
 }
@@ -270,9 +286,12 @@ const authKeyB64 = Buffer.from(JSON.stringify(priv)).toString("base64");
 
 // ------------------------------------------------------- convex dev (tmux, D1)
 console.log("[backend] 2/6 convex local deployment (anonymous, no account)");
-buildHarnessTree();
-applyConvexJsonOverride();
-if (!tmuxRunning(CONV_TMUX)) {
+// Never adopt a watcher started before the environment boundary existed.
+await rebuildWithoutWatcher({
+  session: CONV_TMUX,
+  rebuild: () => { buildHarnessTree(); applyConvexJsonOverride(); },
+});
+{
   mkdirSync(LOCAL_DIR, { recursive: true });
   // TMPDIR must share the backend's filesystem: 1.46 stages external
   // modules via a cross-device rename that fails with EXDEV when TMPDIR
@@ -316,10 +335,9 @@ if (!tmuxRunning(CONV_TMUX)) {
       [EVAL_ENV_WORKOS_CLIENT_ID]: DUMMY_WORKOS_CLIENT_ID,
       [EVAL_ENV_TEST_JWKS]: jwksDataUri,
     },
-    `npx convex dev --typecheck=disable < /dev/null 2>&1 | tee ${shellQuote(path.join(LOCAL_DIR, "convex-dev.log"))}`,
+    [path.join(nodeBin, "node"), path.join(EVAL_DIR, "scripts", "local-backend-watch.mjs"),
+      CONVEX_CLI, path.join(LOCAL_DIR, "convex-dev.log"), "dev", "--typecheck=disable"],
   );
-} else {
-  console.log("[backend] convex dev already running in tmux");
 }
 
 // Wait for the deployment URL in .env.local and a live local backend.
@@ -377,7 +395,7 @@ function localBackendAnswers(port) {
   // answered in <1 ms). Two probes with a longer ceiling; either success
   // proves liveness.
   for (const maxTime of ["10", "10"]) {
-    const code = sh(`curl -s -o /dev/null -w '%{http_code}' --max-time ${maxTime} http://127.0.0.1:${port}/`, { capture: true, allowFail: true }).stdout.trim();
+    const code = command("curl", ["-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", maxTime, `http://127.0.0.1:${port}/`], { capture: true, allowFail: true }).stdout.trim();
     if (code !== "" && code !== "000") return true;
   }
   return false;
@@ -385,7 +403,7 @@ function localBackendAnswers(port) {
 
 /** @param {string} name @param {string} value */
 function runEnvSet(name, value) {
-  sh(`npx convex env set ${name} '${value}'`, { capture: true });
+  convexCommand(["env", "set", name, value]);
 }
 
 function assertLocalDeployment() {
@@ -409,7 +427,7 @@ function assertLocalDeployment() {
     console.error(deploymentRefusalMessage(result.problems));
     process.exit(1);
   }
-  console.log(`[backend] deployment guard ok: ${result.deployment.value} answering on 127.0.0.1:${result.port}`);
+  console.log(`[backend] deployment guard ok: anonymous local backend answering on 127.0.0.1:${result.port}`);
 }
 
 // Deployment env: dummy WorkOS client id (D2) + the harness JWKS provider.
@@ -473,7 +491,7 @@ if (!rePushed) {
   if (existsSync(convLog)) console.error(readFileSync(convLog, "utf8").slice(-4000));
   process.exit(1);
 }
-const seedOut = sh("npx convex run devEval/seed", { capture: true }).stdout;
+const seedOut = convexCommand(["run", "devEval/seed"]).stdout;
 let seedJson = null;
 try {
   seedJson = JSON.parse(seedOut.slice(seedOut.indexOf("{"), seedOut.lastIndexOf("}") + 1));
@@ -486,10 +504,7 @@ console.log(`[backend] seeded meeting ${seedJson.meetingId}`);
 
 // Read the seed back and check every fact the H-14 proof relies on. Positional
 // JSON args (the CLI has no --meetingId option); no shell, so no quoting.
-const shapeRun = spawnSync("npx", ["convex", "run", "devEval/shape:shape", JSON.stringify({ meetingId: seedJson.meetingId })], {
-  cwd: REPO,
-  encoding: "utf8",
-});
+const shapeRun = convexCommand(["run", "devEval/shape:shape", JSON.stringify({ meetingId: seedJson.meetingId })]);
 let shape = null;
 try {
   const out = shapeRun.stdout ?? "";
@@ -504,7 +519,7 @@ console.log("[backend] seed shape verified: A host, B and C participants, O no r
 
 // ------------------------------------------------------------------- next dev
 const httpCode = () =>
-  sh(`curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://localhost:${nextPort}/dev/auth-proof?as=A`, { capture: true, allowFail: true }).stdout.trim();
+  command("curl", ["-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "20", `http://localhost:${nextPort}/dev/auth-proof?as=A`], { capture: true, allowFail: true }).stdout.trim();
 const serving = (/** @type {string} */ code) => code.startsWith("2") || code.startsWith("3");
 {
   // src/proxy.ts (authkitMiddleware) runs in the edge runtime, which reads
@@ -555,7 +570,7 @@ const serving = (/** @type {string} */ code) => code.startsWith("2") || code.sta
     console.log(`[backend] 5/6 next dev already serving on :${nextPort} with this env`);
   } else {
     console.log(`[backend] 5/6 ${ours ? "restarting" : "starting"} next dev on :${nextPort}${ours && !sameEnv ? " (env or key changed)" : ""}`);
-    if (ours) sh(`tmux kill-session -t ${NEXT_TMUX}`, { allowFail: true });
+    if (ours) command("tmux", ["kill-session", "-t", `=${NEXT_TMUX}`], { capture: true, allowFail: true });
     launchInTmux(NEXT_TMUX, path.join(LOCAL_DIR, "next-dev.sh"), nextEnv, `pnpm exec next dev -p ${nextPort} 2>&1 | tee ${shellQuote(path.join(LOCAL_DIR, "next-dev.log"))}`);
     writeFileSync(fingerprintPath, fingerprint);
     const nextDeadline = Date.now() + 240_000;

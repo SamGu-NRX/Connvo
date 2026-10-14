@@ -61,8 +61,14 @@ export function escapeIcsText(value: string): string {
  */
 function formatIcsUtc(epochMs: number): string {
   const seconds = Math.floor(epochMs / 1000);
+  const date = new Date(seconds * 1000);
+  // RFC 5545 DATE-TIME uses exactly four year digits, not ISO extended years.
+  const year = date.getUTCFullYear();
+  if (!Number.isFinite(year) || year < 0 || year > 9999) {
+    throw new RangeError("Calendar date is outside RFC 5545's four-digit year range");
+  }
   // toISOString is always UTC: "YYYY-MM-DDTHH:MM:SS.sssZ".
-  return new Date(seconds * 1000).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 
 let sharedTextEncoder: TextEncoder | null = null;
@@ -120,12 +126,17 @@ export function buildCalendarExport(input: CalendarExportInput): string | null {
   ];
 
   // RFC 5545 §3.8.2.2 requires DTEND to be later than DTSTART. Both are
-  // exported at whole-second precision, so omit unrepresentable intervals.
+  // exported at whole-second precision, so omit unrepresentable intervals,
+  // including ends outside the four-digit year range.
   if (input.durationMs != null) {
-    const endMs = new Date(input.scheduledAt + input.durationMs).getTime();
+    const endDate = new Date(input.scheduledAt + input.durationMs);
+    const endMs = endDate.getTime();
+    const endYear = endDate.getUTCFullYear();
     if (
       Number.isFinite(input.durationMs) &&
       input.durationMs > 0 &&
+      endYear >= 0 &&
+      endYear <= 9999 &&
       Math.floor(endMs / 1000) > Math.floor(input.scheduledAt / 1000)
     ) {
       lines.push(`DTEND:${formatIcsUtc(endMs)}`);

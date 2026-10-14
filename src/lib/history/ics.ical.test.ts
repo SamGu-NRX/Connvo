@@ -39,7 +39,7 @@ const trickyDescription =
   "Second line\nafter CRLF\r\nand commas, semicolons; 😀";
 
 describe("buildCalendarExport parsed by ical.js", () => {
-  it.each([0, -1, -1000, 1, 876, NaN, Infinity, -Infinity, 1e20])(
+  it.each([0, -1, -1000, 1, 876, NaN, Infinity, -Infinity, 1e20, 3e14])(
     "omits DTEND for an interval that cannot end later: %s ms",
     (durationMs) => {
       const vevent = parseToVEvent(
@@ -71,6 +71,43 @@ describe("buildCalendarExport parsed by ical.js", () => {
     expect(timePropertyMs(vevent, "dtstart")).toBe(1700000000000);
     expect(timePropertyMs(vevent, "dtend")).toBe(1700000001000);
   });
+
+  it("keeps the last four-digit second and omits an end in year 10000", () => {
+    for (const [durationMs, expected] of [
+      [1000, "99991231T235959Z"],
+      [2000, null],
+    ] as const) {
+      const ics = buildCalendarExport({
+        meetingId: "year-boundary",
+        title: "Last meeting",
+        scheduledAt: Date.parse("9999-12-31T23:59:58Z"),
+        durationMs,
+        state: "scheduled",
+        updatedAt: 1700000000000,
+      })!;
+      expect(ics).toContain("DTSTART:99991231T235958Z");
+      if (expected) expect(ics).toContain(`DTEND:${expected}`);
+      else expect(parseToVEvent(ics).getFirstProperty("dtend")).toBeNull();
+    }
+  });
+
+  it.each(["-000001-12-31T23:59:59Z", "+010000-01-01T00:00:00Z"])(
+    "rejects an out-of-range required date: %s",
+    (date) => {
+      for (const field of ["scheduledAt", "updatedAt"] as const) {
+        expect(() =>
+          buildCalendarExport({
+            meetingId: "invalid-year",
+            title: "Meeting",
+            scheduledAt: 1700000000000,
+            updatedAt: 1700000000000,
+            state: "scheduled",
+            [field]: Date.parse(date),
+          }),
+        ).toThrow(RangeError);
+      }
+    },
+  );
 
   it("round-trips summary, uid, start and end instants through the real parser", () => {
     const ics = buildCalendarExport({

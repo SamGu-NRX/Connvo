@@ -46,6 +46,24 @@ describe("startup target before a pushing Convex command", () => {
       .toBe("anonymous-swift-hawk");
   });
 
+  it.each(["anonymous-probe", "anonymous:anonymous-probe", "local:anonymous-probe"])(
+    "uses the same anonymous name rule at startup and env-set: %s", (value) => {
+      expect(requireAnonymousStartup({ env: { CONVEX_DEPLOYMENT: value } })).toBe(value);
+      expect(applyDeploymentEnv({ deployment: { source: "environment", value },
+        backendAnswered: true, port: 3210, envSets: [], envSet: () => {} }).ok).toBe(true);
+    },
+  );
+
+  it.each(["anonymous:cloud-probe", "anonymous-cloud:probe", "local:cloud-probe", "prod:anonymous-probe"])(
+    "refuses nonlocal or misleading selectors at both boundaries: %s", (value) => {
+      expect(() => requireAnonymousStartup({ env: { CONVEX_DEPLOYMENT: value } })).toThrow();
+      const result = applyDeploymentEnv({ deployment: { source: "environment", value },
+        backendAnswered: true, port: 3210, envSets: [], envSet: () => {} });
+      expect(result.ok).toBe(false);
+      expect(result.problems.join(" ")).not.toContain(value);
+    },
+  );
+
   it("refuses inherited cloud selection even with anonymous agent mode", () => {
     expect(() => requireAnonymousStartup({ env: { CONVEX_AGENT_MODE: "anonymous", CONVEX_DEPLOYMENT: "dev:shared-cloud" } }))
       .toThrow("CONVEX_DEPLOYMENT is not an anonymous local target");
@@ -99,7 +117,8 @@ afterEach(() => {
 
 describe("tmux launcher environment", () => {
   it("drops an existing server's cloud selectors and shell startup file", async ({ skip }) => {
-    if (spawnSync("tmux", ["-V"]).error?.code === "ENOENT") {
+    const tmuxError = spawnSync("tmux", ["-V"]).error;
+    if (tmuxError && "code" in tmuxError && tmuxError.code === "ENOENT") {
       skip("tmux is not on PATH; this integration test requires an isolated tmux server");
     }
     const dir = mkdtempSync(path.join(tmpdir(), "connvo-launcher-"));
@@ -161,6 +180,7 @@ describe("tmux launcher environment", () => {
           env: { CONVEX_AGENT_MODE: "anonymous" },
           command: `${shellQuote(process.execPath)} ${shellQuote(probe)} ${shellQuote(output)}`,
         });
+        if (launcher.script === null) throw new Error("Expected a shell launcher script");
         writeFileSync(file, launcher.script, { mode: 0o700 });
         expect(tmux(launcher.args).status).toBe(0);
         expect(await readProbe(output)).toEqual({
@@ -329,7 +349,7 @@ describe("guard (iii): eval env vars are set only for the verified local anonymo
       envSet,
     });
     expect(result.ok).toBe(false);
-    expect(result.problems.join("\n")).toContain("https://graceful-crane-123.convex.cloud");
+    expect(result.problems.join("\n")).not.toContain("https://graceful-crane-123.convex.cloud");
     expect(result.problems.join("\n")).toContain("not an anonymous local deployment");
     expect(envSet).not.toHaveBeenCalled();
   });
@@ -364,7 +384,7 @@ describe("guard (iii): eval env vars are set only for the verified local anonymo
   it("refuses an anonymous deployment name when no local backend answers", () => {
     const envSet = vi.fn();
     const result = applyDeploymentEnv({
-      deployment: { source: "environment", value: "anonymous:swift-hawk-999" },
+      deployment: { source: "environment", value: "anonymous:anonymous-swift-hawk-999" },
       backendAnswered: () => false,
       port: 3210,
       envSets,
@@ -376,7 +396,7 @@ describe("guard (iii): eval env vars are set only for the verified local anonymo
   });
 
   it("accepts both anonymous spellings and sets both env vars, in order", () => {
-    for (const value of ["anonymous:swift-hawk-999", "anonymous-swift-hawk-999"]) {
+    for (const value of ["anonymous:anonymous-swift-hawk-999", "anonymous-swift-hawk-999"]) {
       const envSet = vi.fn();
       const result = applyDeploymentEnv({
         deployment: { source: "environment", value },
@@ -399,7 +419,8 @@ describe("guard (iii): eval env vars are set only for the verified local anonymo
       port: 3210,
     });
     expect(problems).toHaveLength(2);
-    expect(problems[0]).toContain("prod:very-much-cloud");
+    expect(problems[0]).toContain("not an anonymous local deployment");
+    expect(problems[0]).not.toContain("prod:very-much-cloud");
     expect(problems[1]).toContain("no local backend answered");
   });
 });
