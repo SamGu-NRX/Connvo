@@ -29,8 +29,12 @@ export function NotesTransportProvider({
   );
 }
 
+export function useOptionalNotesTransport(): NotesTransport | null {
+  return useContext(NotesTransportContext);
+}
+
 export function useNotesTransport(): NotesTransport {
-  const transport = useContext(NotesTransportContext);
+  const transport = useOptionalNotesTransport();
   if (!transport) {
     throw new Error(
       "Notes ledger used without a NotesTransportProvider. Wrap the tree in " +

@@ -100,8 +100,11 @@ function typeAndCommit(next: string) {
 describe("MeetingNotesPanel — review sequences through the default provider", () => {
   it("a teardown inside the debounce keeps the other person's words", async () => {
     const { backend, a, b, sim } = await twoPeople("teardown");
+    const errors = vi.spyOn(console, "error");
     const view = render(<MeetingNotesPanel meetingId={a.meetingId} />);
     await badgeShows(/Synced/i);
+    expect(errors.mock.calls).toEqual([]);
+    errors.mockRestore();
     typeAndCommit("base");
     await waitFor(async () =>
       expect(await serverText(backend, a.meetingId)).toBe("base"),

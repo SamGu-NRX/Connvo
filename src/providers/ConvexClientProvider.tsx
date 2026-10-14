@@ -90,17 +90,18 @@ function useAuth() {
 }
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
-  return (
-    <AuthKitProvider>
-      <ConvexProviderWithAuthKit
-        client={getConvexClient()}
-        useAuth={TEST_AUTH_ENABLED ? useTestAuth : useAuth}
-      >
-        {TEST_AUTH_ENABLED ? null : <UpsertUserOnAuth />}
-        {children}
-      </ConvexProviderWithAuthKit>
-    </AuthKitProvider>
+  const content = (
+    <ConvexProviderWithAuthKit
+      client={getConvexClient()}
+      useAuth={TEST_AUTH_ENABLED ? useTestAuth : useAuth}
+    >
+      {TEST_AUTH_ENABLED ? null : <UpsertUserOnAuth />}
+      {children}
+    </ConvexProviderWithAuthKit>
   );
+  // Local test auth bypasses AuthKit middleware; mounting its provider would
+  // still invoke withAuth server actions and report 500s on every eval page.
+  return TEST_AUTH_ENABLED ? content : <AuthKitProvider>{content}</AuthKitProvider>;
 }
 
 function UpsertUserOnAuth() {
