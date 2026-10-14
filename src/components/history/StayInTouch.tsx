@@ -31,6 +31,7 @@ function StayInTouchControl({ meetingId }: { meetingId: Id<"meetings"> }) {
   if (status === undefined) return <Skeleton className="h-16 w-full" />;
 
   const toggle = async (enabled: boolean) => {
+    if (saving) return;
     setSaving(true);
     setProblem(null);
     try {
@@ -59,9 +60,12 @@ function StayInTouchControl({ meetingId }: { meetingId: Id<"meetings"> }) {
           aria-labelledby={labelId}
           aria-describedby={hintId}
           checked={status.enabled}
-          disabled={saving}
+          // Unavailable while saving, but not natively disabled: disabling the
+          // focused switch drops keyboard focus to the page. toggle() ignores
+          // presses until the save ends.
+          aria-disabled={saving}
           onCheckedChange={(checked) => void toggle(checked)}
-          className="mt-1"
+          className="mt-1 aria-disabled:cursor-wait aria-disabled:opacity-50"
         />
       </div>
       {problem ? (

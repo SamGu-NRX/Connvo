@@ -47,7 +47,8 @@ export function presentStatus(
     case "synced":
       return {
         label: "Synced",
-        tone: "text-emerald-600 dark:text-emerald-400",
+        // Emerald-600 measured 3.59:1 on the ended-call card in the browser proof.
+        tone: "text-emerald-700 dark:text-emerald-400",
         Icon: CheckCircle2,
       };
     case "saving":

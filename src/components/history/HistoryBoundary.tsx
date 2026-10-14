@@ -43,7 +43,10 @@ export class HistoryBoundary extends Component<
         data-kind={kind}
         className={
           this.props.className ??
-          "text-muted-foreground rounded-md border p-4 text-sm"
+          // A card surface: on the bare page backdrop this muted text
+          // measured 3.76:1 where a tinted blob sits behind it; on the card
+          // it is 4.73:1, like the muted text in the recap's own cards.
+          "bg-card text-muted-foreground rounded-md border p-4 text-sm"
         }
       >
         {MESSAGES[kind]}

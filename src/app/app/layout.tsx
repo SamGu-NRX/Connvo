@@ -39,7 +39,7 @@ export default function RootLayout({
             >
               <div className="flex w-full items-center gap-2.5">
                 <Link
-                  className="flex items-center gap-2.5 font-semibold transition-opacity duration-150 hover:opacity-80"
+                  className="flex items-center gap-2.5 font-semibold hover:underline underline-offset-4"
                   href="/app"
                 >
                   <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-sm">
@@ -61,7 +61,8 @@ export default function RootLayout({
                     />
                   </span>
                   <motion.span
-                    className="text-sm font-semibold tracking-tight text-emerald-600 dark:text-emerald-300"
+                    data-testid="app-wordmark"
+                    className="text-sm font-semibold tracking-tight text-emerald-700 dark:text-emerald-300"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}

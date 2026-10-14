@@ -13,11 +13,11 @@ export function DesktopNavigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex min-h-0 flex-1 flex-col py-3">
+    <nav data-testid="desktop-navigation" className="flex min-h-0 flex-1 flex-col py-3">
       <div className="flex-1 space-y-3.5 overflow-y-auto">
         {navSections.map((section) => (
           <div key={section.title} className="space-y-2">
-            <p className="px-3 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-900/60 dark:text-emerald-100/60">
+            <p className="px-3 text-[11px] font-medium uppercase tracking-[0.2em] text-emerald-900/75 dark:text-emerald-100/80">
               {section.title}
             </p>
             <div className="space-y-1">
@@ -32,7 +32,9 @@ export function DesktopNavigation() {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "group relative flex h-10 items-center gap-3 overflow-hidden rounded-lg px-3 text-sm font-medium text-emerald-900/70 transition-colors duration-200 hover:text-emerald-600 dark:text-emerald-100/70 dark:hover:text-emerald-300",
+                      // The scroll container clips outward outlines; the inset band
+                      // passed the two-pixel-equivalent check in shell-proof/result.json.
+                      "group relative flex h-10 items-center gap-3 overflow-hidden rounded-lg px-3 text-sm font-medium text-emerald-900/85 transition-colors duration-200 hover:text-emerald-700 focus-visible:outline-3 focus-visible:-outline-offset-3 dark:text-emerald-100/90 dark:hover:text-emerald-300",
                     )}
                   >
                     {isActive && (
@@ -56,7 +58,7 @@ export function DesktopNavigation() {
                     </span>
                     <span className="relative flex flex-col">
                       <span className="leading-tight">{item.name}</span>
-                      <span className="text-[11px] font-normal text-emerald-900/50 transition-opacity duration-200 group-hover:opacity-100 dark:text-emerald-200/50">
+                      <span className="text-[11px] font-normal text-emerald-900/75 transition-opacity duration-200 group-hover:opacity-100 dark:text-emerald-200/85">
                         {item.description}
                       </span>
                     </span>
@@ -74,7 +76,7 @@ export function DesktopNavigation() {
             window.location.href = "/api/auth/signout";
           }}
           variant="ghost"
-          className="group flex w-full items-center justify-center gap-2 rounded-md border border-white/30 bg-white/65 px-3 py-2 text-sm font-semibold text-emerald-900/80 transition-colors duration-200 hover:bg-white/80 hover:text-red-500 focus-visible:ring-emerald-500/30 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100/80 dark:hover:bg-white/15 dark:hover:text-red-300"
+          className="group flex w-full items-center justify-center gap-2 rounded-md border border-white/30 bg-white/65 px-3 py-2 text-sm font-semibold text-emerald-900/80 transition-colors duration-200 hover:bg-white/80 hover:text-red-700 focus-visible:ring-ring dark:border-white/10 dark:bg-white/10 dark:text-emerald-100/80 dark:hover:bg-white/15 dark:hover:text-red-200"
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />
           Log out

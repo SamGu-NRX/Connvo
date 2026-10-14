@@ -397,6 +397,47 @@ describe("with the client flag on", () => {
     expect(contacts).toHaveTextContent("b@after-call.test");
   });
 
+  it("stay in touch: the switch keeps keyboard focus while its choice saves", async () => {
+    render(<MeetingDetail meetingId={meetingId} />);
+    const toggle = await screen.findByTestId("stay-in-touch-switch");
+    toggle.focus();
+    fireEvent.click(toggle);
+    // Saving: unavailable to assistive tech, but not natively disabled,
+    // which would drop focus in a browser.
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
+    expect(toggle).not.toBeDisabled();
+    expect(document.activeElement).toBe(toggle);
+    await screen.findByText(/Nobody else has yet/);
+    expect(toggle).toHaveAttribute("aria-disabled", "false");
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("stay in touch ignores repeated presses while saving, then accepts the next choice", async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const realMutation = people.A.mutation.bind(people.A);
+    const mutation = vi.spyOn(people.A, "mutation").mockImplementation(async (fn, args = {}) => {
+      await pending;
+      return realMutation(fn, args);
+    });
+    render(<MeetingDetail meetingId={meetingId} />);
+    const toggle = await screen.findByTestId("stay-in-touch-switch");
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
+    expect(mutation.mock.calls.map(([, args]) => args)).toEqual([{ meetingId, enabled: true }]);
+    await act(async () => { release(); });
+    await screen.findByText(/Nobody else has yet/);
+    fireEvent.click(toggle);
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-disabled", "false"));
+    expect(mutation.mock.calls.map(([, args]) => args)).toEqual([
+      { meetingId, enabled: true }, { meetingId, enabled: false },
+    ]);
+    const status = await people.A.query(api.history.queries.getStayInTouchStatus, { meetingId });
+    expect(status.enabled).toBe(false);
+  });
+
   it("the call page's ended screen links to the recap and shows it", async () => {
     render(
       <>
