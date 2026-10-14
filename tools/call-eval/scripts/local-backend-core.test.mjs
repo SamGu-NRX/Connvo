@@ -98,7 +98,10 @@ afterEach(() => {
 });
 
 describe("tmux launcher environment", () => {
-  it("drops an existing server's cloud selectors and shell startup file", async () => {
+  it("drops an existing server's cloud selectors and shell startup file", async ({ skip }) => {
+    if (spawnSync("tmux", ["-V"]).error?.code === "ENOENT") {
+      skip("tmux is not on PATH; this integration test requires an isolated tmux server");
+    }
     const dir = mkdtempSync(path.join(tmpdir(), "connvo-launcher-"));
     tmpDirs.push(dir);
     const cwd = path.join(dir, "checkout with spaces");
