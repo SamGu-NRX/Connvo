@@ -1,8 +1,15 @@
 {
-  "commit": "7d8b18d073d897d2a382761fa35d3fa60ce1a413",
+  "dirty": true,
+  "commit": "dddaab5a029c85f26068e22f5bb0afeef5d7ee78",
   "baseUrl": "http://localhost:3043",
-  "startedAt": "2026-10-14T17:13:53.992Z",
+  "startedAt": "2026-10-14T18:05:42.411Z",
   "checks": {
+    "keyboardLeaveHeading": {
+      "focused": true,
+      "focusVisible": true,
+      "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, lab(100 0 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+      "visibleSpread": false
+    },
     "notesInCall": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
     "endedRecap": {
       "A": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
@@ -17,7 +24,7 @@
     "calendar": {
       "fileName": "budget-review.ics",
       "summary": "Budget review",
-      "start": "2026-10-14T17:13:54Z"
+      "start": "2026-10-14T18:05:42Z"
     },
     "keyboard": {
       "recapWalk": {
@@ -395,7 +402,7 @@
               "inPage": false,
               "focusVisible": true,
               "box": {
-                "x": 23.59375,
+                "x": 23.8125,
                 "y": 27,
                 "width": 88.125,
                 "height": 28
@@ -837,7 +844,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Budget reviewWed, Oct 14, 2026, 12:13 PM \u00b7 You hostedIn prog",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -862,7 +869,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 12:13 PM \u00b7 You ",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:05 PM · You h",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -888,7 +895,7 @@
           "backward": [
             {
               "tag": "a",
-              "name": "Budget reviewWed, Oct 14, 2026, 12:13 PM \u00b7 You hostedIn prog",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
               "testid": null
             },
             {
@@ -951,7 +958,7 @@
               "inPage": false,
               "focusVisible": true,
               "box": {
-                "x": 24.078125,
+                "x": 23.8125,
                 "y": 27,
                 "width": 88.125,
                 "height": 28
@@ -996,7 +1003,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Budget reviewWed, Oct 14, 2026, 12:13 PM \u00b7 You hostedIn prog",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -1021,7 +1028,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 12:13 PM \u00b7 You ",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:05 PM · You h",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -1102,12 +1109,12 @@
             },
             {
               "tag": "a",
-              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 12:13 PM \u00b7 You ",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:05 PM · You h",
               "testid": null
             },
             {
               "tag": "a",
-              "name": "Budget reviewWed, Oct 14, 2026, 12:13 PM \u00b7 You hostedIn prog",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
               "testid": null
             },
             {
@@ -1141,5 +1148,5 @@
     }
   },
   "pass": true,
-  "meetingId": "m973mahchdp0n7zxa863ytzkdh8g9pf3"
+  "meetingId": "m97fnsyxrpb7segghwpepbyvnh8g801h"
 }

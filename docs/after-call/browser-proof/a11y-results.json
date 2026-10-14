@@ -1,11 +1,13 @@
 {
-  "ranAt": "2026-10-14T17:13:53.992Z",
+  "commit": "dddaab5a029c85f26068e22f5bb0afeef5d7ee78",
+  "dirty": true,
+  "ranAt": "2026-10-14T18:05:42.411Z",
   "states": [
     {
       "state": "call-ended",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/call-ended-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/call-ended-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/call-ended-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/call-ended-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -381,7 +383,7 @@
           {
             "selector": "p[data-testid=\"notes-counts\"]",
             "inPage": true,
-            "text": "8 words \u00b7 58 characters",
+            "text": "8 words · 58 characters",
             "fontSize": 12,
             "need": 4.5,
             "coveredPixels": 575,
@@ -763,7 +765,7 @@
           {
             "selector": "p[data-testid=\"notes-counts\"]",
             "inPage": true,
-            "text": "8 words \u00b7 58 characters",
+            "text": "8 words · 58 characters",
             "fontSize": 12,
             "need": 4.5,
             "coveredPixels": 576,
@@ -818,8 +820,8 @@
     {
       "state": "recap",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/recap-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/recap-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -1035,10 +1037,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM",
+            "text": "Wed, Oct 14, 2026, 1:05 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 862,
+            "coveredPixels": 852,
             "worst": 4.68,
             "pass": true
           },
@@ -1377,10 +1379,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM",
+            "text": "Wed, Oct 14, 2026, 1:05 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 862,
+            "coveredPixels": 852,
             "worst": 4.67,
             "pass": true
           },
@@ -1582,8 +1584,8 @@
     {
       "state": "stay-in-touch-waiting",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/stay-in-touch-waiting-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/stay-in-touch-waiting-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-waiting-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-waiting-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -1759,10 +1761,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM",
+            "text": "Wed, Oct 14, 2026, 1:05 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 862,
+            "coveredPixels": 852,
             "worst": 4.68,
             "pass": true
           },
@@ -2111,10 +2113,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM",
+            "text": "Wed, Oct 14, 2026, 1:05 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 862,
+            "coveredPixels": 852,
             "worst": 4.67,
             "pass": true
           },
@@ -2326,8 +2328,8 @@
     {
       "state": "stay-in-touch-both",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/stay-in-touch-both-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/stay-in-touch-both-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-both-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-both-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -2503,10 +2505,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM",
+            "text": "Wed, Oct 14, 2026, 1:05 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 862,
+            "coveredPixels": 852,
             "worst": 4.68,
             "pass": true
           },
@@ -2865,10 +2867,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM",
+            "text": "Wed, Oct 14, 2026, 1:05 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 862,
+            "coveredPixels": 852,
             "worst": 4.67,
             "pass": true
           },
@@ -3090,8 +3092,8 @@
     {
       "state": "list",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/list-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/list-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -3307,10 +3309,10 @@
           {
             "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM \u00b7 You hosted",
+            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1240,
+            "coveredPixels": 1221,
             "worst": 4.68,
             "pass": true
           },
@@ -3337,10 +3339,10 @@
           {
             "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM \u00b7 You hosted",
+            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1240,
+            "coveredPixels": 1221,
             "worst": 4.68,
             "pass": true
           },
@@ -3549,10 +3551,10 @@
           {
             "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM \u00b7 You hosted",
+            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1225,
+            "coveredPixels": 1219,
             "worst": 4.68,
             "pass": true
           },
@@ -3579,10 +3581,10 @@
           {
             "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 12:13 PM \u00b7 You hosted",
+            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1225,
+            "coveredPixels": 1219,
             "worst": 4.68,
             "pass": true
           },
@@ -3654,8 +3656,8 @@
     {
       "state": "list-loading",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/list-loading-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/list-loading-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-loading-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-loading-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -4098,8 +4100,8 @@
     {
       "state": "recap-error",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/recap-error-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/recap-error-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-error-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-error-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -4542,8 +4544,8 @@
     {
       "state": "recap-not-a-participant",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/recap-not-a-participant-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/recap-not-a-participant-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-not-a-participant-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-not-a-participant-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -4986,8 +4988,8 @@
     {
       "state": "list-empty",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/list-empty-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-vet-steady/shots/list-empty-390x844.png"
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-empty-1440x900.png",
+        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-empty-390x844.png"
       ],
       "violations": {
         "1440x900": [],
