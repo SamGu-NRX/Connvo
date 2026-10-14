@@ -8,6 +8,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -24,6 +25,7 @@ import {
   checkoutWatchers,
   confirmedSignals,
   discoverWatchers,
+  nodeEntry,
   rebuildWithoutWatcher,
   runConvexCommand,
 } from "./local-backend-process.mjs";
@@ -184,6 +186,8 @@ function watcherFixture() {
     observed: path.join(dir, "observed"),
     pids: path.join(dir, "pids"),
     forks: path.join(dir, "forks"),
+    /** @type {string | null} */
+    deleteAfterStart: null,
     statePath: path.join(dir, "out", "watcher-processes.json"),
     env: { HOME: dir, PATH: process.env.PATH },
     /** @type {number[][]} */
@@ -373,44 +377,73 @@ it("a TZ change between refusal and retry does not hide a surviving watcher", as
   expect(alive(pid)).toBe(true);
 }, 60_000);
 
-it.each([
-  ["no state file", null],
-  ["a state file holding []", "[]"],
-])("finds an orphaned watcher with %s and the session gone", async (_, stateText) => {
-  const f = watcherFixture();
-  if (stateText !== null) {
-    mkdirSync(path.dirname(f.statePath), { recursive: true });
-    writeFileSync(f.statePath, stateText);
-  }
-  // No tmux server ever starts on this socket.
-  const { tmuxArgs } = isolatedTmux(f.env);
-  let child;
-  if (stateText === null) {
-    // Current shape: the wrapper's child, node
-    // <checkout>/node_modules/convex/bin/main.js dev, run from the checkout.
-    const cli = writeScript(
-      path.join(f.checkout, "node_modules", "convex", "bin", "main.js"),
-      watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }),
-    );
-    child = spawn(process.execPath, [cli, "dev", "--typecheck=disable"], { cwd: f.checkout, detached: true, stdio: "ignore" });
-  } else {
-    // Versions before 59c98b7 ran `npx convex dev` from the checkout; this
-    // npx is a fake on a temp PATH.
-    const body = writeScript(path.join(f.dir, "npx-body.mjs"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
-    const bin = path.join(f.dir, "bin");
-    const npx = writeScript(path.join(bin, "npx"), `#!/usr/bin/env node\nimport(${J(body)});\n`);
-    chmodSync(npx, 0o755);
-    child = spawn("npx", ["convex", "dev", "--typecheck=disable"], {
-      cwd: f.checkout,
-      detached: true,
-      stdio: "ignore",
-      env: { PATH: `${bin}:${path.dirname(process.execPath)}:/usr/bin:/bin` },
-    });
-  }
+/**
+ * A tmux stand-in that reports no server, for tests whose session is gone
+ * anyway; they then need no real tmux.
+ * @param {ReturnType<typeof watcherFixture>} f
+ */
+function noTmux(f) {
+  const bin = path.join(f.dir, "no-tmux");
+  chmodSync(writeScript(path.join(bin, "tmux"), "#!/bin/sh\nexit 1\n"), 0o755);
+  return { tmuxArgs: [], env: { ...f.env, PATH: `${bin}:/usr/bin:/bin` } };
+}
+
+/** @param {string} exe @param {string[]} args @param {string} cwd @param {NodeJS.ProcessEnv} [env] */
+function orphan(exe, args, cwd, env) {
+  const child = spawn(exe, args, { cwd, detached: true, stdio: "ignore", env });
   child.unref();
+  cleanups.push(() => child.kill("SIGKILL"));
+  return child;
+}
+
+/**
+ * Ways a watcher for the checkout can be invoked, each started as an orphan
+ * with no tmux session and no state file.
+ * @type {Array<[string, (f: ReturnType<typeof watcherFixture>) => void]>}
+ */
+const ORPHANS = [
+  ["node <checkout>/node_modules/convex/bin/main.js dev", (f) => {
+    const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    orphan(process.execPath, [cli, "dev", "--typecheck=disable"], f.checkout);
+  }],
+  ["a relative entry, node node_modules/convex/bin/main.js dev", (f) => {
+    writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    orphan(process.execPath, ["node_modules/convex/bin/main.js", "dev"], f.checkout);
+  }],
+  ["node --trace-warnings before the entry", (f) => {
+    const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    orphan(process.execPath, ["--trace-warnings", cli, "dev"], f.checkout);
+  }],
+  ["node --inspect=127.0.0.1:0 before the entry", (f) => {
+    const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    orphan(process.execPath, ["--inspect=127.0.0.1:0", cli, "dev"], f.checkout);
+  }],
+  ["node -r <hook>, an option that takes a value", (f) => {
+    const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    const hook = writeScript(path.join(f.dir, "hook.cjs"), "");
+    orphan(process.execPath, ["-r", hook, cli, "dev"], f.checkout);
+  }],
+  ["an entry file deleted after start", (f) => {
+    const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    orphan(process.execPath, [cli, "dev"], f.checkout);
+    // The test deletes it once the process has recorded its PID.
+    f.deleteAfterStart = cli;
+  }],
+  ["the wrapper under a symlink alias of the checkout", (f) => {
+    writeScript(path.join(f.checkout, "tools", "call-eval", "scripts", "local-backend-watch.mjs"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    const alias = path.join(f.dir, "alias");
+    symlinkSync(f.checkout, alias);
+    orphan(process.execPath, [path.join(alias, "tools", "call-eval", "scripts", "local-backend-watch.mjs"), "x", "log", "dev"], f.dir);
+  }],
+];
+
+it.each(ORPHANS)("finds an orphaned watcher with no state file and the session gone: %s", async (_, start) => {
+  const f = watcherFixture();
+  start(f);
   const [pid] = await waitForPids(f.pids, 1);
+  if (f.deleteAfterStart) rmSync(f.deleteAfterStart);
   await rebuildWithoutWatcher({
-    session: "watcher", checkout: f.checkout, statePath: f.statePath, tmuxArgs, env: f.env, graceMs: 200, rebuild: f.rebuild,
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), graceMs: 200, rebuild: f.rebuild,
   });
   expect(f.liveAtRebuild).toEqual([[]]);
   expect(alive(pid)).toBe(false);
@@ -418,7 +451,27 @@ it.each([
   expect(existsSync(f.observed)).toBe(false);
 }, 30_000);
 
-it("a child forked on SIGHUP during shutdown is stopped before the rebuild", async ({ skip }) => {
+it("finds an old `npx convex dev` orphan when the state file holds []", async () => {
+  const f = watcherFixture();
+  mkdirSync(path.dirname(f.statePath), { recursive: true });
+  writeFileSync(f.statePath, "[]");
+  // Versions before 59c98b7 ran `npx convex dev` from the checkout; this npx
+  // is a fake on a temp PATH.
+  const body = writeScript(path.join(f.dir, "npx-body.mjs"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+  const bin = path.join(f.dir, "bin");
+  chmodSync(writeScript(path.join(bin, "npx"), `#!/usr/bin/env node\nimport(${J(body)});\n`), 0o755);
+  orphan("npx", ["convex", "dev", "--typecheck=disable"], f.checkout, { PATH: `${bin}:${path.dirname(process.execPath)}:/usr/bin:/bin` });
+  const [pid] = await waitForPids(f.pids, 1);
+  await rebuildWithoutWatcher({
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), graceMs: 200, rebuild: f.rebuild,
+  });
+  expect(f.liveAtRebuild).toEqual([[]]);
+  expect(alive(pid)).toBe(false);
+  await settle();
+  expect(existsSync(f.observed)).toBe(false);
+}, 30_000);
+
+it("a child forked on SIGHUP during shutdown never outlives a rebuild", async ({ skip }) => {
   requireTmux(skip);
   const f = watcherFixture();
   const { tmuxArgs, tmux } = isolatedTmux(f.env);
@@ -426,12 +479,27 @@ it("a child forked on SIGHUP during shutdown is stopped before the rebuild", asy
   const forking = writeScript(path.join(f.dir, "forking.mjs"), watcherSource(f, { forkOn: forked }));
   expect(tmux(["new-session", "-d", "-s", "watcher", "--", process.execPath, forking]).status).toBe(0);
   await waitForPids(f.pids, 1);
-  await rebuildWithoutWatcher({
-    session: "watcher", checkout: f.checkout, statePath: f.statePath, tmuxArgs, env: f.env, graceMs: 200, rebuild: f.rebuild,
-  });
+  const attempt = () =>
+    rebuildWithoutWatcher({
+      session: "watcher", checkout: f.checkout, statePath: f.statePath, tmuxArgs, env: f.env, graceMs: 200, rebuild: f.rebuild,
+    });
+  // If the parent exits before a round sees the child, the child is in the
+  // watcher's group with no verified member left: shutdown refuses and names it.
+  const outcome = await attempt().then(() => null, (/** @type {Error} */ error) => error);
+  expect(readPids(f.forks).length).toBeGreaterThan(0);
+  if (outcome) {
+    expect(f.liveAtRebuild).toEqual([]);
+    const survivors = readPids(f.forks).filter(alive);
+    expect(survivors.length).toBeGreaterThan(0);
+    for (const pid of survivors) expect(outcome.message).toContain(`${pid} (`);
+    // The saved group keeps refusing after the session is gone.
+    await expect(attempt()).rejects.toThrow(`${survivors[0]} (`);
+    for (const pid of survivors) process.kill(pid, "SIGKILL");
+    await vi.waitFor(() => expect(survivors.filter(alive)).toEqual([]));
+    await attempt();
+  }
   expect(f.liveAtRebuild).toEqual([[]]);
   await settle();
-  expect(readPids(f.forks).length).toBeGreaterThan(0);
   expect(readPids(f.pids).filter(alive)).toEqual([]);
   expect(existsSync(f.observed)).toBe(false);
 }, 30_000);
@@ -549,41 +617,95 @@ it("does not target an editor, pager or search whose arguments name the wrapper 
   // Stand-ins that stay alive: shell scripts named like the real tools.
   const bin = path.join(f.dir, "bin");
   for (const name of ["vim", "less", "grep"]) chmodSync(writeScript(path.join(bin, name), "#!/bin/sh\nsleep 30\n"), 0o755);
-  const search = writeScript(path.join(f.dir, "search.mjs"), "setInterval(() => {}, 1000);\n");
   /** @type {Array<[string, string[]]>} */
   const commands = [
     [path.join(bin, "vim"), [wrapper]],
     [path.join(bin, "less"), [wrapper]],
     [path.join(bin, "grep"), ["-r", "convex dev", f.checkout]],
     [path.join(bin, "grep"), ["convex", "dev", cli, "dev"]],
-    // Node itself, but running a different script.
-    [process.execPath, [search, "convex dev", f.checkout, wrapper]],
+    // Node running inline code that names the wrapper, without convex or dev.
     [process.execPath, ["-e", "setInterval(() => {}, 1000)", wrapper]],
   ];
-  const bystanders = commands.map(([exe, args]) => {
-    const child = spawn(exe, args, { cwd: f.checkout, detached: true, stdio: "ignore" });
-    child.unref();
-    cleanups.push(() => child.kill("SIGKILL"));
-    return /** @type {number} */ (child.pid);
-  });
+  const bystanders = commands.map(([exe, args]) => /** @type {number} */ (orphan(exe, args, f.checkout).pid));
   await vi.waitFor(() => expect(bystanders.every(alive)).toBe(true));
   await settle();
   await rebuildWithoutWatcher({
-    session: "watcher", checkout: f.checkout, statePath: f.statePath, tmuxArgs: isolatedTmux(f.env).tmuxArgs, env: f.env, rebuild: f.rebuild,
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), rebuild: f.rebuild,
   });
   expect(f.liveAtRebuild).toEqual([[]]);
   expect(bystanders.filter((pid) => !alive(pid))).toEqual([]);
 }, 30_000);
 
+it("refuses, without signalling it, a Node process in the checkout that mentions convex and dev but is no known watcher", async () => {
+  const f = watcherFixture();
+  const search = writeScript(path.join(f.dir, "search.mjs"), "setInterval(() => {}, 1000);\n");
+  const pid = /** @type {number} */ (orphan(process.execPath, [search, "--mode", "convex", "dev"], f.checkout).pid);
+  await vi.waitFor(() => expect(alive(pid)).toBe(true));
+  await settle();
+  await expect(
+    rebuildWithoutWatcher({ session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), rebuild: f.rebuild }),
+  ).rejects.toThrow(`${pid} (`);
+  expect(f.liveAtRebuild).toEqual([]);
+  expect(alive(pid)).toBe(true);
+}, 30_000);
+
+it("refuses when a watcher's process group is led by a launcher that is not a watcher", async () => {
+  const f = watcherFixture();
+  const forked = writeScript(path.join(f.dir, "forked.mjs"), watcherSource(f));
+  const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { forkOn: forked }));
+  // The launcher leads its own group and starts the watcher inside it.
+  const launcher = writeScript(path.join(f.dir, "launcher.mjs"), `
+import { spawn } from 'node:child_process';
+for (const signal of ['SIGHUP', 'SIGTERM']) process.on(signal, () => {});
+spawn(process.execPath, [${J(cli)}, 'dev'], { cwd: ${J(f.checkout)}, stdio: 'ignore' });
+setInterval(() => {}, 1000);
+`);
+  const leader = /** @type {number} */ (orphan(process.execPath, [launcher], f.dir).pid);
+  const [watcher] = await waitForPids(f.pids, 1);
+  await expect(
+    rebuildWithoutWatcher({ session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), graceMs: 200, rebuild: f.rebuild }),
+  ).rejects.toThrow(`${leader} (`);
+  expect(f.liveAtRebuild).toEqual([]);
+  // Refused before signalling: the watcher did not fork a child out of reach.
+  expect(alive(watcher)).toBe(true);
+  expect(readPids(f.forks)).toEqual([]);
+}, 30_000);
+
+it("refuses while a saved group has members and none of them was verified", async () => {
+  const f = watcherFixture();
+  const member = orphan(process.execPath, ["-e", "setInterval(() => {}, 1000)"], f.dir);
+  const pid = /** @type {number} */ (member.pid);
+  await vi.waitFor(() => expect(alive(pid)).toBe(true));
+  mkdirSync(path.dirname(f.statePath), { recursive: true });
+  // A refused run saved this group; its verified members have since exited.
+  writeFileSync(f.statePath, JSON.stringify({ format: "connvo-call-eval-watchers", version: 2, processes: [], groups: [pid] }));
+  await expect(
+    rebuildWithoutWatcher({ session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), rebuild: f.rebuild }),
+  ).rejects.toThrow(`${pid} (`);
+  expect(f.liveAtRebuild).toEqual([]);
+  expect(alive(pid)).toBe(true);
+}, 30_000);
+
+it("refuses when ps hangs past the shutdown deadline", async () => {
+  const f = watcherFixture();
+  const tools = path.join(f.dir, "hung-tools");
+  // exec, so the timeout's SIGKILL reaches the sleeping process itself.
+  for (const name of ["ps", "lsof"]) chmodSync(writeScript(path.join(tools, name), "#!/bin/sh\nexec /bin/sleep 30\n"), 0o755);
+  const begun = Date.now();
+  await expect(
+    rebuildWithoutWatcher({
+      session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), deadlineMs: 1_000, observerPath: tools, rebuild: f.rebuild,
+    }),
+  ).rejects.toThrow("did not finish before the shutdown deadline");
+  expect(Date.now() - begun).toBeLessThan(5_000);
+  expect(f.liveAtRebuild).toEqual([]);
+}, 30_000);
+
 it("matches a real Node watcher by what it executes", async () => {
   const f = watcherFixture();
   const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), "setInterval(() => {}, 1000);\n");
-  const elsewhere = spawn(process.execPath, [cli, "dev"], { cwd: f.dir, detached: true, stdio: "ignore" });
-  const inside = spawn(process.execPath, [cli, "dev", "--typecheck=disable"], { cwd: f.checkout, detached: true, stdio: "ignore" });
-  for (const child of [elsewhere, inside]) {
-    child.unref();
-    cleanups.push(() => child.kill("SIGKILL"));
-  }
+  const elsewhere = orphan(process.execPath, [cli, "dev"], f.dir);
+  const inside = orphan(process.execPath, ["--trace-warnings", cli, "dev", "--typecheck=disable"], f.checkout);
   await vi.waitFor(() => expect([elsewhere.pid, inside.pid].every((pid) => alive(/** @type {number} */ (pid)))).toBe(true));
   await settle();
   const table = spawnSync("ps", ["axww", "-o", "pid=,ppid=,pgid=,stat=,lstart=,command="], {
@@ -593,7 +715,23 @@ it("matches a real Node watcher by what it executes", async () => {
     return { pid: Number(m?.[1]), parent: Number(m?.[2]), group: Number(m?.[3]), zombie: false, started: String(m?.[5]), command: String(m?.[6]) };
   });
   // Only the copy whose working directory is inside the checkout watches it.
-  expect(checkoutWatchers(table, f.checkout).map((row) => row.pid)).toEqual([inside.pid]);
+  const { watchers, unclassified } = checkoutWatchers(table, f.checkout);
+  expect(watchers.map((row) => row.pid)).toEqual([inside.pid]);
+  expect(unclassified).toEqual([]);
+});
+
+it.each([
+  ["options before the entry", ["--trace-warnings", "--inspect=127.0.0.1:0", "-r", "/hook.cjs", "/co/node_modules/convex/bin/main.js", "dev"], true, "/co/node_modules/convex/bin/main.js", ["dev"]],
+  ["-- ends Node's options", ["--", "/co/x.mjs", "a"], true, "/co/x.mjs", ["a"]],
+  ["a relative entry", ["node_modules/convex/bin/main.js", "dev"], true, "/co/node_modules/convex/bin/main.js", ["dev"]],
+  ["a spaced path split by ps, file gone", ["/Programming", "Projects/co/node_modules/convex/bin/main.js", "dev"], false, "/Programming Projects/co/node_modules/convex/bin/main.js", ["dev"]],
+])("parses the Node entry: %s", (_, args, exact, entry, after) => {
+  const parsed = nodeEntry({ args: /** @type {string[]} */ (args), exact: /** @type {boolean} */ (exact) }, "/co");
+  expect(parsed).toMatchObject({ inline: false, entry, after });
+});
+
+it("treats inline Node code as having no entry script", () => {
+  expect(nodeEntry({ args: ["-e", "1", "/co/node_modules/convex/bin/main.js", "dev"], exact: true }, "/co")).toEqual({ inline: true });
 });
 
 // Synthetic process tables: PID and group reuse cannot be forced on a real system.
@@ -604,43 +742,60 @@ const row = (pid, parent, group, started = START) => ({ pid, parent, group, zomb
 const base = [row(1, 0, 1), row(100, 1, 100)];
 /** @param {Partial<Parameters<typeof discoverWatchers>[0]>} input */
 const discover = (input) =>
-  discoverWatchers({ table: base, self: 100, panes: [], saved: [], matched: [], previous: new Map(), groups: new Map(), ...input });
+  discoverWatchers({ table: base, self: 100, panes: [], saved: [], matched: [], previous: new Map(), seen: null, groups: new Set(), ...input });
+/** @param {Iterable<{ pid: number, started: string }>} rows */
+const ids = (rows) => new Map([...rows].map((r) => [`${r.pid}@${r.started}`, /** @type {any} */ (r)]));
+/** @param {{ unclassified: Array<{ row: { pid: number } }> }} result */
+const refused = (result) => result.unclassified.map((item) => item.row.pid).sort((a, b) => a - b);
 
-it("follows a watcher's group after the leader exits, but not a recycled group ID", () => {
-  // Round 1: the pane process 500 leads group 500.
-  const first = discover({ table: [...base, row(500, 1, 500)], panes: [500] });
-  expect([...first.found.keys()]).toEqual([500]);
-  const previous = new Map([...first.found.values()].map((r) => [`${r.pid}@${r.started}`, r]));
-  // Leader gone, a child it forked is still in group 500: a target.
-  const forked = discover({ table: [...base, row(601, 1, 500, LATER)], previous, groups: first.groups });
-  expect([...forked.found.keys()]).toEqual([601]);
-  // Group 500 emptied and a new process took PID 500 and led a new group 500.
-  const recycled = discover({ table: [...base, row(500, 1, 500, LATER), row(602, 500, 500, LATER)], previous, groups: first.groups });
-  expect([...recycled.found.keys()]).toEqual([]);
-  expect([...recycled.groups.keys()]).toEqual([]);
-  // A round that saw the group empty drops it, so a later refill is ignored.
-  const emptied = discover({ table: base, previous, groups: first.groups });
-  const refilled = discover({
-    table: [...base, row(603, 1, 500, LATER)],
-    previous: new Map([...emptied.found.values()].map((r) => [`${r.pid}@${r.started}`, r])),
-    groups: emptied.groups,
-  });
-  expect([...refilled.found.keys()]).toEqual([]);
+it("tracks a watcher's group and accepts a member forked while a verified member lives", () => {
+  const first = discover({ table: [...base, row(500, 1, 500), row(501, 500, 500)], panes: [500] });
+  expect([...first.found.keys()].sort()).toEqual([500, 501]);
+  expect([...first.groups]).toEqual([500]);
+  const seen = new Set([...base, row(500, 1, 500), row(501, 500, 500)].map((r) => `${r.pid}@${r.started}`));
+  // 500 exited; 501 (verified last round) is still in the group, 602 is new.
+  const next = discover({ table: [...base, row(501, 1, 500), row(602, 1, 500, LATER)], previous: ids(first.found.values()), seen, groups: first.groups });
+  expect([...next.found.keys()].sort()).toEqual([501, 602]);
+  expect(refused(next)).toEqual([]);
 });
 
-it("never targets the caller, its ancestors, or a group containing them", () => {
-  // The caller (100) runs inside pane 90's group; 700 shares that group.
-  const table = [row(1, 0, 1), row(90, 1, 90), row(100, 90, 90), row(700, 1, 90)];
-  const result = discover({ table, panes: [90], saved: [{ pid: 100, group: 90, started: START, command: "x" }] });
-  expect([...result.found.keys()]).toEqual([]);
-  expect([...result.groups.keys()]).toEqual([]);
+it("refuses a carried group that has members but no verified one", () => {
+  const first = discover({ table: [...base, row(500, 1, 500)], panes: [500] });
+  const seen = new Set([...base, row(500, 1, 500)].map((r) => `${r.pid}@${r.started}`));
+  const previous = ids(first.found.values());
+  // The leader exited and a child it forked is all that is left.
+  const forked = discover({ table: [...base, row(601, 1, 500, LATER)], previous, seen, groups: first.groups });
+  expect([...forked.found.keys()]).toEqual([]);
+  expect(refused(forked)).toEqual([601]);
+  // A new process took PID 500 and leads a new group 500.
+  const recycled = discover({ table: [...base, row(500, 1, 500, LATER), row(602, 500, 500, LATER)], previous, seen, groups: first.groups });
+  expect([...recycled.found.keys()]).toEqual([]);
+  expect(refused(recycled)).toEqual([500, 602]);
+  // A round that saw the group empty stops tracking it.
+  const emptied = discover({ table: base, previous, seen, groups: first.groups });
+  expect([...emptied.groups]).toEqual([]);
+});
+
+it("refuses an untracked launcher that leads a watcher's group", () => {
+  const table = [...base, row(400, 1, 400), row(401, 400, 400)];
+  const result = discover({ table, matched: [row(401, 400, 400)] });
+  expect([...result.found.keys()]).toEqual([401]);
+  expect([...result.groups]).toEqual([400]);
+  expect(refused(result)).toEqual([400]);
+});
+
+it("refuses rather than signal a group containing the caller or its ancestors", () => {
+  // The caller (100) runs inside pane 90's group.
+  const table = [row(1, 0, 1), row(90, 1, 90), row(100, 90, 90), row(700, 90, 90)];
+  const result = discover({ table, panes: [90], matched: [row(700, 90, 90)] });
+  expect([...result.found.keys()]).toEqual([700]);
+  expect(refused(result)).toEqual([90, 100]);
 });
 
 it("signals only targets whose PID and group still belong to the process that was found", () => {
   const found = new Map([[601, row(601, 1, 500)], [602, row(602, 1, 602)]]);
-  const groups = new Map([[500, "500@" + START], [602, "602@" + START]]);
-  const fresh = [...base, row(601, 1, 500), row(500, 1, 500, LATER), row(602, 1, 602, LATER)];
-  // 602 now belongs to a different process; group 500's ID was taken by a new leader.
-  expect(confirmedSignals({ fresh, found, groups })).toEqual({ pids: [601], groups: [] });
-  expect(confirmedSignals({ fresh: [...base, row(601, 1, 500)], found, groups })).toEqual({ pids: [601], groups: [500] });
+  const groups = new Set([500, 602]);
+  // 602 now belongs to a different process, so neither it nor its group is signalled.
+  const fresh = [...base, row(601, 1, 500), row(602, 1, 602, LATER)];
+  expect(confirmedSignals({ fresh, found, groups })).toEqual({ pids: [601], groups: [500] });
 });
