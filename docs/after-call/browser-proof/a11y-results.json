@@ -1,13 +1,36 @@
 {
-  "commit": "dddaab5a029c85f26068e22f5bb0afeef5d7ee78",
+  "commit": "a674f51c0ce5c4db93d2afa09c9ccfc3abb4e6d0",
   "dirty": true,
-  "ranAt": "2026-10-14T18:05:42.411Z",
+  "dirtyPaths": [
+    "convex.json"
+  ],
+  "diagnostics": [
+    {
+      "person": "A",
+      "level": "error",
+      "text": "%o\n\n%s Error: [CONVEX Q(history/queries:getMeetingHistory)] Server Error\n  Called by client\n    at OptimisticQueryResults.queryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:4566:19)\n    at BaseConvexClient.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:6452:44)\n    at Object.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8233:44)\n    at QueriesObserver.getLocalResults (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8652:31)\n    at useQueriesHelper.useMemo[subscription] (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8784:41)\n    at useSubscription.useEffect.checkForUpdates (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7979:43)\n    at basicStateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4813:47)\n    at updateReducerImpl (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4895:79)\n    at updateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4845:16)\n    at Object.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:15202:24)\n    at exports.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:1754:36)\n    at useSubscription (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7950:412)\n    at useQueriesHelper (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8798:275)\n    at useQueries (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8764:12)\n    at useQuery (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8470:274)\n    at MeetingDetailData (http://localhost:3043/_next/static/chunks/src_aa6f5924._.js:1623:267)\n    at Object.react_stack_bottom_frame (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:14746:24)\n    at renderWithHooks (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4636:24)\n    at updateFunctionComponent (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6091:21)\n    at beginWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6672:24)\n    at runWithFiberInDEV (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:959:74)\n    at performUnitOfWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9487:97)\n    at workLoopSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9381:40)\n    at renderRootSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9365:13)\n    at performWorkOnRoot (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9030:47)\n    at performWorkOnRootViaSchedulerTask (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:10155:9)\n    at MessagePort.performWorkUntilDeadline (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:2647:64) The above error occurred in the <MeetingDetailData> component. It was handled by the <HistoryBoundary> error boundary.",
+      "url": "http://localhost:3043/app/meetings/m97eqjrtwej661tr6z10wxrtrx8g9fbs",
+      "source": "http://localhost:3043/_next/static/chunks/941ca_next_dist_client_89ceecdc._.js",
+      "expected": true,
+      "expectedReason": "injected-history-error"
+    },
+    {
+      "person": "O",
+      "level": "error",
+      "text": "%o\n\n%s ConvexError: [CONVEX Q(history/queries:getMeetingHistory)] [Request ID: 2d0fc78554c52a5e] Server Error\nUncaught ConvexError: {\"code\":\"FORBIDDEN\",\"message\":\"Access denied: Not a meeting participant\",\"statusCode\":403,\"metadata\":{\"meetingId\":\"m97eqjrtwej661tr6z10wxrtrx8g9fbs\",\"userId\":\"p57en1jgt2t7sh8e20jnk5h5nn8g9qe6\"}}\n    at forbidden [as forbidden] (../../convex-harness/lib/errors.ts:78:23)\n    at assertMeetingAccess (../../convex-harness/auth/guards.ts:135:6)\n    at async handler (../../convex-harness/history/queries.ts:207:9)\n\n  Called by client\n    at forbidden [as forbidden] (../../convex-harness/lib/errors.ts:78:23)\n    at assertMeetingAccess (../../convex-harness/auth/guards.ts:135:6)\n    at async handler (../../convex-harness/history/queries.ts:207:9)\n\n  Called by client\n    at OptimisticQueryResults.queryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:4564:284)\n    at BaseConvexClient.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:6452:44)\n    at Object.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8233:44)\n    at QueriesObserver.getLocalResults (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8652:31)\n    at useQueriesHelper.useMemo[subscription] (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8784:41)\n    at useSubscription.useEffect.checkForUpdates (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7979:43)\n    at basicStateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4813:47)\n    at updateReducerImpl (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4895:79)\n    at updateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4845:16)\n    at Object.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:15202:24)\n    at exports.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:1754:36)\n    at useSubscription (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7950:412)\n    at useQueriesHelper (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8798:275)\n    at useQueries (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8764:12)\n    at useQuery (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8470:274)\n    at MeetingDetailData (http://localhost:3043/_next/static/chunks/src_aa6f5924._.js:1623:267)\n    at Object.react_stack_bottom_frame (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:14746:24)\n    at renderWithHooks (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4636:24)\n    at updateFunctionComponent (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6091:21)\n    at beginWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6672:24)\n    at runWithFiberInDEV (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:959:74)\n    at performUnitOfWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9487:97)\n    at workLoopSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9381:40)\n    at renderRootSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9365:13)\n    at performWorkOnRoot (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9030:47)\n    at performWorkOnRootViaSchedulerTask (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:10155:9)\n    at MessagePort.performWorkUntilDeadline (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:2647:64) The above error occurred in the <MeetingDetailData> component. It was handled by the <HistoryBoundary> error boundary.",
+      "url": "http://localhost:3043/app/meetings/m97eqjrtwej661tr6z10wxrtrx8g9fbs",
+      "source": "http://localhost:3043/_next/static/chunks/941ca_next_dist_client_89ceecdc._.js",
+      "expected": true,
+      "expectedReason": "outsider-refusal"
+    }
+  ],
+  "ranAt": "2026-10-14T19:33:47.940Z",
   "states": [
     {
       "state": "call-ended",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/call-ended-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/call-ended-390x844.png"
+        "docs/after-call/browser-proof/call-ended-1440x900.png",
+        "docs/after-call/browser-proof/call-ended-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -351,7 +374,7 @@
             "pass": true
           },
           {
-            "selector": "#_r_7_",
+            "selector": "#_r_3_",
             "inPage": true,
             "text": "Shared meeting notes",
             "fontSize": 16,
@@ -733,7 +756,7 @@
             "pass": true
           },
           {
-            "selector": "#_r_7_",
+            "selector": "#_r_3_",
             "inPage": true,
             "text": "Shared meeting notes",
             "fontSize": 16,
@@ -820,8 +843,8 @@
     {
       "state": "recap",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-390x844.png"
+        "docs/after-call/browser-proof/recap-1440x900.png",
+        "docs/after-call/browser-proof/recap-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -1037,10 +1060,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM",
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 852,
+            "coveredPixels": 860,
             "worst": 4.68,
             "pass": true
           },
@@ -1379,10 +1402,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM",
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 852,
+            "coveredPixels": 860,
             "worst": 4.67,
             "pass": true
           },
@@ -1584,8 +1607,8 @@
     {
       "state": "stay-in-touch-waiting",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-waiting-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-waiting-390x844.png"
+        "docs/after-call/browser-proof/stay-in-touch-waiting-1440x900.png",
+        "docs/after-call/browser-proof/stay-in-touch-waiting-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -1761,10 +1784,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM",
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 852,
+            "coveredPixels": 860,
             "worst": 4.68,
             "pass": true
           },
@@ -2113,10 +2136,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM",
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 852,
+            "coveredPixels": 860,
             "worst": 4.67,
             "pass": true
           },
@@ -2328,8 +2351,8 @@
     {
       "state": "stay-in-touch-both",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-both-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/stay-in-touch-both-390x844.png"
+        "docs/after-call/browser-proof/stay-in-touch-both-1440x900.png",
+        "docs/after-call/browser-proof/stay-in-touch-both-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -2505,10 +2528,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM",
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 852,
+            "coveredPixels": 860,
             "worst": 4.68,
             "pass": true
           },
@@ -2867,10 +2890,10 @@
           {
             "selector": "header > .text-muted-foreground",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM",
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 852,
+            "coveredPixels": 860,
             "worst": 4.67,
             "pass": true
           },
@@ -3092,8 +3115,8 @@
     {
       "state": "list",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-390x844.png"
+        "docs/after-call/browser-proof/list-1440x900.png",
+        "docs/after-call/browser-proof/list-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -3309,10 +3332,10 @@
           {
             "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1221,
+            "coveredPixels": 1227,
             "worst": 4.68,
             "pass": true
           },
@@ -3339,10 +3362,10 @@
           {
             "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1221,
+            "coveredPixels": 1227,
             "worst": 4.68,
             "pass": true
           },
@@ -3551,10 +3574,10 @@
           {
             "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1219,
+            "coveredPixels": 1227,
             "worst": 4.68,
             "pass": true
           },
@@ -3581,10 +3604,10 @@
           {
             "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
             "inPage": true,
-            "text": "Wed, Oct 14, 2026, 1:05 PM · You hosted",
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
             "fontSize": 14,
             "need": 4.5,
-            "coveredPixels": 1219,
+            "coveredPixels": 1227,
             "worst": 4.68,
             "pass": true
           },
@@ -3656,8 +3679,8 @@
     {
       "state": "list-loading",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-loading-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-loading-390x844.png"
+        "docs/after-call/browser-proof/list-loading-1440x900.png",
+        "docs/after-call/browser-proof/list-loading-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -4100,8 +4123,8 @@
     {
       "state": "recap-error",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-error-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-error-390x844.png"
+        "docs/after-call/browser-proof/recap-error-1440x900.png",
+        "docs/after-call/browser-proof/recap-error-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -4544,8 +4567,8 @@
     {
       "state": "recap-not-a-participant",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-not-a-participant-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/recap-not-a-participant-390x844.png"
+        "docs/after-call/browser-proof/recap-not-a-participant-1440x900.png",
+        "docs/after-call/browser-proof/recap-not-a-participant-390x844.png"
       ],
       "violations": {
         "1440x900": [],
@@ -4988,8 +5011,8 @@
     {
       "state": "list-empty",
       "shots": [
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-empty-1440x900.png",
-        "../../../../.long-run/obvious-fleet/review-debt/triage/connvo-linkedup-pr43-halo-retry-flow/list-empty-390x844.png"
+        "docs/after-call/browser-proof/list-empty-1440x900.png",
+        "docs/after-call/browser-proof/list-empty-390x844.png"
       ],
       "violations": {
         "1440x900": [],

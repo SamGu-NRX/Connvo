@@ -12,11 +12,11 @@
  *   node tools/call-eval/scripts/local-backend.mjs --port=3035 --after-call
  *
  *   node tools/call-eval/scripts/after-call-proof.mjs --base-url=http://localhost:3035 \
- *     [--shots=docs/after-call/browser-proof] [--out=docs/after-call/browser-proof]
+ *     [--out=tools/call-eval/out/after-call] [--publish-docs]
  */
 import fs from "node:fs";
 import { keyboardLeave, captureFocusControl } from "./after-call-keyboard.mjs";
-import { execFileSync } from "node:child_process";
+import { proofRevision, prepareProofOutput, recordBrowserConsole, unexpectedErrors, publishProof } from "./after-call-proof-support.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -29,10 +29,7 @@ import { keyboardWalk, tabTo, textContrast, assertShellMeasurements } from "./a1
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const flags = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, "").split("=")));
 const baseUrl = flags["base-url"] ?? "http://localhost:3035";
-const shotsDir = path.resolve(REPO, flags.shots ?? "docs/after-call/browser-proof");
-const outDir = path.resolve(REPO, flags.out ?? "docs/after-call/browser-proof");
-fs.mkdirSync(shotsDir, { recursive: true });
-fs.mkdirSync(outDir, { recursive: true });
+const {out: outDir, shots: shotsDir} = prepareProofOutput(REPO, flags);
 
 const VIEWPORTS = [
   { width: 1440, height: 900 },
@@ -42,6 +39,8 @@ const EDITOR = '[data-testid="notes-editor"]';
 
 /** @type {import('@playwright/test').Browser[]} */
 const browsers = [];
+/** @type {import("./after-call-proof-support.mjs").Diagnostic[]} */
+const diagnostics = [];
 async function person(id) {
   // Chromium's built-in fake devices (a file-backed one is labelled with
   // its file path, which the lobby would show).
@@ -53,10 +52,11 @@ async function person(id) {
   const context = await browser.newContext({ viewport: VIEWPORTS[0], deviceScaleFactor: 1, acceptDownloads: true });
   const tap = await tapConvex(context);
   const page = await context.newPage();
-  page.on("pageerror", (e) => console.error(`[pageerror ${id}]`, e.message.slice(0, 200)));
+  const consoleScenario = { current: /** @type {string | null} */ (null) };
+  recordBrowserConsole(page, id, diagnostics, () => consoleScenario.current);
   // A blank page in its own context for decoding screenshots (a11y-manual.mjs).
   const scratch = await browser.newPage();
-  return { id, browser, context, page, tap, scratch };
+  return { id, browser, context, page, tap, scratch, consoleScenario };
 }
 
 async function joinCall(page, meetingId, id) {
@@ -117,6 +117,7 @@ async function capture({ page, scratch }, name, { focus, scope }) {
     await page.waitForTimeout(450);
     const file = path.join(shotsDir, `${name}-${size}.png`);
     await page.screenshot({ path: file });
+    result.captures.push(path.basename(file));
     shots.push(path.relative(REPO, file));
     // axe runs at each size: elements shown only on a phone (the mobile
     // navigation) or only on a desktop are judged where they are visible.
@@ -182,6 +183,8 @@ async function walkBothSizes({ page, scratch }, name) {
     await page.setViewportSize(viewport);
     const size = `${viewport.width}x${viewport.height}`;
     out[size] = await keyboardWalk(page, scratch, { shots: path.join(outDir, "focus", `${name}-${size}`) });
+    for (let i = 0; i < out[size].forward.length; i++)
+      result.captures.push(`focus/${name}-${size}-${String(i + 1).padStart(2, "0")}.png`);
   }
   await page.setViewportSize(VIEWPORTS[0]);
   return out;
@@ -189,7 +192,7 @@ async function walkBothSizes({ page, scratch }, name) {
 
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
 
-const result = { dirty: execFileSync("git", ["status", "--porcelain"], { cwd: REPO, encoding: "utf8" }).trim().length > 0, commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim(), baseUrl, startedAt: new Date().toISOString(), checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
+const result = { ...proofRevision(REPO), diagnostics, baseUrl, startedAt: new Date().toISOString(), captures: /** @type {string[]} */ ([]), checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
 const meetingId = createEvalMeeting("Budget review");
 result.meetingId = meetingId;
 const fail = (msg) => {
@@ -199,9 +202,9 @@ const fail = (msg) => {
 try {
   // next dev compiles a route on its first request; do that before any
   // timing matters.
-  const warm = await person("O");
+  const warm = await person("A");
   for (const route of ["/app/meetings", `/app/meetings/${meetingId}`]) {
-    await warm.page.goto(`${baseUrl}${route}?as=O`, { waitUntil: "networkidle", timeout: 180_000 });
+    await warm.page.goto(`${baseUrl}${route}?as=A`, { waitUntil: "networkidle", timeout: 180_000 });
   }
   await warm.browser.close();
 
@@ -223,10 +226,12 @@ try {
   // Show the actual call-room ring on a control before leaving the stage.
   await tabTo(A.page, '[data-testid="leave-call"]');
   await captureFocusControl(A.page, A.page.locator('[data-testid="leave-call"]').locator('..'), path.join(shotsDir, "call-room-focus.png"));
+  result.captures.push("call-room-focus.png");
 
   // Both leave: the ended screen links to the recap and shows it.
   result.checks.keyboardLeaveHeading = await keyboardLeave(A.page);
   await A.page.screenshot({ path: path.join(shotsDir, "ended-heading-keyboard.png") });
+  result.captures.push("ended-heading-keyboard.png");
   await leave(B.page);
   for (const p of [A, B]) {
     await p.page.locator('[data-testid="open-recap"]').waitFor({ timeout: 10_000 });
@@ -264,7 +269,10 @@ try {
   result.checks.keyboard = { recapWalk: await walkBothSizes(B, "recap"), calendar: {} };
   for (const key of ["Enter", "Space"]) {
     await tabTo(B.page, '[data-testid="calendar-download"]');
-    if (key === "Enter") await captureFocusControl(B.page, B.page.locator('[data-testid="calendar-download"]'), path.join(shotsDir, "calendar-focus-after.png"));
+    if (key === "Enter") {
+      await captureFocusControl(B.page, B.page.locator('[data-testid="calendar-download"]'), path.join(shotsDir, "calendar-focus-after.png"));
+      result.captures.push("calendar-focus-after.png");
+    }
     const [file] = await Promise.all([B.page.waitForEvent("download", { timeout: 10_000 }).catch(() => null), B.page.keyboard.press(key)]);
     result.checks.keyboard.calendar[key] = file?.suggestedFilename() ?? null;
   }
@@ -319,13 +327,16 @@ try {
   await A.page.locator('[data-testid="meeting-list-loading"]').waitFor({ timeout: 30_000 });
   await capture(A, "list-loading", { focus: "main", scope: "main" });
   A.tap.holdQueries = [];
+  A.consoleScenario.current = "injected-history-error";
   A.tap.failQueries = ["history/queries:"];
   await A.page.goto(`${baseUrl}/app/meetings/${meetingId}?as=A`, { waitUntil: "domcontentloaded" });
   await A.page.locator('[data-testid="history-error"]').first().waitFor({ timeout: 30_000 });
   await capture(A, "recap-error", { focus: "main", scope: "main" });
+  A.consoleScenario.current = null;
 
   // O was not in the meeting: refused; and O's own list is empty.
   const O = await person("O");
+  O.consoleScenario.current = "outsider-refusal";
   await O.page.goto(`${baseUrl}/app/meetings/${meetingId}?as=O`, { waitUntil: "domcontentloaded" });
   const refusal = O.page.locator('[data-testid="history-error"]').first();
   await refusal.waitFor({ timeout: 30_000 });
@@ -336,12 +347,16 @@ try {
   };
   if (result.checks.outsider.kind !== "refused" || result.checks.outsider.sawNotes) fail("O was not refused");
   await capture(O, "recap-not-a-participant", { focus: "main", scope: "main" });
+  O.consoleScenario.current = null;
   await O.page.goto(`${baseUrl}/app/meetings?as=O`, { waitUntil: "domcontentloaded" });
   await O.page.locator('[data-testid="meeting-list-empty"]').waitFor({ timeout: 30_000 });
   await capture(O, "list-empty", { focus: "main", scope: "main" });
 
+  const consoleFailures = unexpectedErrors(diagnostics);
+  if (consoleFailures.length) result.error = `${consoleFailures.length} unexpected browser console errors; see diagnostics`;
   result.pass =
-    result.checks.keyboardLeaveHeading?.visibleSpread === false &&
+    unexpectedErrors(diagnostics).length === 0 &&
+    result.checks.keyboardLeaveHeading?.visibleShadow === false &&
     result.checks.endedRecap.sameAsStored &&
     result.checks.detail.same &&
     result.checks.listHasMeeting &&
@@ -370,7 +385,8 @@ try {
 } finally {
   await Promise.allSettled(browsers.map((b) => b.close()));
   fs.writeFileSync(path.join(outDir, "result.json"), JSON.stringify(result, null, 2) + "\n");
-  fs.writeFileSync(path.join(outDir, "a11y-results.json"), JSON.stringify({ commit: result.commit, dirty: result.dirty, ranAt: result.startedAt, states: a11y }, null, 2) + "\n");
+  fs.writeFileSync(path.join(outDir, "a11y-results.json"), JSON.stringify({ commit: result.commit, dirty: result.dirty, dirtyPaths: result.dirtyPaths, diagnostics, ranAt: result.startedAt, states: a11y }, null, 2) + "\n");
 }
+if (result.pass && Object.hasOwn(flags, "publish-docs")) publishProof(REPO, outDir, shotsDir);
 console.log(`${result.pass ? "PASS" : "FAIL"}${result.error ? `: ${result.error}` : ""}`);
 process.exit(result.pass ? 0 : 1);

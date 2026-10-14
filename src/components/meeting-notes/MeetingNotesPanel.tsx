@@ -7,12 +7,8 @@
  * the status badge never claims "Saved" unless the ledger reports `synced`,
  * and unsaved words stay visible until the server confirms them by identity.
  *
- * Self-contained: when no NotesTransportProvider sits above it, a guard catches
- * the missing-transport error and re-renders under the default provider (the
- * production Convex wiring lands with the ledger milestone — until then the
- * default provider fails loudly; the /dev/notes-preview route supplies the
- * demo transport explicitly). The S3 call-UX task mounts this panel; call
- * pages are NOT edited by this task.
+ * When no notes transport is supplied, the panel selects the default Convex
+ * provider before rendering the ledger, so normal startup does not throw.
  *
  * The panel owns no buffering: every change is forwarded via the hook's
  * `onEdit`, which debounces and flushes. The local `draft` mirror only keeps
@@ -21,12 +17,10 @@
  */
 
 import {
-  Component,
   useEffect,
   useId,
   useState,
   type ChangeEvent,
-  type ReactNode,
 } from "react";
 import { Id } from "@convex/_generated/dataModel";
 import {
@@ -48,6 +42,7 @@ import {
   type UseNotesLedgerRecordState,
 } from "./notesStatus";
 import { FadeRise } from "./FadeRise";
+import { useOptionalNotesTransport } from "@/hooks/notes/notesTransport";
 import { DefaultNotesTransportProvider } from "./defaultNotesTransport";
 
 /**
@@ -60,42 +55,6 @@ import { DefaultNotesTransportProvider } from "./defaultNotesTransport";
 export interface MeetingNotesPanelProps {
   meetingId: Id<"meetings">;
   className?: string;
-}
-
-/**
- * Catches the notes transport context's "used without a NotesTransportProvider"
- * error and re-renders the panel under the default provider. Any other error
- * is rethrown — the panel never masks a real failure.
- */
-const MISSING_TRANSPORT_SNIPPET = "used without a NotesTransportProvider";
-
-class TransportGuard extends Component<
-  { meetingId: Id<"meetings">; clientId: string; children: ReactNode },
-  { error: unknown | null }
-> {
-  state = { error: null as unknown | null };
-
-  static getDerivedStateFromError(error: unknown) {
-    return { error };
-  }
-
-  render() {
-    const { error } = this.state;
-    if (error === null) {
-      return this.props.children;
-    }
-    if (error instanceof Error && error.message.includes(MISSING_TRANSPORT_SNIPPET)) {
-      return (
-        <DefaultNotesTransportProvider
-          meetingId={this.props.meetingId}
-          clientId={this.props.clientId}
-        >
-          {this.props.children}
-        </DefaultNotesTransportProvider>
-      );
-    }
-    throw error;
-  }
 }
 
 function MeetingNotesPanelBody({
@@ -266,13 +225,11 @@ export function MeetingNotesPanel({ meetingId, className }: MeetingNotesPanelPro
   // One identity above BOTH the ledger and the transport (design.md §3):
   // identity acknowledgements and dedupe join only when both sides share it.
   const clientId = useStableNotesClientId(meetingId);
-  return (
-    <TransportGuard meetingId={meetingId} clientId={clientId}>
-      <MeetingNotesPanelBody
-        meetingId={meetingId}
-        clientId={clientId}
-        className={className}
-      />
-    </TransportGuard>
+  const transport = useOptionalNotesTransport();
+  const panel = <MeetingNotesPanelBody meetingId={meetingId} clientId={clientId} className={className} />;
+  return transport ? panel : (
+    <DefaultNotesTransportProvider meetingId={meetingId} clientId={clientId}>
+      {panel}
+    </DefaultNotesTransportProvider>
   );
 }

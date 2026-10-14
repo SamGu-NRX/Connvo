@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { benchPathPassesThrough, testAuthProxyExempt } from "@/lib/eval-proxy-paths";
 import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
 import { ConvexReactClient, useMutation } from "convex/react";
 import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
@@ -90,17 +92,34 @@ function useAuth() {
 }
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
-  return (
-    <AuthKitProvider>
-      <ConvexProviderWithAuthKit
-        client={getConvexClient()}
-        useAuth={TEST_AUTH_ENABLED ? useTestAuth : useAuth}
-      >
-        {TEST_AUTH_ENABLED ? null : <UpsertUserOnAuth />}
-        {children}
-      </ConvexProviderWithAuthKit>
-    </AuthKitProvider>
+  const pathname = usePathname();
+  const skipsAuthKit = TEST_AUTH_ENABLED && pathname !== null && (
+    benchPathPassesThrough(pathname, {
+      benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,
+      realCallFlag: process.env.NEXT_PUBLIC_CONNVO_REAL_CALL,
+      afterCallFlag: process.env.NEXT_PUBLIC_CONNVO_AFTER_CALL,
+      nodeEnv: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV,
+      vercel: process.env.VERCEL,
+    }) || testAuthProxyExempt(pathname, {
+      NEXT_PUBLIC_CONNVO_TEST_AUTH: process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL: process.env.VERCEL,
+    })
   );
+  const content = (
+    <ConvexProviderWithAuthKit
+      client={getConvexClient()}
+      useAuth={TEST_AUTH_ENABLED ? useTestAuth : useAuth}
+    >
+      {TEST_AUTH_ENABLED ? null : <UpsertUserOnAuth />}
+      {children}
+    </ConvexProviderWithAuthKit>
+  );
+  // Only proxy-exempt eval paths lack WorkOS middleware. Other routes, including
+  // the public landing page, need AuthKit for their useAuth consumers.
+  return skipsAuthKit ? content : <AuthKitProvider>{content}</AuthKitProvider>;
 }
 
 function UpsertUserOnAuth() {

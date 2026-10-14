@@ -12,7 +12,7 @@
  * acknowledgements and server-side dedupe join (design.md §3).
  *
  * Joined at the M2/M3 join: this replaces M3's loud-failure placeholder; the
- * panel's TransportGuard fallback path is now fully functional.
+ * panel selects this provider when no transport is supplied.
  */
 
 import { NotesConvexTransportProvider } from "@/hooks/notes";
