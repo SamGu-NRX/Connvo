@@ -26,6 +26,7 @@ import {
   confirmedSignals,
   discoverWatchers,
   nodeEntry,
+  processTable,
   rebuildWithoutWatcher,
   runConvexCommand,
 } from "./local-backend-process.mjs";
@@ -429,6 +430,11 @@ const ORPHANS = [
     // The test deletes it once the process has recorded its PID.
     f.deleteAfterStart = cli;
   }],
+  ["the CLI through a differently named symlink, node ./watch-cli dev", (f) => {
+    const cli = writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+    symlinkSync(cli, path.join(f.checkout, "watch-cli"));
+    orphan(process.execPath, ["./watch-cli", "dev"], f.checkout);
+  }],
   ["the wrapper under a symlink alias of the checkout", (f) => {
     writeScript(path.join(f.checkout, "tools", "call-eval", "scripts", "local-backend-watch.mjs"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
     const alias = path.join(f.dir, "alias");
@@ -708,12 +714,7 @@ it("matches a real Node watcher by what it executes", async () => {
   const inside = orphan(process.execPath, ["--trace-warnings", cli, "dev", "--typecheck=disable"], f.checkout);
   await vi.waitFor(() => expect([elsewhere.pid, inside.pid].every((pid) => alive(/** @type {number} */ (pid)))).toBe(true));
   await settle();
-  const table = spawnSync("ps", ["axww", "-o", "pid=,ppid=,pgid=,stat=,lstart=,command="], {
-    env: { PATH: "/usr/bin:/bin", TZ: "UTC", LC_ALL: "C" }, encoding: "utf8",
-  }).stdout.split("\n").filter(Boolean).map((line) => {
-    const m = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\w{3} \w{3} +\d+ [\d:]+ \d{4})\s*(.*)$/.exec(line);
-    return { pid: Number(m?.[1]), parent: Number(m?.[2]), group: Number(m?.[3]), zombie: false, started: String(m?.[5]), command: String(m?.[6]) };
-  });
+  const table = processTable();
   // Only the copy whose working directory is inside the checkout watches it.
   const { watchers, unclassified } = checkoutWatchers(table, f.checkout);
   expect(watchers.map((row) => row.pid)).toEqual([inside.pid]);
@@ -738,7 +739,7 @@ it("treats inline Node code as having no entry script", () => {
 const START = "Wed Oct 14 12:00:00 2026";
 const LATER = "Wed Oct 14 12:00:05 2026";
 /** @param {number} pid @param {number} parent @param {number} group @param {string} [started] */
-const row = (pid, parent, group, started = START) => ({ pid, parent, group, zombie: false, started, command: `synthetic ${pid}` });
+const row = (pid, parent, group, started = START) => ({ pid, parent, group, uid: 501, exe: "node", zombie: false, started, command: `synthetic ${pid}` });
 const base = [row(1, 0, 1), row(100, 1, 100)];
 /** @param {Partial<Parameters<typeof discoverWatchers>[0]>} input */
 const discover = (input) =>
@@ -798,4 +799,64 @@ it("signals only targets whose PID and group still belong to the process that wa
   // 602 now belongs to a different process, so neither it nor its group is signalled.
   const fresh = [...base, row(601, 1, 500), row(602, 1, 602, LATER)];
   expect(confirmedSignals({ fresh, found, groups })).toEqual({ pids: [601], groups: [500] });
+});
+
+it("refuses a fork left by a candidate that exits between the process table and its working-directory read", async () => {
+  const f = watcherFixture();
+  const trigger = path.join(f.dir, "lsof-started");
+  const forked = writeScript(path.join(f.dir, "forked.mjs"), watcherSource(f));
+  // A watcher-shaped parent (relative entry, so discovery must read its cwd)
+  // that forks and exits once the observer's lsof has started.
+  writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), `
+import { appendFileSync, existsSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+appendFileSync(${J(f.pids)}, process.pid + '\\n');
+const poll = setInterval(() => {
+  if (!existsSync(${J(trigger)})) return;
+  clearInterval(poll);
+  const child = spawn(process.execPath, [${J(forked)}], { stdio: 'ignore' });
+  appendFileSync(${J(f.pids)}, child.pid + '\\n');
+  appendFileSync(${J(f.forks)}, child.pid + '\\n');
+  process.exit(0);
+}, 5);
+`);
+  // The observer's tools: real ps; lsof that marks its start, waits, then runs.
+  const tools = path.join(f.dir, "slow-tools");
+  chmodSync(writeScript(path.join(tools, "ps"), "#!/bin/sh\nexec /bin/ps \"$@\"\n"), 0o755);
+  chmodSync(writeScript(path.join(tools, "lsof"), `#!/bin/sh\n: > ${J(trigger)}\n/bin/sleep 1\nexec /usr/sbin/lsof "$@"\n`), 0o755);
+  orphan(process.execPath, ["node_modules/convex/bin/main.js", "dev"], f.checkout);
+  await waitForPids(f.pids, 1);
+  const attempt = () =>
+    rebuildWithoutWatcher({ session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: tools, rebuild: f.rebuild });
+  const outcome = await attempt().then(() => null, (/** @type {Error} */ error) => error);
+  const [child] = readPids(f.forks);
+  expect(child).toBeGreaterThan(0);
+  expect(f.liveAtRebuild).toEqual([]);
+  expect(outcome?.message).toContain(`${child} (`);
+  // The saved suspect group keeps refusing until the child is gone.
+  await expect(attempt()).rejects.toThrow(`${child} (`);
+  process.kill(child, "SIGKILL");
+  await vi.waitFor(() => expect(alive(child)).toBe(false));
+  await attempt();
+  expect(f.liveAtRebuild).toEqual([[]]);
+  expect(existsSync(f.observed)).toBe(false);
+}, 30_000);
+
+it("re-scans the group of a candidate that exited unread, refusing new members and dropping it once settled", () => {
+  const gone = row(500, 1, 500);
+  const table = [...base, gone, row(501, 500, 500)];
+  const first = discover({ table, vanished: [gone] });
+  expect(first.unresolved).toBe(true);
+  // Its child in the same table is refused at once.
+  expect(refused(first)).toEqual([501]);
+  const seen = new Set(table.map((r) => `${r.pid}@${r.started}`));
+  // Next round: a process that was not in group 500 before is refused.
+  const arrival = discover({ table: [...base, row(602, 1, 500, LATER)], seen, suspects: first.suspects });
+  expect(refused(arrival)).toEqual([602]);
+  expect([...arrival.suspects.keys()]).toEqual([500]);
+  // Nothing new in the group: settled, and the round may rebuild.
+  const settled = discover({ table: base, seen, suspects: new Map([[500, new Set([`500@${START}`])]]) });
+  expect(refused(settled)).toEqual([]);
+  expect(settled.unresolved).toBe(false);
+  expect([...settled.suspects.keys()]).toEqual([]);
 });

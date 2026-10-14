@@ -7,26 +7,28 @@
 //
 // In scope: inherited shell, tmux and process environment (BASH_ENV,
 // NODE_OPTIONS, TZ, locale); leftover watchers from any version of this tool,
-// including versions that wrote no state file, and `convex dev` started by hand
-// in this checkout; a missing, stale or partial state file; tmux sessions with
-// several windows; children forked while shutdown is in progress.
+// including versions that wrote no state file, and a Convex CLI `dev` started
+// by hand from inside this checkout; a missing, stale or partial state file;
+// tmux sessions with several windows; children forked while shutdown is in
+// progress, including while discovery is still reading a process.
 //
 // Out of scope: adversarial code, meaning a process that spoofs its title or
 // argv, tampering with the state file, or control of PATH. Also out of scope:
 // a launcher that detaches with setsid or a double fork before it starts the
-// watcher. Polling cannot contain that, and neither this tool nor the Convex
-// CLI starts watchers that way.
+// watcher (polling cannot contain that, and neither this tool nor the Convex
+// CLI starts watchers that way), and processes owned by another user.
 //
 // Discovery does not trust the state file. Each round reads every pane of the
-// session, finds Node processes running this checkout's watch wrapper or a
-// Convex CLI `dev` from inside the checkout, and adds their descendants and
-// process groups. The state file only adds processes whose recorded identity
-// (PID and start time) still matches. Anything this cannot classify fails
-// closed: the rebuild is refused and the process is named. That covers a Node
-// process in the checkout that mentions `convex` and `dev` but parses as no
-// known watcher, and any member of a watcher's group that was never verified,
-// unless it appeared since the last round while a verified member stayed alive
-// (a fork). A group whose verified members are all gone is therefore refused,
+// session and resolves the entry script of every Node process this user owns,
+// then adds descendants and process groups. The state file only adds processes
+// whose recorded identity (PID and start time) still matches. Anything this
+// cannot classify fails closed: the rebuild is refused and the process named.
+// That covers a Node process in the checkout that mentions `convex` and `dev`
+// but parses as no known watcher; any member of a watcher's group that was
+// never verified, unless it appeared since the last round while a verified
+// member stayed alive (a fork); and a Node process that exits before its
+// working directory could be read, whose group is re-scanned and refused if a
+// new member appears. A group whose verified members are all gone is refused,
 // not signalled, which also covers a group ID taken over by a new process.
 
 import {
@@ -72,9 +74,10 @@ const STATE_VERSION = 2;
 
 const WRAPPER = path.join("tools", "call-eval", "scripts", "local-backend-watch.mjs");
 
-/** @typedef {{ pid: number, parent: number, group: number, zombie: boolean, started: string, command: string }} ProcessRow */
+/** @typedef {{ pid: number, parent: number, group: number, uid: number, exe: string, zombie: boolean, started: string, command: string }} ProcessRow */
 /** @typedef {{ pid: number, group: number, started: string, command: string }} SavedProcess */
-/** @typedef {{ processes: SavedProcess[], groups: number[] }} SavedState */
+/** @typedef {Map<number, Set<string>>} Suspects group ID -> identities of its members when a Node process in it exited unread */
+/** @typedef {{ processes: SavedProcess[], groups: number[], suspects: Suspects }} SavedState */
 /** @typedef {{ row: ProcessRow, reason: string }} Unclassified */
 /** @typedef {{ env: Record<string, string>, deadline: number }} Observer */
 
@@ -101,28 +104,52 @@ class DeadlineError extends Error {
   }
 }
 
-/** @param {Observer} observer @returns {ProcessRow[]} */
-function processTable(observer) {
-  const result = bounded(observer.deadline, "ps", ["axww", "-o", "pid=,ppid=,pgid=,stat=,lstart=,command="], { env: observer.env });
+const LSTART = "[A-Z][a-z]{2} [A-Z][a-z]{2} +\\d{1,2} \\d\\d:\\d\\d:\\d\\d \\d{4}";
+
+/**
+ * One ps snapshot. `exe` is the executable name (ucomm), which a process
+ * cannot change by setting its title; `command` is its argv joined by spaces,
+ * or its title.
+ * @param {Observer} [observer] @returns {ProcessRow[]}
+ */
+export function processTable(observer = defaultObserver()) {
+  const result = bounded(observer.deadline, "ps", ["axww", "-o", "pid=,ppid=,pgid=,uid=,stat=,ucomm=,lstart=,command="], { env: observer.env });
   if (result.error || result.status !== 0)
     throw new Error(`[backend] could not list processes (ps exit ${result.status}); refusing watched-file changes`);
+  const pattern = new RegExp(`^\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(-?\\d+)\\s+(\\S+)\\s+(.*?)\\s+(${LSTART})\\s*(.*)$`);
   return result.stdout
     .split("\n")
     .filter((line) => line.trim())
     .map((line) => {
-      const match =
-        /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+([A-Z][a-z]{2} [A-Z][a-z]{2} +\d{1,2} \d\d:\d\d:\d\d \d{4})\s*(.*)$/.exec(line);
+      const match = pattern.exec(line);
       if (!match)
         throw new Error(`[backend] unexpected ps row ${JSON.stringify(line.slice(0, 120))}; refusing watched-file changes`);
       return {
         pid: Number(match[1]),
         parent: Number(match[2]),
         group: Number(match[3]),
-        zombie: match[4].startsWith("Z"),
-        started: match[5].replace(/\s+/g, " "),
-        command: match[6],
+        uid: Number(match[4]),
+        zombie: match[5].startsWith("Z"),
+        exe: match[6].trim(),
+        started: match[7].replace(/\s+/g, " "),
+        command: match[8],
       };
     });
+}
+
+/** Identities among `rows` that are still running; a zombie has exited. @param {Observer} observer @param {ProcessRow[]} rows */
+function stillRunning(observer, rows) {
+  if (!rows.length) return new Set();
+  const result = bounded(observer.deadline, "ps", ["-o", "pid=,stat=,lstart=", "-p", rows.map((row) => row.pid).join(",")], { env: observer.env });
+  // ps exits 1 when a listed process has exited; the rest are still printed.
+  if (result.error || (result.status !== 0 && result.status !== 1))
+    throw new Error(`[backend] could not recheck processes (ps exit ${result.status}); refusing watched-file changes`);
+  const alive = new Set();
+  for (const line of result.stdout.split("\n")) {
+    const match = new RegExp(`^\\s*(\\d+)\\s+(\\S+)\\s+(${LSTART})`).exec(line);
+    if (match && !match[2].startsWith("Z")) alive.add(`${match[1]}@${match[3].replace(/\s+/g, " ")}`);
+  }
+  return alive;
 }
 
 /** @param {Observer} observer @param {number[]} pids @returns {Map<number, string>} */
@@ -135,7 +162,7 @@ function workingDirectories(observer, pids) {
       try {
         dirs.set(pid, readlinkSync(`/proc/${pid}/cwd`));
       } catch {
-        // Exited, or owned by another user (out of scope).
+        // Exited; the caller decides what that means.
       }
     }
     return dirs;
@@ -153,44 +180,31 @@ function workingDirectories(observer, pids) {
 }
 
 /**
- * Each candidate's argv[0] and arguments. Linux keeps the exact boundaries
- * from /proc/<pid>/cmdline. macOS ps prints argv[0] as `comm` and the
- * arguments joined by spaces, so there `exact` is false and a path containing
- * spaces arrives in pieces. A process whose command does not start with its
- * argv[0] (it rewrote its title) is skipped.
- * @param {Observer} observer @param {ProcessRow[]} rows
- * @returns {Map<number, { exe: string, args: string[], exact: boolean }>}
+ * A Node process's arguments. On macOS they come from the same snapshot as
+ * the row: `command` begins with argv[0], whose last component is the
+ * executable name, and the rest is the arguments joined by spaces, so `exact`
+ * is false and a path containing spaces arrives in pieces. Linux reads exact
+ * boundaries from /proc/<pid>/cmdline. Null when the process set a title
+ * (macOS) and `undefined` when it exited before /proc could be read (Linux).
+ * @param {ProcessRow} row @returns {{ args: string[], exact: boolean } | null | undefined}
  */
-function argvOf(observer, rows) {
-  /** @type {Map<number, { exe: string, args: string[], exact: boolean }>} */
-  const argv = new Map();
-  if (!rows.length) return argv;
+function argvOf(row) {
   if (process.platform === "linux") {
-    for (const row of rows) {
-      try {
-        const [exe = "", ...args] = readFileSync(`/proc/${row.pid}/cmdline`, "utf8").replace(/\0$/, "").split("\0");
-        argv.set(row.pid, { exe, args, exact: true });
-      } catch {
-        // Exited, or owned by another user (out of scope).
-      }
+    try {
+      const [, ...args] = readFileSync(`/proc/${row.pid}/cmdline`, "utf8").replace(/\0$/, "").split("\0");
+      return { args, exact: true };
+    } catch {
+      return undefined;
     }
-    return argv;
   }
-  const result = bounded(observer.deadline, "ps", ["axww", "-o", "pid=,comm="], { env: observer.env });
-  if (result.error || result.status !== 0)
-    throw new Error(`[backend] could not list process executables (ps exit ${result.status}); refusing watched-file changes`);
-  /** @type {Map<number, string>} */
-  const comm = new Map();
-  for (const line of result.stdout.split("\n")) {
-    const match = /^\s*(\d+) (.*)$/.exec(line);
-    if (match) comm.set(Number(match[1]), match[2].trimEnd());
+  const pieces = row.command.split(" ").filter(Boolean);
+  for (let end = 0; end < pieces.length; end++) {
+    const name = path.basename(pieces.slice(0, end + 1).join(" "));
+    // ucomm is cut to 16 characters.
+    if (name === row.exe || (row.exe.length >= 15 && name.startsWith(row.exe)))
+      return { args: pieces.slice(end + 1), exact: false };
   }
-  for (const row of rows) {
-    const exe = comm.get(row.pid);
-    if (exe && (row.command === exe || row.command.startsWith(`${exe} `)))
-      argv.set(row.pid, { exe, args: row.command.slice(exe.length + 1).split(" ").filter(Boolean), exact: false });
-  }
-  return argv;
+  return null;
 }
 
 // Node options whose value is the next argument. Others are single arguments
@@ -201,8 +215,9 @@ const NODE_VALUE_OPTIONS = new Set([
 ]);
 // Inline code: no entry script.
 const NODE_INLINE = /^(?:-e|--eval|-p|--print)(?:=|$)/;
-// Entry scripts this tool has used, matched on the path's end so a deleted
-// file can still be recognised.
+// Entry scripts this tool has used, matched on the canonical path's end. A
+// deleted file keeps its literal path, so it is recognised only under one of
+// these names.
 const CLI_ENTRY = /\/(?:convex\/bin\/main\.js|\.bin\/convex)$/;
 const NPX_ENTRY = /(?:^|\/)npx(?:-cli\.js)?$/;
 const KNOWN_ENTRY = /(?:\/convex\/bin\/main\.js|\/\.bin\/convex|(?:^|\/)npx(?:-cli\.js)?|(?:^|\/)local-backend-watch\.mjs)$/;
@@ -219,10 +234,10 @@ const isFile = (file) => {
 
 /**
  * The script a Node invocation runs: skip Node's own options, resolve a
- * relative entry against the process's working directory, and canonicalise it.
- * A deleted entry keeps its lexical path. When ps split a spaced path into
- * pieces, the entry is the shortest run of pieces naming an existing file,
- * else the run ending in a known entry name.
+ * relative entry against the process's working directory, and canonicalise it
+ * with realpath. A deleted entry keeps its lexical path. When ps split a
+ * spaced path into pieces, the entry is the shortest run of pieces naming an
+ * existing file, else the run ending in a known entry name.
  * @param {{ args: string[], exact: boolean }} argv @param {string | undefined} cwd
  * @returns {{ inline: true } | { inline: false, entry: string | null, raw: string, after: string[] }}
  */
@@ -264,17 +279,54 @@ export function nodeEntry({ args, exact }, cwd) {
   return { inline: false, entry, raw, after: args.slice(end + 1) };
 }
 
+const NEEDS_CWD = Symbol("needs the working directory");
+const WATCHER = Symbol("watcher");
+const HARMLESS = Symbol("harmless");
+
 /**
- * Processes that could watch this checkout, judged by what they execute: Node
- * running this checkout's watch wrapper (under any path alias), or Node
- * running a Convex CLI entry script with `dev` from a working directory inside
- * the checkout. An editor, pager or search whose arguments name these paths
- * executes something else and is ignored. A Node process in the checkout that
- * mentions `convex` and `dev` but parses as neither, or a Node process naming a
- * wrapper file that no longer exists, is returned as unclassified.
- * @param {ProcessRow[]} table @param {string} checkout
- * @param {Observer} [observer]
- * @returns {{ watchers: ProcessRow[], unclassified: Unclassified[] }}
+ * Classify one Node process. Without `cwd`, answers NEEDS_CWD whenever the
+ * working directory could change the answer.
+ * @param {ProcessRow} row @param {{ args: string[], exact: boolean } | null} argv
+ * @param {string | undefined} cwd
+ * @param {{ wrappers: Set<string>, inside: (dir: string) => boolean }} checkout
+ * @returns {typeof NEEDS_CWD | typeof WATCHER | typeof HARMLESS | string} a string is the reason it is unclassified
+ */
+function classify(row, argv, cwd, checkout) {
+  const mentions = /convex/.test(row.command) && /(?:^|\s)dev(?:\s|$)/.test(row.command);
+  const ambiguous = () =>
+    !mentions ? HARMLESS : cwd === undefined ? NEEDS_CWD : checkout.inside(cwd)
+      ? "Node in this checkout mentions convex and dev but is no known watcher" : HARMLESS;
+  // A process that set its title (macOS) is judged on that text alone.
+  if (!argv) return ambiguous();
+  const parsed = nodeEntry(argv, cwd);
+  if (parsed.inline) return ambiguous();
+  if (parsed.raw && !parsed.entry) return NEEDS_CWD;
+  const named = parsed.entry ?? parsed.raw;
+  if (parsed.entry && checkout.wrappers.has(parsed.entry)) return WATCHER;
+  const cli =
+    (CLI_ENTRY.test(named) && parsed.after[0] === "dev") ||
+    (NPX_ENTRY.test(named) && parsed.after[0] === "convex" && parsed.after[1] === "dev");
+  if (cli) return cwd === undefined ? NEEDS_CWD : checkout.inside(cwd) ? WATCHER : HARMLESS;
+  if (path.basename(named) === "local-backend-watch.mjs" && !(parsed.entry && isFile(parsed.entry)))
+    return "runs a watch wrapper whose file is gone, so its checkout is unknown";
+  return ambiguous();
+}
+
+/**
+ * Processes that could watch this checkout, judged by the script they run:
+ * Node running this checkout's watch wrapper, or Node running the Convex CLI
+ * entry with `dev` from a working directory inside the checkout. A symlink or
+ * a renamed path to either is followed only while its target exists; once the
+ * file is deleted, only the literal names in KNOWN_ENTRY are recognised.
+ * Every Node process this user owns is resolved; an editor, pager or search
+ * whose arguments name these paths runs something else and is ignored.
+ *
+ * Returns the watchers, the processes it could not classify, and `vanished`:
+ * Node processes whose working directory it needed but which exited before it
+ * could be read. Those are never taken as absent; the caller re-scans their
+ * groups.
+ * @param {ProcessRow[]} table @param {string} checkout @param {Observer} [observer]
+ * @returns {{ watchers: ProcessRow[], unclassified: Unclassified[], vanished: ProcessRow[] }}
  */
 export function checkoutWatchers(table, checkout, observer = defaultObserver()) {
   const roots = new Set([path.resolve(checkout)]);
@@ -283,8 +335,6 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
   } catch {
     // A checkout that no longer exists can only be matched by its given path.
   }
-  const inside = (/** @type {string | undefined} */ dir) =>
-    !!dir && [...roots].some((root) => dir === root || dir.startsWith(`${root}/`));
   const wrappers = new Set([...roots].map((root) => path.join(root, WRAPPER)));
   for (const wrapper of [...wrappers]) {
     try {
@@ -293,44 +343,45 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
       // No wrapper file in this checkout.
     }
   }
-  const candidates = table.filter(
-    (row) => !row.zombie && (row.command.includes("convex") || row.command.includes("local-backend-watch.mjs")),
-  );
-  const argv = argvOf(observer, candidates);
-  const nodes = candidates.filter((row) => {
-    const args = argv.get(row.pid);
-    return args && NODE.test(path.basename(args.exe));
-  });
-  const cwd = workingDirectories(observer, nodes.map((row) => row.pid));
+  const scope = {
+    wrappers,
+    inside: (/** @type {string} */ dir) => [...roots].some((root) => dir === root || dir.startsWith(`${root}/`)),
+  };
+  const uid = process.getuid?.();
   /** @type {ProcessRow[]} */
   const watchers = [];
   /** @type {Unclassified[]} */
   const unclassified = [];
-  for (const row of nodes) {
-    const dir = cwd.get(row.pid);
-    const parsed = nodeEntry(/** @type {{ args: string[], exact: boolean }} */ (argv.get(row.pid)), dir);
-    if (!parsed.inline) {
-      const named = parsed.entry ?? parsed.raw;
-      if (parsed.entry && wrappers.has(parsed.entry)) {
-        watchers.push(row);
-        continue;
-      }
-      const cli =
-        (CLI_ENTRY.test(named) && parsed.after[0] === "dev") ||
-        (NPX_ENTRY.test(named) && parsed.after[0] === "convex" && parsed.after[1] === "dev");
-      if (cli && inside(dir)) {
-        watchers.push(row);
-        continue;
-      }
-      if (path.basename(named) === "local-backend-watch.mjs" && !(parsed.entry && isFile(parsed.entry))) {
-        unclassified.push({ row, reason: "runs a watch wrapper whose file is gone, so its checkout is unknown" });
-        continue;
-      }
+  /** @type {ProcessRow[]} */
+  const vanished = [];
+  /** @type {Array<{ row: ProcessRow, argv: { args: string[], exact: boolean } | null }>} */
+  const pending = [];
+  /** @param {ProcessRow} row @param {ReturnType<typeof classify>} verdict */
+  const record = (row, verdict) => {
+    if (verdict === WATCHER) watchers.push(row);
+    else if (typeof verdict === "string") unclassified.push({ row, reason: verdict });
+  };
+  for (const row of table) {
+    if (row.zombie || row.uid !== uid || !NODE.test(row.exe)) continue;
+    const argv = argvOf(row);
+    if (argv === undefined) {
+      vanished.push(row);
+      continue;
     }
-    if (inside(dir) && /convex/.test(row.command) && /(?:^|\s)dev(?:\s|$)/.test(row.command))
-      unclassified.push({ row, reason: "Node in this checkout mentions convex and dev but is no known watcher" });
+    const verdict = classify(row, argv, undefined, scope);
+    if (verdict === NEEDS_CWD) pending.push({ row, argv });
+    else record(row, verdict);
   }
-  return { watchers, unclassified };
+  const cwd = workingDirectories(observer, pending.map(({ row }) => row.pid));
+  const unread = pending.filter(({ row }) => !cwd.has(row.pid));
+  const running = stillRunning(observer, unread.map(({ row }) => row));
+  for (const { row, argv } of pending) {
+    const dir = cwd.get(row.pid);
+    if (dir !== undefined) record(row, classify(row, argv, dir, scope));
+    else if (running.has(identity(row))) unclassified.push({ row, reason: "its working directory could not be read" });
+    else vanished.push(row);
+  }
+  return { watchers, unclassified, vanished };
 }
 
 /** @param {string} [observerPath] @returns {Observer} */
@@ -340,7 +391,7 @@ function defaultObserver(observerPath = OBSERVER_PATH) {
 
 /** @param {string} file @returns {SavedState} */
 function savedState(file) {
-  if (!existsSync(file)) return { processes: [], groups: [] };
+  if (!existsSync(file)) return { processes: [], groups: [], suspects: new Map() };
   const refuse = (/** @type {string} */ reason) =>
     new Error(
       `[backend] REFUSING watched-file changes: ${file} ${reason}. Confirm that no Convex watcher for this checkout is running, then delete that file.`,
@@ -353,13 +404,14 @@ function savedState(file) {
   }
   if (Array.isArray(saved)) {
     // An empty version-1 list holds no identity to misread.
-    if (saved.length === 0) return { processes: [], groups: [] };
+    if (saved.length === 0) return { processes: [], groups: [], suspects: new Map() };
     const pids = saved.map((row) => row?.pid).filter(Number.isInteger);
     throw refuse(
       `uses the version-1 format, whose start times depend on the caller's TZ and locale (PIDs ${pids.join(", ") || "unreadable"})`,
     );
   }
   const groups = saved?.groups ?? [];
+  const suspects = saved?.suspects ?? [];
   if (
     saved?.format !== STATE_FORMAT ||
     saved.version !== STATE_VERSION ||
@@ -373,14 +425,23 @@ function savedState(file) {
         !row.started,
     ) ||
     !Array.isArray(groups) ||
-    groups.some((group) => !Number.isInteger(group) || group <= 1)
+    groups.some((group) => !Number.isInteger(group) || group <= 1) ||
+    !Array.isArray(suspects) ||
+    suspects.some(
+      (/** @type {any} */ item) =>
+        !Number.isInteger(item?.group) || !Array.isArray(item.members) || item.members.some((/** @type {any} */ id) => typeof id !== "string"),
+    )
   )
     throw refuse(`is not a version-${STATE_VERSION} ${STATE_FORMAT} record`);
-  return { processes: saved.processes, groups };
+  return {
+    processes: saved.processes,
+    groups,
+    suspects: new Map(suspects.map((/** @type {any} */ item) => [item.group, new Set(item.members)])),
+  };
 }
 
-/** @param {string} file @param {ProcessRow[]} rows @param {Set<number>} groups */
-function saveState(file, rows, groups) {
+/** @param {string} file @param {ProcessRow[]} rows @param {Set<number>} groups @param {Suspects} suspects */
+function saveState(file, rows, groups, suspects) {
   mkdirSync(path.dirname(file), { recursive: true });
   /** @type {SavedProcess[]} */
   const processes = rows.map(({ pid, group, started, command }) => ({
@@ -391,7 +452,17 @@ function saveState(file, rows, groups) {
   }));
   writeFileSync(
     `${file}.tmp`,
-    JSON.stringify({ format: STATE_FORMAT, version: STATE_VERSION, processes, groups: [...groups] }, null, 2),
+    JSON.stringify(
+      {
+        format: STATE_FORMAT,
+        version: STATE_VERSION,
+        processes,
+        groups: [...groups],
+        suspects: [...suspects].map(([group, members]) => ({ group, members: [...members] })),
+      },
+      null,
+      2,
+    ),
   );
   renameSync(`${file}.tmp`, file);
 }
@@ -407,7 +478,7 @@ function deliverSignal(target, signal) {
   }
 }
 
-/** @param {ProcessRow} row */
+/** @param {{ pid: number, started: string }} row */
 const identity = (row) => `${row.pid}@${row.started}`;
 
 /**
@@ -420,18 +491,26 @@ const identity = (row) => `${row.pid}@${row.started}`;
  * tracked, and tracked groups carry to the next round while they have members.
  * Every live member of a tracked group must be a verified target, or must have
  * appeared since the last round while a member verified then is still alive,
- * which only a fork inside the group can produce. Any other member, the
- * caller or its ancestors in a tracked group, and processes `checkoutWatchers`
- * could not classify are returned as unclassified; the caller refuses.
+ * which only a fork inside the group can produce.
+ *
+ * A vanished process (a Node process that exited before discovery could read
+ * it) makes its group a suspect: its children in this table are refused now,
+ * and next round any member that was not in the group this round is refused
+ * unless verified. A suspect with no new member has settled and is dropped.
+ * Everything refused is returned as unclassified.
  * @param {{
  *   table: ProcessRow[], self: number, panes: number[], saved: SavedProcess[],
- *   matched: ProcessRow[], unmatched?: Unclassified[],
- *   previous: Map<string, ProcessRow>, seen: Set<string> | null, groups: Set<number>,
+ *   matched: ProcessRow[], unmatched?: Unclassified[], vanished?: ProcessRow[],
+ *   previous: Map<string, ProcessRow>, seen: Set<string> | null, groups: Set<number>, suspects?: Suspects,
  * }} round `previous` holds last round's targets, `seen` every identity in
- * last round's table (null before the first round).
- * @returns {{ found: Map<number, ProcessRow>, groups: Set<number>, unclassified: Unclassified[] }}
+ * last round's table (null before the first round), `suspects` the groups
+ * that last round's vanished processes left.
+ * @returns {{ found: Map<number, ProcessRow>, groups: Set<number>, unclassified: Unclassified[], suspects: Suspects, unresolved: boolean }}
+ * `suspects` holds the groups still to re-scan or to keep refusing; `unresolved` means this round saw new vanished processes.
  */
-export function discoverWatchers({ table, self, panes, saved, matched, unmatched = [], previous, seen, groups: carried }) {
+export function discoverWatchers({
+  table, self, panes, saved, matched, unmatched = [], vanished = [], previous, seen, groups: carried, suspects: carriedSuspects = new Map(),
+}) {
   const byPid = new Map(table.map((row) => [row.pid, row]));
   if (!byPid.has(self))
     throw new Error("[backend] ps did not list this process; refusing watched-file changes");
@@ -445,6 +524,9 @@ export function discoverWatchers({ table, self, panes, saved, matched, unmatched
   const add = (/** @type {ProcessRow | undefined} */ row) => {
     if (row && !row.zombie && row.pid > 1 && !shielded.has(row.pid)) found.set(row.pid, row);
   };
+  const refuse = (/** @type {ProcessRow} */ row, /** @type {string} */ reason) => {
+    if (!unclassified.has(row.pid)) unclassified.set(row.pid, { row, reason });
+  };
   for (const pid of panes) add(byPid.get(pid));
   for (const hint of saved) {
     const row = byPid.get(hint.pid);
@@ -452,7 +534,7 @@ export function discoverWatchers({ table, self, panes, saved, matched, unmatched
   }
   for (const row of matched) add(row);
   for (const row of table) if (previous.has(identity(row))) add(row);
-  for (const item of unmatched) if (!found.has(item.row.pid) && !shielded.has(item.row.pid)) unclassified.set(item.row.pid, item);
+  for (const item of unmatched) if (!shielded.has(item.row.pid)) refuse(item.row, item.reason);
 
   const groups = new Set(carried);
   for (const pid of panes) groups.add(pid);
@@ -466,21 +548,43 @@ export function discoverWatchers({ table, self, panes, saved, matched, unmatched
       const anchored = members.some((row) => previous.has(identity(row)));
       for (const row of members) {
         if (found.has(row.pid) || unclassified.has(row.pid)) continue;
-        if (shielded.has(row.pid))
-          unclassified.set(row.pid, { row, reason: `shares watcher process group ${group} with this command or its parents` });
+        if (shielded.has(row.pid)) refuse(row, `shares watcher process group ${group} with this command or its parents`);
         else if (anchored && seen && !seen.has(identity(row))) add(row);
-        else
-          unclassified.set(row.pid, { row, reason: `is in watcher process group ${group} but was never verified as a watcher` });
+        else refuse(row, `is in watcher process group ${group} but was never verified as a watcher`);
       }
     }
   }
   for (const group of [...groups]) {
     if (!live.some((row) => row.group === group)) groups.delete(group);
-    else if (group <= 1)
-      for (const row of live.filter((member) => member.group === group))
-        unclassified.set(row.pid, { row, reason: `is in process group ${group}, which cannot be signalled` });
+    else if (group <= 1) for (const row of live.filter((member) => member.group === group)) refuse(row, `is in process group ${group}, which cannot be signalled`);
   }
-  return { found, groups, unclassified: [...unclassified.values()].filter((item) => !found.has(item.row.pid)) };
+
+  /** @type {Suspects} */
+  const suspects = new Map();
+  for (const [group, before] of carriedSuspects) {
+    const arrivals = live.filter((row) => row.group === group && !before.has(identity(row)) && !found.has(row.pid));
+    for (const row of arrivals)
+      refuse(row, `appeared in process group ${group} after a Node process there exited before it could be classified`);
+    // Keep refusing on retry until the arrivals are gone.
+    if (arrivals.length) suspects.set(group, before);
+  }
+  for (const gone of vanished) {
+    if (shielded.has(gone.pid)) continue;
+    for (const row of live)
+      if (row.parent === gone.pid && !found.has(row.pid))
+        refuse(row, `is a child of Node process ${gone.pid}, which exited before it could be classified`);
+    const members = suspects.get(gone.group) ?? new Set();
+    for (const row of live) if (row.group === gone.group) members.add(identity(row));
+    members.add(identity(gone));
+    suspects.set(gone.group, members);
+  }
+  return {
+    found,
+    groups,
+    unclassified: [...unclassified.values()].filter((item) => !found.has(item.row.pid)),
+    suspects,
+    unresolved: vanished.some((gone) => !shielded.has(gone.pid)),
+  };
 }
 
 /**
@@ -505,9 +609,10 @@ const describe = (rows) => [...rows].map((row) => `${row.pid} (${row.command.sli
 
 /**
  * Stop every process that could watch this checkout, then rebuild. Each round
- * persists its targets and groups before signalling, so an interrupted or
- * refused run leaves a record for the retry. Refuses, naming the PIDs, when a
- * process cannot be classified or anything is still alive at the deadline.
+ * persists its targets, groups and suspect groups before signalling, so an
+ * interrupted or refused run leaves a record for the retry. Refuses, naming
+ * the PIDs, when a process cannot be classified or anything is still alive or
+ * unresolved at the deadline.
  * @param {{
  *   session: string,
  *   checkout: string,
@@ -521,7 +626,7 @@ const describe = (rows) => [...rows].map((row) => `${row.pid} (${row.command.sli
  *   observerPath?: string,
  * }} opts `sendSignal` receives a PID or a negative group ID; tests replace it
  * to model a process this user cannot signal. `observerPath` is the fixed PATH
- * for ps and lsof; tests point it at fake tools.
+ * for ps and lsof; tests point it at fake or delayed tools.
  */
 export async function rebuildWithoutWatcher({
   session,
@@ -546,16 +651,22 @@ export async function rebuildWithoutWatcher({
   /** @type {Set<string> | null} */
   let seen = null;
   let groups = new Set(saved.groups);
+  let suspects = saved.suspects;
   const survived = (/** @type {Iterable<ProcessRow>} */ rows) =>
     new Error(
       `[backend] REFUSING watched-file changes: Convex watcher processes for this checkout survived shutdown: ${describe(rows)}. Their identities are saved in ${statePath}. Stop them, then rerun.`,
+    );
+  const unsettled = () =>
+    new Error(
+      `[backend] REFUSING watched-file changes: Node processes in process groups ${[...suspects.keys()].join(", ")} kept exiting before they could be classified. State: ${statePath}. Rerun when they have stopped.`,
     );
   for (;;) {
     try {
       if (shutdownRound()) return;
     } catch (error) {
-      // Out of time while watchers were still alive: name them, not the tool.
+      // Out of time: name what was still alive or unresolved, not the tool.
       if (error instanceof DeadlineError && previous.size) throw survived(previous.values());
+      if (error instanceof DeadlineError && suspects.size) throw unsettled();
       throw error;
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -580,19 +691,20 @@ export async function rebuildWithoutWatcher({
     const scan = checkoutWatchers(table, checkout, observer);
     const round = discoverWatchers({
       table, self: process.pid, panes, saved: saved.processes, matched: scan.watchers, unmatched: scan.unclassified,
-      previous, seen, groups,
+      vanished: scan.vanished, previous, seen, groups, suspects,
     });
     const { found, unclassified } = round;
     groups = round.groups;
+    suspects = round.suspects;
     previous = new Map([...found.values()].map((row) => [identity(row), row]));
     seen = new Set(table.map(identity));
 
-    if (found.size === 0 && unclassified.length === 0 && present.status !== 0) {
+    if (found.size === 0 && unclassified.length === 0 && !round.unresolved && present.status !== 0) {
       rmSync(statePath, { force: true });
       rebuild();
       return true;
     }
-    saveState(statePath, [...found.values()], groups);
+    saveState(statePath, [...found.values()], groups, suspects);
     if (unclassified.length)
       throw new Error(
         `[backend] REFUSING watched-file changes: cannot tell whether these processes watch this checkout: ${unclassified
@@ -603,6 +715,7 @@ export async function rebuildWithoutWatcher({
       throw new Error("[backend] could not stop the watcher tmux session");
     const elapsed = Date.now() - start;
     if (elapsed >= deadlineMs && found.size > 0) throw survived(found.values());
+    if (elapsed >= deadlineMs && round.unresolved) throw unsettled();
     const signal = elapsed < graceMs ? "SIGTERM" : "SIGKILL";
     const confirmed = confirmedSignals({ fresh: processTable(observer), found, groups });
     for (const group of confirmed.groups) sendSignal(-group, signal);
