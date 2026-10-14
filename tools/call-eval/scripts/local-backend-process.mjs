@@ -26,11 +26,14 @@
 // That covers a Node process in the checkout that mentions `convex` and `dev`
 // but parses as no known watcher; any member of a watcher's group that was
 // never verified, unless it appeared since the last round while a verified
-// member stayed alive (a fork); and a Node process that exits before its
-// working directory could be read while its argv could make it a watcher for
-// this checkout, whose group is re-scanned and refused if a new member
-// appears. A process whose argv rules that out (another checkout's script,
-// inline code) is ignored when it exits, and so is the caller's own work. A group whose verified members are all gone is refused,
+// member stayed alive (a fork). A Node process that exits before it could be
+// read is not taken as absent: discovery runs another full round, in which
+// any child it spawned before exiting is classified on its own argv and cwd.
+// If processes keep exiting until the deadline, the rebuild is refused when
+// one of them could, by its argv, have been a watcher for this checkout, and
+// otherwise goes ahead as unrelated churn. A watcher started after the last
+// round's snapshot is no different from one started after the rebuild, and
+// is out of scope like any watcher started later. A group whose verified members are all gone is refused,
 // not signalled, which also covers a group ID taken over by a new process.
 
 import {
@@ -74,12 +77,15 @@ const STATE_FORMAT = "connvo-call-eval-watchers";
 // locale, so its identities cannot be compared with these.
 const STATE_VERSION = 2;
 
+// Time a round that started before the deadline may take to finish.
+const FINAL_ROUND_MS = 3_000;
+
 const WRAPPER = path.join("tools", "call-eval", "scripts", "local-backend-watch.mjs");
 
 /** @typedef {{ pid: number, parent: number, group: number, uid: number, exe: string, zombie: boolean, started: string, command: string }} ProcessRow */
 /** @typedef {{ pid: number, group: number, started: string, command: string }} SavedProcess */
-/** @typedef {Map<number, Set<string>>} Suspects group ID -> identities of its members when a Node process in it exited unread */
-/** @typedef {{ processes: SavedProcess[], groups: number[], suspects: Suspects }} SavedState */
+/** @typedef {{ processes: SavedProcess[], groups: number[] }} SavedState */
+/** @typedef {{ row: ProcessRow, plausible: boolean }} Vanished a Node process that exited before it could be read; `plausible` if its argv could make it a watcher for this checkout */
 /** @typedef {{ row: ProcessRow, reason: string }} Unclassified */
 /** @typedef {{ env: Record<string, string>, deadline: number }} Observer */
 
@@ -314,7 +320,8 @@ function classify(row, argv, cwd, checkout) {
 
 /**
  * Whether a Node process that exited before it could be read might have been
- * a watcher for this checkout, judged only on the argv in the snapshot. Yes
+ * a watcher for this checkout, judged only on the argv in the snapshot. Used
+ * only when processes keep exiting until the deadline. Yes
  * for an entry that resolves (or, deleted, literally points) to this
  * checkout's wrapper, to a Convex CLI entry running `dev`, or to any script
  * inside the checkout, and for a relative entry whose arguments include
@@ -346,11 +353,11 @@ const isConvexDev = (entry, after) =>
  * whose arguments name these paths runs something else and is ignored.
  *
  * Returns the watchers, the processes it could not classify, and `vanished`:
- * Node processes that exited before they could be read and that, by the argv
- * in the snapshot, could have watched this checkout (see couldWatch). Those
- * are never taken as absent; the caller re-scans their groups.
+ * Node processes whose classification needed a read that came too late
+ * because they had exited. Those are never taken as absent; the caller runs
+ * another round.
  * @param {ProcessRow[]} table @param {string} checkout @param {Observer} [observer]
- * @returns {{ watchers: ProcessRow[], unclassified: Unclassified[], vanished: ProcessRow[] }}
+ * @returns {{ watchers: ProcessRow[], unclassified: Unclassified[], vanished: Vanished[] }}
  */
 export function checkoutWatchers(table, checkout, observer = defaultObserver()) {
   const roots = new Set([path.resolve(checkout)]);
@@ -376,7 +383,7 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
   const watchers = [];
   /** @type {Unclassified[]} */
   const unclassified = [];
-  /** @type {ProcessRow[]} */
+  /** @type {Vanished[]} */
   const vanished = [];
   /** @type {Array<{ row: ProcessRow, argv: { args: string[], exact: boolean } | null }>} */
   const pending = [];
@@ -391,7 +398,7 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
     if (argv === undefined) {
       // Linux: gone before /proc was read. Judge it on the snapshot's text.
       const pieces = row.command.split(" ").filter(Boolean).slice(1);
-      if (couldWatch(row, { args: pieces, exact: false }, scope)) vanished.push(row);
+      vanished.push({ row, plausible: couldWatch(row, { args: pieces, exact: false }, scope) });
       continue;
     }
     const verdict = classify(row, argv, undefined, scope);
@@ -405,7 +412,7 @@ export function checkoutWatchers(table, checkout, observer = defaultObserver()) 
     const dir = cwd.get(row.pid);
     if (dir !== undefined) record(row, classify(row, argv, dir, scope));
     else if (running.has(identity(row))) unclassified.push({ row, reason: "its working directory could not be read" });
-    else if (couldWatch(row, argv, scope)) vanished.push(row);
+    else vanished.push({ row, plausible: couldWatch(row, argv, scope) });
   }
   return { watchers, unclassified, vanished };
 }
@@ -417,7 +424,7 @@ function defaultObserver(observerPath = OBSERVER_PATH) {
 
 /** @param {string} file @returns {SavedState} */
 function savedState(file) {
-  if (!existsSync(file)) return { processes: [], groups: [], suspects: new Map() };
+  if (!existsSync(file)) return { processes: [], groups: [] };
   const refuse = (/** @type {string} */ reason) =>
     new Error(
       `[backend] REFUSING watched-file changes: ${file} ${reason}. Confirm that no Convex watcher for this checkout is running, then delete that file.`,
@@ -430,14 +437,13 @@ function savedState(file) {
   }
   if (Array.isArray(saved)) {
     // An empty version-1 list holds no identity to misread.
-    if (saved.length === 0) return { processes: [], groups: [], suspects: new Map() };
+    if (saved.length === 0) return { processes: [], groups: [] };
     const pids = saved.map((row) => row?.pid).filter(Number.isInteger);
     throw refuse(
       `uses the version-1 format, whose start times depend on the caller's TZ and locale (PIDs ${pids.join(", ") || "unreadable"})`,
     );
   }
   const groups = saved?.groups ?? [];
-  const suspects = saved?.suspects ?? [];
   if (
     saved?.format !== STATE_FORMAT ||
     saved.version !== STATE_VERSION ||
@@ -451,23 +457,14 @@ function savedState(file) {
         !row.started,
     ) ||
     !Array.isArray(groups) ||
-    groups.some((group) => !Number.isInteger(group) || group <= 1) ||
-    !Array.isArray(suspects) ||
-    suspects.some(
-      (/** @type {any} */ item) =>
-        !Number.isInteger(item?.group) || !Array.isArray(item.members) || item.members.some((/** @type {any} */ id) => typeof id !== "string"),
-    )
+    groups.some((group) => !Number.isInteger(group) || group <= 1)
   )
     throw refuse(`is not a version-${STATE_VERSION} ${STATE_FORMAT} record`);
-  return {
-    processes: saved.processes,
-    groups,
-    suspects: new Map(suspects.map((/** @type {any} */ item) => [item.group, new Set(item.members)])),
-  };
+  return { processes: saved.processes, groups };
 }
 
-/** @param {string} file @param {ProcessRow[]} rows @param {Set<number>} groups @param {Suspects} suspects */
-function saveState(file, rows, groups, suspects) {
+/** @param {string} file @param {ProcessRow[]} rows @param {Set<number>} groups */
+function saveState(file, rows, groups) {
   mkdirSync(path.dirname(file), { recursive: true });
   /** @type {SavedProcess[]} */
   const processes = rows.map(({ pid, group, started, command }) => ({
@@ -484,7 +481,6 @@ function saveState(file, rows, groups, suspects) {
         version: STATE_VERSION,
         processes,
         groups: [...groups],
-        suspects: [...suspects].map(([group, members]) => ({ group, members: [...members] })),
       },
       null,
       2,
@@ -519,24 +515,16 @@ const identity = (row) => `${row.pid}@${row.started}`;
  * appeared since the last round while a member verified then is still alive,
  * which only a fork inside the group can produce.
  *
- * A vanished process (a Node process that exited before discovery could read
- * it) makes its group a suspect: its children in this table are refused now,
- * and next round any member that was not in the group this round is refused
- * unless verified. A suspect with no new member has settled and is dropped.
  * Everything refused is returned as unclassified.
  * @param {{
  *   table: ProcessRow[], self: number, panes: number[], saved: SavedProcess[],
- *   matched: ProcessRow[], unmatched?: Unclassified[], vanished?: ProcessRow[],
- *   previous: Map<string, ProcessRow>, seen: Set<string> | null, groups: Set<number>, suspects?: Suspects,
+ *   matched: ProcessRow[], unmatched?: Unclassified[],
+ *   previous: Map<string, ProcessRow>, seen: Set<string> | null, groups: Set<number>,
  * }} round `previous` holds last round's targets, `seen` every identity in
- * last round's table (null before the first round), `suspects` the groups
- * that last round's vanished processes left.
- * @returns {{ found: Map<number, ProcessRow>, groups: Set<number>, unclassified: Unclassified[], suspects: Suspects, unresolved: boolean }}
- * `suspects` holds the groups still to re-scan or to keep refusing; `unresolved` means this round saw new vanished processes.
+ * last round's table (null before the first round).
+ * @returns {{ found: Map<number, ProcessRow>, groups: Set<number>, unclassified: Unclassified[] }}
  */
-export function discoverWatchers({
-  table, self, panes, saved, matched, unmatched = [], vanished = [], previous, seen, groups: carried, suspects: carriedSuspects = new Map(),
-}) {
+export function discoverWatchers({ table, self, panes, saved, matched, unmatched = [], previous, seen, groups: carried }) {
   const byPid = new Map(table.map((row) => [row.pid, row]));
   if (!byPid.has(self))
     throw new Error("[backend] ps did not list this process; refusing watched-file changes");
@@ -547,11 +535,6 @@ export function discoverWatchers({
   const found = new Map();
   /** @type {Map<number, Unclassified>} */
   const unclassified = new Map();
-  // The caller's own work can never make a group suspect: anything in the
-  // process group of the caller or one of its ancestors, which includes their
-  // short-lived children. A detached child leads a group of its own.
-  const callerGroups = new Set([...shielded].map((pid) => byPid.get(pid)?.group));
-  const fromCaller = (/** @type {ProcessRow} */ row) => callerGroups.has(row.group);
   const add = (/** @type {ProcessRow | undefined} */ row) => {
     if (row && !row.zombie && row.pid > 1 && !shielded.has(row.pid)) found.set(row.pid, row);
   };
@@ -590,33 +573,7 @@ export function discoverWatchers({
     else if (group <= 1) for (const row of live.filter((member) => member.group === group)) refuse(row, `is in process group ${group}, which cannot be signalled`);
   }
 
-  /** @type {Suspects} */
-  const suspects = new Map();
-  for (const [group, before] of carriedSuspects) {
-    if (callerGroups.has(group)) continue;
-    const arrivals = live.filter((row) => row.group === group && !before.has(identity(row)) && !found.has(row.pid));
-    for (const row of arrivals)
-      refuse(row, `appeared in process group ${group} after a Node process there exited before it could be classified`);
-    // Keep refusing on retry until the arrivals are gone.
-    if (arrivals.length) suspects.set(group, before);
-  }
-  const suspicious = vanished.filter((gone) => !shielded.has(gone.pid) && !fromCaller(gone));
-  for (const gone of suspicious) {
-    for (const row of live)
-      if (row.parent === gone.pid && !found.has(row.pid))
-        refuse(row, `is a child of Node process ${gone.pid}, which exited before it could be classified`);
-    const members = suspects.get(gone.group) ?? new Set();
-    for (const row of live) if (row.group === gone.group) members.add(identity(row));
-    members.add(identity(gone));
-    suspects.set(gone.group, members);
-  }
-  return {
-    found,
-    groups,
-    unclassified: [...unclassified.values()].filter((item) => !found.has(item.row.pid)),
-    suspects,
-    unresolved: suspicious.length > 0,
-  };
+  return { found, groups, unclassified: [...unclassified.values()].filter((item) => !found.has(item.row.pid)) };
 }
 
 /**
@@ -641,10 +598,14 @@ const describe = (rows) => [...rows].map((row) => `${row.pid} (${row.command.sli
 
 /**
  * Stop every process that could watch this checkout, then rebuild. Each round
- * persists its targets, groups and suspect groups before signalling, so an
- * interrupted or refused run leaves a record for the retry. Refuses, naming
- * the PIDs, when a process cannot be classified or anything is still alive or
- * unresolved at the deadline.
+ * persists its targets and groups before signalling, so an interrupted or
+ * refused run leaves a record for the retry. The rebuild runs only after a
+ * round that found nothing and saw no Node process exit before it could be
+ * read. Refuses, naming the PIDs, when a process cannot be classified, when a
+ * watcher is still alive at the deadline, or when processes that could have
+ * been watchers kept exiting until the deadline. New rounds start until
+ * `deadlineMs`; every tool call is bounded by `deadlineMs` plus FINAL_ROUND_MS
+ * so a round that has started can finish.
  * @param {{
  *   session: string,
  *   checkout: string,
@@ -674,7 +635,7 @@ export async function rebuildWithoutWatcher({
 }) {
   if (!checkout) throw new Error("[backend] rebuildWithoutWatcher needs the checkout path");
   const start = Date.now();
-  const observer = { ...defaultObserver(observerPath), deadline: start + deadlineMs };
+  const observer = { ...defaultObserver(observerPath), deadline: start + deadlineMs + FINAL_ROUND_MS };
   /** @param {string[]} args */
   const tmux = (args) => bounded(observer.deadline, "tmux", [...tmuxArgs, ...args], { env });
   const saved = savedState(statePath);
@@ -683,22 +644,31 @@ export async function rebuildWithoutWatcher({
   /** @type {Set<string> | null} */
   let seen = null;
   let groups = new Set(saved.groups);
-  let suspects = saved.suspects;
+  /** `churn`: what exited unread in the last round, when that round found nothing else */
+  const last = { churn: /** @type {Vanished[] | null} */ (null) };
   const survived = (/** @type {Iterable<ProcessRow>} */ rows) =>
     new Error(
       `[backend] REFUSING watched-file changes: Convex watcher processes for this checkout survived shutdown: ${describe(rows)}. Their identities are saved in ${statePath}. Stop them, then rerun.`,
     );
-  const unsettled = () =>
-    new Error(
-      `[backend] REFUSING watched-file changes: Node processes in process groups ${[...suspects.keys()].join(", ")} kept exiting before they could be classified. State: ${statePath}. Rerun when they have stopped.`,
-    );
   for (;;) {
+    const { churn } = last;
+    if (churn && Date.now() - start >= deadlineMs) {
+      // Processes kept exiting before they could be read. Refuse if one of
+      // them could have been a watcher here; otherwise it is unrelated churn.
+      const plausible = churn.filter((item) => item.plausible).map((item) => item.row);
+      if (plausible.length)
+        throw new Error(
+          `[backend] REFUSING watched-file changes: Node processes that could have been watchers for this checkout kept exiting before they could be classified: ${describe(plausible)}. Rerun when they have stopped.`,
+        );
+      rmSync(statePath, { force: true });
+      rebuild();
+      return;
+    }
     try {
       if (shutdownRound()) return;
     } catch (error) {
-      // Out of time: name what was still alive or unresolved, not the tool.
+      // Out of time while watchers were still alive: name them, not the tool.
       if (error instanceof DeadlineError && previous.size) throw survived(previous.values());
-      if (error instanceof DeadlineError && suspects.size) throw unsettled();
       throw error;
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -723,20 +693,26 @@ export async function rebuildWithoutWatcher({
     const scan = checkoutWatchers(table, checkout, observer);
     const round = discoverWatchers({
       table, self: process.pid, panes, saved: saved.processes, matched: scan.watchers, unmatched: scan.unclassified,
-      vanished: scan.vanished, previous, seen, groups, suspects,
+      previous, seen, groups,
     });
     const { found, unclassified } = round;
     groups = round.groups;
-    suspects = round.suspects;
     previous = new Map([...found.values()].map((row) => [identity(row), row]));
     seen = new Set(table.map(identity));
 
-    if (found.size === 0 && unclassified.length === 0 && !round.unresolved && present.status !== 0) {
-      rmSync(statePath, { force: true });
-      rebuild();
-      return true;
+    last.churn = null;
+    if (found.size === 0 && unclassified.length === 0 && present.status !== 0) {
+      if (scan.vanished.length === 0) {
+        rmSync(statePath, { force: true });
+        rebuild();
+        return true;
+      }
+      // Something exited before it could be read. Anything it spawned first
+      // is in the next snapshot, so look again rather than guess.
+      last.churn = scan.vanished;
+      return false;
     }
-    saveState(statePath, [...found.values()], groups, suspects);
+    saveState(statePath, [...found.values()], groups);
     if (unclassified.length)
       throw new Error(
         `[backend] REFUSING watched-file changes: cannot tell whether these processes watch this checkout: ${unclassified
@@ -747,7 +723,6 @@ export async function rebuildWithoutWatcher({
       throw new Error("[backend] could not stop the watcher tmux session");
     const elapsed = Date.now() - start;
     if (elapsed >= deadlineMs && found.size > 0) throw survived(found.values());
-    if (elapsed >= deadlineMs && round.unresolved) throw unsettled();
     const signal = elapsed < graceMs ? "SIGTERM" : "SIGKILL";
     const confirmed = confirmedSignals({ fresh: processTable(observer), found, groups });
     for (const group of confirmed.groups) sendSignal(-group, signal);

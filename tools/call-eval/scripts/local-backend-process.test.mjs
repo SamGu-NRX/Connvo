@@ -703,7 +703,8 @@ it("refuses when ps hangs past the shutdown deadline", async () => {
       session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), deadlineMs: 1_000, observerPath: tools, rebuild: f.rebuild,
     }),
   ).rejects.toThrow("did not finish before the shutdown deadline");
-  expect(Date.now() - begun).toBeLessThan(5_000);
+  // Rounds start until the deadline; the last may run FINAL_ROUND_MS (3 s) longer.
+  expect(Date.now() - begun).toBeLessThan(6_000);
   expect(f.liveAtRebuild).toEqual([]);
 }, 30_000);
 
@@ -801,66 +802,6 @@ it("signals only targets whose PID and group still belong to the process that wa
   expect(confirmedSignals({ fresh, found, groups })).toEqual({ pids: [601], groups: [500] });
 });
 
-it("refuses a fork left by a candidate that exits between the process table and its working-directory read", async () => {
-  const f = watcherFixture();
-  const trigger = path.join(f.dir, "lsof-started");
-  const forked = writeScript(path.join(f.dir, "forked.mjs"), watcherSource(f));
-  // A watcher-shaped parent (relative entry, so discovery must read its cwd)
-  // that forks and exits once the observer's lsof has started.
-  writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), `
-import { appendFileSync, existsSync } from 'node:fs';
-import { spawn } from 'node:child_process';
-appendFileSync(${J(f.pids)}, process.pid + '\\n');
-const poll = setInterval(() => {
-  if (!existsSync(${J(trigger)})) return;
-  clearInterval(poll);
-  const child = spawn(process.execPath, [${J(forked)}], { stdio: 'ignore' });
-  appendFileSync(${J(f.pids)}, child.pid + '\\n');
-  appendFileSync(${J(f.forks)}, child.pid + '\\n');
-  process.exit(0);
-}, 5);
-`);
-  // The observer's tools: real ps; lsof that marks its start, waits, then runs.
-  const tools = path.join(f.dir, "slow-tools");
-  chmodSync(writeScript(path.join(tools, "ps"), "#!/bin/sh\nexec /bin/ps \"$@\"\n"), 0o755);
-  chmodSync(writeScript(path.join(tools, "lsof"), `#!/bin/sh\n: > ${J(trigger)}\n/bin/sleep 1\nexec /usr/sbin/lsof "$@"\n`), 0o755);
-  orphan(process.execPath, ["node_modules/convex/bin/main.js", "dev"], f.checkout);
-  await waitForPids(f.pids, 1);
-  const attempt = () =>
-    rebuildWithoutWatcher({ session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: tools, rebuild: f.rebuild });
-  const outcome = await attempt().then(() => null, (/** @type {Error} */ error) => error);
-  const [child] = readPids(f.forks);
-  expect(child).toBeGreaterThan(0);
-  expect(f.liveAtRebuild).toEqual([]);
-  expect(outcome?.message).toContain(`${child} (`);
-  // The saved suspect group keeps refusing until the child is gone.
-  await expect(attempt()).rejects.toThrow(`${child} (`);
-  process.kill(child, "SIGKILL");
-  await vi.waitFor(() => expect(alive(child)).toBe(false));
-  await attempt();
-  expect(f.liveAtRebuild).toEqual([[]]);
-  expect(existsSync(f.observed)).toBe(false);
-}, 30_000);
-
-it("re-scans the group of a candidate that exited unread, refusing new members and dropping it once settled", () => {
-  const gone = row(500, 1, 500);
-  const table = [...base, gone, row(501, 500, 500)];
-  const first = discover({ table, vanished: [gone] });
-  expect(first.unresolved).toBe(true);
-  // Its child in the same table is refused at once.
-  expect(refused(first)).toEqual([501]);
-  const seen = new Set(table.map((r) => `${r.pid}@${r.started}`));
-  // Next round: a process that was not in group 500 before is refused.
-  const arrival = discover({ table: [...base, row(602, 1, 500, LATER)], seen, suspects: first.suspects });
-  expect(refused(arrival)).toEqual([602]);
-  expect([...arrival.suspects.keys()]).toEqual([500]);
-  // Nothing new in the group: settled, and the round may rebuild.
-  const settled = discover({ table: base, seen, suspects: new Map([[500, new Set([`500@${START}`])]]) });
-  expect(refused(settled)).toEqual([]);
-  expect(settled.unresolved).toBe(false);
-  expect([...settled.suspects.keys()]).toEqual([]);
-});
-
 /**
  * Observer tools for the test: real ps, and an lsof that waits a second
  * before running, so processes that exit quickly do so between the process
@@ -895,7 +836,7 @@ setInterval(() => spawn(process.execPath, [${J(tool)}, '--watch', 'convex', 'dev
   const pid = processTree(spawner, other);
   await settle();
   await rebuildWithoutWatcher({
-    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), rebuild: f.rebuild,
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), deadlineMs: 3_000, rebuild: f.rebuild,
   });
   expect(f.liveAtRebuild).toEqual([[]]);
   expect(alive(pid)).toBe(true);
@@ -917,18 +858,114 @@ setInterval(() => spawn(process.execPath, ['--conditions', 'node', ${J(worker)},
   const pid = processTree(runner, second);
   await settle();
   await rebuildWithoutWatcher({
-    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), rebuild: f.rebuild,
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), deadlineMs: 3_000, rebuild: f.rebuild,
   });
   expect(f.liveAtRebuild).toEqual([[]]);
   expect(alive(pid)).toBe(true);
 }, 30_000);
 
-it("never makes the caller's process group, or its ancestors' groups, suspect", () => {
-  // The caller 100 is in group 90 with its parent 90; 95 is a sibling there and
-  // 121 a short-lived child of the caller. 80 leads the grandparent's group 80.
-  const table = [row(1, 0, 1), row(80, 1, 80), row(90, 80, 90), row(100, 90, 90), row(95, 90, 90), row(121, 100, 90), row(81, 80, 80)];
-  const result = discover({ table, vanished: [row(95, 90, 90), row(121, 100, 90), row(81, 80, 80)] });
-  expect(result.unresolved).toBe(false);
-  expect([...result.suspects.keys()]).toEqual([]);
-  expect(refused(result)).toEqual([]);
-});
+
+/**
+ * Observer tools whose lsof marks `trigger` when it starts, then waits a
+ * second, so a process can react between the process table and the
+ * working-directory read.
+ * @param {ReturnType<typeof watcherFixture>} f @param {string} trigger
+ */
+function triggeringLsof(f, trigger) {
+  const tools = path.join(f.dir, "triggering-lsof");
+  chmodSync(writeScript(path.join(tools, "ps"), "#!/bin/sh\nexec /bin/ps \"$@\"\n"), 0o755);
+  chmodSync(writeScript(path.join(tools, "lsof"), `#!/bin/sh\n: > ${J(trigger)}\n/bin/sleep 1\nexec /usr/sbin/lsof "$@"\n`), 0o755);
+  return tools;
+}
+
+/**
+ * Source of a launcher that, once `trigger` exists, spawns `args` (inheriting
+ * its cwd and process group), records the child's PID and exits.
+ * @param {ReturnType<typeof watcherFixture>} f @param {string} trigger @param {string[]} args
+ */
+function launcherSource(f, trigger, args) {
+  return `
+import { appendFileSync, existsSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+const poll = setInterval(() => {
+  if (!existsSync(${J(trigger)})) return;
+  clearInterval(poll);
+  const child = spawn(process.execPath, ${J(args)}, { stdio: 'ignore' });
+  appendFileSync(${J(f.pids)}, child.pid + '\\n');
+  appendFileSync(${J(f.forks)}, child.pid + '\\n');
+  process.exit(0);
+}, 5);
+`;
+}
+
+/** Never a rebuild while the recorded child lives; a refusal names it. @param {ReturnType<typeof watcherFixture>} f @param {Error | null} outcome */
+function expectSafeOutcome(f, outcome) {
+  const [child] = readPids(f.forks);
+  expect(child).toBeGreaterThan(0);
+  if (outcome) {
+    expect(f.liveAtRebuild).toEqual([]);
+    expect(outcome.message).toContain(`${child} (`);
+  } else {
+    expect(f.liveAtRebuild).toEqual([[]]);
+    expect(alive(child)).toBe(false);
+  }
+  expect(existsSync(f.observed)).toBe(false);
+}
+
+it.each([
+  ["a launcher in its own group", true],
+  ["a launcher in the caller's process group", false],
+])("finds a watcher spawned after the snapshot by %s that exits before its cwd is read", async (_, detached) => {
+  const f = watcherFixture();
+  const trigger = path.join(f.dir, "lsof-started");
+  writeScript(path.join(f.checkout, "node_modules", "convex", "bin", "main.js"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+  // `node ./launch.mjs`: relative, no `dev`, so its own argv says nothing.
+  writeScript(path.join(f.checkout, "launch.mjs"), launcherSource(f, trigger, ["./node_modules/convex/bin/main.js", "dev"]));
+  const launcher = spawn(process.execPath, ["./launch.mjs"], { cwd: f.checkout, detached, stdio: "ignore" });
+  launcher.unref();
+  cleanups.push(() => launcher.kill("SIGKILL"));
+  await vi.waitFor(() => expect(alive(/** @type {number} */ (launcher.pid))).toBe(true));
+  await settle();
+  const outcome = await rebuildWithoutWatcher({
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), graceMs: 200, observerPath: triggeringLsof(f, trigger), rebuild: f.rebuild,
+  }).then(() => null, (/** @type {Error} */ error) => error);
+  // In the caller's group the watcher can only be refused: signalling that group would hit the caller.
+  if (!detached) expect(outcome?.message).toContain("shares watcher process group");
+  expectSafeOutcome(f, outcome);
+}, 30_000);
+
+it("a fork left by a watcher that exits before its cwd is read never outlives a rebuild", async () => {
+  const f = watcherFixture();
+  const trigger = path.join(f.dir, "lsof-started");
+  const bin = path.join(f.checkout, "node_modules", "convex", "bin");
+  const body = writeScript(path.join(f.dir, "respawned-body.mjs"), watcherSource(f, { ignore: ["SIGHUP", "SIGTERM"] }));
+  // The watcher re-runs the CLI (`--respawned` makes it a plain watcher) and
+  // exits once discovery has taken its snapshot.
+  writeScript(path.join(bin, "main.js"), `if (process.argv.includes('--respawned')) await import(${J(body)});
+else await import(${J(writeScript(path.join(f.dir, "launch-body.mjs"), launcherSource(f, trigger, [path.join(bin, "main.js"), "dev", "--respawned"])))});
+`);
+  orphan(process.execPath, ["node_modules/convex/bin/main.js", "dev"], f.checkout);
+  await settle();
+  const outcome = await rebuildWithoutWatcher({
+    session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), graceMs: 200, observerPath: triggeringLsof(f, trigger), rebuild: f.rebuild,
+  }).then(() => null, (/** @type {Error} */ error) => error);
+  expectSafeOutcome(f, outcome);
+}, 30_000);
+
+it("refuses when processes that could be watchers here keep exiting until the deadline", async () => {
+  const f = watcherFixture();
+  writeScript(path.join(f.checkout, "tool.mjs"), "setTimeout(() => {}, 150);\n");
+  // Short-lived `node ./tool.mjs dev` in the checkout: plausible watchers.
+  const spawner = writeScript(path.join(f.dir, "spawner.mjs"), `
+import { spawn } from 'node:child_process';
+setInterval(() => spawn(process.execPath, ['./tool.mjs', 'dev'], { cwd: ${J(f.checkout)}, stdio: 'ignore' }), 30);
+`);
+  processTree(spawner, f.dir);
+  await settle();
+  await expect(
+    rebuildWithoutWatcher({
+      session: "watcher", checkout: f.checkout, statePath: f.statePath, ...noTmux(f), observerPath: slowLsof(f), deadlineMs: 3_000, rebuild: f.rebuild,
+    }),
+  ).rejects.toThrow("could have been watchers for this checkout kept exiting");
+  expect(f.liveAtRebuild).toEqual([]);
+}, 30_000);
