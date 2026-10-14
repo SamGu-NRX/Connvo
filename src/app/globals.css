@@ -262,10 +262,14 @@
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  /* Focus rings draw this at 50% (ring-ring/50). At 0.87 that measured about
-     1.2:1 against white; at 0.205 it is 3.35:1 or more on white, the
-     emerald-50 and sky-50 backdrop and muted rows (WCAG 1.4.11 asks 3:1). */
+  /* Focus rings are two bands: --ring-halo next to the control, then --ring
+     (drawn at 50% by ring-ring/50) outside it. A light page sees the dark
+     ring, a dark panel inside the light theme (/videocall, the call room)
+     sees the light halo. Computed, not measured: 3.36:1 or more on white,
+     emerald-50, sky-50 and zinc-50; 14.9:1 or more on zinc-800/900/950 and
+     black. The old --ring, 0.87 alone, measured about 1.2:1 on white. */
   --ring: oklch(0.205 0 0);
+  --ring-halo: oklch(1 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -301,9 +305,11 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
-  /* Same rule on dark backgrounds: 0.439 at 50% is about 1.4:1; 0.87 is 3.6:1
-     or more on the page, slate-900 and emerald-950. Computed, not measured. */
+  /* The same two bands, reversed. Computed: 3.61:1 or more on the page,
+     slate-900, zinc-950 and emerald-950 (the old 0.439 was about 1.4:1);
+     18.9:1 or more on a white or zinc-50 panel. */
   --ring: oklch(0.87 0 0);
+  --ring-halo: oklch(0.145 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -323,13 +329,25 @@
   * {
     border-color: var(--border);
   }
-  /* The default focus outline for anything that doesn't draw its own ring.
-     This used to be "outline: 2px solid rgba(var(--ring), 0.5)" on every
-     element, which is invalid with an oklch --ring and so reset each
-     element's outline to none, hiding the browser's focus outline too. */
+  /* Focus, in two bands that stay visible on light and dark surfaces alike.
+
+     Controls with a ring utility (every shadcn control: ring-[3px]) get a
+     2px --ring-halo band under their ring: Tailwind v4 draws
+     --tw-ring-offset-shadow beneath --tw-ring-shadow and widens the ring by
+     --tw-ring-offset-width. A ring-offset-* utility still overrides this.
+
+     Anything else gets the same pair from here: the halo as a 2px shadow and
+     a 2px --ring outline just outside it. This used to be
+     "outline: 2px solid rgba(var(--ring), 0.5)" on every element, which is
+     invalid with an oklch --ring and so reset every outline to none,
+     hiding the browser's focus outline too. */
   :focus-visible {
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-color: var(--ring-halo);
+    --tw-ring-offset-shadow: 0 0 0 2px var(--ring-halo);
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--ring-halo);
   }
   html {
     height: 100%;

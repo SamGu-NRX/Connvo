@@ -4,11 +4,13 @@
  *
  * - Text contrast: the app background is a gradient under blurred colour
  *   blobs, so axe reports color-contrast as "incomplete" for nearly every
- *   node. textContrast() hides the element's text, screenshots what is
- *   behind it, and compares the text colour with every background pixel.
+ *   node. textContrast() screenshots the element with and without its text;
+ *   the pixels that differ are where glyphs are drawn, and every one of them
+ *   must reach the WCAG ratio against the backdrop pixel under it.
  * - Keyboard: keyboardWalk() tabs through a region forwards and backwards,
  *   records each stop, and measures how much each stop's pixels change when
- *   it takes focus (WCAG 1.4.11 asks for 3:1 against the unfocused state).
+ *   it takes focus. It passes when the pixels that change by 3:1 or more
+ *   add up to a 2px band around the element, the minimum in WCAG 2.4.13.
  *
  * Screenshots are taken at deviceScaleFactor 1, so one pixel is one CSS px.
  */
@@ -64,9 +66,11 @@ const over = (fg, alpha, bg) =>
   fg.map((c, i) => Math.round(c * alpha + bg[i] * (1 - alpha)));
 
 /**
- * Text contrast for each selector, against the real pixels behind it.
- * Returns one row per element: worst and 2nd-percentile ratios, the size
- * class that sets its threshold, and pass/fail.
+ * Text contrast for each selector, against the real pixels behind its
+ * glyphs. Returns one row per element: how many pixels the text covers, the
+ * worst ratio over them, the size class that sets the threshold, and
+ * pass/fail. A row whose text draws no pixels fails: its colour matches the
+ * backdrop.
  * @param {Page} page @param {Page} scratch @param {string[]} selectors
  */
 export async function textContrast(page, scratch, selectors) {
@@ -76,7 +80,9 @@ export async function textContrast(page, scratch, selectors) {
   // mid-fade when its own turn comes.
   const probeStyle = await page.addStyleTag({
     content:
-      "*, *::before, *::after { transition: none !important; animation: none !important; } [data-a11y-probe], [data-a11y-probe] * { color: transparent !important; text-shadow: none !important; caret-color: transparent !important; }",
+      // Only the element's own text goes transparent: children with a colour
+      // of their own (a badge in a row) stay drawn and so drop out of the diff.
+      "*, *::before, *::after { transition: none !important; animation: none !important; } [data-a11y-probe] { color: transparent !important; text-shadow: none !important; caret-color: transparent !important; }",
   });
   for (const selector of selectors) {
     const el = page.locator(selector).first();
@@ -105,6 +111,11 @@ export async function textContrast(page, scratch, selectors) {
       };
     });
     if (!info.text || info.box.width < 1 || info.box.height < 1) continue;
+    await page.waitForTimeout(50);
+    const drawn = await pixels(
+      scratch,
+      await page.screenshot({ clip: info.box }),
+    );
     await el.evaluate((node) => node.setAttribute("data-a11y-probe", ""));
     await page.waitForTimeout(50);
     const behind = await pixels(
@@ -113,25 +124,30 @@ export async function textContrast(page, scratch, selectors) {
     );
     await el.evaluate((node) => node.removeAttribute("data-a11y-probe"));
     const text = await srgb(scratch, info.color);
-    const ratios = [];
+    let covered = 0;
+    let worst = Infinity;
     for (let i = 0; i < behind.data.length; i += 4) {
       const bg = [behind.data[i], behind.data[i + 1], behind.data[i + 2]];
-      ratios.push(contrast(over(text.rgb, text.alpha, bg), bg));
+      const changed =
+        drawn.data[i] !== bg[0] ||
+        drawn.data[i + 1] !== bg[1] ||
+        drawn.data[i + 2] !== bg[2];
+      if (!changed) continue;
+      covered++;
+      worst = Math.min(worst, contrast(over(text.rgb, text.alpha, bg), bg));
     }
-    ratios.sort((a, b) => a - b);
     const large =
       info.fontSize >= 24 || (info.fontSize >= 18.66 && info.fontWeight >= 700);
     const need = large ? 3 : 4.5;
-    const p2 = ratios[Math.floor(ratios.length * 0.02)];
     rows.push({
       selector,
       inPage: info.inPage,
       text: info.text,
       fontSize: info.fontSize,
       need,
-      worst: Number(ratios[0].toFixed(2)),
-      p2: Number(p2.toFixed(2)),
-      pass: p2 >= need,
+      coveredPixels: covered,
+      worst: covered > 0 ? Number(worst.toFixed(2)) : 1,
+      pass: covered > 0 && worst >= need,
     });
   }
   await probeStyle.evaluate((node) => node.remove());
@@ -172,9 +188,9 @@ async function describeFocus(page) {
 
 /**
  * Pixels that change when the element takes focus, and how strongly. The
- * indicator passes when the changed area is at least the element's
- * perimeter (a 1px outline all round) at 3:1 or more against the same
- * pixels unfocused.
+ * indicator passes when the pixels changing by 3:1 or more against the same
+ * pixels unfocused cover at least a 2px band around the element's
+ * perimeter, the WCAG 2.4.13 minimum area.
  */
 async function focusChange(page, scratch, savePath) {
   await page.evaluate(() =>
@@ -188,12 +204,14 @@ async function focusChange(page, scratch, savePath) {
   if (box.width < 1 || box.height < 1)
     return {
       strongPixels: 0,
-      perimeter: 0,
+      required: 0,
       maxChange: 1,
       pass: false,
       note: "focused element has no size",
     };
-  const pad = 6;
+  // Room for the two-band ring: a 2px halo plus a 3px ring, or a 2px
+  // outline 2px out.
+  const pad = 8;
   const clip = {
     x: Math.max(0, box.x - pad),
     y: Math.max(0, box.y - pad),
@@ -222,23 +240,24 @@ async function focusChange(page, scratch, savePath) {
     if (c >= 3) strong++;
     if (c > best) best = c;
   }
-  const perimeter = Math.round(2 * (box.width + box.height));
+  const required = Math.round(2 * 2 * (box.width + box.height));
   return {
     strongPixels: strong,
-    perimeter,
+    required,
     maxChange: Number(best.toFixed(2)),
-    pass: strong >= perimeter,
+    pass: strong >= required,
   };
 }
 
 /**
- * Tab from the top of the page to its last stop (or `max` stops), then
- * Shift+Tab back. Each stop records what took focus, whether :focus-visible
+ * Tab from the top of the page to its last stop, then Shift+Tab back. A
+ * walk that reaches `max` stops without wrapping is `truncated`, so the
+ * caller can fail it rather than pass a page it only partly walked. Each stop records what took focus, whether :focus-visible
  * matched, and the focus indicator measurement; with `shots`, each focused
  * stop is also saved as `<shots>-<n>.png`.
  * @param {Page} page @param {Page} scratch @param {{ max?: number, shots?: string }} [opts]
  */
-export async function keyboardWalk(page, scratch, { max = 40, shots } = {}) {
+export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
   await page.evaluate(() => {
     window.scrollTo(0, 0);
     if (document.activeElement instanceof HTMLElement)
@@ -252,20 +271,26 @@ export async function keyboardWalk(page, scratch, { max = 40, shots } = {}) {
   });
   const forward = [];
   let last = null;
+  let truncated = true;
   for (let i = 0; i < max; i++) {
     await page.keyboard.press("Tab");
     await page.waitForTimeout(120);
     const stop = await describeFocus(page);
     // Past the page's last stop: the browser chrome, or next dev's overlay
     // (a development-only element that production doesn't render).
-    if (stop === null || stop.tag === "nextjs-portal") break;
+    if (stop === null || stop.tag === "nextjs-portal") {
+      truncated = false;
+      break;
+    }
     if (
       forward.length > 0 &&
       forward[0].testid === stop.testid &&
       forward[0].name === stop.name &&
       forward[0].tag === stop.tag
-    )
+    ) {
+      truncated = false;
       break;
+    }
     stop.indicator = await focusChange(
       page,
       scratch,
@@ -291,6 +316,7 @@ export async function keyboardWalk(page, scratch, { max = 40, shots } = {}) {
   return {
     forward,
     backward,
+    truncated,
     reverseMatches:
       JSON.stringify(backward.map(key)) === JSON.stringify(expectedBack),
   };

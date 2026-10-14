@@ -93,17 +93,15 @@ const a11y = [];
  */
 async function capture({ page, scratch }, name, { focus, scope }) {
   await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
-  await page.setViewportSize(VIEWPORTS[0]);
-  const axe = await new AxeBuilder({ page }).include(scope).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-  const unjudged = axe.incomplete
-    .filter((v) => v.id === "color-contrast")
-    .flatMap((v) => v.nodes.map((n) => n.target))
-    .filter((t) => t.length === 1 && typeof t[0] === "string")
-    .map((t) => /** @type {string} */ (t[0]));
   const shots = [];
+  /** @type {Record<string, unknown[]>} */
+  const violations = {};
   /** @type {Record<string, Awaited<ReturnType<typeof textContrast>>>} */
   const measured = {};
+  let passes = 0;
+  const incomplete = new Set();
   for (const viewport of VIEWPORTS) {
+    const size = `${viewport.width}x${viewport.height}`;
     await page.setViewportSize(viewport);
     if (focus) {
       await page.locator(focus).first().evaluate((el) => {
@@ -115,31 +113,48 @@ async function capture({ page, scratch }, name, { focus, scope }) {
       });
     }
     await page.waitForTimeout(450);
-    const file = path.join(shotsDir, `${name}-${viewport.width}x${viewport.height}.png`);
+    const file = path.join(shotsDir, `${name}-${size}.png`);
     await page.screenshot({ path: file });
     shots.push(path.relative(REPO, file));
-    measured[`${viewport.width}x${viewport.height}`] = await textContrast(page, scratch, unjudged);
+    // axe runs at each size: elements shown only on a phone (the mobile
+    // navigation) or only on a desktop are judged where they are visible.
+    const axe = await new AxeBuilder({ page }).include(scope).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    violations[size] = axe.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help }));
+    passes = Math.max(passes, axe.passes.length);
+    axe.incomplete.forEach((v) => incomplete.add(v.id));
+    const unjudged = axe.incomplete
+      .filter((v) => v.id === "color-contrast")
+      .flatMap((v) => v.nodes.map((n) => n.target))
+      .filter((t) => t.length === 1 && typeof t[0] === "string")
+      .map((t) => /** @type {string} */ (t[0]));
+    measured[size] = await textContrast(page, scratch, unjudged);
   }
   await page.setViewportSize(VIEWPORTS[0]);
   // The pass rule covers the page's own content; failures in the app shell
   // around it (sidebar, top bar) are recorded separately.
   const contrastFailures = Object.values(measured).flat().filter((row) => !row.pass && row.inPage);
   const shellContrastFailures = Object.values(measured).flat().filter((row) => !row.pass && !row.inPage);
+  const violationCount = Object.values(violations).flat().length;
   a11y.push({
     state: name,
     shots,
-    violations: axe.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help })),
-    passes: axe.passes.length,
-    incomplete: axe.incomplete.map((v) => v.id),
+    violations,
+    violationCount,
+    passes,
+    incomplete: [...incomplete],
     contrastMeasured: measured,
     contrastFailures,
     shellContrastFailures,
   });
-  console.log(`${name}: axe violations=${axe.violations.length}, measured contrast failures=${contrastFailures.length}`);
+  console.log(`${name}: axe violations=${violationCount}, measured contrast failures=${contrastFailures.length}`);
 }
 
-/** Every stop on the page, app shell included, shows focus with a 3:1 change, and Shift+Tab retraces Tab. */
-const walkPasses = (walk) => walk.reverseMatches && walk.forward.every((s) => s.focusVisible && s.indicator.pass);
+/**
+ * The walk reached the page's last stop, every stop (app shell included)
+ * shows focus with a 2px-equivalent 3:1 change, and Shift+Tab retraces Tab.
+ */
+const walkPasses = (walk) =>
+  !walk.truncated && walk.reverseMatches && walk.forward.every((s) => s.focusVisible && s.indicator.pass);
 
 /** Tab and Shift+Tab through the page at both sizes; each focused stop is saved under <out>/focus/. */
 async function walkBothSizes({ page, scratch }, name) {
@@ -308,7 +323,7 @@ try {
     result.checks.listHasMeeting &&
     !result.checks.stayInTouch.bSawAnythingBeforeSayingYes &&
     result.checks.outsider.kind === "refused" &&
-    a11y.every((s) => s.violations.length === 0 && s.contrastFailures.length === 0) &&
+    a11y.every((s) => s.violationCount === 0 && s.contrastFailures.length === 0) &&
     Object.values(result.checks.keyboard.recapWalk).every(walkPasses) &&
     Object.values(result.checks.keyboard.listWalk).every(walkPasses) &&
     result.checks.keyboard.calendar.Enter !== null &&

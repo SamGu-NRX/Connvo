@@ -60,11 +60,12 @@ function StayInTouchControl({ meetingId }: { meetingId: Id<"meetings"> }) {
           aria-labelledby={labelId}
           aria-describedby={hintId}
           checked={status.enabled}
-          // Not disabled while saving: disabling the focused switch drops
-          // keyboard focus to the page, so a second press is ignored instead.
-          aria-busy={saving}
+          // Unavailable while saving, but not natively disabled: disabling the
+          // focused switch drops keyboard focus to the page. toggle() ignores
+          // presses until the save ends.
+          aria-disabled={saving}
           onCheckedChange={(checked) => void toggle(checked)}
-          className="mt-1"
+          className="mt-1 aria-disabled:cursor-wait aria-disabled:opacity-50"
         />
       </div>
       {problem ? (

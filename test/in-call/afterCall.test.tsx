@@ -402,13 +402,13 @@ describe("with the client flag on", () => {
     const toggle = await screen.findByTestId("stay-in-touch-switch");
     toggle.focus();
     fireEvent.click(toggle);
-    // Saving: a disabled button would lose focus in a browser, so it stays
-    // enabled and says it is busy.
-    expect(toggle).toHaveAttribute("aria-busy", "true");
+    // Saving: unavailable to assistive tech, but not natively disabled,
+    // which would drop focus in a browser.
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
     expect(toggle).not.toBeDisabled();
     expect(document.activeElement).toBe(toggle);
     await screen.findByText(/Nobody else has yet/);
-    expect(toggle).toHaveAttribute("aria-busy", "false");
+    expect(toggle).toHaveAttribute("aria-disabled", "false");
     expect(document.activeElement).toBe(toggle);
   });
 
