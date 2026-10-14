@@ -11,6 +11,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -31,6 +32,7 @@ import {
   seedShapeProblems,
   shellQuote,
   requireAnonymousStartup,
+  createTmuxLauncher,
 } from "./local-backend-core.mjs";
 
 const TEST_JWKS_DATA_URI = "data:application/json;base64,eyJrZXlzIjpbXX0=";
@@ -93,6 +95,99 @@ describe("startup target before a pushing Convex command", () => {
 const tmpDirs = [];
 afterEach(() => {
   for (const d of tmpDirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+
+describe("tmux launcher environment", () => {
+  it("drops an existing server's cloud selectors and shell startup file", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "connvo-launcher-"));
+    tmpDirs.push(dir);
+    const cwd = path.join(dir, "checkout with spaces");
+    mkdirSync(cwd);
+    const socket = path.join(dir, "server.sock");
+    const probe = path.join(dir, "probe.mjs");
+    const startup = path.join(dir, "shell-startup.sh");
+    writeFileSync(startup, "export CONVEX_DEPLOY_KEY=synthetic-startup-key\n");
+    writeFileSync(probe, `
+      import { writeFileSync, realpathSync } from 'node:fs';
+      const keys = ['CONVEX_DEPLOY_KEY', 'CONVEX_DEPLOYMENT_TOKEN', 'CONVEX_SELF_HOSTED_URL', 'CONVEX_SELF_HOSTED_ADMIN_KEY'];
+      writeFileSync(process.argv[2], JSON.stringify({
+        serverSelectorsPresent: keys.every(key => Boolean(process.env[key])),
+        credentialsEmpty: keys.every(key => !process.env[key]),
+        callerSelectionPreserved: process.env.CONVEX_DEPLOYMENT === 'anonymous:anonymous-caller',
+        callerEmptyKeyPreserved: process.env.CONVEX_DEPLOY_KEY === '',
+        evalModePreserved: process.env.CONVEX_AGENT_MODE === 'anonymous',
+        shellStartupAbsent: process.env.BASH_ENV === undefined,
+        cwdPreserved: process.cwd() === realpathSync(${JSON.stringify(cwd)}),
+      }));
+    `);
+    // Only synthetic selectors enter this isolated server. Every pane runs
+    // the local JSON probe above; neither Convex nor the backend driver runs.
+    const serverEnv = {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      CONVEX_DEPLOYMENT: "prod:synthetic-cloud",
+      CONVEX_DEPLOY_KEY: "synthetic-server-key",
+      CONVEX_DEPLOYMENT_TOKEN: "synthetic-server-token",
+      CONVEX_SELF_HOSTED_URL: "https://synthetic.invalid",
+      CONVEX_SELF_HOSTED_ADMIN_KEY: "synthetic-server-admin",
+      BASH_ENV: startup,
+    };
+    /** @param {string[]} args */
+    const tmux = (args) => spawnSync("tmux", ["-S", socket, "-f", "/dev/null", ...args], { env: serverEnv });
+    /** @param {string} file */
+    const readProbe = (file) => vi.waitFor(() => JSON.parse(readFileSync(file, "utf8")));
+    try {
+      expect(tmux(["new-session", "-d", "-s", "keeper", "--", "/bin/sleep", "30"]).status).toBe(0);
+      const before = path.join(dir, "before.json");
+      expect(tmux(["new-session", "-d", "-s", "before", "--", process.execPath, probe, before]).status).toBe(0);
+      const inherited = await readProbe(before);
+      expect(inherited.serverSelectorsPresent).toBe(true);
+      expect(inherited.shellStartupAbsent).toBe(false);
+
+      for (const emptyKey of [false, true]) {
+        const file = path.join(cwd, `launcher ${emptyKey}.sh`);
+        const output = path.join(dir, `after-${emptyKey}.json`);
+        const launcher = createTmuxLauncher({
+          session: `after-${emptyKey}`, file, cwd,
+          callerEnv: {
+            PATH: process.env.PATH,
+            HOME: process.env.HOME,
+            CONVEX_DEPLOYMENT: "anonymous:anonymous-caller",
+            ...(emptyKey ? { CONVEX_DEPLOY_KEY: "" } : {}),
+          },
+          env: { CONVEX_AGENT_MODE: "anonymous" },
+          command: `${shellQuote(process.execPath)} ${shellQuote(probe)} ${shellQuote(output)}`,
+        });
+        writeFileSync(file, launcher.script, { mode: 0o700 });
+        expect(tmux(launcher.args).status).toBe(0);
+        expect(await readProbe(output)).toEqual({
+          serverSelectorsPresent: false,
+          credentialsEmpty: true,
+          callerSelectionPreserved: true,
+          callerEmptyKeyPreserved: emptyKey,
+          evalModePreserved: true,
+          shellStartupAbsent: true,
+          cwdPreserved: true,
+        });
+      }
+    } finally {
+      tmux(["kill-server"]);
+    }
+  });
+
+  it("refuses unsafe caller settings or launcher overrides before writing a script", () => {
+    const safe = {
+      session: "probe", file: "/tmp/probe.sh", cwd: "/tmp", command: "true",
+      callerEnv: { CONVEX_DEPLOYMENT: "anonymous:anonymous-caller" }, env: {},
+    };
+    expect(() => createTmuxLauncher({ ...safe, callerEnv: { CONVEX_DEPLOY_KEY: "synthetic-key" } }))
+      .toThrow("CONVEX_DEPLOY_KEY selects or authenticates a non-anonymous deployment");
+    expect(() => createTmuxLauncher({ ...safe, env: { CONVEX_DEPLOYMENT: "prod:synthetic-cloud" } }))
+      .toThrow("CONVEX_DEPLOYMENT is not an anonymous local target");
+    expect(createTmuxLauncher(safe).args.slice(4)).toEqual([
+      "--", "/usr/bin/env", "-i", "/bin/bash", "--noprofile", "--norc", "/tmp/probe.sh",
+    ]);
+  });
 });
 
 /**

@@ -44,6 +44,7 @@ import {
   pruneTestArtifacts,
   resolveSelectedDeployment,
   requireAnonymousStartup,
+  createTmuxLauncher,
 } from "./local-backend-core.mjs";
 
 // authkit-nextjs constructs the WorkOS client on every middleware hit and
@@ -66,24 +67,20 @@ const CONV_TMUX = `conn-eval-${REPO_TAG}`;
 const NEXT_TMUX = `conn-eval-next-${REPO_TAG}`;
 
 /**
- * Write a launcher script and run it in a detached tmux session. Exported
- * variables reach the child process; a single `bash -c` string with inline
- * assignments did not (one path ran `cd` with them as arguments, the other
- * separated them with && so they never reached the child).
+ * Run with the checked caller settings and explicit eval variables. The
+ * tmux server's selectors and shell startup environment never reach Bash.
  * @param {string} session @param {string} file @param {Record<string, string>} env @param {string} command
  */
 function launchInTmux(session, file, env, command) {
   mkdirSync(LOCAL_DIR, { recursive: true });
-  const lines = [
-    "#!/bin/bash",
-    "set -uo pipefail",
-    `cd ${shellQuote(REPO)}`,
-    ...Object.entries(env).map(([k, v]) => `export ${k}=${shellQuote(v)}`),
-    command,
-    "",
-  ];
-  writeFileSync(file, lines.join("\n"), { mode: 0o700 });
-  sh(`tmux new-session -d -s ${session} bash ${shellQuote(file)}`);
+  const launcher = createTmuxLauncher({
+    session, file, cwd: REPO, callerEnv: process.env, env, command,
+  });
+  writeFileSync(file, launcher.script, { mode: 0o700 });
+  const result = spawnSync("tmux", launcher.args, { cwd: REPO });
+  if (result.status !== 0) {
+    throw new Error(`[backend] tmux launcher failed for ${session} (exit ${result.status})`);
+  }
 }
 
 const args = process.argv.slice(2);

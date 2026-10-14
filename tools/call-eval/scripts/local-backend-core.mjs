@@ -43,6 +43,42 @@ export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
   return deployment || null;
 }
 
+/**
+ * tmux panes inherit the server's environment, which may differ from the
+ * checked caller. Start env directly, with no intervening shell, and clear
+ * that environment before Bash starts. Preserve caller selectors, including
+ * empty values that prevent dotenv from falling back to a different target.
+ * @param {{ session: string, file: string, cwd: string, callerEnv: NodeJS.ProcessEnv, env: Record<string, string>, command: string }} opts
+ */
+export function createTmuxLauncher({ session, file, cwd, callerEnv, env, command }) {
+  /** @type {Record<string, string>} */
+  const launchEnv = {};
+  for (const key of [
+    "HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE",
+    "CONVEX_DEPLOYMENT", "CONVEX_DEPLOY_KEY", "CONVEX_DEPLOYMENT_TOKEN",
+    "CONVEX_SELF_HOSTED_URL", "CONVEX_SELF_HOSTED_ADMIN_KEY",
+  ]) {
+    const value = callerEnv[key];
+    if (value !== undefined) launchEnv[key] = value;
+  }
+  Object.assign(launchEnv, env);
+  requireAnonymousStartup({ env: launchEnv });
+  return {
+    args: [
+      "new-session", "-d", "-s", session, "--",
+      "/usr/bin/env", "-i", "/bin/bash", "--noprofile", "--norc", file,
+    ],
+    script: [
+      "#!/bin/bash",
+      "set -uo pipefail",
+      `cd ${shellQuote(cwd)} || exit 1`,
+      ...Object.entries(launchEnv).map(([key, value]) => `export ${key}=${shellQuote(value)}`),
+      command,
+      "",
+    ].join("\n"),
+  };
+}
+
 /** @typedef {{ source: "environment" | ".env.local" | "unset", value: string | null }} SelectedDeployment */
 
 export const LOCAL_TEST_ISSUER = "https://connvo-local-test.invalid";
