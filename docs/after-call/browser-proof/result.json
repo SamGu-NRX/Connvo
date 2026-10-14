@@ -1,14 +1,37 @@
 {
+  "commit": "bde1f04021683a785759054fc8ecea647555ca34",
   "dirty": true,
-  "commit": "dddaab5a029c85f26068e22f5bb0afeef5d7ee78",
+  "dirtyPaths": [
+    "convex.json"
+  ],
+  "diagnostics": [
+    {
+      "person": "A",
+      "level": "error",
+      "text": "%o\n\n%s Error: [CONVEX Q(history/queries:getMeetingHistory)] Server Error\n  Called by client\n    at OptimisticQueryResults.queryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:4566:19)\n    at BaseConvexClient.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:6452:44)\n    at Object.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8233:44)\n    at QueriesObserver.getLocalResults (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8652:31)\n    at useQueriesHelper.useMemo[subscription] (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8784:41)\n    at useSubscription.useEffect.checkForUpdates (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:7979:43)\n    at basicStateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4813:47)\n    at updateReducerImpl (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4895:79)\n    at updateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4845:16)\n    at Object.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:15202:24)\n    at exports.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:1754:36)\n    at useSubscription (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:7950:412)\n    at useQueriesHelper (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8798:275)\n    at useQueries (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8764:12)\n    at useQuery (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8470:274)\n    at MeetingDetailData (http://localhost:3043/_next/static/chunks/src_aa6f5924._.js:1623:267)\n    at Object.react_stack_bottom_frame (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:14746:24)\n    at renderWithHooks (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4636:24)\n    at updateFunctionComponent (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6091:21)\n    at beginWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6672:24)\n    at runWithFiberInDEV (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:959:74)\n    at performUnitOfWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9487:97)\n    at workLoopSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9381:40)\n    at renderRootSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9365:13)\n    at performWorkOnRoot (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9030:47)\n    at performWorkOnRootViaSchedulerTask (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:10155:9)\n    at MessagePort.performWorkUntilDeadline (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:2647:64) The above error occurred in the <MeetingDetailData> component. It was handled by the <HistoryBoundary> error boundary.",
+      "url": "http://localhost:3043/app/meetings/m97192hw2b9y49jrz9jpc0v6ns8g8g4p",
+      "source": "http://localhost:3043/_next/static/chunks/941ca_next_dist_client_89ceecdc._.js",
+      "expected": true,
+      "expectedReason": "injected-history-error"
+    },
+    {
+      "person": "O",
+      "level": "error",
+      "text": "%o\n\n%s ConvexError: [CONVEX Q(history/queries:getMeetingHistory)] [Request ID: bc228678884529ec] Server Error\nUncaught ConvexError: {\"code\":\"FORBIDDEN\",\"message\":\"Access denied: Not a meeting participant\",\"statusCode\":403,\"metadata\":{\"meetingId\":\"m97192hw2b9y49jrz9jpc0v6ns8g8g4p\",\"userId\":\"p5792hpqpm56k709wq5ax6gmys8g9m5x\"}}\n    at forbidden [as forbidden] (../../convex-harness/lib/errors.ts:78:23)\n    at assertMeetingAccess (../../convex-harness/auth/guards.ts:135:6)\n    at async handler (../../convex-harness/history/queries.ts:207:9)\n\n  Called by client\n    at forbidden [as forbidden] (../../convex-harness/lib/errors.ts:78:23)\n    at assertMeetingAccess (../../convex-harness/auth/guards.ts:135:6)\n    at async handler (../../convex-harness/history/queries.ts:207:9)\n\n  Called by client\n    at OptimisticQueryResults.queryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:4564:284)\n    at BaseConvexClient.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:6452:44)\n    at Object.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8233:44)\n    at QueriesObserver.getLocalResults (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8652:31)\n    at useQueriesHelper.useMemo[subscription] (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8784:41)\n    at useSubscription.useEffect.checkForUpdates (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:7979:43)\n    at basicStateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4813:47)\n    at updateReducerImpl (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4895:79)\n    at updateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4845:16)\n    at Object.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:15202:24)\n    at exports.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:1754:36)\n    at useSubscription (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:7950:412)\n    at useQueriesHelper (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8798:275)\n    at useQueries (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8764:12)\n    at useQuery (http://localhost:3043/_next/static/chunks/node_modules__pnpm_34a11505._.js:8470:274)\n    at MeetingDetailData (http://localhost:3043/_next/static/chunks/src_aa6f5924._.js:1623:267)\n    at Object.react_stack_bottom_frame (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:14746:24)\n    at renderWithHooks (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4636:24)\n    at updateFunctionComponent (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6091:21)\n    at beginWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6672:24)\n    at runWithFiberInDEV (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:959:74)\n    at performUnitOfWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9487:97)\n    at workLoopSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9381:40)\n    at renderRootSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9365:13)\n    at performWorkOnRoot (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9030:47)\n    at performWorkOnRootViaSchedulerTask (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:10155:9)\n    at MessagePort.performWorkUntilDeadline (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:2647:64) The above error occurred in the <MeetingDetailData> component. It was handled by the <HistoryBoundary> error boundary.",
+      "url": "http://localhost:3043/app/meetings/m97192hw2b9y49jrz9jpc0v6ns8g8g4p",
+      "source": "http://localhost:3043/_next/static/chunks/941ca_next_dist_client_89ceecdc._.js",
+      "expected": true,
+      "expectedReason": "outsider-refusal"
+    }
+  ],
   "baseUrl": "http://localhost:3043",
-  "startedAt": "2026-10-14T18:05:42.411Z",
+  "startedAt": "2026-10-14T18:59:18.810Z",
   "checks": {
     "keyboardLeaveHeading": {
       "focused": true,
       "focusVisible": true,
       "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, lab(100 0 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
-      "visibleSpread": false
+      "visibleShadow": false
     },
     "notesInCall": "Agenda: budget review. Owner: Bob. Decision: ship Friday. ",
     "endedRecap": {
@@ -24,7 +47,7 @@
     "calendar": {
       "fileName": "budget-review.ics",
       "summary": "Budget review",
-      "start": "2026-10-14T18:05:42Z"
+      "start": "2026-10-14T18:59:19Z"
     },
     "keyboard": {
       "recapWalk": {
@@ -844,7 +867,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:59 PM · You hostedIn progr",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -869,7 +892,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:05 PM · You h",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:59 PM · You h",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -895,7 +918,7 @@
           "backward": [
             {
               "tag": "a",
-              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:59 PM · You hostedIn progr",
               "testid": null
             },
             {
@@ -1003,7 +1026,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:59 PM · You hostedIn progr",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -1028,7 +1051,7 @@
             {
               "tag": "a",
               "role": null,
-              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:05 PM · You h",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:59 PM · You h",
               "testid": null,
               "inPage": true,
               "focusVisible": true,
@@ -1109,12 +1132,12 @@
             },
             {
               "tag": "a",
-              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:05 PM · You h",
+              "name": "Eval harness smoke meetingWed, Oct 14, 2026, 1:59 PM · You h",
               "testid": null
             },
             {
               "tag": "a",
-              "name": "Budget reviewWed, Oct 14, 2026, 1:05 PM · You hostedIn progr",
+              "name": "Budget reviewWed, Oct 14, 2026, 1:59 PM · You hostedIn progr",
               "testid": null
             },
             {
@@ -1148,5 +1171,5 @@
     }
   },
   "pass": true,
-  "meetingId": "m97fnsyxrpb7segghwpepbyvnh8g801h"
+  "meetingId": "m97192hw2b9y49jrz9jpc0v6ns8g8g4p"
 }
