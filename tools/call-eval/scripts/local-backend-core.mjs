@@ -1,13 +1,161 @@
 // Pure decision logic for local-backend.mjs, extracted so the three S0 guard
 // fixes are unit-testable (the script itself is a side-effecting CLI: importing
 // it runs the whole bring-up). Behavior moved here is unchanged; the script
-// wires real I/O (fs, sh, curl) into these functions. Tests:
+// wires real I/O (fs, subprocesses, curl) into these functions. Tests:
 // tools/call-eval/scripts/local-backend-core.test.mjs — each test asserts an
 // invariant that fails on the pre-fix behavior (recon dossier section 2,
 // defects i–iii at parent bbc62fae, fixed at f06669f).
 
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { parse as parseEnv } from "dotenv";
+
+/** @param {string | undefined | null} value */
+export function anonymousDeploymentName(value) {
+  const name = value?.replace(/^(?:anonymous|local):/, "");
+  return name && /^anonymous-[a-zA-Z0-9-]+$/.test(name) ? name : null;
+}
+
+/**
+ * Convex 1.46 selects process env, then .env.local, then .env BEFORE its
+ * anonymous-mode fallback. Refuse cloud selectors before `convex dev` can
+ * push, not just before the later deployment-env writes. Values stay private.
+ * @param {{ env: NodeJS.ProcessEnv, envLocalContent?: string | null, envContent?: string | null }} opts
+ * @returns {string | null} the explicit local target, or null for a new anonymous deployment
+ */
+export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
+  const effective = { ...env };
+  for (const text of [envLocalContent, envContent]) {
+    for (const [key, value] of Object.entries(parseEnv(text ?? ""))) {
+      if (effective[key] === undefined) effective[key] = value;
+    }
+  }
+  for (const key of [
+    "CONVEX_DEPLOY_KEY",
+    "CONVEX_DEPLOYMENT_TOKEN",
+    "CONVEX_SELF_HOSTED_URL",
+    "CONVEX_SELF_HOSTED_ADMIN_KEY",
+  ]) {
+    if (effective[key]) {
+      throw new Error(`[backend] REFUSING to start convex dev: ${key} selects or authenticates a non-anonymous deployment`);
+    }
+  }
+  const deployment = effective.CONVEX_DEPLOYMENT;
+  // isAnonymousDeployment in the pinned CLI requires the deployment NAME
+  // to start with anonymous-, after any type prefix has been stripped.
+  if (deployment && !anonymousDeploymentName(deployment)) {
+    throw new Error("[backend] REFUSING to start convex dev: CONVEX_DEPLOYMENT is not an anonymous local target");
+  }
+  // Compare origins, not text: `http://127.0.0.1:3210/` and
+  // `http://127.0.0.1:3210` select the same backend.
+  const origins = [effective.NEXT_PUBLIC_CONVEX_URL, effective.CONVEX_URL]
+    .filter(Boolean)
+    .map((url) => requireLoopbackUrl(url).origin);
+  if (new Set(origins).size > 1)
+    throw new Error("[backend] conflicting Convex URL settings");
+  return deployment || null;
+}
+
+const DEPLOYMENT_SELECTORS = [
+  "CONVEX_DEPLOYMENT", "CONVEX_DEPLOY_KEY", "CONVEX_DEPLOYMENT_TOKEN",
+  "CONVEX_SELF_HOSTED_URL", "CONVEX_SELF_HOSTED_ADMIN_KEY",
+];
+const PROCESS_ENV_KEYS = ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE"];
+
+/**
+ * Pin every selector after applying the CLI's dotenv precedence. Empty
+ * credentials prevent a later dotenv load from choosing another target.
+ * The allowlist excludes BASH_ENV, ENV, NODE_OPTIONS and loader hooks.
+ * @param {{ env: NodeJS.ProcessEnv, envLocalContent?: string | null, envContent?: string | null }} opts
+ * @returns {Record<string, string>}
+ */
+export function checkedConvexEnvironment(opts) {
+  const deployment = requireAnonymousStartup(opts);
+  /** @type {Record<string, string>} */
+  const clean = {};
+  for (const key of [...PROCESS_ENV_KEYS, EVAL_ENV_WORKOS_CLIENT_ID, EVAL_ENV_TEST_JWKS]) {
+    if (opts.env[key] !== undefined) clean[key] = opts.env[key];
+  }
+  for (const key of DEPLOYMENT_SELECTORS) clean[key] = "";
+  clean.CONVEX_DEPLOYMENT = deployment ?? "";
+  clean.CONVEX_AGENT_MODE = "anonymous";
+  return clean;
+}
+
+/**
+ * Environment for `next dev`. Next loads `.env.development.local`, `.env.local`,
+ * `.env.development` and `.env` under the caller's environment, so every
+ * source is checked on its own: a cloud selector, key or URL in any of them is
+ * refused even when another source would shadow it, and all Convex URLs must
+ * share one loopback origin. That origin is then set in the child environment,
+ * where Next never replaces it from a file.
+ * @param {{ env: NodeJS.ProcessEnv, files: Array<string | null> }} opts file contents, highest Next precedence first; null for an absent file
+ * @returns {Record<string, string>}
+ */
+export function checkedNextEnvironment({ env, files }) {
+  const sources = [env, ...files.map((text) => parseEnv(text ?? ""))];
+  for (const source of sources) requireAnonymousStartup({ env: source });
+  const origins = new Set(
+    sources.flatMap((source) =>
+      [source.NEXT_PUBLIC_CONVEX_URL, source.CONVEX_URL].filter(Boolean).map((url) => requireLoopbackUrl(url).origin),
+    ),
+  );
+  if (origins.size > 1) throw new Error("[backend] conflicting Convex URL settings");
+  /** @type {NodeJS.ProcessEnv} */
+  const effective = {};
+  for (const source of sources)
+    for (const [key, value] of Object.entries(source)) if (effective[key] === undefined) effective[key] = value;
+  const clean = checkedConvexEnvironment({ env });
+  clean.CONVEX_DEPLOYMENT = requireAnonymousStartup({ env: effective }) ?? "";
+  for (const origin of origins) {
+    clean.NEXT_PUBLIC_CONVEX_URL = origin;
+    clean.CONVEX_URL = origin;
+  }
+  return clean;
+}
+
+/**
+ * tmux panes inherit the server's environment, which may differ from the
+ * checked caller. Start env directly, with no intervening shell, and clear
+ * that environment before Bash starts. Preserve caller selectors, including
+ * empty values that prevent dotenv from falling back to a different target.
+ * @param {{ session: string, file: string, cwd: string, callerEnv: NodeJS.ProcessEnv, env: Record<string, string>, command: string | string[] }} opts
+ */
+export function createTmuxLauncher({ session, file, cwd, callerEnv, env, command }) {
+  /** @type {Record<string, string>} */
+  const launchEnv = {};
+  for (const key of [
+    "HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE",
+    "CONVEX_DEPLOYMENT", "CONVEX_DEPLOY_KEY", "CONVEX_DEPLOYMENT_TOKEN",
+    "CONVEX_SELF_HOSTED_URL", "CONVEX_SELF_HOSTED_ADMIN_KEY",
+  ]) {
+    const value = callerEnv[key];
+    if (value !== undefined) launchEnv[key] = value;
+  }
+  Object.assign(launchEnv, env);
+  requireAnonymousStartup({ env: launchEnv });
+  if (Array.isArray(command)) {
+    return {
+      args: ["new-session", "-d", "-s", session, "-c", cwd, "--", "/usr/bin/env", "-i",
+        ...Object.entries(launchEnv).map(([key, value]) => `${key}=${value}`), ...command],
+      script: null,
+    };
+  }
+  return {
+    args: [
+      "new-session", "-d", "-s", session, "--",
+      "/usr/bin/env", "-i", "/bin/bash", "--noprofile", "--norc", file,
+    ],
+    script: [
+      "#!/bin/bash",
+      "set -uo pipefail",
+      `cd ${shellQuote(cwd)} || exit 1`,
+      ...Object.entries(launchEnv).map(([key, value]) => `export ${key}=${shellQuote(value)}`),
+      command,
+      "",
+    ].join("\n"),
+  };
+}
 
 /** @typedef {{ source: "environment" | ".env.local" | "unset", value: string | null }} SelectedDeployment */
 
@@ -134,10 +282,10 @@ export function pickConvexUrlFromEnvText(text) {
   if (typeof text !== "string") return null;
   /** @param {string} s */
   const unquote = (s) => s.trim().replace(/^["']|["']$/g, "");
-  const next = text.match(/^NEXT_PUBLIC_CONVEX_URL=(.+)$/m);
-  if (next) return { source: "NEXT_PUBLIC_CONVEX_URL", value: unquote(next[1]) };
-  const legacy = text.match(/^CONVEX_URL=(.+)$/m);
-  if (legacy) return { source: "CONVEX_URL", value: unquote(legacy[1]) };
+  const parsed = parseEnv(text);
+  requireAnonymousStartup({ env: parsed });
+  const source = parsed.NEXT_PUBLIC_CONVEX_URL ? "NEXT_PUBLIC_CONVEX_URL" : "CONVEX_URL";
+  if (parsed[source]) return { source, value: unquote(parsed[source]) };
   return null;
 }
 
@@ -183,19 +331,41 @@ export function resolveSelectedDeployment({ envValue, envLocalContent } = {}) {
   return { source: "unset", value: null };
 }
 
+/** @param {string | null | undefined} value @returns {URL} */
+export function requireLoopbackUrl(value) {
+  let url;
+  try { url = new URL(value ?? ""); } catch { throw new Error("[backend] invalid local Convex URL"); }
+  if (url.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) ||
+      !url.port || url.username || url.password || url.pathname !== "/" || url.search || url.hash)
+    throw new Error("[backend] Convex URL must be an HTTP loopback origin with an explicit port");
+  return url;
+}
+
+/** @param {string | null | undefined} convexUrl @returns {number} */
+export function deploymentPortFromUrl(convexUrl) {
+  return Number(requireLoopbackUrl(convexUrl).port);
+}
+
 /**
- * Local backend HTTP port from a Convex URL ("url~deployment" tolerated),
- * falling back to the backend's default port.
- * @param {string | null | undefined} convexUrl
- * @param {number} [fallback]
- * @returns {number}
+ * Match the pinned CLI's selected project-local anonymous backend, rather
+ * than treating an unrelated listener on a guessed port as proof.
+ * @param {{ cwd: string, env: NodeJS.ProcessEnv }} opts
+ * @returns {{ deployment: string, name: string, url: string }} `name` is what the backend reports at /instance_name
  */
-export function deploymentPortFromUrl(convexUrl, fallback = 3210) {
-  try {
-    return Number(new URL((convexUrl ?? `http://127.0.0.1:${fallback}`).split("~")[0]).port) || fallback;
-  } catch {
-    return fallback;
+export function selectedLocalBackend({ cwd, env }) {
+  const selected = requireAnonymousStartup({ env });
+  const config = JSON.parse(readFileSync(path.join(cwd, ".convex", "local", "default", "config.json"), "utf8"));
+  const name = anonymousDeploymentName(config.deploymentName);
+  const port = config.ports?.cloud;
+  if (!name || !Number.isInteger(port) || port < 1 || port > 65535 ||
+      (selected && anonymousDeploymentName(selected) !== name))
+    throw new Error("[backend] selected deployment does not match local backend configuration");
+  const url = `http://127.0.0.1:${port}`;
+  for (const key of ["NEXT_PUBLIC_CONVEX_URL", "CONVEX_URL"]) {
+    if (env[key] && requireLoopbackUrl(env[key]).origin !== url)
+      throw new Error("[backend] Convex URL does not match selected local backend host and port");
   }
+  return { deployment: `anonymous:${name}`, name, url };
 }
 
 /**
@@ -208,11 +378,8 @@ export function deploymentGuardProblems({ deployment, backendAnswered, port }) {
   const problems = [];
   if (!deployment.value) {
     problems.push("CONVEX_DEPLOYMENT is not set in the environment or .env.local, so the target deployment cannot be identified");
-  } else if (!deployment.value.startsWith("anonymous")) {
-    // Anonymous deployments are the local backend's own (CLI versions spell
-    // the prefix "anonymous:" or "anonymous-"); anything else can be a cloud
-    // deployment the CLI would write eval env vars into.
-    problems.push(`CONVEX_DEPLOYMENT from ${deployment.source} is "${deployment.value}", not an anonymous local deployment`);
+  } else if (!anonymousDeploymentName(deployment.value)) {
+    problems.push(`CONVEX_DEPLOYMENT from ${deployment.source} is not an anonymous local deployment`);
   }
   if (!backendAnswered) {
     problems.push(`no local backend answered on 127.0.0.1:${port}`);

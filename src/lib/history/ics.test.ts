@@ -235,7 +235,7 @@ describe("buildCalendarExport", () => {
         updatedAt: 1700000100000,
       })!,
     );
-    expect(parseIcsUtc(zeroDuration.dtend)).toBe(Math.floor(1700000000123 / 1000) * 1000);
+    expect(zeroDuration.dtend).toBeNull();
   });
 
   it("is deterministic: two builds of the same meeting are byte-identical", () => {
@@ -340,7 +340,10 @@ describe("buildCalendarExport", () => {
         Math.floor(input.updatedAt / 1000) * 1000,
       );
 
-      if (input.durationMs != null) {
+      if (
+        input.durationMs != null &&
+        Math.floor((scheduledAtMs + input.durationMs) / 1000) > Math.floor(scheduledAtMs / 1000)
+      ) {
         expect(parseIcsUtc(parsed.dtend), `${label}: DTEND instant`).toBe(
           Math.floor((scheduledAtMs + input.durationMs) / 1000) * 1000,
         );

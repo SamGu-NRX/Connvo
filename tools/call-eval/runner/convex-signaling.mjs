@@ -11,15 +11,17 @@
  *   shut until restored. Media is the shaper's job, as before.
  *
  * Both eval functions are internal, so they run through `convex run` from
- * the repository, which targets the deployment in .env.local (the local
+ * the repository, which targets the selected project-local backend (the local
  * anonymous backend tools/call-eval/scripts/local-backend.mjs starts).
+ * Runner commands select its checked local config and never inherit credentials.
  */
-import { spawnSync } from "node:child_process";
+import { runConvexCommand } from "../scripts/local-backend-process.mjs";
+import { selectedLocalBackend } from "../scripts/local-backend-core.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-const CONVEX_BIN = path.join(REPO, "node_modules", ".bin", "convex");
+const CONVEX_BIN = path.join(REPO, "node_modules", "convex", "bin", "main.js");
 
 /**
  * The JSON value `convex run` printed, from the first opening bracket to the
@@ -50,12 +52,15 @@ export function participantLetter(workosUserId) {
 /**
  * @param {string} fn e.g. "devEval/callMeeting:create"
  * @param {Record<string, unknown>} args
+ * @param {{cwd?: string, cli?: string, env?: NodeJS.ProcessEnv}} [opts]
  */
-function convexRun(fn, args) {
+export function convexRun(fn, args, { cwd = REPO, cli = CONVEX_BIN, env = process.env } = {}) {
   // Positional JSON args, no shell: nothing to quote.
-  const r = spawnSync(CONVEX_BIN, ["run", fn, JSON.stringify(args)], { cwd: REPO, encoding: "utf8", timeout: 60_000 });
+  const target = selectedLocalBackend({ cwd, env });
+  const r = runConvexCommand({ node: process.execPath, cli, args: ["run", fn, JSON.stringify(args)], cwd,
+    env: { ...env, CONVEX_DEPLOYMENT: target.deployment } });
   if (r.status !== 0) {
-    throw new Error(`convex run ${fn} exited ${r.status ?? r.signal}: ${(r.stderr || r.stdout || "").slice(-600)}`);
+    throw new Error(`local Convex command failed, exit ${r.status ?? r.signal}`);
   }
   return r.stdout ?? "";
 }

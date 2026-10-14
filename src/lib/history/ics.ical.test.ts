@@ -39,6 +39,76 @@ const trickyDescription =
   "Second line\nafter CRLF\r\nand commas, semicolons; 😀";
 
 describe("buildCalendarExport parsed by ical.js", () => {
+  it.each([0, -1, -1000, 1, 876, NaN, Infinity, -Infinity, 1e20, 3e14])(
+    "omits DTEND for an interval that cannot end later: %s ms",
+    (durationMs) => {
+      const vevent = parseToVEvent(
+        buildCalendarExport({
+          meetingId: "invalid-interval",
+          title: "Short meeting",
+          scheduledAt: 1700000000123,
+          durationMs,
+          state: "scheduled",
+          updatedAt: 1700000000123,
+        })!,
+      );
+      expect(timePropertyMs(vevent, "dtstart")).toBe(1700000000000);
+      expect(vevent.getFirstProperty("dtend")).toBeNull();
+    },
+  );
+
+  it("keeps a sub-second duration that crosses the next calendar second", () => {
+    const vevent = parseToVEvent(
+      buildCalendarExport({
+        meetingId: "second-boundary",
+        title: "Short meeting",
+        scheduledAt: 1700000000123,
+        durationMs: 877,
+        state: "scheduled",
+        updatedAt: 1700000000123,
+      })!,
+    );
+    expect(timePropertyMs(vevent, "dtstart")).toBe(1700000000000);
+    expect(timePropertyMs(vevent, "dtend")).toBe(1700000001000);
+  });
+
+  it("keeps the last four-digit second and omits an end in year 10000", () => {
+    for (const [durationMs, expected] of [
+      [1000, "99991231T235959Z"],
+      [2000, null],
+    ] as const) {
+      const ics = buildCalendarExport({
+        meetingId: "year-boundary",
+        title: "Last meeting",
+        scheduledAt: Date.parse("9999-12-31T23:59:58Z"),
+        durationMs,
+        state: "scheduled",
+        updatedAt: 1700000000000,
+      })!;
+      expect(ics).toContain("DTSTART:99991231T235958Z");
+      if (expected) expect(ics).toContain(`DTEND:${expected}`);
+      else expect(parseToVEvent(ics).getFirstProperty("dtend")).toBeNull();
+    }
+  });
+
+  it.each(["-000001-12-31T23:59:59Z", "+010000-01-01T00:00:00Z"])(
+    "rejects an out-of-range required date: %s",
+    (date) => {
+      for (const field of ["scheduledAt", "updatedAt"] as const) {
+        expect(() =>
+          buildCalendarExport({
+            meetingId: "invalid-year",
+            title: "Meeting",
+            scheduledAt: 1700000000000,
+            updatedAt: 1700000000000,
+            state: "scheduled",
+            [field]: Date.parse(date),
+          }),
+        ).toThrow(RangeError);
+      }
+    },
+  );
+
   it("round-trips summary, uid, start and end instants through the real parser", () => {
     const ics = buildCalendarExport({
       meetingId: "icalcheck-1",
@@ -174,10 +244,19 @@ describe(`buildCalendarExport through ical.js, ${ICAL_PROPERTY_CASES} seeded cas
         Math.floor(scheduledAt / 1000) * 1000,
       );
       expect(timePropertyMs(vevent, "dtend"), label).toBe(
-        durationMs === null
+        durationMs === null ||
+          Math.floor((scheduledAt + durationMs) / 1000) <=
+            Math.floor(scheduledAt / 1000)
           ? null
           : Math.floor((scheduledAt + durationMs) / 1000) * 1000,
       );
+      const end = timePropertyMs(vevent, "dtend");
+      if (end !== null) {
+        expect(
+          end,
+          `${label}: RFC 5545 requires end after start`,
+        ).toBeGreaterThan(timePropertyMs(vevent, "dtstart")!);
+      }
       expect(textProperty(vevent, "status"), label).toBe(
         cancelled ? "CANCELLED" : "TENTATIVE",
       );
