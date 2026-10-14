@@ -1,4 +1,4 @@
-// Run from the repository root under a heavy lease and heavy.lock.
+// Run from the repository root through run-guarded.py --min-free-gib 8.
 // This serializes the shipped shell into a static fixture. It does not
 // authenticate, call Convex, or establish history-flow acceptance.
 import fs from "node:fs";
@@ -53,7 +53,7 @@ for (const variant of ["before", "after"]) {
   const bundle = path.join(root, "tools/call-eval/out", `${variant}-shell.cjs`);
   fs.mkdirSync(path.dirname(bundle), { recursive: true });
   await build({
-    stdin: { contents: `${react} import {renderToStaticMarkup} from 'react-dom/server'; import Layout from './src/app/app/layout.tsx'; import {Button} from './src/components/ui/button.tsx'; export const html=renderToStaticMarkup(React.createElement(Layout,null,React.createElement('section',null,React.createElement('h1',{className:'text-xl font-semibold'},'Meeting recap'),React.createElement(Button,{'data-testid':'calendar-download',className:'mt-4'},'Add to calendar'))));`, resolveDir: root, loader: "jsx" },
+    stdin: { contents: `${react} import {renderToStaticMarkup} from 'react-dom/server'; import Layout from './src/app/app/layout.tsx'; import {Button} from './src/components/ui/button.tsx'; export const html=renderToStaticMarkup(React.createElement(Layout,null,React.createElement('section',null,React.createElement('h1',{className:'text-xl font-semibold'},'Meeting recap'),React.createElement(Button,{'data-testid':'calendar-download',variant:'outline',className:'mt-4'},'Add to calendar'))));`, resolveDir: root, loader: "jsx" },
     absWorkingDir: root, outfile: bundle, bundle: true, platform: "node", format: "cjs", jsx: "automatic", alias: { "@": path.join(root, "src") }, plugins: [plugin],
   });
   const { html } = require(bundle);

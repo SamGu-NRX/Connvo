@@ -833,7 +833,7 @@ function Ended({
       <h1
         ref={(el) => el?.focus()}
         tabIndex={-1}
-        className="text-2xl font-medium tracking-tight outline-none"
+        className="text-2xl font-medium tracking-tight outline-none focus-visible:shadow-none"
       >
         You left the call
       </h1>

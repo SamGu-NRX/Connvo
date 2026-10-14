@@ -63,12 +63,13 @@ describe("shared shell text contrast", () => {
       .toBeGreaterThanOrEqual(4.5);
   });
 
-  it("the wordmark remains readable when its link fades on hover", () => {
+  it("the wordmark keeps full text contrast while hover adds an underline", () => {
     const source = readFileSync(new URL("src/app/app/layout.tsx", root), "utf8");
-    const opacity = Number(source.match(/hover:opacity-(\d+)/)?.[1]) / 100;
+    const opacity = source.match(/hover:opacity-(\d+)/)?.[1];
+    const alpha = opacity ? Number(opacity) / 100 : 1;
     const foreground = source.match(/text-(emerald-\d+) dark:text/)?.[1];
     if (!foreground) throw new Error("The wordmark has no emerald text color");
-    expect(contrast(over(color(foreground), opacity, backgrounds.light), backgrounds.light))
+    expect(contrast(over(color(foreground), alpha, backgrounds.light), backgrounds.light))
       .toBeGreaterThanOrEqual(4.5);
   });
   it("the synced notes label reaches 4.5:1 on its light card", () => {

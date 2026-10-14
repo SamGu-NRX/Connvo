@@ -1,4 +1,5 @@
 {
+  "evidenceStatus": "historical alpha receipt; old format without per-pixel contrast or complete keyboard checks; current receipts are in browser-proof/",
   "ranAt": "2026-10-12T19:23:36.091Z",
   "states": [
     {

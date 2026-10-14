@@ -39,7 +39,7 @@ export default function RootLayout({
             >
               <div className="flex w-full items-center gap-2.5">
                 <Link
-                  className="flex items-center gap-2.5 font-semibold transition-opacity duration-150 hover:opacity-95"
+                  className="flex items-center gap-2.5 font-semibold hover:underline underline-offset-4"
                   href="/app"
                 >
                   <span className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-sm">

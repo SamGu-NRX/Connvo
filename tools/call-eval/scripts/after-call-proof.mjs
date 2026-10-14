@@ -12,9 +12,10 @@
  *   node tools/call-eval/scripts/local-backend.mjs --port=3035 --after-call
  *
  *   node tools/call-eval/scripts/after-call-proof.mjs --base-url=http://localhost:3035 \
- *     [--shots=docs/after-call/screenshots] [--out=tools/call-eval/verification/<dir>]
+ *     [--shots=docs/after-call/browser-proof/screenshots] [--out=tools/call-eval/verification/<dir>]
  */
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -22,12 +23,12 @@ import { AxeBuilder } from "@axe-core/playwright";
 import ICAL from "ical.js";
 import { createEvalMeeting, storedNotes } from "../runner/convex-signaling.mjs";
 import { tapConvex } from "../runner/convex-tap.mjs";
-import { keyboardWalk, tabTo, textContrast } from "./a11y-manual.mjs";
+import { keyboardWalk, tabTo, textContrast, assertShellMeasurements } from "./a11y-manual.mjs";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const flags = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, "").split("=")));
 const baseUrl = flags["base-url"] ?? "http://localhost:3035";
-const shotsDir = path.resolve(REPO, flags.shots ?? "docs/after-call/screenshots");
+const shotsDir = path.resolve(REPO, flags.shots ?? "docs/after-call/browser-proof/screenshots");
 const outDir = path.resolve(REPO, flags.out ?? "tools/call-eval/out/after-call");
 fs.mkdirSync(shotsDir, { recursive: true });
 fs.mkdirSync(outDir, { recursive: true });
@@ -142,7 +143,9 @@ async function capture({ page, scratch }, name, { focus, scope }) {
           return `[data-shell-contrast="${index}"]`;
         }),
     );
+    if (shellText.length === 0) throw new Error(`No shell contrast targets at ${size} in ${name}`);
     measured[size] = await textContrast(page, scratch, [...new Set([...unjudged, ...shellText])]);
+    assertShellMeasurements(measured[size]);
   }
   await page.setViewportSize(VIEWPORTS[0]);
   // Keep shell failures separate in the receipt, but fail on either group.
@@ -168,7 +171,7 @@ async function capture({ page, scratch }, name, { focus, scope }) {
  * shows focus with a 2px-equivalent 3:1 change, and Shift+Tab retraces Tab.
  */
 const walkPasses = (walk) =>
-  !walk.truncated && walk.reverseMatches && walk.forward.every((s) => s.focusVisible && s.indicator.pass);
+  !walk.focusLost && !walk.truncated && walk.reverseMatches && walk.forward.every((s) => s.focusVisible && s.indicator.pass);
 
 /** Tab and Shift+Tab through the page at both sizes; each focused stop is saved under <out>/focus/. */
 async function walkBothSizes({ page, scratch }, name) {
@@ -185,7 +188,7 @@ async function walkBothSizes({ page, scratch }, name) {
 
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
 
-const result = { baseUrl, startedAt: new Date().toISOString(), checks: {}, pass: false };
+const result = { commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim(), baseUrl, startedAt: new Date().toISOString(), checks: {}, pass: false };
 const meetingId = createEvalMeeting("Budget review");
 result.meetingId = meetingId;
 const fail = (msg) => {
@@ -216,6 +219,9 @@ try {
     await new Promise((r) => setTimeout(r, 500));
   }
   result.checks.notesInCall = stored;
+  // Show the actual call-room ring on a control before leaving the stage.
+  await tabTo(A.page, '[data-testid="leave-call"]');
+  await A.page.screenshot({ path: path.join(shotsDir, "call-room-focus.png") });
 
   // Both leave: the ended screen links to the recap and shows it.
   await leave(A.page);

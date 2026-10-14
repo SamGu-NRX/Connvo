@@ -92,6 +92,12 @@ export async function textContrast(page, scratch, selectors) {
     const info = await el.evaluate((node) => {
       const style = getComputedStyle(node);
       const r = node.getBoundingClientRect();
+      let opacity = 1;
+      /** @type {Element | null} */
+      let ancestor = node;
+      for (; ancestor; ancestor = ancestor.parentElement) {
+        opacity *= Number(getComputedStyle(ancestor).opacity);
+      }
       // The page's own content is the innermost <main>; anything else is the app shell around it.
       const content = [...document.querySelectorAll("main")].find(
         (m) => !m.querySelector("main"),
@@ -99,6 +105,7 @@ export async function textContrast(page, scratch, selectors) {
       return {
         inPage: !!content?.contains(node),
         color: style.color,
+        opacity,
         fontSize: parseFloat(style.fontSize),
         fontWeight: Number(style.fontWeight) || 400,
         text: (node.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 60),
@@ -134,7 +141,7 @@ export async function textContrast(page, scratch, selectors) {
         drawn.data[i + 2] !== bg[2];
       if (!changed) continue;
       covered++;
-      worst = Math.min(worst, contrast(over(text.rgb, text.alpha, bg), bg));
+      worst = Math.min(worst, contrast(over(text.rgb, text.alpha * info.opacity, bg), bg));
     }
     const large =
       info.fontSize >= 24 || (info.fontSize >= 18.66 && info.fontWeight >= 700);
@@ -152,6 +159,13 @@ export async function textContrast(page, scratch, selectors) {
   }
   await probeStyle.evaluate((node) => node.remove());
   return rows;
+}
+
+/** @param {{ inPage: boolean }[]} rows */
+export function assertShellMeasurements(rows) {
+  if (!rows.some((row) => !row.inPage)) {
+    throw new Error("No visible shell text was measured at this viewport");
+  }
 }
 
 /** How the focused element is described in the walk record. */
@@ -272,6 +286,7 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
   const forward = [];
   let last = null;
   let truncated = true;
+  let focusLost = false;
   for (let i = 0; i < max; i++) {
     await page.keyboard.press("Tab");
     await page.waitForTimeout(120);
@@ -279,7 +294,18 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
     // Past the page's last stop: the browser chrome, or next dev's overlay
     // (a development-only element that production doesn't render).
     if (stop === null || stop.tag === "nextjs-portal") {
-      truncated = false;
+      // Body is normal only after the final sequential stop. A blur or
+      // disabled control in the middle must not turn a partial walk green.
+      const reachedLast = last && await last.evaluate((/** @type {Element} */ el) => {
+        const candidates = Array.from(document.querySelectorAll(
+          'a[href],button,input,select,textarea,[tabindex]',
+        )).filter((node) => node instanceof HTMLElement && node.tabIndex >= 0 &&
+          !node.matches(':disabled') && !node.closest('nextjs-portal') &&
+          node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden');
+        return candidates.at(-1) === el;
+      });
+      focusLost = !reachedLast;
+      truncated = focusLost;
       break;
     }
     if (
@@ -317,6 +343,7 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
     forward,
     backward,
     truncated,
+    focusLost,
     reverseMatches:
       JSON.stringify(backward.map(key)) === JSON.stringify(expectedBack),
   };
