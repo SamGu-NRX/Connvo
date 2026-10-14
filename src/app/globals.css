@@ -262,7 +262,10 @@
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.87 0 0);
+  /* Focus rings draw this at 50% (ring-ring/50). At 0.87 that measured about
+     1.2:1 against white; at 0.205 it is 3.35:1 or more on white, the
+     emerald-50 and sky-50 backdrop and muted rows (WCAG 1.4.11 asks 3:1). */
+  --ring: oklch(0.205 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -298,7 +301,9 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  /* Same rule on dark backgrounds: 0.439 at 50% is about 1.4:1; 0.87 is 3.6:1
+     or more on the page, slate-900 and emerald-950. Computed, not measured. */
+  --ring: oklch(0.87 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -317,7 +322,14 @@
 @layer base {
   * {
     border-color: var(--border);
-    outline: 2px solid rgba(var(--ring), 0.5);
+  }
+  /* The default focus outline for anything that doesn't draw its own ring.
+     This used to be "outline: 2px solid rgba(var(--ring), 0.5)" on every
+     element, which is invalid with an oklch --ring and so reset each
+     element's outline to none, hiding the browser's focus outline too. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   html {
     height: 100%;

@@ -397,6 +397,21 @@ describe("with the client flag on", () => {
     expect(contacts).toHaveTextContent("b@after-call.test");
   });
 
+  it("stay in touch: the switch keeps keyboard focus while its choice saves", async () => {
+    render(<MeetingDetail meetingId={meetingId} />);
+    const toggle = await screen.findByTestId("stay-in-touch-switch");
+    toggle.focus();
+    fireEvent.click(toggle);
+    // Saving: a disabled button would lose focus in a browser, so it stays
+    // enabled and says it is busy.
+    expect(toggle).toHaveAttribute("aria-busy", "true");
+    expect(toggle).not.toBeDisabled();
+    expect(document.activeElement).toBe(toggle);
+    await screen.findByText(/Nobody else has yet/);
+    expect(toggle).toHaveAttribute("aria-busy", "false");
+    expect(document.activeElement).toBe(toggle);
+  });
+
   it("the call page's ended screen links to the recap and shows it", async () => {
     render(
       <>
