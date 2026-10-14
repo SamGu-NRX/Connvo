@@ -189,7 +189,7 @@ async function walkBothSizes({ page, scratch }, name) {
 
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
 
-const result = { dirty: execFileSync("git", ["status", "--porcelain"], { cwd: REPO, encoding: "utf8" }).trim().length > 0, commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim(), baseUrl, startedAt: new Date().toISOString(), checks: {}, pass: false };
+const result = { dirty: execFileSync("git", ["status", "--porcelain"], { cwd: REPO, encoding: "utf8" }).trim().length > 0, commit: execFileSync("git", ["rev-parse", "HEAD"], { cwd: REPO, encoding: "utf8" }).trim(), baseUrl, startedAt: new Date().toISOString(), checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
 const meetingId = createEvalMeeting("Budget review");
 result.meetingId = meetingId;
 const fail = (msg) => {
@@ -341,7 +341,7 @@ try {
   await capture(O, "list-empty", { focus: "main", scope: "main" });
 
   result.pass =
-    !result.checks.keyboardLeaveHeading.visibleSpread &&
+    result.checks.keyboardLeaveHeading?.visibleSpread === false &&
     result.checks.endedRecap.sameAsStored &&
     result.checks.detail.same &&
     result.checks.listHasMeeting &&
