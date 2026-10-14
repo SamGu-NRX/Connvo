@@ -96,5 +96,18 @@
       "reason": "Offset-only shadow is incorrectly accepted",
       "exitCode": 1
     }
-  ]
+  ],
+  "focusDirectoryResetCheck": {
+    "codeCommit": "825fad27a912213d621acb0a392c24a281800b00",
+    "guard": "run-guarded.py --min-free-gib 8 --",
+    "command": "pnpm exec vitest run --project eval tools/call-eval/scripts/after-call-proof-support.test.mjs --maxWorkers=1",
+    "passed": 6,
+    "failed": 0,
+    "exitCode": 0,
+    "negativeControls": {
+      "sourceResetRemoved": 1,
+      "publishedResetRemoved": 1
+    },
+    "browserProof": "Retained a674f51 receipt; full browser flow not rerun for this filesystem-only follow-up."
+  }
 }
