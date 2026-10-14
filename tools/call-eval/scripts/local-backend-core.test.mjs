@@ -253,12 +253,9 @@ describe("guard (i): harness allowlist accepts the devEval seed module", () => {
 });
 
 describe("operator fix 1: the deployment URL is read from what the CLI writes", () => {
-  it("prefers NEXT_PUBLIC_CONVEX_URL when both spellings are present", () => {
+  it("rejects conflicting URL spellings", () => {
     const text = "CONVEX_URL=http://127.0.0.1:1111\nNEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:3210\n";
-    expect(pickConvexUrlFromEnvText(text)).toEqual({
-      source: "NEXT_PUBLIC_CONVEX_URL",
-      value: "http://127.0.0.1:3210",
-    });
+    expect(() => pickConvexUrlFromEnvText(text)).toThrow("conflicting Convex URL settings");
   });
 
   it("falls back to legacy CONVEX_URL", () => {
@@ -437,11 +434,12 @@ describe("deployment selection and port parsing", () => {
       .toEqual({ source: "unset", value: null });
   });
 
-  it("parses the backend port from the Convex URL, tolerating url~deployment", () => {
-    expect(deploymentPortFromUrl("http://127.0.0.1:9901~anonymous:swift-hawk-999")).toBe(9901);
+  it("accepts explicit loopback ports and refuses cloud or malformed URLs", () => {
+    expect(() => deploymentPortFromUrl("http://127.0.0.1:9901~anonymous:swift-hawk-999")).toThrow();
     expect(deploymentPortFromUrl("http://127.0.0.1:9901")).toBe(9901);
-    expect(deploymentPortFromUrl(null)).toBe(3210);
-    expect(deploymentPortFromUrl("not a url")).toBe(3210);
+    expect(() => deploymentPortFromUrl("https://synthetic-cloud.convex.cloud")).toThrow();
+    expect(() => deploymentPortFromUrl(null)).toThrow();
+    expect(() => deploymentPortFromUrl("not a url")).toThrow();
   });
 
   it("renders the refusal banner with every problem", () => {

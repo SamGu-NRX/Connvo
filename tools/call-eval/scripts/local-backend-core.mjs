@@ -46,6 +46,10 @@ export function requireAnonymousStartup({ env, envLocalContent, envContent }) {
   if (deployment && !anonymousDeploymentName(deployment)) {
     throw new Error("[backend] REFUSING to start convex dev: CONVEX_DEPLOYMENT is not an anonymous local target");
   }
+  const urls = [effective.NEXT_PUBLIC_CONVEX_URL, effective.CONVEX_URL].filter(Boolean);
+  for (const url of urls) requireLoopbackUrl(url);
+  if (urls.length === 2 && urls[0] !== urls[1])
+    throw new Error("[backend] conflicting Convex URL settings");
   return deployment || null;
 }
 
@@ -243,10 +247,10 @@ export function pickConvexUrlFromEnvText(text) {
   if (typeof text !== "string") return null;
   /** @param {string} s */
   const unquote = (s) => s.trim().replace(/^["']|["']$/g, "");
-  const next = text.match(/^NEXT_PUBLIC_CONVEX_URL=(.+)$/m);
-  if (next) return { source: "NEXT_PUBLIC_CONVEX_URL", value: unquote(next[1]) };
-  const legacy = text.match(/^CONVEX_URL=(.+)$/m);
-  if (legacy) return { source: "CONVEX_URL", value: unquote(legacy[1]) };
+  const parsed = parseEnv(text);
+  requireAnonymousStartup({ env: parsed });
+  const source = parsed.NEXT_PUBLIC_CONVEX_URL ? "NEXT_PUBLIC_CONVEX_URL" : "CONVEX_URL";
+  if (parsed[source]) return { source, value: unquote(parsed[source]) };
   return null;
 }
 
@@ -292,19 +296,41 @@ export function resolveSelectedDeployment({ envValue, envLocalContent } = {}) {
   return { source: "unset", value: null };
 }
 
+/** @param {string | null | undefined} value @returns {URL} */
+export function requireLoopbackUrl(value) {
+  let url;
+  try { url = new URL(value ?? ""); } catch { throw new Error("[backend] invalid local Convex URL"); }
+  if (url.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) ||
+      !url.port || url.username || url.password || url.pathname !== "/" || url.search || url.hash)
+    throw new Error("[backend] Convex URL must be an HTTP loopback origin with an explicit port");
+  return url;
+}
+
+/** @param {string | null | undefined} convexUrl @returns {number} */
+export function deploymentPortFromUrl(convexUrl) {
+  return Number(requireLoopbackUrl(convexUrl).port);
+}
+
 /**
- * Local backend HTTP port from a Convex URL ("url~deployment" tolerated),
- * falling back to the backend's default port.
- * @param {string | null | undefined} convexUrl
- * @param {number} [fallback]
- * @returns {number}
+ * Match the pinned CLI's selected project-local anonymous backend, rather
+ * than treating an unrelated listener on a guessed port as proof.
+ * @param {{ cwd: string, env: NodeJS.ProcessEnv }} opts
+ * @returns {{ deployment: string, url: string }}
  */
-export function deploymentPortFromUrl(convexUrl, fallback = 3210) {
-  try {
-    return Number(new URL((convexUrl ?? `http://127.0.0.1:${fallback}`).split("~")[0]).port) || fallback;
-  } catch {
-    return fallback;
+export function selectedLocalBackend({ cwd, env }) {
+  const selected = requireAnonymousStartup({ env });
+  const config = JSON.parse(readFileSync(path.join(cwd, ".convex", "local", "default", "config.json"), "utf8"));
+  const name = anonymousDeploymentName(config.deploymentName);
+  const port = config.ports?.cloud;
+  if (!name || !Number.isInteger(port) || port < 1 || port > 65535 ||
+      (selected && anonymousDeploymentName(selected) !== name))
+    throw new Error("[backend] selected deployment does not match local backend configuration");
+  const url = `http://127.0.0.1:${port}`;
+  for (const key of ["NEXT_PUBLIC_CONVEX_URL", "CONVEX_URL"]) {
+    if (env[key] && requireLoopbackUrl(env[key]).origin !== url)
+      throw new Error("[backend] Convex URL does not match selected local backend host and port");
   }
+  return { deployment: `anonymous:${name}`, url };
 }
 
 /**

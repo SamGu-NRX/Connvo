@@ -1,3 +1,12 @@
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { checkedConvexEnvironment } from "./local-backend-core.mjs";
 
@@ -11,18 +20,63 @@ export function runConvexCommand({ node, cli, args, cwd, ...environment }) {
     cwd,
     env: checkedConvexEnvironment(environment),
     encoding: "utf8",
+    timeout: 60_000,
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
 
+/** @typedef {{ pid: number, parent: number, started: string }} ProcessIdentity */
+
+/** @returns {ProcessIdentity[]} */
+function processIdentities() {
+  const result = spawnSync("ps", ["-eo", "pid=,ppid=,lstart="], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0)
+    throw new Error("[backend] could not inspect watcher processes");
+  return result.stdout
+    .trim()
+    .split("\n")
+    .map((line) => {
+      const match = /^\s*(\d+)\s+(\d+)\s+(.+)$/.exec(line);
+      if (!match) throw new Error("[backend] invalid watcher process identity");
+      return {
+        pid: Number(match[1]),
+        parent: Number(match[2]),
+        started: match[3].trim(),
+      };
+    });
+}
+
+/** @param {string} file @returns {ProcessIdentity[]} */
+function pendingWatchers(file) {
+  if (!existsSync(file)) return [];
+  const rows = JSON.parse(readFileSync(file, "utf8"));
+  if (
+    !Array.isArray(rows) ||
+    rows.some(
+      (row) =>
+        !Number.isInteger(row.pid) ||
+        row.pid <= 0 ||
+        !Number.isInteger(row.parent) ||
+        typeof row.started !== "string" ||
+        !row.started,
+    )
+  )
+    throw new Error(
+      "[backend] invalid persisted watcher identities; refusing watched-file changes",
+    );
+  return rows;
+}
+
 /**
- * An old pane may hold unchecked selectors. End it and wait for its process
- * tree before rebuilding anything its watcher can push. Failure leaves the
- * watched files untouched, including when a child ignores the pane's HUP.
- * @param {{ session: string, rebuild: () => void, tmuxArgs?: string[], env?: NodeJS.ProcessEnv }} opts
+ * Persist the process tree before killing its pane. A timeout or interrupted
+ * caller must not lose a surviving watcher and rebuild under it on retry.
+ * @param {{ session: string, statePath: string, rebuild: () => void, tmuxArgs?: string[], env?: NodeJS.ProcessEnv }} opts
  */
 export async function rebuildWithoutWatcher({
   session,
+  statePath,
   rebuild,
   tmuxArgs = [],
   env = process.env,
@@ -30,6 +84,7 @@ export async function rebuildWithoutWatcher({
   /** @param {string[]} args */
   const tmux = (args) =>
     spawnSync("tmux", [...tmuxArgs, ...args], { env, encoding: "utf8" });
+  const pending = pendingWatchers(statePath);
   const present = tmux(["has-session", "-t", `=${session}`]);
   if (present.status !== 0 && present.status !== 1)
     throw new Error("[backend] could not inspect existing watcher");
@@ -41,47 +96,38 @@ export async function rebuildWithoutWatcher({
       "-F",
       "#{pane_pid}",
     ]);
-    const processes = spawnSync("ps", ["-eo", "pid=,ppid="], {
-      encoding: "utf8",
-    });
-    if (panes.status !== 0 || processes.status !== 0)
+    const rows = processIdentities();
+    if (panes.status !== 0)
       throw new Error("[backend] could not inspect watcher processes");
     const pids = new Set(panes.stdout.trim().split(/\s+/).map(Number));
     if ([...pids].some((pid) => !Number.isInteger(pid) || pid <= 0))
       throw new Error("[backend] invalid watcher process identity");
-    const rows = processes.stdout
-      .trim()
-      .split("\n")
-      .map((row) => row.trim().split(/\s+/).map(Number));
     for (let count = -1; count !== pids.size; ) {
       count = pids.size;
-      for (const [pid, parent] of rows) if (pids.has(parent)) pids.add(pid);
+      for (const row of rows) if (pids.has(row.parent)) pids.add(row.pid);
     }
+    pending.push(...rows.filter((row) => pids.has(row.pid)));
+    mkdirSync(path.dirname(statePath), { recursive: true });
+    writeFileSync(`${statePath}.tmp`, JSON.stringify(pending));
+    renameSync(`${statePath}.tmp`, statePath);
     if (tmux(["kill-session", "-t", `=${session}`]).status !== 0)
       throw new Error("[backend] could not stop existing watcher");
-    const deadline = Date.now() + 10_000;
-    for (;;) {
-      const live = [...pids].some((pid) => {
-        try {
-          process.kill(pid, 0);
-          return true;
-        } catch (error) {
-          if (
-            error instanceof Error &&
-            "code" in error &&
-            error.code === "ESRCH"
-          )
-            return false;
-          throw error;
-        }
-      });
-      if (!live) break;
-      if (Date.now() >= deadline)
-        throw new Error(
-          "[backend] watcher did not stop; refusing watched-file changes",
-        );
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
   }
+  const deadline = Date.now() + 10_000;
+  while (pending.length) {
+    const rows = processIdentities();
+    const live = pending.some((saved) =>
+      rows.some(
+        (row) => row.pid === saved.pid && row.started === saved.started,
+      ),
+    );
+    if (!live) break;
+    if (Date.now() >= deadline)
+      throw new Error(
+        "[backend] watcher did not stop; refusing watched-file changes",
+      );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  rmSync(statePath, { force: true });
   rebuild();
 }

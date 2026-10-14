@@ -22,6 +22,7 @@ import { spawnSync } from "node:child_process";
 import { createHash, createSign, createPrivateKey, generateKeyPairSync } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import os from "node:os";
+import { parse as parseEnv } from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,6 +47,7 @@ import {
   requireAnonymousStartup,
   createTmuxLauncher,
   checkedConvexEnvironment,
+  selectedLocalBackend,
 } from "./local-backend-core.mjs";
 import { rebuildWithoutWatcher, runConvexCommand } from "./local-backend-process.mjs";
 
@@ -255,7 +257,7 @@ const SEED_USERS = [
 
 // ------------------------------------------------------------------ stop/status
 if (flag("stop")) {
-  await rebuildWithoutWatcher({ session: CONV_TMUX, rebuild: restoreConvexJson });
+  await rebuildWithoutWatcher({ session: CONV_TMUX, statePath: path.join(OUT_DIR, "watcher-processes.json"), rebuild: restoreConvexJson });
   command("tmux", ["kill-session", "-t", `=${NEXT_TMUX}`], { capture: true, allowFail: true });
   console.log("[backend] stopped (convex dev + next dev tmux sessions killed, convex.json restored)");
   process.exit(0);
@@ -289,6 +291,7 @@ console.log("[backend] 2/6 convex local deployment (anonymous, no account)");
 // Never adopt a watcher started before the environment boundary existed.
 await rebuildWithoutWatcher({
   session: CONV_TMUX,
+  statePath: path.join(OUT_DIR, "watcher-processes.json"),
   rebuild: () => { buildHarnessTree(); applyConvexJsonOverride(); },
 });
 {
@@ -359,7 +362,13 @@ while (Date.now() < deadline) {
     // CONVEX_URL tolerated) — reading only CONVEX_URL timed out a fresh
     // checkout even with the backend up.
     const picked = pickConvexUrlFromEnvText(readFileSync(envLocal, "utf8"));
-    if (picked) convexUrl = picked.value;
+    if (picked) {
+      const target = selectedLocalBackend({
+        cwd: REPO, env: { ...parseEnv(readFileSync(envLocal, "utf8")), ...process.env },
+      });
+      if (picked.value !== target.url) throw new Error("[backend] Convex URL does not match selected local backend");
+      convexUrl = target.url;
+    }
   }
   if (convexUrl && localBackendAnswers(deploymentPortFromUrl(convexUrl))) break;
   // A dead session or a CLI crash will not recover by waiting out the deadline.
@@ -407,7 +416,9 @@ function runEnvSet(name, value) {
 }
 
 function assertLocalDeployment() {
-  const port = deploymentPortFromUrl(convexUrl);
+  const target = selectedLocalBackend({ cwd: REPO, env: { ...parseEnv(readEnvLocalIfPresent() ?? ""), ...process.env } });
+  if (target.url !== convexUrl) throw new Error("[backend] local backend URL changed");
+  const port = deploymentPortFromUrl(target.url);
   // Guard-then-set (refusal BEFORE any `convex env set`) lives in
   // local-backend-core.mjs (unit-tested: a non-local deployment must never
   // reach the env-set calls); this wrapper supplies the real I/O and

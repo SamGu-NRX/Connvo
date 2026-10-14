@@ -184,6 +184,7 @@ it("stops an existing unsafe watcher before rebuilding and restarts a clean pane
     ).toEqual({ unsafe: true });
     await rebuildWithoutWatcher({
       session: "watcher",
+      statePath: path.join(dir, "retiring.json"),
       tmuxArgs,
       env,
       rebuild: () => {
@@ -217,6 +218,7 @@ it("stops an existing unsafe watcher before rebuilding and restarts a clean pane
     expect(existsSync(pushed)).toBe(false);
     await rebuildWithoutWatcher({
       session: "watcher",
+      statePath: path.join(dir, "retiring.json"),
       tmuxArgs,
       env,
       rebuild: () => {
@@ -254,7 +256,7 @@ it("refuses to rebuild if an old watcher survives pane termination", async ({
   const env = { HOME: dir, PATH: process.env.PATH };
   /** @param {string[]} args */
   const tmux = (args) => spawnSync("tmux", [...tmuxArgs, ...args], { env });
-  let pid;
+  let pid = 0;
   try {
     expect(
       tmux(["new-session", "-d", "-s", "keeper", "--", "/bin/sleep", "30"])
@@ -270,6 +272,7 @@ it("refuses to rebuild if an old watcher survives pane termination", async ({
     await expect(
       rebuildWithoutWatcher({
         session: "watcher",
+        statePath: path.join(dir, "retiring.json"),
         tmuxArgs,
         env,
         rebuild: () => {
@@ -278,8 +281,60 @@ it("refuses to rebuild if an old watcher survives pane termination", async ({
       }),
     ).rejects.toThrow("watcher did not stop; refusing watched-file changes");
     expect(readFileSync(watched, "utf8")).toBe("before");
+    expect(tmux(["has-session", "-t", "=watcher"]).status).toBe(1);
+    // The retry has no tmux session to rediscover, but the child still lives.
+    await expect(
+      rebuildWithoutWatcher({
+        session: "watcher",
+        statePath: path.join(dir, "retiring.json"),
+        tmuxArgs,
+        env,
+        rebuild: () => writeFileSync(watched, "unsafe retry"),
+      }),
+    ).rejects.toThrow("watcher did not stop; refusing watched-file changes");
+    expect(readFileSync(watched, "utf8")).toBe("before");
+    const stoppedPid = pid;
+    process.kill(stoppedPid, "SIGTERM");
+    await vi.waitFor(() => {
+      expect(() => process.kill(stoppedPid, 0)).toThrow();
+    });
+    pid = 0;
+    await rebuildWithoutWatcher({
+      session: "watcher",
+      statePath: path.join(dir, "retiring.json"),
+      tmuxArgs,
+      env,
+      rebuild: () => writeFileSync(watched, "safe retry"),
+    });
+    expect(readFileSync(watched, "utf8")).toBe("safe retry");
+    expect(existsSync(path.join(dir, "retiring.json"))).toBe(false);
   } finally {
-    if (pid !== undefined) process.kill(pid, "SIGTERM");
+    if (pid > 0) process.kill(pid, "SIGTERM");
     tmux(["kill-server"]);
   }
-}, 15_000);
+}, 30_000);
+
+it("a saved PID with a different start time does not block a safe rebuild", async ({
+  skip,
+}) => {
+  const error = spawnSync("tmux", ["-V"]).error;
+  if (error && "code" in error && error.code === "ENOENT")
+    skip("tmux is not on PATH");
+  const dir = fixture();
+  const statePath = path.join(dir, "retiring.json");
+  const watched = path.join(dir, "watched.txt");
+  writeFileSync(
+    statePath,
+    JSON.stringify([
+      { pid: process.pid, parent: 1, started: "different process start time" },
+    ]),
+  );
+  await rebuildWithoutWatcher({
+    session: "absent",
+    statePath,
+    tmuxArgs: ["-S", path.join(dir, "no-server.sock")],
+    rebuild: () => writeFileSync(watched, "safe"),
+  });
+  expect(readFileSync(watched, "utf8")).toBe("safe");
+  expect(existsSync(statePath)).toBe(false);
+});
