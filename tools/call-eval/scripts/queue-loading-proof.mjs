@@ -44,7 +44,8 @@ try {
   }
   assert.ok(available, "Next did not register the temporary local fixture route");
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  const page = await context.newPage();
   for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     // This fixture deliberately never completes its Suspense stream.
@@ -64,6 +65,51 @@ try {
     comparisons.push({ viewport, fallback, query, seriousOrCriticalViolations: 0 });
   }
   fs.writeFileSync("docs/lane3/queue-loading-proof.json", JSON.stringify({ pass: true, fixture: "Suspended search consumer and query-loading view in local app shell", comparisons }, null, 2));
+  const historyContext = await browser.newContext();
+  const historyPages = new Set();
+  await historyContext.routeWebSocket(/\/api\/[^/]+\/sync$/, socket => {
+    const server = socket.connectToServer();
+    const queryIds = new Map();
+    socket.onMessage(raw => {
+      const message = JSON.parse(String(raw));
+      for (const modification of message.modifications ?? []) {
+        if (modification.type === "Add" && modification.udfPath === "history/queries:listMyMeetings") {
+          historyPages.add(modification.queryId);
+          queryIds.set(modification.queryId, `proof-${historyPages.size}`);
+        }
+      }
+      server.send(raw);
+    });
+    server.onMessage(raw => {
+      const message = JSON.parse(String(raw));
+      for (const modification of message.modifications ?? []) {
+        const cursor = queryIds.get(modification.queryId);
+        if (modification.type === "QueryUpdated" && cursor)
+          modification.value = { page: [], isDone: false, continueCursor: cursor };
+      }
+      socket.send(JSON.stringify(message));
+    });
+    socket.onClose(() => void server.close().catch(() => {}));
+    server.onClose(() => void socket.close().catch(() => {}));
+  });
+  const history = await historyContext.newPage();
+  await history.goto("http://localhost:3103/app/meetings?as=A");
+  await history.getByText("More meetings may be available", { exact: true }).waitFor();
+  assert.equal(historyPages.size, 6, "Initial page plus five automatic requests");
+  const historyAudits = [];
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await history.setViewportSize(viewport);
+    await history.addStyleTag({ content: "nextjs-portal {display:none!important}" });
+    const audit = await new AxeBuilder({ page: history }).include('[data-testid="meeting-list-empty"]').analyze();
+    const violations = audit.violations.filter(v => v.impact === "serious" || v.impact === "critical");
+    assert.equal(violations.length, 0);
+    historyAudits.push({ viewport, seriousOrCriticalViolations: 0 });
+    await history.screenshot({ path: path.join(screenshots, `history-more-${viewport.width}x${viewport.height}.png`), animations: "disabled" });
+  }
+  await history.getByRole("button", { name: "Load more" }).click();
+  await history.getByText("More meetings may be available", { exact: true }).waitFor();
+  assert.equal(historyPages.size, 7, "Manual continuation must issue exactly one more request");
+  fs.writeFileSync("docs/lane3/history-pagination-proof.json", JSON.stringify({ pass: true, fixture: "Scoped empty history pages with more results remaining", automaticRequests: 5, manualRequests: 1, audits: historyAudits }, null, 2));
   console.log("PASS: two viewports, identical fallback/query loading rectangles, zero serious/critical accessibility violations");
 } finally {
   await browser?.close();
