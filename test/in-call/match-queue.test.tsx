@@ -9,6 +9,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { axe } from "jest-axe";
 import { getFunctionName, type FunctionReturnType } from "convex/server";
+import type { Id } from "@convex/_generated/dataModel";
 import { api } from "@convex/_generated/api";
 import { QueueView, type QueueViewProps } from "@/components/queue/QueueView";
 import LiveMatchQueue from "@/components/queue/LiveMatchQueue";
@@ -142,6 +143,31 @@ describe("match queue interface", () => {
     expect(screen.getByText("1:15 elapsed")).toBeVisible();
     await act(() => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByText("1:17 elapsed")).toBeVisible();
+  });
+
+  it("does not extend a fresh invitation when the clock sample arrived late", async () => {
+    const serverNow = Date.now();
+    mock.time.mockResolvedValue(serverNow - 1000);
+    mock.status = {
+      state: "matched",
+      queueType: "casual",
+      matchId: "match-42" as Id<"callQueueMatches">,
+      joinedAt: serverNow - 5000,
+      serverNow,
+      expiresAt: serverNow + 60_000,
+      accepted: false,
+      partnerAccepted: false,
+      partner: {
+        id: "bob" as Id<"users">,
+        displayName: "Bob Brown",
+        avatarUrl: undefined,
+      },
+      reasons: ["Strong interest alignment"],
+    };
+    render(<LiveMatchQueue />);
+    await act(async () => {});
+    expect(screen.getByText("1:00")).toBeVisible();
+    expect(screen.queryByText("1:01")).not.toBeInTheDocument();
   });
 
   it("joins once on entry with the requested queue type", async () => {

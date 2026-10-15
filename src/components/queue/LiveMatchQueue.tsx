@@ -146,7 +146,11 @@ function ConnectedQueue({
       window.clearInterval(timer);
     };
   }, [isAuthenticated, connection.isWebSocketConnected, serverTime]);
-  const now = clock ?? (status && "serverNow" in status ? status.serverNow : 0);
+  // A newly delivered match can be newer than our earlier clock sample.
+  const now = Math.max(
+    clock ?? 0,
+    status && "serverNow" in status ? status.serverNow : 0,
+  );
 
   useEffect(() => {
     if (!status || entered.current) return;
