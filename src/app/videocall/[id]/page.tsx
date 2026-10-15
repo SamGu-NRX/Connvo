@@ -154,7 +154,7 @@ export default function VideoMeeting() {
   const [showTimeAddedToast, setShowTimeAddedToast] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAlmostOutOfTime, setIsAlmostOutOfTime] = useState(false);
-  const [messages, setMessages] = useState(() => {
+  const [messages, setMessages] = useState<typeof MOCK_MESSAGES>(() => {
     try {
       const raw = localStorage.getItem(LS_KEYS.MESSAGES);
       return raw ? JSON.parse(raw) : MOCK_MESSAGES;

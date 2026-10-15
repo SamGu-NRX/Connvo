@@ -20,17 +20,17 @@
 
 "use client";
 
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface CreateMeetingParams {
   title: string;
   description?: string;
   scheduledAt?: number;
   duration?: number;
-  participantIds: Id<"users">[];
+  participantEmails?: string[];
   generatePrompts?: boolean;
 }
 
@@ -73,7 +73,7 @@ export interface UseMeetingLifecycleResult {
  *     // Create meeting with participants
  *     const meetingId = await createMeeting({
  *       title: "Networking Call",
- *       participantIds: [userId1, userId2],
+ *       participantEmails: ["peer@example.com"],
  *       generatePrompts: true, // Auto-generate conversation starters
  *     });
  *     
@@ -121,13 +121,21 @@ export function useMeetingLifecycle(): UseMeetingLifecycleResult {
   // Actions
   const generatePromptsAction = useAction(api.prompts.actions.generatePreCallIdeas);
 
-  // Query connection info when needed
-  const connectionInfo = useQuery(
-    currentMeetingId
-      ? api.meetings.lifecycle.getMeetingConnectionInfo
-      : "skip" as any,
-    currentMeetingId ? { meetingId: currentMeetingId } : undefined
-  );
+  const connectionInfoMutation = useMutation(api.meetings.lifecycle.getMeetingConnectionInfo);
+  const [connectionInfo, setConnectionInfo] = useState<{
+    meetingId: Id<"meetings">;
+    info: MeetingConnectionInfo;
+  }>();
+  useEffect(() => {
+    if (!currentMeetingId) return;
+    let cancelled = false;
+    void connectionInfoMutation({ meetingId: currentMeetingId }).then(result => {
+      if (!cancelled) setConnectionInfo({ meetingId: currentMeetingId, info: result });
+    }).catch(err => {
+      if (!cancelled) setError(err instanceof Error ? err : new Error("Failed to load connection info"));
+    });
+    return () => { cancelled = true; };
+  }, [currentMeetingId, connectionInfoMutation]);
 
   /**
    * Creates a new meeting and optionally generates pre-call prompts
@@ -138,12 +146,12 @@ export function useMeetingLifecycle(): UseMeetingLifecycleResult {
 
     try {
       // Create meeting
-      const meetingId = await createMeetingMutation({
+      const { meetingId } = await createMeetingMutation({
         title: params.title,
         description: params.description,
         scheduledAt: params.scheduledAt,
         duration: params.duration,
-        participantIds: params.participantIds,
+        participantEmails: params.participantEmails,
       });
 
       setCurrentMeetingId(meetingId);
@@ -236,7 +244,7 @@ export function useMeetingLifecycle(): UseMeetingLifecycleResult {
     if (currentMeetingId !== meetingId) {
       setCurrentMeetingId(meetingId);
     }
-    return connectionInfo;
+    return connectionInfo?.meetingId === meetingId ? connectionInfo.info : undefined;
   }, [connectionInfo, currentMeetingId]);
 
   return {
@@ -250,14 +258,4 @@ export function useMeetingLifecycle(): UseMeetingLifecycleResult {
     error,
   };
 
-  return {
-    createMeeting,
-    startMeeting,
-    endMeeting,
-    getConnectionInfo,
-    isCreating,
-    isStarting,
-    isEnding,
-    error,
-  };
 }

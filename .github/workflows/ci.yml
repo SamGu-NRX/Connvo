@@ -2,22 +2,28 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, alpha]
   pull_request:
-    branches: [main]
+    branches: [main, alpha]
 
 jobs:
   test:
-    runs-on: upnpmtu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: oven-sh/setup-pnpm@v2
+        uses: pnpm/action-setup@v4
         with:
-          pnpm-version: latest
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -29,14 +35,14 @@ jobs:
         run: pnpm run lint
 
       - name: Run tests
-        run: pnpm test
+        run: pnpm test:run
 
       - name: Test build
         run: pnpm run build
 
   deploy-staging:
     needs: test
-    runs-on: upnpmtu-latest
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
@@ -44,9 +50,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: oven-sh/setup-pnpm@v2
+        uses: pnpm/action-setup@v4
         with:
-          pnpm-version: latest
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -62,7 +74,7 @@ jobs:
 
   deploy-production:
     needs: test
-    runs-on: upnpmtu-latest
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -70,9 +82,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: oven-sh/setup-pnpm@v2
+        uses: pnpm/action-setup@v4
         with:
-          pnpm-version: latest
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

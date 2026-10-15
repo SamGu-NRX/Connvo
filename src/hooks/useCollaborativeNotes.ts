@@ -22,19 +22,12 @@ import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { useCallback, useState } from "react";
 
-export interface MeetingNote {
-  _id: Id<"meetingNotes">;
-  meetingId: Id<"meetings">;
-  content: string;
-  version: number;
-  lastEditedBy?: Id<"users">;
-  lastEditedAt: number;
-  createdAt: number;
-}
+export type { MeetingNote } from "@convex/types/entities/note";
+import type { MeetingNote } from "@convex/types/entities/note";
 
 export interface NoteOperation {
   type: "insert" | "delete" | "retain";
-  position?: number;
+  position: number;
   text?: string;
   length?: number;
 }
@@ -110,10 +103,10 @@ export function useCollaborativeNotes(
         operation: {
           type: operation.type,
           position: operation.position,
-          text: operation.text,
+          content: operation.text,
           length: operation.length,
         },
-        clientTimestamp: Date.now(),
+        clientSequence: notes?.version ?? 0,
       });
     } catch (err) {
       console.error("Failed to apply note operation:", err);
@@ -121,7 +114,7 @@ export function useCollaborativeNotes(
     } finally {
       setIsSyncing(false);
     }
-  }, [meetingId, applyOperationMutation]);
+  }, [meetingId, applyOperationMutation, notes?.version]);
 
   // Apply multiple operations in batch
   const applyOperations = useCallback(async (operations: NoteOperation[]) => {
@@ -131,12 +124,14 @@ export function useCollaborativeNotes(
       await batchApplyMutation({
         meetingId,
         operations: operations.map(op => ({
-          type: op.type,
-          position: op.position,
-          text: op.text,
-          length: op.length,
+          operation: {
+            type: op.type,
+            position: op.position,
+            content: op.text,
+            length: op.length,
+          },
+          clientSequence: notes?.version ?? 0,
         })),
-        clientTimestamp: Date.now(),
       });
     } catch (err) {
       console.error("Failed to apply note operations batch:", err);
@@ -144,7 +139,7 @@ export function useCollaborativeNotes(
     } finally {
       setIsSyncing(false);
     }
-  }, [meetingId, batchApplyMutation]);
+  }, [meetingId, batchApplyMutation, notes?.version]);
 
   return {
     notes,
@@ -191,6 +186,7 @@ export function calculateOperation(oldText: string, newText: string): NoteOperat
     // Same length - treat as retain (no change)
     return {
       type: "retain",
+      position: 0,
       length: newText.length,
     };
   }

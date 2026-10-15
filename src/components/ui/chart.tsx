@@ -104,8 +104,20 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<"div"> & {
+  Omit<
+    RechartsPrimitive.TooltipContentProps<
+      number | string | Array<number | string>,
+      number | string
+    >,
+    "accessibilityLayer" | "active" | "coordinate" | "payload" | "label"
+  > & {
+    active?: boolean;
+    payload?: RechartsPrimitive.TooltipContentProps<
+      number | string | Array<number | string>,
+      number | string
+    >["payload"];
+    label?: string | number;
+  } & React.ComponentProps<"div"> & {
       hideLabel?: boolean;
       hideIndicator?: boolean;
       indicator?: "line" | "dot" | "dashed";
@@ -192,14 +204,14 @@ const ChartTooltipContent = React.forwardRef<
 
             return (
               <div
-                key={item.dataKey}
+                key={typeof item.dataKey === "function" ? index : item.dataKey}
                 className={cn(
                   "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
                   indicator === "dot" && "items-center",
                 )}
               >
                 {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                  formatter(item.value, item.name, item, index, payload)
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -261,7 +273,10 @@ const ChartLegend = RechartsPrimitive.Legend;
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+    Pick<
+      React.ComponentProps<typeof RechartsPrimitive.DefaultLegendContent>,
+      "payload" | "verticalAlign"
+    > & {
       hideIcon?: boolean;
       nameKey?: string;
     }

@@ -81,9 +81,9 @@ export function validateValidatorStructure(
         }
         break;
       case "record":
-        if (!validator.keys || !validator.values) {
+        if (!validator.key || !validator.value) {
           errors.push(
-            `${validatorName} record validator missing 'keys' or 'values'`,
+            `${validatorName} record validator missing 'key' or 'value'`,
           );
         }
         break;
@@ -376,8 +376,8 @@ export function exploreValidatorStructure(
       case "record":
         return {
           kind: "record",
-          keys: analyzeValidator(v.keys, depth + 1),
-          values: analyzeValidator(v.values, depth + 1),
+          keys: analyzeValidator(v.key, depth + 1),
+          values: analyzeValidator(v.value, depth + 1),
         };
 
       case "id":

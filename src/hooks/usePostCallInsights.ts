@@ -40,31 +40,11 @@ export interface MeetingWithInsights {
   activeWebRTCSessions: number;
 }
 
-export interface TranscriptSegment {
-  _id: Id<"transcriptSegments">;
-  _creationTime: number;
-  meetingId: Id<"meetings">;
-  startMs: number;
-  endMs: number;
-  speakers: string[];
-  text: string;
-  topics: string[];
-  sentiment?: {
-    score: number;
-    label: "positive" | "negative" | "neutral";
-  };
-  createdAt: number;
-}
+export type { TranscriptSegment } from "@convex/types/entities/transcript";
+import type { TranscriptSegment } from "@convex/types/entities/transcript";
 
-export interface MeetingNote {
-  _id: Id<"meetingNotes">;
-  meetingId: Id<"meetings">;
-  content: string;
-  version: number;
-  lastEditedBy?: Id<"users">;
-  lastEditedAt: number;
-  createdAt: number;
-}
+export type { MeetingNote } from "@convex/types/entities/note";
+import type { MeetingNote } from "@convex/types/entities/note";
 
 export interface MeetingInsights {
   totalDuration: number;
@@ -165,8 +145,7 @@ export function usePostCallInsights(
 
     // Calculate average sentiment
     const sentimentScores = segments
-      .filter(s => s.sentiment)
-      .map(s => s.sentiment!.score);
+      .flatMap(s => s.sentiment === undefined ? [] : [s.sentiment]);
     const averageSentiment = sentimentScores.length > 0
       ? sentimentScores.reduce((sum, score) => sum + score, 0) / sentimentScores.length
       : 0;
