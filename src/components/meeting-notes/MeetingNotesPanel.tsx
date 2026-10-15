@@ -17,7 +17,6 @@
  */
 
 import {
-  useEffect,
   useId,
   useState,
   type ChangeEvent,
@@ -68,11 +67,9 @@ function MeetingNotesPanelBody({
 
   // When the hook's editing session ends (flush settled), drop the mirror so
   // the composed ledger content — possibly rebased with remote edits — shows.
-  useEffect(() => {
-    if (!ledger.isEditing) {
-      setDraft(null);
-    }
-  }, [ledger.isEditing]);
+  if (!ledger.isEditing && draft !== null) {
+    setDraft(null);
+  }
 
   const value = ledger.isEditing && draft !== null ? draft : ledger.content;
 
