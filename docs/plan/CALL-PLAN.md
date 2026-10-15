@@ -1,5 +1,7 @@
 # Connvo call plan
 
+> **Status, 2026-10-15.** The call described here is built and merged into `alpha`. The proof requirements below (20-seed pass bars, scenario matrices, harness growth) are retired. New work follows the engineering budget in `AGENTS.md`; matching and scheduled chats follow `docs/plan/MATCHING-PLAN.md`.
+
 Owner: the Connvo/LinkedUp lead (fleet). Task prompts quote this file by section ID. Integration branch: `alpha`
 (cut from `main` at 8d73d9bbaf93). Nothing here merges to `main`.
 
