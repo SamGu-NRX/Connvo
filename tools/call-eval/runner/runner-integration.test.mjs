@@ -115,18 +115,21 @@ function tcpPortFree(port) {
 }
 
 describe("wired scenario selection", () => {
-  it("exposes all 16 H ids for contract completeness", () => {
-    expect(H_IDS).toHaveLength(16);
+  it("exposes all H ids including the explicit endpoint relay proof", () => {
+    expect(H_IDS).toHaveLength(17);
     expect(H_IDS[0]).toBe("H-01");
     expect(H_IDS[15]).toBe("H-16");
+    expect(H_IDS[16]).toBe("H-17");
     expect(P_IDS).toEqual(["P-01", "P-02", "P-03", "P-04", "P-05"]);
-    expect(ALL_SCENARIOS).toHaveLength(21);
+    expect(ALL_SCENARIOS).toHaveLength(22);
   });
 
   it("wires every H scenario except H-14", () => {
     const wired = wiredScenarioIds("H");
     expect(wired).toHaveLength(15);
     expect(wired).not.toContain("H-14");
+    expect(wired).not.toContain("H-17");
+    expect(wiredScenarioIds("H", { signaling: "convex" })).not.toContain("H-17");
     expect(wired).toContain("H-13");
     expect(wired).toContain("H-15");
     expect(wired).toContain("H-16");
