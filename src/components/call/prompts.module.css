@@ -1,0 +1,144 @@
+.panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--card-foreground);
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.header h2,
+.panel h2 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.shared {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+.body {
+  min-height: 10rem;
+  padding: 1.5rem 0 1rem;
+}
+.eyebrow {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-bottom: 0.625rem;
+}
+.question {
+  font-size: 1.375rem;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+/* Occasional content changes fade in to indicate the shared selection changed.
+   Reuse the call's easing curve; keep the question still while it is read. */
+.question {
+  transition: opacity 200ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+}
+@starting-style {
+  .question {
+    opacity: 0;
+  }
+}
+.saved,
+.hint,
+.error {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin-top: 0.75rem;
+}
+.saved,
+.hint {
+  color: var(--muted-foreground);
+}
+.error {
+  color: var(--destructive);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.actions button,
+.auto button {
+  min-height: 44px;
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.actions button {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+}
+.actions button:first-child {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.panel button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.auto {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.auto p {
+  margin: 0;
+  flex: 1;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.auto button {
+  flex-shrink: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .question {
+    transition: opacity 150ms ease;
+  }
+}
+@media (max-width: 440px) {
+  .panel {
+    padding: 1rem;
+  }
+  .body {
+    min-height: 9rem;
+  }
+}
+
+.panel[data-keyboard="true"] .question {
+  transition: none;
+}
+@starting-style {
+  .panel[data-keyboard="true"] .question {
+    opacity: 1;
+  }
+}

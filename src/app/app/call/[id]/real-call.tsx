@@ -24,6 +24,7 @@ import { useConvex, useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
+import { ConversationPrompts } from "@/components/call/ConversationPrompts";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
@@ -93,8 +94,12 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // After the person leaves, the page shows what the meeting recorded
   // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
   const [ended, setEnded] = useState(false);
+  const [inCall, setInCall] = useState(false);
   const onScreenChange = useCallback(
-    (screen: "lobby" | "call" | "ended") => setEnded(screen === "ended"),
+    (screen: "lobby" | "call" | "ended") => {
+      setEnded(screen === "ended");
+      setInCall(screen === "call");
+    },
     [],
   );
 
@@ -197,6 +202,12 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
       >
         {ended ? <EndedRecap meetingId={meetingId} /> : null}
+        {!ended ? (
+          <ConversationPrompts
+            meetingId={meetingId as Id<"meetings">}
+            inCall={inCall}
+          />
+        ) : null}
         <NotesBoundary>
           <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
         </NotesBoundary>
