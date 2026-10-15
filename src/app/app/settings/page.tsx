@@ -28,6 +28,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  AvailabilityEditor,
+  defaultTimezone,
+  type AvailabilityValue,
+  type Intent,
+} from "@/components/availability/AvailabilityEditor";
+import { blocksToGrid, gridToBlocks } from "@/lib/availability/schedule";
 
 export default function SettingsPage() {
   const { isAuthenticated, loading: authLoading } = useWorkOSAuth();
@@ -42,6 +49,54 @@ export default function SettingsPage() {
     readyForSettingsQuery ? {} : "skip",
   );
   const updateSettings = useMutation(api.settings.mutations.updateSettings);
+  const chatPreferences = useQuery(
+    api.profiles.availability.getMyChatPreferences,
+    readyForSettingsQuery ? {} : "skip",
+  );
+  const availability = useQuery(
+    api.profiles.availability.getMyAvailability,
+    readyForSettingsQuery ? {} : "skip",
+  );
+  const setChatPreferences = useMutation(api.profiles.availability.setChatPreferences);
+  const replaceAvailability = useMutation(api.profiles.availability.replaceAvailability);
+
+  // Matching & availability editor state, prefilled once both queries land.
+  const [editor, setEditor] = useState<AvailabilityValue | null>(null);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const preferencesLoaded = chatPreferences !== undefined;
+  const availabilityLoaded = availability !== undefined;
+  if (editor === null && preferencesLoaded && availabilityLoaded) {
+    // The queries are typed, but a mocked or partially-provisioned client can
+    // answer with unexpected shapes; degrade to defaults instead of crashing.
+    const blocks = Array.isArray(availability) ? availability : [];
+    const prefs = chatPreferences && typeof chatPreferences === "object" ? chatPreferences : null;
+    setEditor({
+      intents: (prefs?.intents ?? []) as Intent[],
+      timezone: prefs?.timezone ?? defaultTimezone(),
+      chatsPerWeek: prefs?.chatsPerWeek ?? 1,
+      grid: blocksToGrid(blocks),
+    });
+  }
+
+  const handleSaveAvailability = async () => {
+    if (!editor) return;
+    setSavingAvailability(true);
+    try {
+      await setChatPreferences({
+        intents: editor.intents,
+        timezone: editor.timezone,
+        chatsPerWeek: editor.chatsPerWeek,
+      });
+      await replaceAvailability({ blocks: gridToBlocks(editor.grid) });
+      toast.success("Matching preferences saved");
+    } catch (error) {
+      console.error("Availability save error:", error);
+      toast.error("Couldn't save your matching preferences");
+    } finally {
+      setSavingAvailability(false);
+    }
+  };
+
   
   // Local state for optimistic updates
   const [localSettings, setLocalSettings] = useState({
@@ -258,6 +313,44 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
         
+        {/* Matching & Availability */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+          className="md:col-span-2"
+        >
+          <Card data-testid="matching-settings">
+            <CardHeader>
+              <CardTitle>Matching &amp; availability</CardTitle>
+              <CardDescription>
+                What you want from conversations and when you&apos;re free —
+                the matcher uses this to pair your coffee chats.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {editor ? (
+                <>
+                  <AvailabilityEditor value={editor} onChange={setEditor} />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleSaveAvailability}
+                      disabled={savingAvailability}
+                    >
+                      Save matching preferences
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-8 w-2/3" />
+                  <Skeleton className="h-40 w-full" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Account Settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
