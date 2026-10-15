@@ -277,8 +277,12 @@ describe("guard (i): harness allowlist accepts the devEval seed module", () => {
 
   it("keeps excluding modules outside the harness closure", () => {
     expect(isHarnessModulePath("embeddings/actions")).toBe(false);
-    expect(isHarnessModulePath("prompts/foo")).toBe(false);
     expect(isHarnessModulePath("insights/foo")).toBe(false);
+  });
+
+  it("includes live prompts in the call closure", () => {
+    expect(isHarnessModulePath("prompts/live:pick")).toBe(true);
+    expect(isHarnessModulePath("prompts/selection")).toBe(true);
   });
 
   it("accepts the notes directory (the call/meeting closure imports it)", () => {

@@ -1,0 +1,134 @@
+[
+  {
+    "scenario": "H-17",
+    "transport": "reference",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy",
+    "measurements": {
+      "seed": 1,
+      "endpointCredentialsUsed": [
+        true,
+        true
+      ],
+      "relayStats": {
+        "allocations": 3,
+        "relayedToPeer": 617,
+        "relayedToClient": 617,
+        "live": 2
+      },
+      "paths": [
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ],
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ]
+      ],
+      "audioHz": [
+        656.7,
+        437.6
+      ],
+      "colours": [
+        "B",
+        "A"
+      ]
+    },
+    "failure": null,
+    "ms": 19953
+  },
+  {
+    "scenario": "H-17",
+    "transport": "reference",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy",
+    "measurements": {
+      "seed": 2,
+      "endpointCredentialsUsed": [
+        true,
+        true
+      ],
+      "relayStats": {
+        "allocations": 3,
+        "relayedToPeer": 616,
+        "relayedToClient": 613,
+        "live": 2
+      },
+      "paths": [
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ],
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ]
+      ],
+      "audioHz": [
+        656.8,
+        437.9
+      ],
+      "colours": [
+        "B",
+        "A"
+      ]
+    },
+    "failure": null,
+    "ms": 27804
+  },
+  {
+    "scenario": "H-17",
+    "transport": "reference",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy",
+    "measurements": {
+      "seed": 3,
+      "endpointCredentialsUsed": [
+        true,
+        true
+      ],
+      "relayStats": {
+        "allocations": 3,
+        "relayedToPeer": 606,
+        "relayedToClient": 599,
+        "live": 2
+      },
+      "paths": [
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ],
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ]
+      ],
+      "audioHz": [
+        657.3,
+        437.9
+      ],
+      "colours": [
+        "B",
+        "A"
+      ]
+    },
+    "failure": null,
+    "ms": 33790
+  }
+]

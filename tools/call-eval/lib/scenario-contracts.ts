@@ -30,6 +30,7 @@ export const H_PASS_CONDITIONS = {
   "H-15":
     "5% and 15% loss with 300 ms delay, by a method `getStats` proves affects RTP: call stays connected, A/V recovers",
   "H-16": "informational: all pairs receive media",
+  "H-17": "endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy",
 } as const;
 
 export const P_PASS_CONDITIONS = {

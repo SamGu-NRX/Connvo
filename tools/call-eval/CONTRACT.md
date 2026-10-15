@@ -47,6 +47,7 @@ Bench conventions (S0-only, pinned here so runner and page agree):
 | H-14 | Outsider | a signed-in non-participant gets a named rejection and no media |
 | H-15 | Lossy link | 5% and 15% loss with 300 ms delay, by a method `getStats` proves affects RTP: call stays connected, A/V recovers |
 | H-16 | Three peers | informational: all pairs receive media |
+| H-17 | Endpoint-issued TURN | endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy |
 
 Every scenario's pass condition MUST appear in code as a verbatim quoted string
 from this table (see `PASS_CONDITIONS` in the runner), not paraphrased.

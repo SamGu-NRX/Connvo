@@ -24,9 +24,15 @@ import { useConvex, useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
+import { ConversationPrompts } from "@/components/call/ConversationPrompts";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
+import {
+  IceAccessError,
+  isIceAccessRefusal,
+  sessionIceConfiguration,
+} from "@/lib/call/ice-config";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
 import {
@@ -88,21 +94,49 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // After the person leaves, the page shows what the meeting recorded
   // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
   const [ended, setEnded] = useState(false);
+  const [inCall, setInCall] = useState(false);
   const onScreenChange = useCallback(
-    (screen: "lobby" | "call" | "ended") => setEnded(screen === "ended"),
+    (screen: "lobby" | "call" | "ended") => {
+      setEnded(screen === "ended");
+      setInCall(screen === "call");
+    },
     [],
   );
 
+  const [path, setPath] = useState("unknown");
+  const getRtcConfig = useMemo(
+    () =>
+      sessionIceConfiguration(async () => {
+        if (!me?._id)
+          throw new IceAccessError(
+            "Sign in with the account invited to this meeting.",
+          );
+        try {
+          return await convex.action(api.meetings.webrtc.ice.configuration, {
+            meetingId: meetingId as Id<"meetings">,
+          });
+        } catch (error) {
+          if (isIceAccessRefusal(error))
+            throw new IceAccessError(
+              "Access denied: Calls are only for the people invited to this meeting. Sign in with the invited account.",
+            );
+          throw error;
+        }
+      }),
+    [convex, meetingId, me?._id],
+  );
   const createTransport = useCallback(
     () =>
       Promise.resolve(
         createP2PTransport({
+          getRtcConfig,
+          onConnectionPath: setPath,
           signaling: convexSignaling(convex as unknown as ConvexCallClient, {
             participantIdOf,
           }),
         }),
       ),
-    [convex],
+    [convex, getRtcConfig],
   );
   // The Convex client already carries the user's token.
   const identityToken = useCallback(async () => "", []);
@@ -139,7 +173,10 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // the app shell's floating navigation covers the bottom of the screen, so
   // the page leaves room to scroll the notes clear of it.
   return (
-    <div className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+    <div
+      data-call-connection-path={path}
+      className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]"
+    >
       <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
         <CallRoom
           meetingId={meetingId}
@@ -165,6 +202,12 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
       >
         {ended ? <EndedRecap meetingId={meetingId} /> : null}
+        {!ended ? (
+          <ConversationPrompts
+            meetingId={meetingId as Id<"meetings">}
+            inCall={inCall}
+          />
+        ) : null}
         <NotesBoundary>
           <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
         </NotesBoundary>
