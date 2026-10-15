@@ -8,7 +8,10 @@ import { chromium, type Browser } from "@playwright/test";
 
 async function main() {
   const root = process.cwd();
-  const routeDir = path.join(root, "src/app/auth/queue-component-proof");
+  const routeDir = path.join(
+    root,
+    "src/app/dev/call-bench/queue-component-proof",
+  );
   const route = path.join(routeDir, "page.tsx");
   const out = path.join(root, "docs/match-to-call/screenshots");
   const port = Number(
@@ -47,7 +50,7 @@ export default function Page() { return <Suspense><State /></Suspense>; }
     const page = await browser.newPage();
     for (const state of ["loading", "idle", "signed_out", "ready"]) {
       await page.goto(
-        `http://localhost:${port}/auth/queue-component-proof?as=O&state=${state}`,
+        `http://localhost:${port}/dev/call-bench/queue-component-proof?as=O&state=${state}`,
       );
       await page.locator(`[data-queue-state="${state}"]`).waitFor();
       for (const viewport of [
