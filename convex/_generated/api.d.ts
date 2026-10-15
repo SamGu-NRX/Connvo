@@ -62,6 +62,7 @@ import type * as matching_scheduler from "../matching/scheduler.js";
 import type * as matching_scoring from "../matching/scoring.js";
 import type * as meetings_lifecycle from "../meetings/lifecycle.js";
 import type * as meetings_postProcessing from "../meetings/postProcessing.js";
+import type * as meetings_presenceLifecycle from "../meetings/presenceLifecycle.js";
 import type * as meetings_queries from "../meetings/queries.js";
 import type * as meetings_stateTracking from "../meetings/stateTracking.js";
 import type * as meetings_stream_cleanup from "../meetings/stream/cleanup.js";
@@ -225,6 +226,7 @@ declare const fullApi: ApiFromModules<{
   "matching/scoring": typeof matching_scoring;
   "meetings/lifecycle": typeof meetings_lifecycle;
   "meetings/postProcessing": typeof meetings_postProcessing;
+  "meetings/presenceLifecycle": typeof meetings_presenceLifecycle;
   "meetings/queries": typeof meetings_queries;
   "meetings/stateTracking": typeof meetings_stateTracking;
   "meetings/stream/cleanup": typeof meetings_stream_cleanup;

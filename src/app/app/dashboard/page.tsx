@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useSyncExternalStore } from "react";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,14 +13,18 @@ import {
   getStatusColor,
 } from "@/data/avatar-utils";
 
+const subscribeToHydration = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
+
 export default function DashboardPage() {
-  const [isClient, setIsClient] = useState(false);
+  const isClient = useSyncExternalStore(
+    subscribeToHydration,
+    clientSnapshot,
+    serverSnapshot,
+  );
   const totalConnections = mockUsers.length;
   const featuredConnections = mockUsers.slice(0, 8);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   if (!isClient) {
     return null;

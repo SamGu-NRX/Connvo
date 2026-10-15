@@ -1,3 +1,4 @@
+import { formatRecordedDuration } from "./duration";
 /**
  * Deterministic, extractive recap builder for the after-call history view.
  *
@@ -88,19 +89,12 @@ export function buildRecap(input: RecapInput): RecapResult {
     items: participantItems,
   });
 
-  // Duration: only from state.startedAt/state.endedAt when BOTH are
-  // present, formatted as minutes. Never fabricate a duration.
-  const durationRecorded =
-    input.state !== null &&
-    typeof input.state.startedAt === "number" &&
-    typeof input.state.endedAt === "number";
-  const durationItems = durationRecorded
-    ? [
-        `${Math.round(
-          ((input.state?.endedAt ?? 0) - (input.state?.startedAt ?? 0)) / 60000,
-        )} minutes`,
-      ]
-    : ["Not recorded"];
+  const duration = formatRecordedDuration(
+    input.state?.startedAt,
+    input.state?.endedAt,
+  );
+  const durationRecorded = duration !== null;
+  const durationItems = [duration ?? "Not recorded"];
 
   sections.push({
     kind: "duration",

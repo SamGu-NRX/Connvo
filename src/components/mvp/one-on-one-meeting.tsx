@@ -49,7 +49,7 @@ const generatePrompts = (interests1: String[], interests2: String[]) => [
   "What skills from ${interests1[1]} do you think could be valuable in ${interests2[2]}?",
 ];
 
-const OneonOneMeeting = () => {
+const OneonOneMeeting = ({ meetingId }: { meetingId: string }) => {
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMuted, setIsMuted] = useState(false);
@@ -87,7 +87,7 @@ const OneonOneMeeting = () => {
   };
 
   if (isCallEnded) {
-    return <AfterCallScreen />;
+    return <AfterCallScreen meetingId={meetingId} />;
   }
 
   return (

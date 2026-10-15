@@ -54,7 +54,7 @@ export function ScheduleModal({
     return slots;
   };
 
-  const timeSlots = generateTimeSlots();
+  const [timeSlots] = useState(generateTimeSlots);
 
   const modalVariants = {
     hidden: {

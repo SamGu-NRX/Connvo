@@ -49,6 +49,8 @@ export interface TestMeetingData {
 export interface TestProfileData {
   displayName?: string;
   bio?: string;
+  experience?: string;
+  goals?: string;
   age?: number;
   gender?: "male" | "female" | "non-binary" | "prefer-not-to-say";
   field?: string;
@@ -147,9 +149,9 @@ export async function createTestProfile(
       userId,
       displayName: defaultData.displayName,
       bio: defaultData.bio,
-      goals: undefined,
+      goals: defaultData.goals,
       languages: [],
-      experience: undefined,
+      experience: defaultData.experience,
       age: defaultData.age,
       gender: defaultData.gender,
       field: defaultData.field,

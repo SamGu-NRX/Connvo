@@ -6,7 +6,7 @@
  * can return a short page that is not the end; this keeps asking until it
  * has a screenful or the list is done.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePaginatedQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistoryBoundary } from "./HistoryBoundary";
+import { formatRecordedDuration } from "@/lib/history/duration";
 import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
 
 const PAGE = 20;
@@ -62,6 +63,9 @@ export function MeetingListRows({ items }: { items: Item[] }) {
               <span className="text-muted-foreground text-sm">
                 {formatMeetingTime(item.meeting.scheduledAt)}
                 {item.role === "host" ? " · You hosted" : ""}
+                {formatRecordedDuration(item.startedAt, item.endedAt)
+                  ? ` · ${formatRecordedDuration(item.startedAt, item.endedAt)}`
+                  : ""}
               </span>
             </span>
             <Badge variant="outline">{STATE_LABEL[item.meeting.state]}</Badge>
@@ -101,17 +105,30 @@ function MeetingListData() {
     auth === "ready" ? {} : "skip",
     { initialNumItems: PAGE },
   );
-  const autoFetches = useRef(0);
+  const [pagination, setPagination] = useState({
+    results,
+    status,
+    fetches: 0,
+    waiting: false,
+  });
+  const canFetch = auth === "ready" && status === "CanLoadMore" && results.length < PAGE;
+  if (pagination.results !== results || pagination.status !== status ||
+      (canFetch && pagination.fetches === 0)) {
+    const request = canFetch && pagination.fetches < AUTO_FETCHES;
+    setPagination({
+      results,
+      status,
+      fetches: pagination.fetches + (request ? 1 : 0),
+      waiting: request,
+    });
+  }
+  const issued = useRef(0);
   useEffect(() => {
-    if (
-      status === "CanLoadMore" &&
-      results.length < PAGE &&
-      autoFetches.current < AUTO_FETCHES
-    ) {
-      autoFetches.current++;
+    if (pagination.fetches > issued.current) {
+      issued.current = pagination.fetches;
       loadMore(PAGE);
     }
-  }, [status, results.length, loadMore]);
+  }, [pagination.fetches, loadMore]);
 
   if (auth === "signed-out")
     return (
@@ -127,7 +144,7 @@ function MeetingListData() {
     status === "LoadingFirstPage" ||
     (results.length === 0 &&
       (status === "LoadingMore" ||
-        (status === "CanLoadMore" && autoFetches.current < AUTO_FETCHES)));
+        (status === "CanLoadMore" && pagination.waiting)));
   if (settling) return <MeetingListSkeleton />;
   if (results.length === 0) {
     return (
@@ -135,10 +152,15 @@ function MeetingListData() {
         data-testid="meeting-list-empty"
         className="flex flex-col items-start gap-2 rounded-md border p-6"
       >
-        <p className="font-medium">No meetings yet</p>
+        <p className="font-medium">{status === "CanLoadMore" ? "More meetings may be available" : "No meetings yet"}</p>
         <p className="text-muted-foreground text-sm">
-          Meetings you take part in show up here, with what each one recorded.
+          {status === "CanLoadMore"
+            ? "Keep checking your history to look through the remaining meetings."
+            : "Meetings you take part in show up here, with what each one recorded."}
         </p>
+        {status === "CanLoadMore" && (
+          <Button variant="outline" onClick={() => loadMore(PAGE)}>Load more</Button>
+        )}
       </div>
     );
   }

@@ -322,7 +322,7 @@ async function connected(peer: Person) {
       async () => {
         // decodeRemoteFrame uses the pinned decoderBundle on pixels from the remote video.
         const frame = await decodeRemoteFrame(peer, remoteId);
-        if (!frame.present) return "no-frame";
+        if (!frame.present || !frame.color) return "no-frame";
         const color = matchPeerColor(frame.color);
         return color.ok ? color.label : "unclassified";
       },
@@ -337,6 +337,8 @@ async function connected(peer: Person) {
     first.present && first.counter?.ok,
     "Remote fixture frame counter did not decode",
   );
+  const firstCounter = first.counter;
+  assert(firstCounter, "Remote fixture frame counter is missing");
   await expect
     .poll(
       async () => {
@@ -344,7 +346,7 @@ async function connected(peer: Person) {
         return (
           next.present &&
           next.counter?.ok &&
-          next.counter.counter !== first.counter.counter
+          next.counter.counter !== firstCounter.counter
         );
       },
       {

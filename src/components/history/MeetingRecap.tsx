@@ -13,6 +13,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatRecordedDuration } from "@/lib/history/duration";
 import { buildRecap } from "@/lib/history/recap";
 import { cn } from "@/lib/utils";
 import { HistoryBoundary } from "./HistoryBoundary";
@@ -27,8 +28,7 @@ function durationLine(history: MeetingHistory): string {
   const started = state?.startedAt;
   const ended = state?.endedAt;
   if (typeof started === "number" && typeof ended === "number") {
-    const minutes = Math.max(0, Math.round((ended - started) / 60_000));
-    return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+    return formatRecordedDuration(started, ended) ?? "Not recorded";
   }
   if (typeof started === "number")
     return "Still going: no end has been recorded yet.";

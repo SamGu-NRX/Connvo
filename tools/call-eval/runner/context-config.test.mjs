@@ -37,7 +37,7 @@ function relayContext() {
   ctx._relayEnabled = true;
   // Stubbed coturn handle: rtcConfigFor only reads port/user/pass, and a
   // pre-seeded shaper avoids binding real UDP ports in a unit test.
-  ctx.turn = { port: 3488, user: "eval-user", pass: "eval-pass", realm: "eval", stop() {} };
+  ctx.turn = { port: 3488, user: "eval-user", pass: "eval-pass", stats: () => ({ live: 0, allocations: 0, relayedToPeer: 0, relayedToClient: 0 }), stop() {} };
   ctx.shapers.set("A", { port: 3489, ready: Promise.resolve() });
   return ctx;
 }
@@ -79,7 +79,7 @@ describe("RunContext.setSeed shaper re-creation", () => {
   it("re-creates shapers per seed so loss patterns re-derive per matrix row", async () => {
     const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3311" });
     ctx._relayEnabled = true;
-    ctx.turn = { port: 3488, user: "eval-user", pass: "eval-pass", realm: "eval", stop() {} };
+    ctx.turn = { port: 3488, user: "eval-user", pass: "eval-pass", stats: () => ({ live: 0, allocations: 0, relayedToPeer: 0, relayedToClient: 0 }), stop() {} };
 
     await ctx.rtcConfigFor("A"); // lazily creates A's shaper from the constructor seed (1)
     expect(vi.mocked(createShaper).mock.calls[0]?.[0]).toEqual({ seed: 1 });
@@ -111,7 +111,7 @@ describe("RunContext.setSeed shaper re-creation", () => {
   it("recreates shapers with the new seed but keeps port assignment stable", async () => {
     const ctx = new RunContext({ transport: "reference", baseUrl: "http://localhost:3311" });
     ctx._relayEnabled = true;
-    ctx.turn = { port: 3488, user: "eval-user", pass: "eval-pass", realm: "eval", stop() {} };
+    ctx.turn = { port: 3488, user: "eval-user", pass: "eval-pass", stats: () => ({ live: 0, allocations: 0, relayedToPeer: 0, relayedToClient: 0 }), stop() {} };
     ctx.shapers.set("A", { port: 3489, ready: Promise.resolve(), stop: vi.fn() });
     ctx._relayConfigCache.set("A", { iceServers: [] });
 

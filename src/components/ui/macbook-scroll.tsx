@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useRef, useSyncExternalStore } from "react";
 import { MotionValue, motion, useScroll, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +25,15 @@ import { IconCaretLeftFilled } from "@tabler/icons-react";
 import { IconCaretDownFilled } from "@tabler/icons-react";
 import Image from "next/image";
 
+const mobileQuery = "(max-width: 767px)";
+const subscribeToMobile = (listener: () => void) => {
+  const query = window.matchMedia(mobileQuery);
+  query.addEventListener("change", listener);
+  return () => query.removeEventListener("change", listener);
+};
+const mobileSnapshot = () => window.matchMedia(mobileQuery).matches;
+const serverMobileSnapshot = () => false;
+
 export const MacbookScroll = ({
   src,
   showGradient,
@@ -42,13 +51,11 @@ export const MacbookScroll = ({
     offset: ["start start", "end start"],
   });
 
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    if (window && window.innerWidth < 768) {
-      setIsMobile(true);
-    }
-  }, []);
+  const isMobile = useSyncExternalStore(
+    subscribeToMobile,
+    mobileSnapshot,
+    serverMobileSnapshot,
+  );
 
   const scaleX = useTransform(
     scrollYProgress,

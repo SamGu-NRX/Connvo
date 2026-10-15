@@ -82,11 +82,11 @@ type StreamVideoClientCtor = new (
 // client. Behavior is unchanged: same client, same credentials check, same
 // errors, just resolved through the awaited promise.
 async function loadStreamCtor(): Promise<StreamVideoClientCtor> {
-  const module = (await import("@stream-io/video-react-sdk")) as unknown as {
+  const sdk = (await import("@stream-io/video-react-sdk")) as unknown as {
     StreamVideoClient: StreamVideoClientCtor;
   };
 
-  return module.StreamVideoClient;
+  return sdk.StreamVideoClient;
 }
 
 export async function getStreamVideoClient(): Promise<StreamVideoClient> {

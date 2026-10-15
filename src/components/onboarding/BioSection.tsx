@@ -1,7 +1,7 @@
 // src/components/onboarding/BioSection.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,11 +25,7 @@ export default function BioSection({ onNext, onBack }: BioSectionProps) {
 
   // Watch the bio value and update the character count
   const bioValue = watch("bio", "");
-  const [charCount, setCharCount] = useState(bioValue.length);
-
-  useEffect(() => {
-    setCharCount(bioValue.length);
-  }, [bioValue]);
+  const charCount = bioValue.length;
 
   const handleNext = async () => {
     const isValid = await trigger("bio");

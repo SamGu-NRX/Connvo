@@ -149,7 +149,8 @@ describe("Transcript Ingestion Pipeline", () => {
   });
 
   test("should handle time-bucketed sharding correctly", async () => {
-    const baseTime = Date.now();
+    // Start at a bucket boundary so the first two chunks always share a bucket.
+    const baseTime = Date.UTC(2024, 0, 1, 12, 0, 0);
     const chunks = [
       {
         text: "First chunk",

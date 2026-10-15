@@ -84,8 +84,9 @@ interface Peer {
   disconnectedTimer: ReturnType<typeof setTimeout> | null;
   watchdog: ReturnType<typeof setInterval> | null;
   politeOfferTimer: ReturnType<typeof setTimeout> | null;
-  /** When the last offer from the other side arrived (ms since epoch). */
-  lastRemoteOfferAt: number;
+  /** Changes on every received offer, including offers in the same millisecond. */
+  remoteOfferVersion: number;
+  requestOffer: () => void;
   initialIceDeadline: ReturnType<typeof setTimeout> | null;
 }
 
@@ -234,7 +235,8 @@ export function createP2PTransport({
       disconnectedTimer: null,
       watchdog: null,
       politeOfferTimer: null,
-      lastRemoteOfferAt: 0,
+      remoteOfferVersion: 0,
+      requestOffer: () => {},
       initialIceDeadline: null,
     };
     peers.set(id, peer);
@@ -254,12 +256,18 @@ export function createP2PTransport({
         );
     }, GIVE_UP_MS.joining);
 
-    // addTrack, not addTransceiver: a remote offer can reuse an addTrack
-    // transceiver, so a glare rollback does not leave orphaned m-lines.
+    // Keep addTrack reuse for captured tracks. Reserve a sendrecv video slot
+    // for audio-only joins so a later camera track has a negotiated sender.
     const stream = currentStream();
     for (const kind of KINDS) {
       const track = stream?.getTracks().find((t) => t.kind === kind);
       if (track && stream) peer.senders[kind] = pc.addTrack(track, stream);
+      else if (kind === "video") {
+        peer.senders.video = pc.addTransceiver("video", {
+          direction: "sendrecv",
+          streams: stream ? [stream] : [],
+        }).sender;
+      }
     }
 
     pc.onicecandidate = ({ candidate }) => {
@@ -311,26 +319,28 @@ export function createP2PTransport({
     // collision, but the polite side no longer starts one:
     // - when it needs to negotiate (first offer, ICE restart, a new track)
     //   it waits POLITE_OFFER_DELAY_MS, and offers only if the other side
-    //   sent no offer meanwhile. If negotiation is still needed after
-    //   answering that offer, Chromium fires negotiationneeded again.
+    //   sent no offer meanwhile. An unassociated reserved video slot needs
+    //   an explicit follow-up after answering, since Chromium may leave its
+    //   negotiationneeded flag set without firing the event again.
     // - only the impolite side starts ICE restarts on its own timers.
-    pc.onnegotiationneeded = () => {
+    peer.requestOffer = () => {
       trace(`${id} negotiationneeded (${pc.signalingState})`);
       if (!peer.polite) {
         void makeOffer();
         return;
       }
       if (peer.politeOfferTimer) return;
-      const askedAt = Date.now();
+      const offeredVersion = peer.remoteOfferVersion;
       peer.politeOfferTimer = setTimeout(() => {
         peer.politeOfferTimer = null;
-        if (peer.lastRemoteOfferAt >= askedAt) return;
-        if (pc.signalingState === "stable" && pc.connectionState !== "closed") {
+        if (peer.remoteOfferVersion !== offeredVersion) return;
+        if (!peer.makingOffer && pc.signalingState === "stable" && pc.connectionState !== "closed") {
           trace(`${id} no offer arrived; offering`);
           void makeOffer();
         }
       }, POLITE_OFFER_DELAY_MS);
     };
+    pc.onnegotiationneeded = peer.requestOffer;
     let restarting = false;
     const restart = () => {
       if (
@@ -402,7 +412,6 @@ export function createP2PTransport({
       if (description.type === "offer" && getRtcConfig) {
         if (!(await refreshIce(peer))) return;
       }
-      if (description.type === "offer") peer.lastRemoteOfferAt = Date.now();
       const readyForOffer =
         !peer.makingOffer &&
         (pc.signalingState === "stable" || peer.settingRemoteAnswer);
@@ -423,6 +432,14 @@ export function createP2PTransport({
         await pc.setLocalDescription();
         if (pc.localDescription)
           send(peer.id, { description: pc.localDescription.toJSON() });
+        // Incoming offers cannot associate addTransceiver reservations. A
+        // polite audio-only join must offer its remaining video slot itself.
+        const video = pc.getTransceivers().find((slot) => slot.sender === peer.senders.video);
+        if (video && video.mid === null && pc.connectionState !== "closed" && peers.get(peer.id) === peer) {
+          if (peer.politeOfferTimer) clearTimeout(peer.politeOfferTimer);
+          peer.politeOfferTimer = null;
+          peer.requestOffer();
+        }
       }
       return;
     }
@@ -533,7 +550,7 @@ export function createP2PTransport({
             peer = createPeer(from);
           }
           if ("description" in signal && signal.description.type === "offer")
-            peer.lastRemoteOfferAt = Date.now();
+            peer.remoteOfferVersion++;
           const target = peer;
           enqueue(target, () => applySignal(target, signal));
         },

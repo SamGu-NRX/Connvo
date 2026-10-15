@@ -88,7 +88,7 @@ async function tapConvex(context) {
         if (mode.holdNotes) return; // the answer never arrives
       }
       if (msg.type === "Transition" && (mode.holdNotes || mode.failNotesMutation || mode.failNotesQuery)) {
-        msg.modifications = (msg.modifications ?? []).flatMap((mod) => {
+        msg.modifications = (msg.modifications ?? []).flatMap((/** @type {{queryId: number, type: string, journal?: unknown}} */ mod) => {
           if (!notesQueries.has(mod.queryId) || mod.type !== "QueryUpdated") return [mod];
           if (mode.failNotesQuery) {
             return [{ type: "QueryFailed", queryId: mod.queryId, errorMessage: "Server Error", logLines: [], journal: mod.journal ?? null }];
@@ -117,6 +117,7 @@ async function tapConvex(context) {
 }
 
 /** One person's browser on the call page, joined to the call. */
+/** @param {string} id @param {string} meetingId @param {{reducedMotion?: "reduce" | "no-preference", join?: boolean}} [options] */
 async function openPerson(id, meetingId, { reducedMotion = "no-preference", join = true } = {}) {
   // Chromium's built-in fake camera and microphone, not the harness fixture
   // files: a file-backed fake device is labelled with its file path, which
@@ -145,6 +146,7 @@ async function openPerson(id, meetingId, { reducedMotion = "no-preference", join
   return { browser, context, page, tap };
 }
 
+/** @param {import("@playwright/test").Page} page @param {string} text */
 async function typeNotes(page, text) {
   const editor = page.locator(`${EDITOR}:not([disabled])`);
   await editor.waitFor({ timeout: 60_000 });
@@ -154,6 +156,7 @@ async function typeNotes(page, text) {
   await editor.blur();
 }
 
+/** @param {import("@playwright/test").Page} page @param {RegExp} re @param {number} [timeout] */
 const waitStatus = (page, re, timeout = 15_000) =>
   page.waitForFunction(
     ([sel, src]) => new RegExp(src, "i").test(document.querySelector(sel)?.textContent ?? ""),
@@ -162,6 +165,7 @@ const waitStatus = (page, re, timeout = 15_000) =>
   );
 
 /** Screenshots at both sizes with the notes in view, and an axe audit of the notes column. */
+/** @param {import("@playwright/test").Page} page @param {string} name */
 async function capture(page, name) {
   await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
   const shots = [];
@@ -202,9 +206,11 @@ async function capture(page, name) {
   };
 }
 
-const results = { baseUrl, ranAt: new Date().toISOString(), states: [], keyboard: null, reducedMotion: null };
+const results = { baseUrl, ranAt: new Date().toISOString(), states: /** @type {Awaited<ReturnType<typeof capture>>[]} */ ([]), keyboard: /** @type {{tabsToEditor: number, path: string[], reachedEditor: boolean, editorShowsFocus: boolean, tabFromEditorGoesTo: string, leftEditor: boolean, shiftTabReturnsTo: string, shiftTabFromEditorGoesTo: string, reachesCallControls: boolean} | null} */ (null), reducedMotion: /** @type {{animatedElementsWithReduce: number, animatedElementsWithoutPreference: number, pass: boolean} | null} */ (null) };
 const meetingId = createEvalMeeting("notes states");
+/** @type {Awaited<ReturnType<typeof openPerson>>[]} */
 const opened = [];
+/** @param {Parameters<typeof openPerson>} args */
 const person = async (...args) => {
   const p = await openPerson(...args);
   opened.push(p);
@@ -279,7 +285,10 @@ try {
     await a.page.reload({ waitUntil: "domcontentloaded" });
     await a.page.locator('[data-testid="join-call"]:not([disabled])').click({ timeout: 60_000 });
     await a.page.locator(`${EDITOR}`).waitFor({ timeout: 60_000 });
-    await a.page.waitForFunction((sel) => document.querySelector(sel)?.value.includes("Decision: ship Friday."), EDITOR, {
+    await a.page.waitForFunction((sel) => {
+      const editor = document.querySelector(sel);
+      return editor instanceof HTMLTextAreaElement && editor.value.includes("Decision: ship Friday.");
+    }, EDITOR, {
       timeout: 30_000,
     });
     results.states.push(await capture(a.page, "recovered"));

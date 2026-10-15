@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 // In-page code below runs in the browser through page.evaluate.
 /**
- * H-01..H-16. Every function is named scenario_<id> (the orchestrator binds
+ * H-01..H-18. Every function is named scenario_<id> (the orchestrator binds
  * by name) and returns the plan-schema measurement object for its result
  * entry. Pass conditions live verbatim in lib/scenario-contracts.ts and are
  * echoed by the summary; the assertions below implement them.
@@ -38,8 +38,13 @@ import {
   waitForLiveMedia,
 } from "./page-helpers.mjs";
 
+/** @typedef {import("./context.mjs").RunContext} RunContext */
+/** @typedef {Awaited<ReturnType<import("./peers.mjs").launchPeer>>} Peer */
+/** @typedef {{ seed: number, log: (message: string) => void }} ScenarioOptions */
+/** @param {number} ms */
 const H = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** @param {string} participantId */
 const tileCount = (participantId) =>
   `() => document.querySelectorAll('[data-testid="remote-media"][data-participant-id="${participantId}"]').length`;
 
@@ -54,6 +59,7 @@ const left = (/** @type {number} */ deadline) => Math.max(1, deadline - Date.now
 
 // Node-side color assertions go through one page-side hook wrapping the pinned
 // decoder bundle; tolerant classification per the S0b cross-thread note.
+/** @param {Peer} peer */
 async function installColorHook(peer) {
   const bundleSrc = await decoderBundle();
   const { PEER_COLORS, SECOND_CAMERA_COLOR, COLOR_TOLERANCE } = loadContracts();
@@ -83,6 +89,7 @@ async function installColorHook(peer) {
 }
 
 /** H-01 — each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s */
+/** @param {RunContext} ctx @param {ScenarioOptions} options */
 export async function scenario_H_01(ctx, { log }) {
   // The contract's 5 s bar runs from the moment joining begins (the join
   // click; auto-join fires at page mount) — the reviewed bug started the
@@ -110,7 +117,7 @@ export async function scenario_H_01(ctx, { log }) {
     let last = null;
     for (;;) {
       const frame = await decodeRemoteFrame(peer, from);
-      last = frame.present ? matchPeerColor(frame.color) : null;
+      last = frame.present && frame.color ? matchPeerColor(frame.color) : null;
       if (last?.ok && last.label === want) return { ms: Date.now() - t0, distance: last.distance };
       if (Date.now() - t0 > 5000) {
         throw new ScenarioError(`H-01: ${peer.peerId}'s view of ${from} classified as ${last?.label ?? "nothing"} (distance ${last?.distance ?? "n/a"}) at the 5 s bar`, { frame });
@@ -139,9 +146,11 @@ export async function scenario_H_01(ctx, { log }) {
 }
 
 /** H-02 — each receiver's analyser peak is the sender's tone +-10 Hz within 3 s */
+/** @param {RunContext} ctx */
 export async function scenario_H_02(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
+  /** @param {Peer} peer @param {string} from @param {number} expected @param {number} [timeoutMs] */
   async function toneWithin(peer, from, expected, timeoutMs = 3000) {
     const deadline = Date.now() + timeoutMs;
     let last = null;
@@ -149,7 +158,7 @@ export async function scenario_H_02(ctx) {
       last = await sampleRemoteTone(peer, from, 400); // jitter-buffer settle: stale pre-join samples read as silence
       // decodeToneHz returns { peakHz, rms } — the reviewed bug did
       // arithmetic on the object (NaN), so no healthy call ever matched.
-      if (toneMatches(last, expected)) return last.peakHz;
+      if (last && toneMatches(last, expected)) return last.peakHz;
       if (Date.now() > deadline) {
         const heard = last ? `${last.peakHz} Hz (rms ${last.rms})` : "silence";
         throw new ScenarioError(`H-02: ${peer.peerId} heard ${heard}, expected ${expected}±10 Hz from ${from}`);
@@ -164,6 +173,7 @@ export async function scenario_H_02(ctx) {
 }
 
 /** H-03 — remote data-audio-muted flips within 1 s; received tone energy falls below threshold; unmute restores both */
+/** @param {RunContext} ctx */
 export async function scenario_H_03(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
@@ -193,7 +203,7 @@ export async function scenario_H_03(ctx) {
   let restored = null;
   for (;;) {
     restored = await sampleRemoteTone(peerB, "A", 500);
-    if (toneMatches(restored, 440)) break; // reads restored.peakHz (the reviewed NaN bug compared the object)
+    if (restored && toneMatches(restored, 440)) break; // reads restored.peakHz (the reviewed NaN bug compared the object)
     if (Date.now() > deadline) {
       const heard = restored ? `${restored.peakHz} Hz (rms ${restored.rms})` : "silence";
       throw new ScenarioError(`H-03: unmute did not restore the 440 Hz tone (last ${heard})`);
@@ -204,6 +214,7 @@ export async function scenario_H_03(ctx) {
 }
 
 /** H-04 — remote data-video-off flips within 1 s; the sender's capture track is ended (camera released); on resumes frames */
+/** @param {RunContext} ctx */
 export async function scenario_H_04(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
@@ -232,6 +243,7 @@ export async function scenario_H_04(ctx) {
 }
 
 /** H-05 — switching to the second fake camera keeps frames flowing without a failed phase */
+/** @param {RunContext} ctx */
 export async function scenario_H_05(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   await installColorHook(peerB);
@@ -244,7 +256,7 @@ export async function scenario_H_05(ctx) {
   const color = await waitForValue(
     peerB,
     `async () => await window.__decodeRemoteColor("A")`,
-    (c) => c?.ok && c.label === "second-camera",
+    (/** @type {{ok: boolean, label: string, distance: number}} */ c) => c?.ok && c.label === "second-camera",
     { timeoutMs: 15000, describe: "second-camera color on B's tile" },
   );
   const after = await measureFps(peerB, "A", 2000);
@@ -255,6 +267,7 @@ export async function scenario_H_05(ctx) {
 }
 
 /** H-06 — context without media permission shows an actionable error; granting and retry-media joins */
+/** @param {RunContext} ctx */
 export async function scenario_H_06(ctx) {
   // A runs the full Chromium build without the fake-UI flag, so its
   // getUserMedia prompt is really denied (headless denies by default). It
@@ -272,6 +285,7 @@ export async function scenario_H_06(ctx) {
   const phaseDenied = await peerA.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
   if (phaseDenied === "connected") throw new ScenarioError("H-06: denied peer reports connected", { text });
 
+  if (!ctx.url) throw new ScenarioError("H-06 requires a running page origin");
   await peerA.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
   await click(peerA, "retry-media");
   try {
@@ -287,6 +301,7 @@ export async function scenario_H_06(ctx) {
 }
 
 /** H-07 — one peer offline 3 s, 10 s, 30 s: honest reconnecting, media resumes within 10 s of restore, no duplicate tiles */
+/** @param {RunContext} ctx @param {ScenarioOptions} options */
 export async function scenario_H_07(ctx, { seed }) {
   ctx.enableRelay();
   await ctx.shaperFor("B").ready; // B's own shaper; A stays on host candidates
@@ -340,6 +355,7 @@ export async function scenario_H_07(ctx, { seed }) {
 }
 
 /** H-08 — recovers within 10 s (signaling outage mid-call: both sockets die at once) */
+/** @param {RunContext} ctx */
 export async function scenario_H_08(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   await installColorHook(peerA);
@@ -386,6 +402,7 @@ export async function scenario_H_08(ctx) {
 }
 
 /** H-09 — reloaded peer rejoins; no ghost participant after 10 s */
+/** @param {RunContext} ctx */
 export async function scenario_H_09(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   await installColorHook(peerB); // the no-ghost media check decodes through the hook
@@ -393,7 +410,7 @@ export async function scenario_H_09(ctx) {
   await peerA.page.reload({ waitUntil: "domcontentloaded" }); // same URL: the bench rejoins by itself
   await ctx.joinFromLobby(peerA); // the real page reloads into its lobby
   await waitFor(peerA, phaseIs("connected"), { timeoutMs: 10000, describe: "reloaded A reconnected" });
-  await waitForValue(peerB, tileCount("A"), (n) => n === 1, {
+  await waitForValue(peerB, tileCount("A"), (/** @type {number} */ n) => n === 1, {
     timeoutMs: 10000,
     describe: "B sees exactly one A tile",
   });
@@ -409,13 +426,14 @@ export async function scenario_H_09(ctx) {
 }
 
 /** H-10 — survivor shows the peer gone within 15 s */
+/** @param {RunContext} ctx */
 export async function scenario_H_10(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
   const closed = await killPeerTab(peerA); // CDP Target.closeTarget: no WS close frame
   if (!closed) throw new ScenarioError("H-10: failed to hard-kill peer A's tab");
 
-  await waitForValue(peerB, tileCount("A"), (n) => n === 0, {
+  await waitForValue(peerB, tileCount("A"), (/** @type {number} */ n) => n === 0, {
     timeoutMs: 15000,
     describe: "A's tile gone within 15 s (heartbeat sweep)",
   });
@@ -424,6 +442,7 @@ export async function scenario_H_10(ctx) {
 }
 
 /** H-11 — all local tracks ended, all wrapped connections closed, no getStats traffic afterwards, server session closed */
+/** @param {RunContext} ctx */
 export async function scenario_H_11(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
 
@@ -442,7 +461,7 @@ export async function scenario_H_11(ctx) {
   // would throw; the captured MediaStreamTrack objects still report their
   // post-leave readyState.
   const trackStates = await peerA.page.evaluate(`(() => (window.__h11tracks ?? []).map(t => t.readyState))()`);
-  if (trackStates.length === 0 || !trackStates.every((s) => s === "ended")) {
+  if (trackStates.length === 0 || !trackStates.every((/** @type {string} */ s) => s === "ended")) {
     throw new ScenarioError(`H-11: local tracks not ended (${JSON.stringify(trackStates)})`);
   }
 
@@ -467,11 +486,12 @@ export async function scenario_H_11(ctx) {
   if (!leftEvent) throw new ScenarioError("H-11: no leave session event on the relay", { events });
 
   // B observes the departure (tile gone).
-  await waitForValue(peerB, tileCount("A"), (n) => n === 0, { timeoutMs: 15000, describe: "B's tile for A removed" });
+  await waitForValue(peerB, tileCount("A"), (/** @type {number} */ n) => n === 0, { timeoutMs: 15000, describe: "B's tile for A removed" });
   return { trackStates, getStatsCallsStable: true, getStatsCalls: calls2, sessionEvents: events.slice(-4) };
 }
 
 /** H-12 — simultaneous join in both orders, 20 seeds: always connects */
+/** @param {RunContext} ctx @param {ScenarioOptions} options */
 export async function scenario_H_12(ctx, { seed }) {
   // Both join orders across the seed matrix; within one seed both pages
   // launch simultaneously (Promise.all) — offers collide from both sides.
@@ -502,6 +522,7 @@ export async function scenario_H_12(ctx, { seed }) {
 }
 
 /** H-13 — five leave/rejoin cycles: live connection and track counts return to baseline */
+/** @param {RunContext} ctx */
 export async function scenario_H_13(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   const baseline = await probeState(peerA);
@@ -531,6 +552,7 @@ export async function scenario_H_13(ctx) {
 }
 
 /** H-14 — a signed-in non-participant gets a named rejection and no media */
+/** @param {RunContext} ctx */
 export async function scenario_H_14(ctx) {
   const { peerA, peerB } = await joinPair(ctx);
   const peerO = await ctx.launchPeer("O");
@@ -544,8 +566,12 @@ export async function scenario_H_14(ctx) {
     const tiles = await peerO.page.evaluate(`(${tileCountAll})()`);
     if (tiles !== 0) throw new ScenarioError(`H-14: rejected peer has ${tiles} media tiles`, { text });
     const phase = await peerO.page.evaluate(`(() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase'))()`);
-    await waitForValue(peerB, tileCountAll, (n) => n === 1, { timeoutMs: 5000, describe: "no O tile on B" });
-    return { rejection: text.slice(0, 140), phase, tiles };
+    const probe = await probeState(peerO);
+    if (probe.tracks.created !== 0 || probe.connections.live !== 0) {
+      throw new ScenarioError("H-14: rejected peer acquired capture or retained a peer connection", { probe });
+    }
+    await waitForValue(peerB, tileCountAll, (/** @type {number} */ n) => n === 1, { timeoutMs: 5000, describe: "no O tile on B" });
+    return { rejection: text.slice(0, 140), phase, tiles, tracksCreated: probe.tracks.created, liveConnections: probe.connections.live };
   } finally {
     await peerO.close();
     await peerA.close();
@@ -554,6 +580,7 @@ export async function scenario_H_14(ctx) {
 }
 
 /** H-15 — 5% and 15% loss with 300 ms delay, by a method getStats proves affects RTP: call stays connected, A/V recovers */
+/** @param {RunContext} ctx */
 export async function scenario_H_15(ctx) {
   ctx.enableRelay();
   await ctx.shaperFor("B").ready;
@@ -561,6 +588,7 @@ export async function scenario_H_15(ctx) {
 
   await installColorHook(peerB);
 
+  /** @param {string} label @param {number} lossPct @param {number} delayMs @param {number} [windowMs] */
   async function proofBlock(label, lossPct, delayMs, windowMs = 6000) {
     if (lossPct > 0 || delayMs > 0) {
       ctx.shaperFor("B").applyProfile({ lossPct, delayMs });
@@ -582,7 +610,7 @@ export async function scenario_H_15(ctx) {
     let tone = null;
     for (;;) {
       tone = await sampleRemoteTone(peerB, "A", 400);
-      if (toneMatches(tone, 440)) return { hz: tone.peakHz, afterMs: Date.now() - clearedAt };
+      if (tone && toneMatches(tone, 440)) return { hz: tone.peakHz, afterMs: Date.now() - clearedAt };
       if (Date.now() > deadline) {
         const heard = tone ? `${tone.peakHz} Hz (rms ${tone.rms})` : "silence";
         throw new ScenarioError(`H-15: audio did not recover within 3 s after ${name} loss (heard ${heard}, expected 440 Hz)`, { tone });
@@ -592,12 +620,12 @@ export async function scenario_H_15(ctx) {
   }
 
   const baseline = await proofBlock("baseline", 0, 0, 4000);
-  if (baseline.deltaLost !== 0 || baseline.rttMs >= 100) {
+  if (baseline.deltaLost !== 0 || baseline.rttMs === null || baseline.rttMs >= 100) {
     throw new ScenarioError("H-15: baseline is not clean — proof would be meaningless", baseline);
   }
 
   const loss5 = await proofBlock("5%", 5, 300);
-  if (loss5.deltaLost <= 0 || loss5.rttMs < 250) {
+  if (loss5.deltaLost <= 0 || loss5.rttMs === null || loss5.rttMs < 250) {
     throw new ScenarioError(
       `H-15: shaping did not demonstrably reach RTP at 5% (lost +${loss5.deltaLost}, rtt ${loss5.rttMs} ms)`,
       loss5,
@@ -607,7 +635,7 @@ export async function scenario_H_15(ctx) {
   const recovery5 = await proofBlock("recovery-5%", 0, 0, 4000);
 
   const loss15 = await proofBlock("15%", 15, 300);
-  if (loss15.deltaLost <= 0 || loss15.rttMs < 250) {
+  if (loss15.deltaLost <= 0 || loss15.rttMs === null || loss15.rttMs < 250) {
     throw new ScenarioError(
       `H-15: shaping did not demonstrably reach RTP at 15% (lost +${loss15.deltaLost}, rtt ${loss15.rttMs} ms)`,
       loss15,
@@ -616,12 +644,12 @@ export async function scenario_H_15(ctx) {
   const tone15 = await toneBack("15%", loss15.clearedAt);
   const recovery15 = await proofBlock("recovery-15%", 0, 0, 4000);
 
-  for (const [name, block] of [["5%", loss5], ["15%", loss15]]) {
+  for (const [name, block] of /** @type {const} */ ([["5%", loss5], ["15%", loss15]])) {
     if (block.phase !== "connected") {
       throw new ScenarioError(`H-15: call phase was "${block.phase}" under ${name} loss`, block);
     }
   }
-  for (const [name, block] of [["5%", recovery5], ["15%", recovery15]]) {
+  for (const [name, block] of /** @type {const} */ ([["5%", recovery5], ["15%", recovery15]])) {
     if (block.fps < 10) {
       throw new ScenarioError(`H-15: video did not recover after ${name} loss (${block.fps} fps)`, block);
     }
@@ -640,6 +668,7 @@ export async function scenario_H_15(ctx) {
 }
 
 /** H-16 — informational: all pairs receive media */
+/** @param {RunContext} ctx */
 export async function scenario_H_16(ctx) {
   const [peerA, peerB, peerC] = await Promise.all([
     ctx.launchPeer("A"),
@@ -655,19 +684,19 @@ export async function scenario_H_16(ctx) {
     for (const peer of [peerA, peerB, peerC]) await installColorHook(peer);
 
     const pairs = [];
-    for (const [viewer, from, expected] of [
+    for (const [viewer, from, expected] of /** @type {const} */ ([
       ["A", "B", "B"],
       ["A", "C", "C"],
       ["B", "A", "A"],
       ["B", "C", "C"],
       ["C", "A", "A"],
       ["C", "B", "B"],
-    ]) {
+    ])) {
       const peer = { A: peerA, B: peerB, C: peerC }[viewer];
       const c = await waitForValue(
         peer,
         `async () => await window.__decodeRemoteColor("${from}")`,
-        (c) => c?.ok && c.label === expected,
+        (/** @type {{ok: boolean, label: string, distance: number}} */ c) => c?.ok && c.label === expected,
         { timeoutMs: 20000, describe: `${viewer} decodes ${from}` },
       );
       pairs.push({ viewer, from, label: c.label, distance: c.distance });
@@ -704,6 +733,7 @@ export async function scenario_H_17(ctx, { seed }) {
     await waitForLiveMedia(peerB, "A", { deadlineAt: Date.now() + 15000, label: "A" });
     const frameA = await decodeRemoteFrame(peerA, "B");
     const frameB = await decodeRemoteFrame(peerB, "A");
+    if (!frameA.color || !frameB.color) throw new ScenarioError("H-17 remote video frames are absent.");
     if (!matchPeerColor(frameA.color)?.ok || matchPeerColor(frameA.color).label !== "B" || !matchPeerColor(frameB.color)?.ok || matchPeerColor(frameB.color).label !== "A") throw new ScenarioError("H-17 remote video does not match the other participant.");
     // Use H-02's three-second receipt window while the jitter buffer settles.
     const audioDeadline = Date.now() + 3000;
@@ -713,7 +743,7 @@ export async function scenario_H_17(ctx, { seed }) {
       [toneA, toneB] = await Promise.all([sampleRemoteTone(peerA, "B", 400), sampleRemoteTone(peerB, "A", 400)]);
       if (toneMatches(toneA, 660) && toneMatches(toneB, 440)) break;
     } while (Date.now() < audioDeadline);
-    if (!toneMatches(toneA, 660) || !toneMatches(toneB, 440)) throw new ScenarioError(`H-17 remote audio does not match the other participant: ${JSON.stringify({ toneA, toneB })}`);
+    if (!toneA || !toneB || !toneMatches(toneA, 660) || !toneMatches(toneB, 440)) throw new ScenarioError(`H-17 remote audio does not match the other participant: ${JSON.stringify({ toneA, toneB })}`);
     const paths = [await selectedCandidateTypes(peerA), await selectedCandidateTypes(peerB)];
     if (!paths.every((path) => path.some((pair) => pair?.local === "relay" || pair?.remote === "relay"))) throw new ScenarioError("H-17 selected media path is not relayed", { paths });
     const configuredByEndpoint = await Promise.all([peerA, peerB].map((peer) => peer.page.evaluate((port) => {
@@ -735,4 +765,46 @@ export async function scenario_H_17(ctx, { seed }) {
     relay.stop();
     ctx.turn = null;
   }
+}
+
+/** H-18: audio-only join, then camera on must produce decoded remote frames. */
+/** @param {RunContext} ctx @param {ScenarioOptions} options */
+export async function scenario_H_18(ctx, { seed }) {
+  if (ctx.page !== "real") throw new ScenarioError("H-18 requires --page=real to exercise the lobby camera control");
+  // Exercise the late sender on both sides of perfect negotiation.
+  const late = seed % 2 ? "A" : "B";
+  const other = late === "A" ? "B" : "A";
+  const sender = await ctx.launchPeer(late, { autojoin: "0" });
+  await sender.page.locator('[data-testid="join-call"]:not([disabled])').waitFor({ timeout: 30000 });
+  await click(sender, "toggle-camera");
+  const receiver = await ctx.launchPeer(other);
+  await ctx.joinFromLobby(sender);
+  await waitFor(sender, phaseIs("connected"), { timeoutMs: 30000, describe: "audio-only sender connected" });
+  await waitFor(receiver, phaseIs("connected"), { timeoutMs: 30000, describe: "receiver connected" });
+  await waitAttr(receiver, late, "data-video-off", "true", 5000);
+  const captureBefore = await probeState(sender);
+  if (captureBefore.tracks.live !== 1) {
+    throw new ScenarioError("H-18 audio-only sender must have exactly one live capture track", captureBefore);
+  }
+  const audioDeadline = Date.now() + 3000;
+  let audio;
+  for (;;) {
+    audio = await sampleRemoteTone(receiver, late, 400);
+    if (audio && toneMatches(audio, late === "A" ? 440 : 660)) break;
+    if (Date.now() > audioDeadline) throw new ScenarioError("H-18 audio-only join did not send the sender's tone", { audio });
+    await H(100);
+  }
+  await installColorHook(receiver);
+  await click(sender, "toggle-camera");
+  await waitAttr(receiver, late, "data-video-off", "false", 5000);
+  let live;
+  try {
+    live = await waitForLiveMedia(receiver, late, { deadlineAt: Date.now() + 10000, label: late });
+  } catch (error) {
+    const diagnostics = await Promise.all([pageDiagnostics(sender), pageDiagnostics(receiver)]);
+    throw new ScenarioError(`${error instanceof Error ? error.message : String(error)} | diagnostics ${JSON.stringify(diagnostics)}`);
+  }
+  const fps = await measureFps(receiver, late, 2000);
+  if (fps.fps <= 0) throw new ScenarioError("H-18 remote camera frames did not advance", fps);
+  return { lateCameraParticipant: late, liveCaptureTracksBefore: captureBefore.tracks.live, audioHz: audio.peakHz, decoded: true, fps: fps.fps, liveAt: live.liveAt };
 }

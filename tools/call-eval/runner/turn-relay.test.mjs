@@ -50,7 +50,7 @@ async function request(sock, port, msg) {
   sock.send(msg, port, "127.0.0.1");
   const raw = await reply;
   const parsed = parseStun(raw);
-  if (!parsed) throw new Error("Expected a STUN reply.");
+  if (!parsed) throw new Error("TURN reply is not a STUN message");
   return { ...parsed, raw };
 }
 

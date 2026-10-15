@@ -17,11 +17,17 @@ interface LatestState {
 let latest: LatestState | null = null;
 
 function render(useTestAuth: () => LatestState): void {
-  const Probe = () => {
-    latest = useTestAuth();
+  const Probe = ({ observe }: { observe: (state: LatestState) => void }) => {
+    observe(useTestAuth());
     return null;
   };
-  renderToString(createElement(Probe));
+  renderToString(
+    createElement(Probe, {
+      observe: (state) => {
+        latest = state;
+      },
+    }),
+  );
 }
 
 function tokenResponseFor(
@@ -113,7 +119,11 @@ describe("useTestAuth identity-keyed cache (mounts A then B)", () => {
     cacheTestAuthToken("A", {
       token: "tok-a",
       expiresAtMs: Date.now() + 10 * 60_000,
-      user: { id: "local-test-a", email: "a@connvo-local.test", name: "User A" },
+      user: {
+        id: "local-test-a",
+        email: "a@connvo-local.test",
+        name: "User A",
+      },
     });
 
     // B mounts with only A cached: no user — never A's — and still loading.
@@ -125,7 +135,11 @@ describe("useTestAuth identity-keyed cache (mounts A then B)", () => {
     cacheTestAuthToken("B", {
       token: "tok-b",
       expiresAtMs: Date.now() + 10 * 60_000,
-      user: { id: "local-test-b", email: "b@connvo-local.test", name: "User B" },
+      user: {
+        id: "local-test-b",
+        email: "b@connvo-local.test",
+        name: "User B",
+      },
     });
     render(() => useTestAuthState("B"));
     expect(latest?.isLoading).toBe(false);
@@ -155,7 +169,11 @@ describe("useTestAuth identity-keyed cache (mounts A then B)", () => {
     cacheTestAuthToken("B", {
       token: "tok-b-stale",
       expiresAtMs: Date.now() - 1,
-      user: { id: "local-test-b", email: "b@connvo-local.test", name: "User B" },
+      user: {
+        id: "local-test-b",
+        email: "b@connvo-local.test",
+        name: "User B",
+      },
     });
 
     // Stale cache: the identity stays known while loading.

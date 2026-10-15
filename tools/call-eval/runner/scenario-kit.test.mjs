@@ -54,6 +54,7 @@ describe("joinPair rtcConfig resolution", () => {
   it("forwards an explicitly pinned rtcConfig unchanged", async () => {
     /** @type {{ participant: string, params: object, rtcConfig?: object | null }[]} */
     const captured = [];
+    /** @type {RTCConfiguration} */
     const pinned = { iceServers: [], iceTransportPolicy: "all" };
     await joinPair(/** @type {import('./context.mjs').RunContext} */ (/** @type {unknown} */ (fakeCtx(captured))), { rtcConfig: pinned });
     expect(captured.map((c) => c.rtcConfig)).toEqual([pinned, pinned]);

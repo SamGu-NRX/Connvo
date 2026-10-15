@@ -1,0 +1,53 @@
+[
+  {
+    "scenario": "H-18",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "audio-only join, camera enabled after connect: the remote side decodes advancing video",
+    "measurements": {
+      "lateCameraParticipant": "A",
+      "liveCaptureTracksBefore": 1,
+      "audioHz": 436.4,
+      "decoded": true,
+      "fps": 30.3,
+      "liveAt": 1792050814405
+    },
+    "failure": null,
+    "ms": 7092
+  },
+  {
+    "scenario": "H-18",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "audio-only join, camera enabled after connect: the remote side decodes advancing video",
+    "measurements": {
+      "lateCameraParticipant": "B",
+      "liveCaptureTracksBefore": 1,
+      "audioHz": 660.1,
+      "decoded": true,
+      "fps": 30.3,
+      "liveAt": 1792050820634
+    },
+    "failure": null,
+    "ms": 6220
+  },
+  {
+    "scenario": "H-18",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "audio-only join, camera enabled after connect: the remote side decodes advancing video",
+    "measurements": {
+      "lateCameraParticipant": "A",
+      "liveCaptureTracksBefore": 1,
+      "audioHz": 446.6,
+      "decoded": true,
+      "fps": 30.2,
+      "liveAt": 1792050827749
+    },
+    "failure": null,
+    "ms": 7019
+  }
+]

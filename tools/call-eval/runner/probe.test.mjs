@@ -39,6 +39,8 @@ class FakePC {
   getStats() {
     return Promise.resolve(new Map());
   }
+  /** @param {object} cfg */
+  setConfiguration(cfg) { this.__cfg = cfg; }
   getReceivers() {
     return [];
   }
@@ -70,7 +72,7 @@ function fakeTrack() {
  * @param {{ rtcConfig?: object }} [opts]
  */
 function boot({ rtcConfig } = {}) {
-  /** @type {{ RTCPeerConnection: typeof FakePC, __probeRtcConfig?: object, __wrappedPcs?: FakePC[] }} */
+  /** @type {{ RTCPeerConnection: typeof FakePC, __probeRtcConfig?: object, __wrappedPcs?: FakePC[], __probeRestartIce?: () => boolean[] }} */
   const windowObj = { RTCPeerConnection: FakePC };
   if (rtcConfig) windowObj.__probeRtcConfig = rtcConfig;
   const track = fakeTrack();
@@ -116,6 +118,11 @@ describe("probe connection records", () => {
     const endpointServers = [{ urls: "turn:127.0.0.1:3478", username: "temporary", credential: "temporary" }];
     const endpointPc = new policyOnly.windowObj.RTCPeerConnection({ iceServers: endpointServers });
     expect(endpointPc.__cfg).toEqual({ iceServers: endpointServers, iceTransportPolicy: "relay" });
+    pc.setConfiguration({ iceServers: [{ urls: "stun:app.test" }] });
+    expect(pc.__cfg).toEqual(forced);
+    const refreshedServers = [{ urls: "turn:127.0.0.1:3478", username: "refreshed", credential: "refreshed" }];
+    endpointPc.setConfiguration({ iceServers: refreshedServers });
+    expect(endpointPc.__cfg).toEqual({ iceServers: refreshedServers, iceTransportPolicy: "relay" });
     await pc.getStats();
     expect(probe.getStatsCalls).toBe(1);
     expect(windowObj.__wrappedPcs).toContain(pc);
@@ -127,6 +134,7 @@ describe("probe connection records", () => {
     windowObj.__wrappedPcs = []; // reset: boot() itself may have created none
     const pc1 = new windowObj.RTCPeerConnection();
     const pc2 = new windowObj.RTCPeerConnection();
+    if (!windowObj.__probeRestartIce) throw new Error("probe did not install __probeRestartIce");
     const result = windowObj.__probeRestartIce();
     expect(result).toEqual([true, true]);
     expect(pc1.__restarted).toBe(1);

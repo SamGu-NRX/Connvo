@@ -41,6 +41,7 @@ const EDITOR = '[data-testid="notes-editor"]';
 const browsers = [];
 /** @type {import("./after-call-proof-support.mjs").Diagnostic[]} */
 const diagnostics = [];
+/** @param {string} id */
 async function person(id) {
   // Chromium's built-in fake devices (a file-backed one is labelled with
   // its file path, which the lobby would show).
@@ -59,6 +60,7 @@ async function person(id) {
   return { id, browser, context, page, tap, scratch, consoleScenario };
 }
 
+/** @param {import("@playwright/test").Page} page @param {string} meetingId @param {string} id */
 async function joinCall(page, meetingId, id) {
   await page.goto(`${baseUrl}/app/call/${meetingId}?as=${id}`, { waitUntil: "domcontentloaded" });
   await page.locator('[data-testid="join-call"]:not([disabled])').click({ timeout: 60_000 });
@@ -67,6 +69,7 @@ async function joinCall(page, meetingId, id) {
   });
 }
 
+/** @param {import("@playwright/test").Page} page @param {"start" | "end"} where @param {string} text */
 async function typeNotes(page, where, text) {
   const editor = page.locator(`${EDITOR}:not([disabled])`);
   await editor.waitFor({ timeout: 60_000 });
@@ -80,6 +83,7 @@ async function typeNotes(page, where, text) {
   await editor.blur();
 }
 
+/** @param {import("@playwright/test").Page} page */
 async function leave(page) {
   await page.click('[data-testid="leave-call"]');
   await page.click('[data-testid="leave-call-confirm"]');
@@ -88,11 +92,14 @@ async function leave(page) {
   });
 }
 
+/** @typedef {{state: string, shots: string[], violations: Record<string, unknown[]>, violationCount: number, passes: number, incomplete: string[], contrastMeasured: Record<string, Awaited<ReturnType<typeof textContrast>>>, contrastFailures: Awaited<ReturnType<typeof textContrast>>, shellContrastFailures: Awaited<ReturnType<typeof textContrast>>}} CaptureResult */
+/** @type {CaptureResult[]} */
 const a11y = [];
 /**
  * Screenshots at both sizes with `focus` in view, an axe audit of `scope`,
  * and a pixel contrast check of every node axe left incomplete.
  */
+/** @param {Pick<Awaited<ReturnType<typeof person>>, "page" | "scratch">} person @param {string} name @param {{focus: string, scope: string}} options */
 async function capture({ page, scratch }, name, { focus, scope }) {
   await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
   const shots = [];
@@ -172,11 +179,14 @@ async function capture({ page, scratch }, name, { focus, scope }) {
  * The walk reached the page's last stop, every stop (app shell included)
  * shows focus with a 2px-equivalent 3:1 change, and Shift+Tab retraces Tab.
  */
+/** @param {Awaited<ReturnType<typeof keyboardWalk>>} walk */
 const walkPasses = (walk) =>
   !walk.focusLost && !walk.truncated && walk.reverseMatches && walk.forward.every((s) => s.focusVisible && s.indicator.pass);
 
 /** Tab and Shift+Tab through the page at both sizes; each focused stop is saved under <out>/focus/. */
+/** @param {Pick<Awaited<ReturnType<typeof person>>, "page" | "scratch">} person @param {string} name */
 async function walkBothSizes({ page, scratch }, name) {
+  /** @type {Record<string, Awaited<ReturnType<typeof keyboardWalk>>>} */
   const out = {};
   fs.mkdirSync(path.join(outDir, "focus"), { recursive: true });
   for (const viewport of VIEWPORTS) {
@@ -190,11 +200,16 @@ async function walkBothSizes({ page, scratch }, name) {
   return out;
 }
 
+/** @param {import("@playwright/test").Page} page */
 const recapNotes = (page) => page.locator('[data-testid="recap-notes"]').first().textContent();
 
-const result = { ...proofRevision(REPO), diagnostics, baseUrl, startedAt: new Date().toISOString(), captures: /** @type {string[]} */ ([]), checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
+/** @typedef {Record<string, Awaited<ReturnType<typeof keyboardWalk>>>} Walks */
+/** @typedef {{keyboardLeaveHeading: Awaited<ReturnType<typeof keyboardLeave>> | null, notesInCall?: string, endedRecap?: {A: string | null, B: string | null, sameAsStored: boolean}, detail?: {A: string | null, B: string | null, same: boolean}, calendar?: {fileName: string, summary: unknown, start: string | null}, keyboard?: {recapWalk: Walks, calendar: Record<string, string | null>, switchSpace?: boolean, switchKeepsFocus?: boolean, listWalk?: Walks, listRowEnter?: boolean}, stayInTouch?: {bSawAnythingBeforeSayingYes: boolean, aSees: string, bSees: string}, listHasMeeting?: boolean, outsider?: {kind: string | null, text: string, sawNotes: boolean}}} Checks */
+/** @type {ReturnType<typeof proofRevision> & {diagnostics: typeof diagnostics, baseUrl: string, startedAt: string, captures: string[], checks: Checks, pass: boolean, meetingId?: string, error?: string, failures: Record<string, {url: string, text: string}>}} */
+const result = { ...proofRevision(REPO), diagnostics, baseUrl, startedAt: new Date().toISOString(), captures: /** @type {string[]} */ ([]), failures: {}, checks: { keyboardLeaveHeading: /** @type {Awaited<ReturnType<typeof keyboardLeave>> | null} */ (null) }, pass: false };
 const meetingId = createEvalMeeting("Budget review");
 result.meetingId = meetingId;
+/** @param {string} msg @returns {never} */
 const fail = (msg) => {
   throw new Error(msg);
 };
@@ -354,7 +369,7 @@ try {
 
   const consoleFailures = unexpectedErrors(diagnostics);
   if (consoleFailures.length) result.error = `${consoleFailures.length} unexpected browser console errors; see diagnostics`;
-  result.pass =
+  result.pass = !!(
     unexpectedErrors(diagnostics).length === 0 &&
     result.checks.keyboardLeaveHeading?.visibleShadow === false &&
     result.checks.endedRecap.sameAsStored &&
@@ -369,7 +384,7 @@ try {
     result.checks.keyboard.calendar.Space !== null &&
     result.checks.keyboard.switchSpace &&
     result.checks.keyboard.switchKeepsFocus &&
-    result.checks.keyboard.listRowEnter;
+    result.checks.keyboard.listRowEnter);
 } catch (err) {
   result.error = err instanceof Error ? err.message : String(err);
   // What each open page showed when it failed.
@@ -378,7 +393,7 @@ try {
     for (const context of browser.contexts()) {
       for (const page of context.pages()) {
         await page.screenshot({ path: path.join(outDir, `failure-${++n}.png`) }).catch(() => {});
-        result[`failure-${n}`] = { url: page.url(), text: (await page.locator("body").innerText().catch(() => "")).slice(0, 600) };
+        result.failures[`failure-${n}`] = { url: page.url(), text: (await page.locator("body").innerText().catch(() => "")).slice(0, 600) };
       }
     }
   }
