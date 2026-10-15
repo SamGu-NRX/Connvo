@@ -18,7 +18,7 @@ import {
   type CIValidationReport,
   type TypeDriftCheck,
   type TypePerformanceMetrics,
-} from "./typeValidationUtils";
+} from "./typeValidationUtils.helpers";
 
 // Import all validator collections
 import { UserV, MeetingV, TranscriptV } from "../validators";

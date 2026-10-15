@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import {
   exploreValidatorStructure,
   validateValidatorStructure,
-} from "./typeValidationUtils";
+} from "./typeValidationUtils.helpers";
 
 describe("record validator inspection", () => {
   test("accepts a real Convex record", () => {

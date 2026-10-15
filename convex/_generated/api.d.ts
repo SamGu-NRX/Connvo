@@ -13,6 +13,9 @@ import type * as audit_logging from "../audit/logging.js";
 import type * as auth_guards from "../auth/guards.js";
 import type * as auth_permissions from "../auth/permissions.js";
 import type * as crons from "../crons.js";
+import type * as devEval_callMeeting from "../devEval/callMeeting.js";
+import type * as devEval_seed from "../devEval/seed.js";
+import type * as devEval_shape from "../devEval/shape.js";
 import type * as embeddings_actions from "../embeddings/actions.js";
 import type * as embeddings_index from "../embeddings/index.js";
 import type * as embeddings_mutations from "../embeddings/mutations.js";
@@ -57,6 +60,7 @@ import type * as matching_scheduler from "../matching/scheduler.js";
 import type * as matching_scoring from "../matching/scoring.js";
 import type * as meetings_lifecycle from "../meetings/lifecycle.js";
 import type * as meetings_postProcessing from "../meetings/postProcessing.js";
+import type * as meetings_presenceLifecycle from "../meetings/presenceLifecycle.js";
 import type * as meetings_queries from "../meetings/queries.js";
 import type * as meetings_stateTracking from "../meetings/stateTracking.js";
 import type * as meetings_stream_cleanup from "../meetings/stream/cleanup.js";
@@ -89,6 +93,7 @@ import type * as realtime_subscriptionActions from "../realtime/subscriptionActi
 import type * as realtime_subscriptionManager from "../realtime/subscriptionManager.js";
 import type * as realtime_subscriptions from "../realtime/subscriptions.js";
 import type * as schema_ai from "../schema/ai.js";
+import type * as schema_history from "../schema/history.js";
 import type * as schema_interests from "../schema/interests.js";
 import type * as schema_legacy from "../schema/legacy.js";
 import type * as schema_matching from "../schema/matching.js";
@@ -110,9 +115,6 @@ import type * as transcripts_ingestion from "../transcripts/ingestion.js";
 import type * as transcripts_initialization from "../transcripts/initialization.js";
 import type * as transcripts_queries from "../transcripts/queries.js";
 import type * as transcripts_streaming from "../transcripts/streaming.js";
-import type * as types___tests___ciValidation from "../types/__tests__/ciValidation.js";
-import type * as types___tests___monitoringTools from "../types/__tests__/monitoringTools.js";
-import type * as types___tests___typeValidationUtils from "../types/__tests__/typeValidationUtils.js";
 import type * as types__template from "../types/_template.js";
 import type * as types_api_index from "../types/api/index.js";
 import type * as types_api_pagination from "../types/api/pagination.js";
@@ -161,20 +163,15 @@ import type {
   FunctionReference,
 } from "convex/server";
 
-/**
- * A utility for referencing Convex functions in your app's API.
- *
- * Usage:
- * ```js
- * const myFunctionReference = api.myModule.myFunction;
- * ```
- */
 declare const fullApi: ApiFromModules<{
   "analytics/meetings": typeof analytics_meetings;
   "audit/logging": typeof audit_logging;
   "auth/guards": typeof auth_guards;
   "auth/permissions": typeof auth_permissions;
   crons: typeof crons;
+  "devEval/callMeeting": typeof devEval_callMeeting;
+  "devEval/seed": typeof devEval_seed;
+  "devEval/shape": typeof devEval_shape;
   "embeddings/actions": typeof embeddings_actions;
   "embeddings/index": typeof embeddings_index;
   "embeddings/mutations": typeof embeddings_mutations;
@@ -219,6 +216,7 @@ declare const fullApi: ApiFromModules<{
   "matching/scoring": typeof matching_scoring;
   "meetings/lifecycle": typeof meetings_lifecycle;
   "meetings/postProcessing": typeof meetings_postProcessing;
+  "meetings/presenceLifecycle": typeof meetings_presenceLifecycle;
   "meetings/queries": typeof meetings_queries;
   "meetings/stateTracking": typeof meetings_stateTracking;
   "meetings/stream/cleanup": typeof meetings_stream_cleanup;
@@ -251,6 +249,7 @@ declare const fullApi: ApiFromModules<{
   "realtime/subscriptionManager": typeof realtime_subscriptionManager;
   "realtime/subscriptions": typeof realtime_subscriptions;
   "schema/ai": typeof schema_ai;
+  "schema/history": typeof schema_history;
   "schema/interests": typeof schema_interests;
   "schema/legacy": typeof schema_legacy;
   "schema/matching": typeof schema_matching;
@@ -272,9 +271,6 @@ declare const fullApi: ApiFromModules<{
   "transcripts/initialization": typeof transcripts_initialization;
   "transcripts/queries": typeof transcripts_queries;
   "transcripts/streaming": typeof transcripts_streaming;
-  "types/__tests__/ciValidation": typeof types___tests___ciValidation;
-  "types/__tests__/monitoringTools": typeof types___tests___monitoringTools;
-  "types/__tests__/typeValidationUtils": typeof types___tests___typeValidationUtils;
   "types/_template": typeof types__template;
   "types/api/index": typeof types_api_index;
   "types/api/pagination": typeof types_api_pagination;
@@ -317,150 +313,33 @@ declare const fullApi: ApiFromModules<{
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
 }>;
-declare const fullApiWithMounts: typeof fullApi;
 
+/**
+ * A utility for referencing Convex functions in your app's public API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
+ */
 export declare const api: FilterApi<
-  typeof fullApiWithMounts,
+  typeof fullApi,
   FunctionReference<any, "public">
 >;
+
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
 export declare const internal: FilterApi<
-  typeof fullApiWithMounts,
+  typeof fullApi,
   FunctionReference<any, "internal">
 >;
 
 export declare const components: {
-  rateLimiter: {
-    lib: {
-      checkRateLimit: FunctionReference<
-        "query",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          count?: number;
-          key?: string;
-          name: string;
-          reserve?: boolean;
-          throws?: boolean;
-        },
-        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
-      >;
-      clearAll: FunctionReference<
-        "mutation",
-        "internal",
-        { before?: number },
-        null
-      >;
-      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
-      getValue: FunctionReference<
-        "query",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          key?: string;
-          name: string;
-          sampleShards?: number;
-        },
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          shard: number;
-          ts: number;
-          value: number;
-        }
-      >;
-      rateLimit: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          count?: number;
-          key?: string;
-          name: string;
-          reserve?: boolean;
-          throws?: boolean;
-        },
-        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
-      >;
-      resetRateLimit: FunctionReference<
-        "mutation",
-        "internal",
-        { key?: string; name: string },
-        null
-      >;
-    };
-    time: {
-      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
-    };
-  };
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

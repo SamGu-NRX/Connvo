@@ -9,7 +9,7 @@
  */
 
 import { api } from "@convex/_generated/api";
-import { expect, test, describe, beforeEach } from "vitest";
+import { expect, test, describe, beforeEach, vi } from "vitest";
 import { Id } from "@convex/_generated/dataModel";
 import { createTestEnvironment } from "../../test/convex/helpers";
 
@@ -365,54 +365,62 @@ describe("Dynamic Permission Management", () => {
     });
 
     test("should revoke transcript access when meeting ends", async () => {
-      // Start meeting and establish transcript subscription
-      await hostT.mutation(api.meetings.lifecycle.startMeeting, {
-        meetingId: testMeetingId,
-      });
-
-      const subscription = await participantT.query(
-        api.realtime.subscriptions.subscribeTranscriptStream,
-        {
+      // startMeeting queues transcription after one second; this test only exercises permissions.
+      vi.useFakeTimers();
+      try {
+        // Start meeting and establish transcript subscription
+        await hostT.mutation(api.meetings.lifecycle.startMeeting, {
           meetingId: testMeetingId,
-          subscriptionId: "test-end-meeting-sub",
-        },
-      );
-      expect(subscription.subscriptionValid).toBe(true);
-
-      // End meeting by updating state directly to avoid scheduler side effects
-      await t.run(async (ctx) => {
-        await ctx.db.patch(testMeetingId, {
-          state: "concluded",
-          updatedAt: Date.now(),
         });
 
-        const meetingState = await ctx.db
-          .query("meetingState")
-          .withIndex("by_meeting", (q) => q.eq("meetingId", testMeetingId))
-          .unique();
+        const subscription = await participantT.query(
+          api.realtime.subscriptions.subscribeTranscriptStream,
+          {
+            meetingId: testMeetingId,
+            subscriptionId: "test-end-meeting-sub",
+          },
+        );
+        expect(subscription.subscriptionValid).toBe(true);
 
-        if (meetingState) {
-          await ctx.db.patch(meetingState._id, {
-            active: false,
-            endedAt: Date.now(),
+        // End meeting by updating state directly to avoid scheduler side effects
+        await t.run(async (ctx) => {
+          await ctx.db.patch(testMeetingId, {
+            state: "concluded",
             updatedAt: Date.now(),
           });
-        }
-      });
 
-      // Transcript subscription should now be invalid
-      const validation = await participantT.query(
-        api.realtime.subscriptions.validateSubscription,
-        {
-          subscriptionId: "test-end-meeting-sub",
-          resourceType: "transcripts",
-          resourceId: testMeetingId,
-          lastValidated: Date.now(),
-        },
-      );
+          const meetingState = await ctx.db
+            .query("meetingState")
+            .withIndex("by_meeting", (q) => q.eq("meetingId", testMeetingId))
+            .unique();
 
-      expect(validation.valid).toBe(false);
-      expect(validation.reason).toContain("no longer active");
+          if (meetingState) {
+            await ctx.db.patch(meetingState._id, {
+              active: false,
+              endedAt: Date.now(),
+              updatedAt: Date.now(),
+            });
+          }
+        });
+
+        // Transcript subscription should now be invalid
+        const validation = await participantT.query(
+          api.realtime.subscriptions.validateSubscription,
+          {
+            subscriptionId: "test-end-meeting-sub",
+            resourceType: "transcripts",
+            resourceId: testMeetingId,
+            lastValidated: Date.now(),
+          },
+        );
+
+        expect(validation.valid).toBe(false);
+        expect(validation.reason).toContain("no longer active");
+      } finally {
+        await t.finishInProgressScheduledFunctions();
+        vi.clearAllTimers();
+        vi.useRealTimers();
+      }
     });
   });
 

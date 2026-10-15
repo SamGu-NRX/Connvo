@@ -31,6 +31,7 @@ export default defineConfig({
             "test/convex/**/*.test.ts",
             "test/convex/**/*.spec.ts",
           ],
+          exclude: ["convex/types/__tests__/**"],
           environment: "edge-runtime",
           setupFiles: ["./test/convex/setup.ts"],
           pool: "threads",
@@ -41,6 +42,17 @@ export default defineConfig({
               inline: ["convex-test"],
             },
           },
+        },
+        resolve: commonResolve,
+      },
+      {
+        test: {
+          name: "types",
+          // These inspect validators and files; they do not execute Convex functions.
+          environment: "node",
+          include: ["convex/types/__tests__/**/*.test.ts"],
+          maxWorkers: 1,
+          sequence: { groupOrder: 1 },
         },
         resolve: commonResolve,
       },

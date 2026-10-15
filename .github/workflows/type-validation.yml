@@ -54,16 +54,21 @@ jobs:
       - name: TypeScript compilation check
         run: pnpm run type-check
 
+      - name: Start anonymous local backend
+        run: pnpm call-eval:backend -- --no-next --port=3103
+
       - name: Convex codegen check
         run: pnpm run convex:codegen
-        env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - name: Run type validation tests
         run: pnpm run test:types
 
       - name: Generate comprehensive type validation report
         run: pnpm run validate-types
+
+      - name: Stop anonymous local backend
+        if: always()
+        run: pnpm call-eval:backend -- --stop --port=3103
 
       - name: Upload validation report
         uses: actions/upload-artifact@v4
@@ -171,6 +176,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 8
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: [20, 22]
