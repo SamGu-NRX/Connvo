@@ -156,6 +156,15 @@ describe("P2P camera publication", () => {
       { description: { type: "offer", sdp: "test-sdp" } },
     ]);
     expect(pc.slots.map((slot) => slot.mid)).toEqual(["0", "1"]);
+    handlers.onSignal("B", { description: { type: "answer", sdp: "remote-answer" } });
+    await vi.advanceTimersByTimeAsync(0);
+    handlers.onSignal("B", { description: { type: "offer", sdp: "remote-restart" } });
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(sent).toEqual([
+      { description: { type: "answer", sdp: "test-sdp" } },
+      { description: { type: "offer", sdp: "test-sdp" } },
+      { description: { type: "answer", sdp: "test-sdp" } },
+    ]);
   });
 
   it("reserves sending video in the initial negotiation and fills the same slot after an audio-only join", async () => {

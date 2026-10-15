@@ -311,6 +311,10 @@ class NotesBoundary extends Component<
   }
 }
 
+function focusNoticeHeading(heading: HTMLHeadingElement | null) {
+  heading?.focus();
+}
+
 function CallNotice({
   title,
   body,
@@ -329,7 +333,13 @@ function CallNotice({
       className="grid h-full min-h-[24rem] place-items-center p-6"
     >
       <div className="flex max-w-md flex-col gap-3 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
+        <h1
+          ref={recapMeetingId ? focusNoticeHeading : undefined}
+          tabIndex={recapMeetingId ? -1 : undefined}
+          className="text-2xl font-medium tracking-tight outline-none"
+        >
+          {title}
+        </h1>
         <p
           data-testid={failed ? "call-error" : undefined}
           className="text-muted-foreground text-sm"

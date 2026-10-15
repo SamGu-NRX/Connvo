@@ -184,6 +184,13 @@ try {
   );
   await a.reload();
   await a.getByTestId("open-recap").waitFor();
+  assert.equal(
+    await a
+      .getByRole("heading", { name: "This call has ended", exact: true })
+      .evaluate((el) => el === document.activeElement),
+    true,
+    "ended heading receives focus",
+  );
   assert.deepEqual(
     await captureState(a),
     { requests: 0, live: 0 },
