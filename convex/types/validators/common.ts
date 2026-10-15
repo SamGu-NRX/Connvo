@@ -39,13 +39,6 @@ export const CommonV = {
     v.union(v.string(), v.number(), v.boolean()),
   ),
 
-  // Embedding vector (using ArrayBuffer for performance)
-  embeddingVector: v.object({
-    data: v.bytes(), // ArrayBuffer for optimal storage
-    dimensions: v.number(),
-    model: v.string(),
-  }),
-
   // Common entity patterns
   baseEntity: v.object({
     _id: v.string(), // Will be overridden with specific v.id() in actual entities

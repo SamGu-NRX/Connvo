@@ -10,5 +10,4 @@
 
 // Domain-specific exports
 export * from "./operationalTransform";
-export * from "./vectorSearch";
 export * from "./realTime";

@@ -57,24 +57,6 @@ export type OptionalString = string | undefined;
 export type OptionalNumber = number | undefined;
 export type OptionalBoolean = boolean | undefined;
 
-// Array buffer helpers for embeddings (performance optimization)
-export interface EmbeddingVector {
-  data: ArrayBuffer; // Use v.bytes() for optimal storage
-  dimensions: number;
-  model: string;
-}
-
-// Helper to convert Float32Array to/from ArrayBuffer
-export const float32ArrayToBuffer = (array: Float32Array): ArrayBuffer => {
-  const buffer = new ArrayBuffer(array.byteLength);
-  new Uint8Array(buffer).set(
-    new Uint8Array(array.buffer, array.byteOffset, array.byteLength),
-  );
-  return buffer;
-};
-export const bufferToFloat32Array = (buffer: ArrayBuffer): Float32Array =>
-  new Float32Array(buffer);
-
 // Common validation patterns
 export type NonEmptyString = string & { readonly __brand: "NonEmptyString" };
 export type PositiveNumber = number & { readonly __brand: "PositiveNumber" };

@@ -20,10 +20,8 @@ const NoteV = {}; // Placeholder for missing validators
 const PromptV = {};
 const MatchingV = {};
 const WebRTCV = {};
-const EmbeddingV = { searchResult: { kind: "object", fields: {} } };
 import { PaginationResultV } from "../validators/pagination";
 import { CommonV } from "../validators/common";
-import { float32ArrayToBuffer, bufferToFloat32Array } from "../utils";
 
 describe("Performance Validation", () => {
   describe("Compile-time Performance", () => {
@@ -125,79 +123,7 @@ describe("Performance Validation", () => {
   });
 
   describe("Runtime Performance", () => {
-    test("ArrayBuffer operations are efficient", () => {
-      // Test that ArrayBuffer operations for embeddings are fast
-      const dimensions = 1536; // Common embedding size
-      const testVector = new Float32Array(dimensions);
 
-      // Fill with test data
-      for (let i = 0; i < dimensions; i++) {
-        testVector[i] = Math.random();
-      }
-
-      const iterations = 1000;
-      const startTime = performance.now();
-
-      for (let i = 0; i < iterations; i++) {
-        const buffer = float32ArrayToBuffer(testVector);
-        const converted = bufferToFloat32Array(buffer);
-
-        // Ensure the operation actually happens
-        expect(converted.length).toBe(dimensions);
-      }
-
-      const endTime = performance.now();
-      const totalTime = endTime - startTime;
-      const avgTime = totalTime / iterations;
-
-      console.log(
-        `ArrayBuffer operations: ${avgTime.toFixed(3)}ms per operation (${iterations} iterations)`,
-      );
-
-      // Should be very fast - less than 0.1ms per operation
-      expect(avgTime).toBeLessThan(0.1);
-    });
-
-    test("Large embedding vector performance", () => {
-      // Test performance with large embedding vectors
-      const dimensions = 3072; // Large embedding size (e.g., text-embedding-3-large)
-      const vectorCount = 100;
-
-      const startTime = performance.now();
-
-      for (let i = 0; i < vectorCount; i++) {
-        const vector = new Float32Array(dimensions);
-
-        // Fill with normalized random data
-        let magnitude = 0;
-        for (let j = 0; j < dimensions; j++) {
-          vector[j] = (Math.random() - 0.5) * 2;
-          magnitude += vector[j] * vector[j];
-        }
-        magnitude = Math.sqrt(magnitude);
-
-        if (magnitude > 0) {
-          for (let j = 0; j < dimensions; j++) {
-            vector[j] /= magnitude;
-          }
-        }
-
-        // Convert to ArrayBuffer
-        const buffer = float32ArrayToBuffer(vector);
-        expect(buffer.byteLength).toBe(dimensions * 4);
-      }
-
-      const endTime = performance.now();
-      const totalTime = endTime - startTime;
-      const avgTime = totalTime / vectorCount;
-
-      console.log(
-        `Large vector processing: ${avgTime.toFixed(2)}ms per vector (${vectorCount} vectors, ${dimensions} dimensions)`,
-      );
-
-      // Should handle large vectors efficiently
-      expect(avgTime).toBeLessThan(5); // Less than 5ms per large vector
-    });
 
     test("Memory usage remains bounded", () => {
       // Test that repeated operations don't leak memory
@@ -376,14 +302,6 @@ describe("Performance Validation", () => {
           },
           returns: MeetingV.full,
         },
-        {
-          name: "searchEmbeddings",
-          args: {
-            queryVector: { kind: "bytes" },
-            limit: { kind: "number" },
-          },
-          returns: { kind: "array", element: EmbeddingV.searchResult },
-        },
       ];
 
       const startTime = performance.now();
@@ -445,15 +363,6 @@ describe("Performance Validation", () => {
           name: "Pagination validator creation",
           test: () => PaginationResultV(UserV.public),
           expectedMaxTime: 2, // 2ms
-        },
-        {
-          name: "ArrayBuffer conversion",
-          test: () => {
-            const arr = new Float32Array([1, 2, 3, 4]);
-            const buf = float32ArrayToBuffer(arr);
-            return bufferToFloat32Array(buf);
-          },
-          expectedMaxTime: 1, // 1ms (more realistic for small operations)
         },
       ];
 

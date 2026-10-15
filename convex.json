@@ -1,5 +1,10 @@
 {
   "node": {
-    "18": true
-  }
+    "18": true,
+    "externalPackages": [
+      "@stream-io/video-react-sdk",
+      "openai"
+    ]
+  },
+  "functions": "convex-harness"
 }

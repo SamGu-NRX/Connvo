@@ -12,7 +12,6 @@ export const config = {
     intelligentMatching: true,
     liveTranscription: true,
     collaborativeNotes: true,
-    vectorSimilarity: false, // Disabled locally to avoid API costs
   },
 
   // Rate limits (more permissive for development)

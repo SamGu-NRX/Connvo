@@ -54,7 +54,6 @@ export const compatibilityFeaturesV = v.object({
   experienceGap: v.number(),
   industryMatch: v.number(),
   timezoneCompatibility: v.number(),
-  vectorSimilarity: v.optional(v.number()),
   orgConstraintMatch: v.number(),
   languageOverlap: v.number(),
   roleComplementarity: v.number(),
@@ -291,13 +290,6 @@ export const UserScoringDataV = {
       }),
     ),
     interests: v.array(v.string()),
-    embedding: v.union(
-      v.null(),
-      v.object({
-        vector: v.bytes(), // Use ArrayBuffer for embeddings per design
-        model: v.string(),
-      }),
-    ),
   }),
 } as const;
 

@@ -16,7 +16,6 @@ export * from "./note";
 export * from "./prompt";
 export * from "./matching";
 export * from "./webrtc";
-export * from "./embedding";
 export * from "./messaging";
 export * from "./system";
 export * from "./stream";

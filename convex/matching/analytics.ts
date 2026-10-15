@@ -148,7 +148,6 @@ export const submitMatchFeedback = mutation({
  *         "experienceGap": 1.0,
  *         "industryMatch": 0.7,
  *         "timezoneCompatibility": 1.0,
- *         "vectorSimilarity": 0.88,
  *         "orgConstraintMatch": 1.0,
  *         "languageOverlap": 0.9,
  *         "roleComplementarity": 1.0
@@ -214,10 +213,6 @@ export const getMatchHistory = query({
         experienceGap: f.experienceGap ?? 0,
         industryMatch: f.industryMatch ?? 0,
         timezoneCompatibility: f.timezoneCompatibility ?? 0,
-        vectorSimilarity:
-          typeof f.vectorSimilarity === "number"
-            ? f.vectorSimilarity
-            : undefined,
         orgConstraintMatch: f.orgConstraintMatch ?? 0,
         languageOverlap: f.languageOverlap ?? 0,
         roleComplementarity: f.roleComplementarity ?? 0,
@@ -266,8 +261,6 @@ export const getMatchHistory = query({
  *         "averageScore": 0.85,
  *         "count": 15
  *       },
- *       {
- *         "feature": "vectorSimilarity",
  *         "averageScore": 0.82,
  *         "count": 15
  *       },
@@ -421,11 +414,6 @@ export const getMatchingStats = query({
  *         "averageScore": 0.82,
  *         "correlation": 0.78
  *       },
- *       {
- *         "feature": "vectorSimilarity",
- *         "averageScore": 0.79,
- *         "correlation": 0.75
- *       }
  *     ],
  *     "matchingTrends": [
  *       {
@@ -650,7 +638,6 @@ export const getGlobalMatchingAnalytics = query({
  *       "experienceGap": 0.12,
  *       "industryMatch": 0.08,
  *       "timezoneCompatibility": 0.09,
- *       "vectorSimilarity": 0.24,
  *       "orgConstraintMatch": 0.04,
  *       "languageOverlap": 0.11,
  *       "roleComplementarity": 0.04
@@ -740,7 +727,6 @@ export const optimizeMatchingWeights = action({
       experienceGap: 0.15,
       industryMatch: 0.1,
       timezoneCompatibility: 0.1,
-      vectorSimilarity: 0.2,
       orgConstraintMatch: 0.05,
       languageOverlap: 0.1,
       roleComplementarity: 0.05,
@@ -766,7 +752,6 @@ export const optimizeMatchingWeights = action({
       experienceGap: optimizedFull.experienceGap,
       industryMatch: optimizedFull.industryMatch,
       timezoneCompatibility: optimizedFull.timezoneCompatibility,
-      vectorSimilarity: optimizedFull.vectorSimilarity,
       orgConstraintMatch: optimizedFull.orgConstraintMatch,
       languageOverlap: optimizedFull.languageOverlap,
       roleComplementarity: optimizedFull.roleComplementarity,
@@ -806,7 +791,6 @@ export const optimizeMatchingWeights = action({
  *         "experienceGap": 1.0,
  *         "industryMatch": 0.7,
  *         "timezoneCompatibility": 1.0,
- *         "vectorSimilarity": 0.88,
  *         "orgConstraintMatch": 1.0,
  *         "languageOverlap": 0.9,
  *         "roleComplementarity": 1.0
@@ -858,7 +842,6 @@ export const getMatchesForOptimization = internalQuery({
             experienceGap: f.experienceGap ?? 0,
             industryMatch: f.industryMatch ?? 0,
             timezoneCompatibility: f.timezoneCompatibility ?? 0,
-            vectorSimilarity: f.vectorSimilarity,
             orgConstraintMatch: f.orgConstraintMatch ?? 0,
             languageOverlap: f.languageOverlap ?? 0,
             roleComplementarity: f.roleComplementarity ?? 0,

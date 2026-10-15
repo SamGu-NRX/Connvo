@@ -369,14 +369,6 @@ export const mockNextJSAPI = {
  */
 export const mockAIProvider = {
   /**
-   * Mock embedding generation
-   */
-  generateEmbedding: vi.fn().mockResolvedValue([
-    0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
-    // ... more values to simulate a real embedding vector
-  ]),
-
-  /**
    * Mock insights generation
    */
   generateInsights: vi.fn().mockResolvedValue({

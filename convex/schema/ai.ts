@@ -43,40 +43,4 @@ export const aiTables = {
     .index("by_user", ["userId"])
     .index("by_meeting", ["meetingId"])
     .index("by_user_meeting", ["userId", "meetingId"]),
-
-  // Vector Embeddings
-  embeddings: defineTable({
-    sourceType: v.union(
-      v.literal("user"),
-      v.literal("profile"),
-      v.literal("meeting"),
-      v.literal("note"),
-      v.literal("transcriptSegment"),
-    ),
-    sourceId: v.string(),
-    vector: v.bytes(), // Use ArrayBuffer for performance and size optimization
-    model: v.string(),
-    dimensions: v.number(),
-    version: v.string(),
-    metadata: metadataRecordV,
-    createdAt: v.number(),
-  })
-    .index("by_source", ["sourceType", "sourceId"])
-    .index("by_model", ["model"])
-    .index("by_created", ["createdAt"]),
-
-  vectorIndexMeta: defineTable({
-    provider: v.string(),
-    indexName: v.string(),
-    config: metadataRecordV,
-    status: v.union(
-      v.literal("active"),
-      v.literal("inactive"),
-      v.literal("migrating"),
-    ),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_provider", ["provider"])
-    .index("by_status", ["status"]),
 };

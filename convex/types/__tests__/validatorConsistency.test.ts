@@ -129,18 +129,6 @@ describe("Validator Consistency for Function Usage", () => {
       }
     });
 
-    test("CommonV.embeddingVector uses ArrayBuffer", () => {
-      const result = validateValidatorStructure(
-        CommonV.embeddingVector,
-        "CommonV.embeddingVector",
-      );
-      expect(result.isValid).toBe(true);
-      expect(result.typeName).toBe("object");
-
-      // Should have a 'data' field that uses bytes (ArrayBuffer)
-      const validator = CommonV.embeddingVector as any;
-      expect(validator.fields?.data?.kind).toBe("bytes");
-    });
   });
 
   describe("Validator Composition", () => {
@@ -179,7 +167,6 @@ describe("Validator Consistency for Function Usage", () => {
         MeetingV.full,
         TranscriptV.full,
         PaginationResultV(UserV.public),
-        CommonV.embeddingVector,
       ];
 
       for (const validator of validators) {

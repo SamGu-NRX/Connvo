@@ -188,9 +188,6 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.9(react@19.2.9))(react@19.2.9)
-      openai:
-        specifier: ^6.7.0
-        version: 6.7.0(ws@8.22.0)(zod@4.1.12)
       react-chartjs-2:
         specifier: ^5.3.1
         version: 5.3.1(chart.js@4.5.1)(react@19.2.9)
@@ -5431,18 +5428,6 @@ packages:
   object.values@1.2.1:
     resolution: {integrity: sha512-gXah6aZrcUxjWg2zR2MwouP2eHlCBzdV4pygudehaKXSGW4v2AsRQUK+lwwXhii6KFZcunEnmSUoYp5CXibxtA==}
     engines: {node: '>= 0.4'}
-
-  openai@6.7.0:
-    resolution: {integrity: sha512-mgSQXa3O/UXTbA8qFzoa7aydbXBJR5dbLQXCRapAOtoNT+v69sLdKMZzgiakpqhclRnhPggPAXoniVGn2kMY2A==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
 
   openapi-sampler@1.6.2:
     resolution: {integrity: sha512-NyKGiFKfSWAZr4srD/5WDhInOWDhfml32h/FKUqLpEwKJt0kG0LGUU0MdyNkKrVGuJnw6DuPWq/sHCwAMpiRxg==}
@@ -12006,11 +11991,6 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
-
-  openai@6.7.0(ws@8.22.0)(zod@4.1.12):
-    optionalDependencies:
-      ws: 8.22.0
-      zod: 4.1.12
 
   openapi-sampler@1.6.2:
     dependencies:
