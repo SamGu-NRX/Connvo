@@ -18,6 +18,8 @@ async function capture(page, name, all = true) {
   await page.addStyleTag({content:"nextjs-portal { display: none !important; }"});
   for (const viewport of all ? viewports : [page.viewportSize()]) {
     await page.setViewportSize(viewport);
+    // Full Chromium can capture stale compositor tiles immediately after resize.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.screenshot({ animations: "disabled", path: `${shots}/${name}-${viewport.width}x${viewport.height}.png` });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     assert.equal(overflow, false, `${name} horizontal overflow`);

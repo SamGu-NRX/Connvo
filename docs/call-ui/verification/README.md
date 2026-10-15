@@ -18,6 +18,8 @@ Merged alpha `7aabfb8bc54709cfb5d105a2536438da0153c24e` before final verificatio
 - `type-baseline.json` compares the application compiler against the base through an in-memory compiler host. Alpha `7aabfb8` reports 33 application diagnostics; this branch reports 32, with no added diagnostic. The full `pnpm type-check` also reports 444 harness diagnostics after merging TURN.
 - `pnpm lint` invokes `next lint`, which Next 16 no longer provides. Targeted ESLint uses `docs/call-ui/eslint.config.mjs`, the installed Next core-web-vitals rules in flat-config format. It passes for the changed production TypeScript files.
 
+Permission-error captures were refreshed after visual review found stale compositor tiles during viewport resizing. The DOM had one header and call room; two animation frames after resize produced clean captures at all three sizes. The capture script now waits for that paint.
+
 Screenshots hide the Next development inspector, which is absent from production. The browser fixtures use generated media. They prove rendering, state and connection behavior under automation; they do not establish real iPhone camera switching, permission prompts, physical audio playback, or low-end device performance. `check.mjs` also mounts the real side-panel component in an isolated fixture. That fixture mounts the real prompt view above an unsaved textarea. It verifies prompt actions, scrolling to notes, sheet focus and draft preservation; it does not verify Convex persistence.
 
 ## Prep-for-prod source review
