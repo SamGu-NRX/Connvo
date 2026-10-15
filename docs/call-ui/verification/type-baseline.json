@@ -1,9 +1,15 @@
 {
-  "base": "35895b1230112b5fc6d93be781da8187f02ac33e",
-  "baseCount": 32,
+  "base": "7aabfb8bc54709cfb5d105a2536438da0153c24e",
+  "baseCount": 33,
   "currentCount": 32,
   "added": [],
   "baseDiagnostics": [
+    {
+      "file": "docs/call-ui/panel-fixture.tsx",
+      "line": 5,
+      "code": 2307,
+      "message": "Cannot find module '../../src/components/call/CallSidePanel' or its corresponding type declarations."
+    },
     {
       "file": "src/app/videocall/[id]/page.tsx",
       "line": 331,
@@ -44,7 +50,7 @@
       "file": "src/components/ui/chart.tsx",
       "line": 264,
       "code": 2344,
-      "message": "Type '\"verticalAlign\" | \"payload\"' does not satisfy the constraint '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'.   Type '\"payload\"' is not assignable to type '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'."
+      "message": "Type '\"verticalAlign\" | \"payload\"' does not satisfy the constraint '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"seed\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | ... 428 more ... | \"onBBoxUpdate\"'.   Type '\"payload\"' is not assignable to type '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"seed\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | ... 428 more ... | \"onBBoxUpdate\"'."
     },
     {
       "file": "src/components/ui/chart.tsx",
@@ -238,7 +244,7 @@
       "file": "src/components/ui/chart.tsx",
       "line": 264,
       "code": 2344,
-      "message": "Type '\"verticalAlign\" | \"payload\"' does not satisfy the constraint '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'.   Type '\"payload\"' is not assignable to type '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'."
+      "message": "Type '\"verticalAlign\" | \"payload\"' does not satisfy the constraint '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"seed\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | ... 428 more ... | \"onBBoxUpdate\"'.   Type '\"payload\"' is not assignable to type '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"seed\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | ... 428 more ... | \"onBBoxUpdate\"'."
     },
     {
       "file": "src/components/ui/chart.tsx",

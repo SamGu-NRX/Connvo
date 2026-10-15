@@ -3,7 +3,7 @@ import ts from "typescript";
 import path from "node:path";
 import fs from "node:fs/promises";
 import {execFileSync} from "node:child_process";
-const base=process.argv[2] ?? "35895b1230112b5fc6d93be781da8187f02ac33e";
+const base=process.argv[2] ?? "7aabfb8bc54709cfb5d105a2536438da0153c24e";
 const cwd=process.cwd();
 const config=ts.readConfigFile("tsconfig.json",ts.sys.readFile);
 const parsed=ts.parseJsonConfigFileContent(config.config,ts.sys,cwd);

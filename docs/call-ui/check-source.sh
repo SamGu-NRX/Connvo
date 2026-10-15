@@ -7,6 +7,7 @@ pnpm exec vitest run \
   src/lib/call/network-quality.test.ts src/lib/call/public-assets.test.ts \
   src/proxy.test.ts src/proxy-test-auth.test.ts \
   test/in-call/callSidePanel.test.tsx test/in-call/callRoom.test.tsx \
+  test/in-call/conversation-prompts.test.tsx \
   test/in-call/callRoomIceLoading.test.tsx src/lib/call/ice-config.test.ts \
   src/lib/call/transports/p2p/p2p-ice.test.ts
 pnpm exec eslint --config docs/call-ui/eslint.config.mjs \

@@ -140,7 +140,7 @@ try {
 const require = createRequire(import.meta.url);
 const { build } = createRequire(require.resolve("tsx/package.json"))("esbuild");
 const bundle = await build({
-  stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import {CallSidePanel} from './src/components/call/CallSidePanel'; import styles from './src/components/call/call.module.css'; createRoot(document.getElementById('root')).render(<div className={styles.page}><div className={styles.room} style={{height:'100%',position:'relative',display:'flex',flexDirection:'column',overflow:'hidden',background:'var(--stage)',color:'var(--ink)'}}><header className={styles.header}>Connvo</header><div className={styles.workspace}><div className={styles.callContent}><button id="outside">Call control</button></div><CallSidePanel><label>Notes draft<textarea style={{width:'100%',height:220,fontSize:16}} aria-label="Notes draft" /></label></CallSidePanel></div></div></div>);`, loader: "tsx", resolveDir: process.cwd() },
+  entryPoints: ["docs/call-ui/panel-fixture.tsx"],
   bundle: true, write: false, outdir: "/tmp/connvo-lane5-panel", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' },
 });
 for (const [name, browserType] of Object.entries({ chromium, webkit })) {
@@ -150,11 +150,17 @@ for (const [name, browserType] of Object.entries({ chromium, webkit })) {
     const context = await browser.newContext({ viewport: viewports[1] });
     const page = await context.newPage();
     const css = bundle.outputFiles.find(file => file.path.endsWith(".css")).text;
+    const theme = (await fs.readFile("src/app/globals.css", "utf8")).match(/:root\s*\{[^}]*\}/g).at(-1);
     const js = bundle.outputFiles.find(file => file.path.endsWith(".js")).text;
-    await page.setContent(`<!doctype html><html lang="en"><title>Call notes panel fixture</title><style>${css}</style><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}button{font:inherit;color:inherit;background:none;border:0}h2{font:inherit;margin:0}textarea{font:inherit}</style><main id="root"></main><script>${js.replaceAll("</script", "<\\/script")}</script></html>`);
+    await page.setContent(`<!doctype html><html lang="en"><title>Call notes panel fixture</title><style>${theme} ${css}</style><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}button{font:inherit;color:inherit;background:none;border:0}h2{font:inherit;margin:0}textarea{font:inherit}</style><main id="root"></main><script>${js.replaceAll("</script", "<\\/script")}</script></html>`);
     await page.locator("#outside").click();
     await page.getByTestId("toggle-side-panel").click();
+    await page.getByTestId("current-prompt").waitFor();
+    await page.getByRole("button", {name:"We used this"}).click();
+    await page.getByText("Marked as used. Saved to your recap.").waitFor();
     await page.getByRole("textbox").fill("A thought that survives closing the sheet.");
+    await capture(page, `${name}-side-panel-notes`, false);
+    await page.getByTestId("current-prompt").scrollIntoViewIfNeeded();
     await capture(page, `${name}-side-panel-component`, false);
     await axe(page, `${name}-panel`, "dialog");
     await page.keyboard.press("Escape");
@@ -163,12 +169,17 @@ for (const [name, browserType] of Object.entries({ chromium, webkit })) {
     await page.getByTestId("toggle-side-panel").click();
     assert.equal(await page.getByRole("textbox").inputValue(), "A thought that survives closing the sheet.");
     await page.setViewportSize(viewports[2]);
+    await page.getByRole("textbox").scrollIntoViewIfNeeded();
+    await capture(page, `${name}-side-panel-notes`, false);
+    await page.getByTestId("current-prompt").scrollIntoViewIfNeeded();
     await capture(page, `${name}-side-panel-component`, false);
     await page.setViewportSize(viewports[0]);
     await page.locator('dialog[open]').waitFor();
     await capture(page, `${name}-side-panel-component`, false);
-    results.push({ check: `${name}-native-sheet`, pass: true });
-  } catch (error) { results.push({ check: `${name}-native-sheet`, error: error.message }); process.exitCode = 1; }
+    await page.getByRole("textbox").scrollIntoViewIfNeeded();
+    await capture(page, `${name}-side-panel-notes`, false);
+    results.push({ check: `${name}-native-sheet-prompts-and-notes`, pass: true });
+  } catch (error) { results.push({ check: `${name}-native-sheet-prompts-and-notes`, error: error.message }); process.exitCode = 1; }
   finally { await browser?.close(); }
 }
 await fs.writeFile("docs/call-ui/verification/ui.json", JSON.stringify(results, null, 2) + "\n");
