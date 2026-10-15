@@ -15,6 +15,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -30,6 +31,9 @@ import {
   Settings2,
   Video,
   VideoOff,
+  ScanFace,
+  SwitchCamera,
+  ArrowLeft,
 } from "lucide-react";
 
 import {
@@ -55,7 +59,16 @@ import type {
 } from "@/lib/call/transport";
 import { cn } from "@/lib/utils";
 
-import { DeviceSelect, Tile } from "./call-parts";
+import { SelfPreview } from "./SelfPreview";
+import { NetworkStatus } from "./NetworkStatus";
+import type { NetworkQualitySnapshot } from "@/lib/call/network-quality";
+import { CallSidePanel } from "./CallSidePanel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DeviceSelect, Tile, VoiceLine } from "./call-parts";
 import styles from "./call.module.css";
 
 export interface CallRoomProps {
@@ -69,6 +82,10 @@ export interface CallRoomProps {
   inviteLink: () => string;
   /** Extra actions on the "You left the call" screen (the recap link). */
   endedActions?: ReactNode;
+  /** Single mounted slot shared by notes and conversation prompts. */
+  sidePanel?: ReactNode;
+  sidePanelTitle?: string;
+  network?: NetworkQualitySnapshot[];
   /** Told when the person moves between the lobby, the call and the end. */
   onScreenChange?: (screen: "lobby" | "call" | "ended") => void;
 }
@@ -93,6 +110,9 @@ export function CallRoom({
   exitHref,
   inviteLink,
   endedActions,
+  sidePanel,
+  sidePanelTitle,
+  network,
   onScreenChange,
 }: CallRoomProps) {
   const media = useLocalMedia();
@@ -104,11 +124,23 @@ export function CallRoom({
   } | null>(null);
   const [remotes, setRemotes] = useState<Map<string, Remote>>(new Map());
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notification) return;
+    const timer = setTimeout(() => setNotification(null), 3000);
+    return () => clearTimeout(timer);
+  }, [notification]);
   const leaveButtonRef = useRef<HTMLButtonElement>(null);
   const leavingRef = useRef(false);
   const transportRef = useRef<CallTransport | null>(null);
   const mediaRef = useRef(media);
-  mediaRef.current = media;
+  const nameRef = useRef(nameFor);
+  useLayoutEffect(() => {
+    mediaRef.current = media;
+    nameRef.current = nameFor;
+  }, [media, nameFor]);
+  const attemptRef = useRef(0);
+  const previousPhase = useRef<CallPhase>("idle");
 
   // Ask for the camera as soon as the lobby opens, so the preview is live.
   const { start } = media;
@@ -139,16 +171,25 @@ export function CallRoom({
 
   const events = useMemo<TransportEvents>(
     () => ({
-      onPhase: setPhase,
-      onRemoteJoined: ({ participantId }) =>
-        updateRemote(participantId, (r) => r),
-      onRemoteLeft: ({ participantId }) =>
+      onPhase: (next) => {
+        if (previousPhase.current === "reconnecting" && next === "connected")
+          setNotification("You're connected again");
+        previousPhase.current = next;
+        setPhase(next);
+      },
+      onRemoteJoined: ({ participantId }) => {
+        setNotification(`${nameRef.current(participantId)} joined`);
+        updateRemote(participantId, (r) => r);
+      },
+      onRemoteLeft: ({ participantId }) => {
+        setNotification(`${nameRef.current(participantId)} left`);
         setRemotes((prev) => {
           if (!prev.has(participantId)) return prev;
           const next = new Map(prev);
           next.delete(participantId);
           return next;
-        }),
+        });
+      },
       onRemoteStream: ({ participantId, stream }) =>
         updateRemote(participantId, (r) => ({
           ...r,
@@ -166,12 +207,22 @@ export function CallRoom({
   const join = useCallback(async () => {
     const m = mediaRef.current;
     if (m.status !== "ready") return;
+    const attempt = ++attemptRef.current;
+    const current = () => attempt === attemptRef.current;
     setCallError(null);
     setRemotes(new Map());
     setScreen("call");
+    setPhase("joining");
     try {
-      await transportRef.current?.leave();
+      const previous = transportRef.current;
+      transportRef.current = null;
+      await previous?.leave();
+      if (!current()) return;
       const transport = await createTransport();
+      if (!current()) {
+        await transport.leave();
+        return;
+      }
       transportRef.current = transport;
       await transport.connect(
         {
@@ -180,16 +231,37 @@ export function CallRoom({
           identityToken,
           getLocalStream: () => mediaRef.current.stream,
         },
-        events,
+        {
+          onPhase: (phase) => {
+            if (current()) events.onPhase(phase);
+          },
+          onRemoteJoined: (peer) => {
+            if (current()) events.onRemoteJoined(peer);
+          },
+          onRemoteLeft: (peer) => {
+            if (current()) events.onRemoteLeft(peer);
+          },
+          onRemoteStream: (peer) => {
+            if (current()) events.onRemoteStream(peer);
+          },
+          onRemoteState: (peer) => {
+            if (current()) events.onRemoteState(peer);
+          },
+          onError: (error) => {
+            if (current()) events.onError(error);
+          },
+        },
       );
-      // Credential loading can outlast a control change while joining.
-      const currentMedia = mediaRef.current;
-      transport.publishLocalStream(currentMedia.stream);
+      if (!current()) return;
+      // The person can change capture while connect awaits signaling.
+      const latest = mediaRef.current;
+      transport.publishLocalStream(latest.stream);
       transport.publishLocalState({
-        micOn: currentMedia.micOn,
-        cameraOn: currentMedia.cameraOn,
+        micOn: latest.micOn,
+        cameraOn: latest.cameraOn,
       });
     } catch (err) {
+      if (!current()) return;
       setCallError({
         message:
           err instanceof Error ? err.message : "The call could not start.",
@@ -211,14 +283,17 @@ export function CallRoom({
   }, [media.micOn, media.cameraOn]);
 
   const leave = useCallback(async () => {
+    attemptRef.current++;
     leavingRef.current = true;
     setConfirmLeave(false);
-    await transportRef.current?.leave();
+    const transport = transportRef.current;
     transportRef.current = null;
+    // Release capture immediately even when signaling teardown is slow.
     mediaRef.current.release();
     setRemotes(new Map());
     setPhase("left");
     setScreen("ended");
+    await transport?.leave().catch(() => {});
   }, []);
 
   const rejoin = useCallback(async () => {
@@ -229,7 +304,10 @@ export function CallRoom({
 
   useEffect(
     () => () => {
-      void transportRef.current?.leave();
+      attemptRef.current++;
+      const transport = transportRef.current;
+      transportRef.current = null;
+      void transport?.leave().catch(() => {});
     },
     [],
   );
@@ -237,6 +315,39 @@ export function CallRoom({
   useEffect(() => {
     onScreenChange?.(screen);
   }, [screen, onScreenChange]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (
+        event.repeat ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        confirmLeave ||
+        screen === "ended"
+      )
+        return;
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest(
+          'input, textarea, select, dialog, [contenteditable="true"], [role="dialog"], [role="alertdialog"]',
+        )
+      )
+        return;
+      if (mediaRef.current.status !== "ready") return;
+      if (event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        mediaRef.current.setMicOn(!mediaRef.current.micOn);
+      }
+      if (event.key.toLowerCase() === "v") {
+        event.preventDefault();
+        void mediaRef.current.setCameraOn(!mediaRef.current.cameraOn);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmLeave, screen]);
 
   const domPhase: CallPhase =
     screen === "lobby" ? "idle" : screen === "ended" ? "left" : phase;
@@ -247,40 +358,83 @@ export function CallRoom({
       data-testid="call-root"
       className={cn(
         styles.room,
-        "relative flex h-full min-h-[28rem] w-full flex-col overflow-hidden rounded-md bg-[var(--stage)] text-[var(--ink)]",
+        "relative flex h-full min-h-0 w-full flex-col overflow-clip bg-[var(--stage)] text-[var(--ink)]",
       )}
     >
-      {screen === "lobby" ? (
-        <Lobby
-          media={media}
-          selfName={self.name}
-          meetingId={meetingId}
-          onJoin={join}
-        />
-      ) : screen === "ended" ? (
-        <Ended exitHref={exitHref} onRejoin={rejoin} actions={endedActions} />
-      ) : (
-        <InCall
-          media={media}
-          self={self}
-          phase={phase}
-          remotes={remotes}
-          nameFor={nameFor}
-          callError={callError}
-          onRetry={join}
-          onLeave={() => {
-            leavingRef.current = false;
-            setConfirmLeave(true);
-          }}
-          leaveButtonRef={leaveButtonRef}
-          inviteLink={inviteLink}
-          exitHref={exitHref}
-        />
-      )}
-
+      <header className={styles.header}>
+        {screen === "call" ? (
+          <span className={styles.brand}>
+            Connvo<span className={styles.brandDot}>.</span>
+          </span>
+        ) : (
+          <Link
+            href={exitHref}
+            className={styles.brand}
+            aria-label="Back to Connvo"
+          >
+            <ArrowLeft size={16} aria-hidden />
+            Connvo<span className={styles.brandDot}>.</span>
+          </Link>
+        )}
+        <span className={styles.headerContext}>
+          {screen === "lobby"
+            ? "Before you join"
+            : screen === "ended"
+              ? "Until next time"
+              : "In conversation"}
+        </span>
+        {screen === "call" && network ? (
+          <NetworkStatus peers={network} />
+        ) : null}
+      </header>
+      {/* Informational status stays out of the Tab order. The global toast
+          returned focus to Leave repeatedly in the P-03 keyboard scenario. */}
+      <div role="status" aria-live="polite" className={styles.callNotification}>
+        {notification && screen === "call" && phase === "connected" ? (
+          <span className={styles.notice}>{notification}</span>
+        ) : null}
+      </div>
+      <div className={styles.workspace}>
+        <div className={styles.callContent}>
+          {screen === "lobby" ? (
+            <Lobby
+              media={media}
+              selfName={self.name}
+              meetingId={meetingId}
+              onJoin={join}
+            />
+          ) : screen === "ended" ? (
+            <Ended
+              exitHref={exitHref}
+              onRejoin={rejoin}
+              actions={endedActions}
+            />
+          ) : (
+            <InCall
+              media={media}
+              self={self}
+              phase={phase}
+              remotes={remotes}
+              nameFor={nameFor}
+              callError={callError}
+              onRetry={join}
+              onLeave={() => {
+                leavingRef.current = false;
+                setConfirmLeave(true);
+              }}
+              leaveButtonRef={leaveButtonRef}
+              inviteLink={inviteLink}
+              exitHref={exitHref}
+            />
+          )}
+        </div>
+        {sidePanel ? (
+          <CallSidePanel title={sidePanelTitle}>{sidePanel}</CallSidePanel>
+        ) : null}
+      </div>
       <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
         <AlertDialogContent
-          className="max-w-sm motion-reduce:animate-none"
+          className="w-[calc(100vw-2rem)] max-w-sm rounded-xl motion-reduce:animate-none"
           onCloseAutoFocus={(e) => {
             // Stay returns focus to Leave; leaving moves it to the ended
             // screen's heading instead.
@@ -296,10 +450,10 @@ export function CallRoom({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogCancel className="h-11">Stay</AlertDialogCancel>
             <AlertDialogAction
               data-testid="leave-call-confirm"
-              className="bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500/50"
+              className="h-11 bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500/50"
               onClick={() => void leave()}
             >
               Leave call
@@ -329,18 +483,8 @@ function Lobby({
     media.status === "no-device" ||
     media.status === "error";
   return (
-    <div
-      className={cn(
-        styles.screen,
-        "grid flex-1 content-center gap-5 overflow-y-auto p-4 sm:p-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-8 lg:p-8",
-      )}
-    >
-      <div
-        className={cn(
-          "relative w-full overflow-hidden rounded-md bg-[var(--tile)]",
-          blocked ? "min-h-[16rem]" : "aspect-video",
-        )}
-      >
+    <div className={cn(styles.screen, styles.lobby)}>
+      <div className={cn(styles.lobbyPreview, blocked ? "min-h-[16rem]" : "")}>
         {blocked ? (
           <MediaProblem media={media} />
         ) : media.status === "requesting" || media.status === "idle" ? (
@@ -362,41 +506,42 @@ function Lobby({
           />
         )}
         {media.status === "ready" ? (
-          <div className="absolute right-3 bottom-3 flex gap-2">
+          <div className="absolute right-3 bottom-3 flex gap-2 rounded-xl bg-[#0e1716]/90 p-1.5">
             <MicButton media={media} />
             <CameraButton media={media} />
           </div>
         ) : null}
       </div>
 
-      <div className="flex min-w-0 flex-col justify-center gap-5">
+      <div className={styles.lobbyDetails}>
         <div className="flex flex-col gap-1.5">
           <h1 className="text-2xl font-medium tracking-tight text-[var(--ink)] sm:text-3xl">
-            Ready to join?
+            Ready when you are.
           </h1>
           <p className="text-sm text-[var(--ink-muted)]">
             Others will see you as{" "}
-            <span className="font-medium text-[var(--ink)]">{selfName}</span>.
+            <span className="font-medium break-words text-[var(--ink)]">
+              {selfName}
+            </span>
+            .
           </p>
         </div>
-        <div className="grid gap-3">
-          <DeviceSelect
-            dark
-            label="Camera"
-            devices={media.devices.videoinput}
-            value={media.selected.videoinput}
-            disabled={media.status !== "ready"}
-            onChange={(id) => void media.selectDevice("videoinput", id)}
-          />
-          <DeviceSelect
-            dark
-            label="Microphone"
-            devices={media.devices.audioinput}
-            value={media.selected.audioinput}
-            disabled={media.status !== "ready"}
-            onChange={(id) => void media.selectDevice("audioinput", id)}
-          />
+        <div className={styles.lobbyAudio}>
+          <span>Microphone level</span>
+          <div className={styles.meter}>
+            <VoiceLine
+              stream={media.stream}
+              version={media.version}
+              active={media.micOn}
+            />
+          </div>
+          <span>{media.micOn ? "Speak to check" : "Muted"}</span>
         </div>
+        <BlurButton media={media} />
+        <details className={styles.lobbySettings}>
+          <summary>Camera & microphone settings</summary>
+          <MediaSettings media={media} dark />
+        </details>
         <div className="flex flex-col gap-2">
           <button
             type="button"
@@ -494,6 +639,7 @@ function InCall({
   onLeave: () => void;
   exitHref: string;
 }) {
+  const stage = useRef<HTMLDivElement>(null);
   if (phase === "failed") {
     return (
       <div
@@ -552,7 +698,7 @@ function InCall({
 
   return (
     <div className={cn(styles.screen, "relative flex min-h-0 flex-1 flex-col")}>
-      <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center px-3">
+      <div className="pointer-events-none absolute inset-x-0 top-6 z-20 flex justify-center px-6">
         <StatusNotice
           phase={phase}
           alone={alone}
@@ -561,7 +707,7 @@ function InCall({
         />
       </div>
 
-      <div className="relative min-h-0 flex-1 p-2 sm:p-3">
+      <div ref={stage} className={styles.stage}>
         {alone ? (
           <div className="flex h-full flex-col gap-3">
             <Tile
@@ -579,7 +725,7 @@ function InCall({
           <>
             <div
               className={cn(
-                "grid h-full gap-2 sm:gap-3",
+                "grid h-full min-h-0 gap-2 sm:gap-3",
                 grid,
                 people.length > 2 && "grid-rows-2",
               )}
@@ -598,14 +744,13 @@ function InCall({
                 />
               ))}
             </div>
-            <Tile
+            <SelfPreview
+              stage={stage}
               name={self.name}
               stream={media.stream}
               version={media.version}
               micOn={media.micOn}
               cameraOn={media.cameraOn}
-              self
-              className="absolute right-4 bottom-4 z-10 aspect-video w-32 shadow-lg ring-1 ring-white/10 sm:right-5 sm:bottom-5 sm:w-48 lg:w-56"
             />
           </>
         )}
@@ -698,54 +843,70 @@ const controlClass =
 function MicButton({ media }: { media: LocalMedia }) {
   const on = media.micOn;
   return (
-    <button
-      type="button"
-      data-testid="toggle-mic"
-      aria-pressed={!on}
-      aria-label={on ? "Mute microphone" : "Unmute microphone"}
-      title={on ? "Mute microphone" : "Unmute microphone"}
-      onClick={() => media.setMicOn(!on)}
-      className={cn(
-        styles.press,
-        controlClass,
-        on
-          ? "bg-white/10 text-[var(--ink)] hover:bg-white/15"
-          : "bg-rose-500/90 text-white hover:bg-rose-500",
-      )}
-    >
-      {on ? (
-        <Mic aria-hidden className="size-5" />
-      ) : (
-        <MicOff aria-hidden className="size-5" />
-      )}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          data-testid="toggle-mic"
+          aria-pressed={!on}
+          aria-label={on ? "Mute microphone" : "Unmute microphone"}
+          title={on ? "Mute microphone (M)" : "Unmute microphone (M)"}
+          aria-keyshortcuts="M"
+          onClick={() => media.setMicOn(!on)}
+          className={cn(
+            styles.press,
+            controlClass,
+            on
+              ? "bg-white/10 text-[var(--ink)] hover:bg-white/15"
+              : "bg-rose-500/90 text-white hover:bg-rose-500",
+          )}
+        >
+          {on ? (
+            <Mic aria-hidden className="size-5" />
+          ) : (
+            <MicOff aria-hidden className="size-5" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="animate-none" side="top">
+        Microphone <kbd>M</kbd>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
 function CameraButton({ media }: { media: LocalMedia }) {
   const on = media.cameraOn;
   return (
-    <button
-      type="button"
-      data-testid="toggle-camera"
-      aria-pressed={!on}
-      aria-label={on ? "Turn camera off" : "Turn camera on"}
-      title={on ? "Turn camera off" : "Turn camera on"}
-      onClick={() => void media.setCameraOn(!on)}
-      className={cn(
-        styles.press,
-        controlClass,
-        on
-          ? "bg-white/10 text-[var(--ink)] hover:bg-white/15"
-          : "bg-rose-500/90 text-white hover:bg-rose-500",
-      )}
-    >
-      {on ? (
-        <Video aria-hidden className="size-5" />
-      ) : (
-        <VideoOff aria-hidden className="size-5" />
-      )}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          data-testid="toggle-camera"
+          aria-pressed={!on}
+          aria-label={on ? "Turn camera off" : "Turn camera on"}
+          title={on ? "Turn camera off (V)" : "Turn camera on (V)"}
+          aria-keyshortcuts="V"
+          onClick={() => void media.setCameraOn(!on)}
+          className={cn(
+            styles.press,
+            controlClass,
+            on
+              ? "bg-white/10 text-[var(--ink)] hover:bg-white/15"
+              : "bg-rose-500/90 text-white hover:bg-rose-500",
+          )}
+        >
+          {on ? (
+            <Video aria-hidden className="size-5" />
+          ) : (
+            <VideoOff aria-hidden className="size-5" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="animate-none" side="top">
+        Camera <kbd>V</kbd>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -759,11 +920,7 @@ function ControlBar({
   leaveButtonRef: RefObject<HTMLButtonElement | null>;
 }) {
   return (
-    <div
-      className="flex items-center justify-center gap-2 border-t border-white/8 px-3 py-3"
-      role="group"
-      aria-label="Call controls"
-    >
+    <div className={styles.controls} role="group" aria-label="Call controls">
       <MicButton media={media} />
       <CameraButton media={media} />
       <Popover>
@@ -783,21 +940,12 @@ function ControlBar({
           </button>
         </PopoverTrigger>
         <PopoverContent
+          data-testid="call-settings-panel"
+          aria-label="Camera and microphone settings"
           side="top"
-          className="grid w-72 origin-(--radix-popover-content-transform-origin) gap-3 motion-reduce:animate-none"
+          className="grid max-h-[70dvh] w-80 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) gap-3 overflow-y-auto motion-reduce:animate-none"
         >
-          <DeviceSelect
-            label="Camera"
-            devices={media.devices.videoinput}
-            value={media.selected.videoinput}
-            onChange={(id) => void media.selectDevice("videoinput", id)}
-          />
-          <DeviceSelect
-            label="Microphone"
-            devices={media.devices.audioinput}
-            value={media.selected.audioinput}
-            onChange={(id) => void media.selectDevice("audioinput", id)}
-          />
+          <MediaSettings media={media} />
         </PopoverContent>
       </Popover>
       <button
@@ -813,6 +961,98 @@ function ControlBar({
         <PhoneOff aria-hidden className="size-5" />
         <span>Leave</span>
       </button>
+    </div>
+  );
+}
+
+function BlurButton({ media }: { media: LocalMedia }) {
+  return (
+    <div className={styles.blurControl}>
+      <button
+        type="button"
+        data-testid="toggle-blur"
+        aria-pressed={media.blurEnabled}
+        disabled={
+          !media.cameraOn ||
+          media.status !== "ready" ||
+          media.blurStatus === "loading"
+        }
+        onClick={() => void media.setBlurEnabled(!media.blurEnabled)}
+      >
+        <ScanFace size={18} aria-hidden />
+        <span>Background blur</span>
+        <span className={styles.settingValue}>
+          {media.blurStatus === "loading"
+            ? "Starting…"
+            : media.blurEnabled
+              ? "On"
+              : "Off"}
+        </span>
+      </button>
+      {media.blurProblem ? <p role="status">{media.blurProblem}</p> : null}
+    </div>
+  );
+}
+
+function MediaSettings({
+  media,
+  dark = false,
+}: {
+  media: LocalMedia;
+  dark?: boolean;
+}) {
+  return (
+    <div className={styles.settings}>
+      <DeviceSelect
+        dark={dark}
+        label="Camera"
+        devices={media.devices.videoinput}
+        value={media.selected.videoinput}
+        disabled={media.status !== "ready"}
+        onChange={(id) => void media.selectDevice("videoinput", id)}
+      />
+      <DeviceSelect
+        dark={dark}
+        label="Microphone"
+        devices={media.devices.audioinput}
+        value={media.selected.audioinput}
+        disabled={media.status !== "ready"}
+        onChange={(id) => void media.selectDevice("audioinput", id)}
+      />
+      <label className={styles.qualityLabel}>
+        Video quality
+        <select
+          data-testid="video-quality"
+          value={media.quality}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (
+              value === "standard" ||
+              value === "hd" ||
+              value === "data-saver"
+            )
+              void media.setQuality(value);
+          }}
+        >
+          <option value="standard">Balanced · 720p / 24 fps</option>
+          <option value="hd">Sharper · 1080p / 30 fps</option>
+          <option value="data-saver">Save data · 360p / 15 fps</option>
+        </select>
+      </label>
+      {!dark ? <BlurButton media={media} /> : null}
+      <button
+        type="button"
+        data-testid="switch-camera"
+        className={styles.switchCamera}
+        disabled={!media.cameraOn || media.status !== "ready"}
+        onClick={() => void media.switchCamera()}
+      >
+        <SwitchCamera size={18} aria-hidden />
+        Switch front / back camera
+      </button>
+      <p className={styles.settingsHint}>
+        Your preview is mirrored. Others see you the right way around.
+      </p>
     </div>
   );
 }
@@ -838,7 +1078,7 @@ function Ended({
       <h1
         ref={(el) => el?.focus()}
         tabIndex={-1}
-        className="text-2xl font-medium tracking-tight outline-none focus-visible:ring-offset-0 focus-visible:shadow-none"
+        className="text-2xl font-medium tracking-tight outline-none focus-visible:shadow-none focus-visible:ring-offset-0"
       >
         You left the call
       </h1>

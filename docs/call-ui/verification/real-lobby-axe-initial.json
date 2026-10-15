@@ -1,0 +1,91 @@
+[
+  {
+    "id": "color-contrast",
+    "impact": "serious",
+    "tags": [
+      "cat.color",
+      "wcag2aa",
+      "wcag143",
+      "TTv5",
+      "TT13.c",
+      "EN-301-549",
+      "EN-9.1.4.3",
+      "ACT",
+      "RGAAv4",
+      "RGAA-3.2.1"
+    ],
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+    "nodes": [
+      {
+        "any": [
+          {
+            "id": "color-contrast",
+            "data": {
+              "fgColor": "#788884",
+              "bgColor": "#1a2925",
+              "contrastRatio": 4.07,
+              "fontSize": "9.0pt (12px)",
+              "fontWeight": "normal",
+              "messageKey": null,
+              "expectedContrastRatio": "4.5:1"
+            },
+            "relatedNodes": [
+              {
+                "html": "<div data-slot=\"card\" class=\"relative flex flex-c...\" data-testid=\"notes-panel\">",
+                "target": [
+                  ".rounded-sm"
+                ]
+              }
+            ],
+            "impact": "serious",
+            "message": "Element has insufficient color contrast of 4.07 (foreground color: #788884, background color: #1a2925, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ],
+        "all": [],
+        "none": [],
+        "impact": "serious",
+        "html": "<span data-slot=\"badge\" class=\"inline-flex items-ce...\" data-testid=\"notes-status\">",
+        "target": [
+          ".inline-flex"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.07 (foreground color: #788884, background color: #1a2925, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "any": [
+          {
+            "id": "color-contrast",
+            "data": {
+              "fgColor": "#788884",
+              "bgColor": "#1a2925",
+              "contrastRatio": 4.07,
+              "fontSize": "9.0pt (12px)",
+              "fontWeight": "normal",
+              "messageKey": null,
+              "expectedContrastRatio": "4.5:1"
+            },
+            "relatedNodes": [
+              {
+                "html": "<div data-slot=\"card\" class=\"relative flex flex-c...\" data-testid=\"notes-panel\">",
+                "target": [
+                  ".rounded-sm"
+                ]
+              }
+            ],
+            "impact": "serious",
+            "message": "Element has insufficient color contrast of 4.07 (foreground color: #788884, background color: #1a2925, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ],
+        "all": [],
+        "none": [],
+        "impact": "serious",
+        "html": "<p data-testid=\"notes-counts\">0 words · 0 characters</p>",
+        "target": [
+          "p[data-testid=\"notes-counts\"]"
+        ],
+        "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.07 (foreground color: #788884, background color: #1a2925, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+    ]
+  }
+]

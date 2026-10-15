@@ -1,0 +1,24 @@
+[
+  {
+    "check": "comparison-environment",
+    "application": "working branch after merging 6c0ae81045d02bcc9501221e39b00f5591ee93dd",
+    "captureOverride": "Original assignment-based synthetic capture; no app playback modifications"
+  },
+  {
+    "check": "webkit-call",
+    "stage": "start",
+    "error": "page.waitForFunction: Timeout 30000ms exceeded."
+  },
+  {
+    "check": "playback-diagnostic",
+    "state": {
+      "capture": {
+        "stage": "override installed",
+        "current": "(constraints)=>{\n            return _getUserMedia(shimConstraints(constraints));\n        }"
+      },
+      "phase": "idle",
+      "videos": [],
+      "text": "Connvo.Before you joinYour browser is blocking the camera and microphone for this site.Open the site settings from the icon left of the address bar, allow Camera and Microphone, then try again.Try againReady when you are.Others will see you as Guest A.Microphone levelSpeak to checkBackground blurOffCamera & microphone settingsCameraNone foundMicrophoneNone foundVideo qualityBalanced \u00b7 720p / 24 fpsSharper \u00b7 1080p / 30 fpsSave data \u00b7 360p / 15 fpsSwitch front / back cameraYour preview is mirrored. Others see you the right way around.Join callMeeting lane5-webkit-p2p-s1-1792053521517"
+    }
+  }
+]

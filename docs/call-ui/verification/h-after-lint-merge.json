@@ -1,0 +1,101 @@
+{
+  "base": "3055350",
+  "page": "real",
+  "signaling": "convex",
+  "seeds": [
+    1
+  ],
+  "results": [
+    {
+      "scenario": "H-01",
+      "transport": "p2p",
+      "seed": 1,
+      "pass": true,
+      "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+      "measurements": {
+        "joinMs": 1523,
+        "timeToFirstRemoteFrameMs": 1633,
+        "timeToFirstRemoteFrameMsReverse": 1636,
+        "fpsAtoB": 26.7,
+        "fpsBtoA": 23.1,
+        "colourMsAseesB": 1638,
+        "colourMsBseesA": 1639
+      },
+      "failure": null,
+      "ms": 11908
+    },
+    {
+      "scenario": "H-02",
+      "transport": "p2p",
+      "seed": 1,
+      "pass": true,
+      "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
+      "measurements": {
+        "aHearsB": 657.4,
+        "bHearsA": 438.3
+      },
+      "failure": null,
+      "ms": 4134
+    },
+    {
+      "scenario": "H-03",
+      "transport": "p2p",
+      "seed": 1,
+      "pass": true,
+      "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+      "measurements": {
+        "muteFlipMs": 192,
+        "silentAfterMs": 345,
+        "unmuteFlipMs": 181,
+        "restoredToneHz": 438.3
+      },
+      "failure": null,
+      "ms": 2820
+    },
+    {
+      "scenario": "H-04",
+      "transport": "p2p",
+      "seed": 1,
+      "pass": true,
+      "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
+      "measurements": {
+        "offFlipMs": 183,
+        "resumedFps": 25.4
+      },
+      "failure": null,
+      "ms": 6163
+    },
+    {
+      "scenario": "H-05",
+      "transport": "p2p",
+      "seed": 1,
+      "pass": true,
+      "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
+      "measurements": {
+        "fpsBefore": 27.7,
+        "fpsDuring": 36.6,
+        "fpsAfter": 33.3,
+        "phase": true,
+        "colorDistance": 1
+      },
+      "failure": null,
+      "ms": 8012
+    },
+    {
+      "scenario": "H-06",
+      "transport": "p2p",
+      "seed": 1,
+      "pass": true,
+      "passCondition": "context without media permission shows an actionable error; granting and `retry-media` joins",
+      "measurements": {
+        "errorText": "Your browser is blocking the camera and microphone for this site.",
+        "phaseDenied": "idle",
+        "joinedAfterRetry": true,
+        "fpsBseesA": 23.6
+      },
+      "failure": null,
+      "ms": 4213
+    }
+  ],
+  "wallMs": 38578
+}

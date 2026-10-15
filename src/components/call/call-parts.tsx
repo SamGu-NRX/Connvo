@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import { MicOff, VideoOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,10 +32,12 @@ export function VoiceLine({
   stream,
   version,
   active,
+  ring = false,
 }: {
   stream: MediaStream | null;
   version: number;
   active: boolean;
+  ring?: boolean;
 }) {
   const lineRef = useRef<HTMLSpanElement>(null);
 
@@ -61,13 +63,20 @@ export function VoiceLine({
       let sum = 0;
       for (const v of buf) sum += v * v;
       const rms = Math.sqrt(sum / buf.length);
-      // Speech sits around 0.02-0.2 rms; map it onto 0-1 with a quick
-      // attack and a slower release so the line does not flicker.
+      // This visual activity heuristic is not a calibrated speech detector.
+      // Quick attack and slower release keep the line from flickering.
       const target = Math.min(1, rms * 6);
       level = target > level ? target : level * 0.9 + target * 0.1;
       // Set both each frame, so switching the preference mid-call never
       // leaves a stale value from the other mode behind.
-      if (reduce.matches) {
+      if (ring) {
+        line.style.opacity = String(
+          level > 0.08 ? Math.min(1, 0.35 + level) : 0,
+        );
+        line
+          .closest("figure")
+          ?.setAttribute("data-speaking", String(level > 0.08));
+      } else if (reduce.matches) {
         line.style.transform = "";
         line.style.opacity = String(0.25 + level * 0.75);
       } else {
@@ -82,7 +91,10 @@ export function VoiceLine({
       source.disconnect();
       line.style.transform = line.style.opacity = "";
     };
-  }, [stream, version, active]);
+  }, [stream, version, active, ring]);
+
+  if (ring)
+    return <span ref={lineRef} aria-hidden className={styles.speakingRing} />;
 
   return (
     <span
@@ -124,25 +136,65 @@ export function StreamVideo({
   testId?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const [blocked, setBlocked] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (el.srcObject !== stream) el.srcObject = stream;
-    if (stream) void el.play().catch(() => {});
+    let current = true;
+    const play = () => {
+      if (stream)
+        void el
+          .play()
+          .then(() => {
+            if (current) setBlocked(false);
+          })
+          .catch((error: unknown) => {
+            if (
+              current &&
+              error instanceof DOMException &&
+              error.name === "NotAllowedError"
+            )
+              setBlocked(true);
+          });
+    };
+    play();
+    el.addEventListener("loadedmetadata", play);
+    return () => {
+      current = false;
+      el.removeEventListener("loadedmetadata", play);
+      el.srcObject = null;
+    };
   }, [stream, version]);
   return (
-    <video
-      ref={ref}
-      data-testid={testId}
-      autoPlay
-      playsInline
-      muted={muted}
-      className={cn(
-        "absolute inset-0 h-full w-full object-cover",
-        mirrored && "-scale-x-100",
-        hidden && "invisible",
-      )}
-    />
+    <>
+      <video
+        ref={ref}
+        data-testid={testId}
+        autoPlay
+        playsInline
+        muted={muted}
+        className={cn(
+          "absolute inset-0 h-full w-full object-cover",
+          mirrored && "-scale-x-100",
+          hidden && "invisible",
+        )}
+      />
+      {blocked && !muted ? (
+        <button
+          type="button"
+          className={styles.enableAudio}
+          onClick={() => {
+            void ref.current
+              ?.play()
+              .then(() => setBlocked(false))
+              .catch(() => setBlocked(true));
+          }}
+        >
+          Tap to hear the call
+        </button>
+      ) : null}
+    </>
   );
 }
 
@@ -176,7 +228,7 @@ export function Tile({
     <figure
       className={cn(
         styles.tile,
-        "relative isolate m-0 overflow-hidden rounded-md bg-[var(--tile)]",
+        "relative isolate m-0 overflow-hidden rounded-xl bg-[var(--tile)]",
         className,
       )}
       data-dim={dim ? "true" : "false"}
@@ -219,7 +271,7 @@ export function Tile({
         ) : null}
         <span className="truncate">{self ? `${name} (you)` : name}</span>
       </figcaption>
-      <VoiceLine stream={stream} version={version} active={micOn} />
+      <VoiceLine stream={stream} version={version} active={micOn} ring />
     </figure>
   );
 }
@@ -239,7 +291,11 @@ export function DeviceSelect({
   disabled?: boolean;
   dark?: boolean;
 }) {
-  const id = `device-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  const unique = useId();
+  const id =
+    label === "Camera"
+      ? "device-camera"
+      : `device-${label.toLowerCase().replace(/\s+/g, "-")}-${unique}`;
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <label

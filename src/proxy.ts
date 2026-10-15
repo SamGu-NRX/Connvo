@@ -1,4 +1,5 @@
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
+import { isPublicCallAsset } from "@/lib/call/public-assets";
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
 
 import {
@@ -23,6 +24,7 @@ const handleAuth = authkitMiddleware({
 });
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (isPublicCallAsset(request.nextUrl.pathname)) return NextResponse.next();
   if (
     benchPathPassesThrough(request.nextUrl.pathname, {
       benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,

@@ -1,0 +1,51 @@
+[
+  {
+    "check": "axe-lobby",
+    "violations": []
+  },
+  {
+    "check": "real-page-blur",
+    "active": true,
+    "text": "Background blur\nOn"
+  },
+  {
+    "check": "axe-no-signaling",
+    "violations": []
+  },
+  {
+    "check": "axe-connected",
+    "violations": []
+  },
+  {
+    "check": "mic-shortcut-and-pip-pointer-keyboard",
+    "pass": true
+  },
+  {
+    "check": "axe-call-settings",
+    "violations": []
+  },
+  {
+    "check": "axe-network-blocked",
+    "violations": []
+  },
+  {
+    "check": "merged-transport-network-error",
+    "pass": true
+  },
+  {
+    "check": "axe-chromium-panel",
+    "violations": []
+  },
+  {
+    "check": "chromium-native-sheet-prompts-and-notes",
+    "pass": true
+  },
+  {
+    "check": "axe-webkit-panel",
+    "violations": []
+  },
+  {
+    "check": "webkit-native-sheet-prompts-and-notes",
+    "pass": true
+  }
+]

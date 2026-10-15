@@ -1,0 +1,23 @@
+[
+  {
+    "check": "comparison-environment",
+    "application": "6c0ae81045d02bcc9501221e39b00f5591ee93dd",
+    "captureOverride": "Original assignment-based synthetic capture; no app playback modifications"
+  },
+  {
+    "check": "webkit-call",
+    "stage": "start",
+    "error": "page.waitForFunction: Timeout 30000ms exceeded."
+  },
+  {
+    "check": "playback-diagnostic",
+    "state": {
+      "capture": {
+        "stage": "override installed"
+      },
+      "phase": "idle",
+      "videos": [],
+      "text": "Your browser is blocking the camera and microphone for this site.Open the site settings from the icon left of the address bar, allow Camera and Microphone, then try again.Try againReady to join?Others will see you as Guest A.CameraNone foundMicrophoneNone foundJoin callMeeting lane5-webkit-p2p-s1-1792053191249"
+    }
+  }
+]

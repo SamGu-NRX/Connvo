@@ -94,12 +94,18 @@ export interface P2PTransportOptions {
   signaling: SignalingAdapter;
   getRtcConfig?: () => Promise<RTCConfiguration>;
   onConnectionPath?: (path: "relay" | "direct" | "unknown") => void;
+  /** Attach per-peer stats observers; null releases them before the connection closes. */
+  onPeerConnection?: (
+    participantId: string,
+    connection: RTCPeerConnection | null,
+  ) => void;
 }
 
 export function createP2PTransport({
   signaling,
   getRtcConfig,
   onConnectionPath,
+  onPeerConnection,
 }: P2PTransportOptions): CallTransport {
   let ctx: TransportContext | null = null;
   let events: TransportEvents | null = null;
@@ -395,6 +401,7 @@ export function createP2PTransport({
       if (pc.connectionState !== "connected" && pc.connectionState !== "closed")
         restart();
     }, NOT_CONNECTED_RESTART_MS);
+    onPeerConnection?.(id, pc);
     return peer;
   }
 
@@ -452,6 +459,7 @@ export function createP2PTransport({
 
   /** Closes one peer connection. Never stops local tracks (D5). */
   function closePeer(peer: Peer): void {
+    if (peers.get(peer.id) !== peer) return;
     if (peer.initialIceDeadline) clearTimeout(peer.initialIceDeadline);
     if (peer.disconnectedTimer) clearTimeout(peer.disconnectedTimer);
     if (peer.watchdog) clearInterval(peer.watchdog);
@@ -462,6 +470,7 @@ export function createP2PTransport({
     pc.onnegotiationneeded = null;
     pc.oniceconnectionstatechange = null;
     pc.onconnectionstatechange = null;
+    onPeerConnection?.(peer.id, null);
     pc.close();
     peers.delete(peer.id);
   }

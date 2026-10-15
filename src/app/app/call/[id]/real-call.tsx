@@ -25,6 +25,8 @@ import { useConvex, useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
+import styles from "@/components/call/call.module.css";
+import { useCallNetwork } from "@/hooks/useCallNetwork";
 import { ConversationPrompts } from "@/components/call/ConversationPrompts";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
@@ -87,6 +89,7 @@ export function RealCall() {
 /** A call signaled over Convex, for the signed-in user. */
 function ConvexCall({ meetingId }: { meetingId: string }) {
   const convex = useConvex();
+  const network = useCallNetwork();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const me = useQuery(
     api.users.queries.getCurrentUser,
@@ -124,13 +127,10 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
   const [ended, setEnded] = useState(false);
   const [inCall, setInCall] = useState(false);
-  const onScreenChange = useCallback(
-    (screen: "lobby" | "call" | "ended") => {
-      setEnded(screen === "ended");
-      setInCall(screen === "call");
-    },
-    [],
-  );
+  const onScreenChange = useCallback((screen: "lobby" | "call" | "ended") => {
+    setEnded(screen === "ended");
+    setInCall(screen === "call");
+  }, []);
 
   const [path, setPath] = useState("unknown");
   const getRtcConfig = useMemo(
@@ -160,12 +160,13 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         createP2PTransport({
           getRtcConfig,
           onConnectionPath: setPath,
+          onPeerConnection: network.onPeerConnection,
           signaling: convexSignaling(convex as unknown as ConvexCallClient, {
             participantIdOf,
           }),
         }),
       ),
-    [convex, getRtcConfig],
+    [convex, getRtcConfig, network.onPeerConnection],
   );
   // The Convex client already carries the user's token.
   const identityToken = useCallback(async () => "", []);
@@ -240,50 +241,44 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
       />
     );
   }
-  // The shared notes sit beside the call on wide screens and below it on
-  // narrow ones; they work in the lobby too, before anyone joins. On phones
-  // the app shell's floating navigation covers the bottom of the screen, so
-  // the page leaves room to scroll the notes clear of it.
+  // CallRoom keeps prompts and notes in the same responsive panel.
+
   return (
-    <div
-      data-call-connection-path={path}
-      className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]"
-    >
-      <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
-        <CallRoom
-          meetingId={meetingId}
-          self={self}
-          createTransport={createTransport}
-          identityToken={identityToken}
-          // Presence carries ids, not names; test users read as Guest A..O.
-          nameFor={(id) =>
-            TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
-          }
-          inviteLink={() => {
-            const url = new URL(window.location.href);
-            url.search = "";
-            return url.toString();
-          }}
-          exitHref="/app"
-          onScreenChange={onScreenChange}
-          endedActions={<OpenRecapLink meetingId={meetingId} />}
-        />
-      </div>
-      <aside
-        aria-label="Meeting notes"
-        className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
-      >
-        {ended ? <EndedRecap meetingId={meetingId} /> : null}
-        {!ended ? (
-          <ConversationPrompts
-            meetingId={meetingId as Id<"meetings">}
-            inCall={inCall}
-          />
-        ) : null}
-        <NotesBoundary>
-          <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
-        </NotesBoundary>
-      </aside>
+    <div className={styles.page} data-call-connection-path={path}>
+      <CallRoom
+        meetingId={meetingId}
+        self={self}
+        createTransport={createTransport}
+        network={network.peers}
+        identityToken={identityToken}
+        // Presence carries ids, not names; test users read as Guest A..O.
+        nameFor={(id) =>
+          TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
+        }
+        inviteLink={() => {
+          const url = new URL(window.location.href);
+          url.search = "";
+          return url.toString();
+        }}
+        exitHref="/app"
+        onScreenChange={onScreenChange}
+        endedActions={<OpenRecapLink meetingId={meetingId} />}
+        sidePanel={
+          <>
+            {ended ? (
+              <EndedRecap meetingId={meetingId} />
+            ) : (
+              <ConversationPrompts
+                meetingId={meetingId as Id<"meetings">}
+                inCall={inCall}
+              />
+            )}
+            <NotesBoundary>
+              <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
+            </NotesBoundary>
+          </>
+        }
+      />
     </div>
   );
 }
@@ -338,40 +333,42 @@ export function CallNotice({
   recapMeetingId?: string;
 }) {
   return (
-    <div
-      data-call-phase={recapMeetingId ? "left" : failed ? "failed" : "idle"}
-      role={failed ? "alert" : "status"}
-      className="grid h-full min-h-[24rem] place-items-center p-6"
-    >
-      <div className="flex max-w-md flex-col gap-3 text-center">
-        <h1
-          ref={recapMeetingId ? focusNoticeHeading : undefined}
-          tabIndex={recapMeetingId ? -1 : undefined}
-          className="text-2xl font-medium tracking-tight outline-none"
-        >
-          {title}
-        </h1>
-        <p
-          data-testid={failed ? "call-error" : undefined}
-          className="text-muted-foreground text-sm"
-        >
-          {body}
-        </p>
-        {recapMeetingId ? (
-          <Link
-            href={`/app/meetings/${recapMeetingId}`}
-            data-testid="open-recap"
-            className="text-primary focus-visible:ring-ring/50 inline-flex min-h-11 items-center justify-center rounded-md underline underline-offset-4 focus-visible:ring-[3px]"
+    <div className={styles.page}>
+      <div
+        data-call-phase={recapMeetingId ? "left" : failed ? "failed" : "idle"}
+        role={failed ? "alert" : "status"}
+        className={`${styles.room} grid h-full place-items-center bg-[var(--stage)] p-6 text-[var(--ink)]`}
+      >
+        <div className="flex max-w-md flex-col gap-3 text-center">
+          <h1
+            ref={recapMeetingId ? focusNoticeHeading : undefined}
+            tabIndex={recapMeetingId ? -1 : undefined}
+            className="text-2xl font-medium tracking-tight outline-none"
           >
-            Open the recap
+            {title}
+          </h1>
+          <p
+            data-testid={failed ? "call-error" : undefined}
+            className="text-sm text-[var(--ink-muted)]"
+          >
+            {body}
+          </p>
+          {recapMeetingId ? (
+            <Link
+              href={`/app/meetings/${recapMeetingId}`}
+              data-testid="open-recap"
+              className="inline-flex min-h-11 items-center justify-center rounded-md text-emerald-300 underline underline-offset-4 focus-visible:ring-[3px] focus-visible:ring-emerald-300/60"
+            >
+              Open the recap
+            </Link>
+          ) : null}
+          <Link
+            href="/app"
+            className="mx-auto mt-1 grid h-11 place-items-center rounded-md bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 outline-none hover:bg-emerald-300 focus-visible:ring-[3px] focus-visible:ring-emerald-300/60"
+          >
+            Back to Connvo
           </Link>
-        ) : null}
-        <Link
-          href="/app"
-          className="bg-primary text-primary-foreground focus-visible:ring-ring/50 mx-auto mt-1 grid h-11 place-items-center rounded-md px-4 text-sm font-medium outline-none focus-visible:ring-[3px]"
-        >
-          Back to Connvo
-        </Link>
+        </div>
       </div>
     </div>
   );
@@ -388,12 +385,16 @@ function BenchCall({
   name: string;
   signalUrl: string;
 }) {
+  const network = useCallNetwork();
   const createTransport = useCallback(
     () =>
       Promise.resolve(
-        createP2PTransport({ signaling: websocketSignaling(signalUrl) }),
+        createP2PTransport({
+          signaling: websocketSignaling(signalUrl),
+          onPeerConnection: network.onPeerConnection,
+        }),
       ),
-    [signalUrl],
+    [signalUrl, network.onPeerConnection],
   );
   const identityToken = useCallback(async () => {
     const res = await fetch(
@@ -411,13 +412,12 @@ function BenchCall({
   const self = useMemo(() => ({ id: selfId, name }), [selfId, name]);
 
   return (
-    // Phones: the app shell's floating navigation dock overlays the bottom
-    // of this panel, so the call area ends above it.
-    <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
+    <div className={styles.page}>
       <CallRoom
         meetingId={meetingId}
         self={self}
         createTransport={createTransport}
+        network={network.peers}
         identityToken={identityToken}
         nameFor={(id) => `Guest ${id}`}
         inviteLink={() => {
@@ -440,25 +440,10 @@ function BenchCall({
 
 function NoSignaling() {
   return (
-    <div
-      data-call-phase="failed"
-      className="grid h-full min-h-[24rem] place-items-center p-6"
-    >
-      <div className="flex max-w-md flex-col gap-3 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">
-          Calls need the signaling service
-        </h1>
-        <p data-testid="call-error" className="text-muted-foreground text-sm">
-          This build has no call signaling configured, so it cannot connect you
-          to anyone yet.
-        </p>
-        <Link
-          href="/app"
-          className="bg-primary text-primary-foreground focus-visible:ring-ring/50 mx-auto mt-1 grid h-10 place-items-center rounded-md px-4 text-sm font-medium outline-none focus-visible:ring-[3px]"
-        >
-          Back to Connvo
-        </Link>
-      </div>
-    </div>
+    <CallNotice
+      title="Calls need the signaling service"
+      body="This build has no call signaling configured, so it cannot connect you to anyone yet."
+      failed
+    />
   );
 }
