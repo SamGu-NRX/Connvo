@@ -12,7 +12,10 @@ import { getFunctionName, type FunctionReturnType } from "convex/server";
 import { api } from "@convex/_generated/api";
 import { QueueView, type QueueViewProps } from "@/components/queue/QueueView";
 import LiveMatchQueue from "@/components/queue/LiveMatchQueue";
-import { callQueueDestination } from "@/components/queue/queue-navigation";
+import {
+  callQueueDestination,
+  enterQueueCall,
+} from "@/components/queue/queue-navigation";
 
 type Status = FunctionReturnType<typeof api.matching.queue.status>;
 const mock = vi.hoisted(() => ({
@@ -276,6 +279,15 @@ describe("match queue interface", () => {
     });
     expect(screen.getByRole("button", { name: /^Join$/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Decline" })).toBeDisabled();
+  });
+
+  it("loads a fresh call document to avoid removing a shared auth provider during navigation", () => {
+    const location = { search: "?as=B", replace: vi.fn() };
+    enterQueueCall("meeting-42", location, true);
+    expect(location.replace).toHaveBeenCalledExactlyOnceWith(
+      "/app/call/meeting-42?as=B",
+    );
+    expect(mock.replace).not.toHaveBeenCalled();
   });
 
   it("keeps test identity only in the local handoff", () => {

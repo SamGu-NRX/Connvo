@@ -14,10 +14,9 @@ import {
   useMutation,
   useQuery,
 } from "convex/react";
-import { useRouter } from "next/navigation";
 import { api } from "@convex/_generated/api";
 import { QueueView, type QueueViewState } from "./QueueView";
-import { callQueueDestination } from "./queue-navigation";
+import { enterQueueCall } from "./queue-navigation";
 
 type QueueType = "casual" | "professional";
 const notices = {
@@ -82,7 +81,6 @@ function ConnectedQueue({
   queueType: QueueType;
   title: string;
 }) {
-  const router = useRouter();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const connection = useConvexConnectionState();
   const status = useQuery(
@@ -156,14 +154,12 @@ function ConnectedQueue({
 
   useEffect(() => {
     if (status?.state !== "ready") return;
-    router.replace(
-      callQueueDestination(
-        status.meetingId,
-        window.location.search,
-        process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1",
-      ),
+    enterQueueCall(
+      status.meetingId,
+      window.location,
+      process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1",
     );
-  }, [status, router]);
+  }, [status]);
 
   let view: QueueViewState;
   if (error) view = { kind: "error", message: error };

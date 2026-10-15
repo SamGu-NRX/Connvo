@@ -13,8 +13,9 @@ import { readUserScoringData, scoreQueuePair } from "./scoring";
 type QueueType = Infer<typeof callQueueTypeV>;
 type QueueState = Infer<typeof callQueueStatusV>;
 
-// Product limits: one minute to answer a match and fifteen minutes of queue availability.
-// These are explicit timeouts, not estimates of matching performance.
+// Unmeasured policy defaults: unanswered invitations must release both people,
+// and abandoned queue tabs must stop reserving partners. Revisit these windows
+// with usage evidence; they are not matching-time estimates.
 const MATCH_WINDOW_MS = 60_000;
 const QUEUE_WINDOW_MS = 15 * 60_000;
 

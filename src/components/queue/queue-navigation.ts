@@ -10,3 +10,13 @@ export function callQueueDestination(
     ? `${destination}?as=${identity}`
     : destination;
 }
+
+export function enterQueueCall(
+  meetingId: string,
+  location: Pick<Location, "search" | "replace">,
+  testAuth: boolean,
+): void {
+  // Soft navigation removes the eval app's inner Convex auth provider, whose
+  // cleanup clears the shared client. A fresh document mounts call auth once.
+  location.replace(callQueueDestination(meetingId, location.search, testAuth));
+}
