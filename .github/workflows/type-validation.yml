@@ -159,6 +159,11 @@ jobs:
       - name: Run performance tests
         run: pnpm run test:run convex/types/__tests__/propertyBasedTests.test.ts --reporter=verbose
 
+      - name: Start anonymous local backend for the build
+        run: |
+          pnpm call-eval:backend -- --no-next --port=3103
+          node -e 'const fs = require("node:fs"); const state = JSON.parse(fs.readFileSync("tools/call-eval/out/state.json", "utf8")); fs.appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_CONVEX_URL=${state.convexUrl}\n`);'
+
       - name: Check bundle size impact
         run: |
           echo "Checking type system bundle impact..."
@@ -170,6 +175,10 @@ jobs:
           else
             echo "No bundle analysis found - types should have zero runtime impact"
           fi
+
+      - name: Stop anonymous local backend
+        if: always()
+        run: pnpm call-eval:backend -- --stop --port=3103
 
   compatibility-check:
     name: Cross-Platform Type Compatibility

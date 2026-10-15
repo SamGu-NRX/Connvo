@@ -20,7 +20,6 @@ const state = JSON.parse(
   fs.readFileSync("tools/call-eval/out/state.json", "utf8"),
 );
 const client = new ConvexHttpClient(state.convexUrl);
-client.setAuth(state.users.A.token);
 const meetingId = createEvalMeeting("Lifecycle proof");
 /** @type {import('@playwright/test').Browser[]} */
 const browsers = [];
@@ -220,6 +219,12 @@ try {
   );
   await a.keyboard.press("Enter");
   await a.getByTestId("meeting-recap").waitFor();
+  // Provisioning tokens expire after ten minutes; queued browser proofs must
+  // obtain the same fresh local identity the page uses.
+  const authResponse = await fetch(`${baseUrl}/api/test-auth/token?user=A`);
+  assert.ok(authResponse.ok, "local proof identity must be available");
+  const auth = z.object({ token: z.string() }).parse(await authResponse.json());
+  client.setAuth(auth.token);
   const history = z
     .object({
       meeting: z.object({ state: z.literal("concluded") }),
