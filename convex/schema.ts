@@ -23,6 +23,9 @@ import { legacyTables } from "./schema/legacy";
 import { userSettings } from "./schema/userSettings";
 import { livePromptTables } from "./schema/livePrompts";
 import { historyTables } from "./schema/history";
+import { availabilityBlocks } from "./schema/availability";
+import { blocks } from "./schema/blocks";
+import { reports } from "./schema/reports";
 
 export default defineSchema({
   ...userTables,
@@ -39,4 +42,7 @@ export default defineSchema({
   ...offlineTables,
   ...legacyTables,
   userSettings,
+  availabilityBlocks,
+  blocks,
+  reports,
 });

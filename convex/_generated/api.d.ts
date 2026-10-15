@@ -85,6 +85,8 @@ import type * as notes_mutations from "../notes/mutations.js";
 import type * as notes_offline from "../notes/offline.js";
 import type * as notes_operations from "../notes/operations.js";
 import type * as notes_queries from "../notes/queries.js";
+import type * as profiles_availability from "../profiles/availability.js";
+import type * as profiles_moderation from "../profiles/moderation.js";
 import type * as profiles_mutations from "../profiles/mutations.js";
 import type * as profiles_queries from "../profiles/queries.js";
 import type * as prompts_actions from "../prompts/actions.js";
@@ -249,6 +251,8 @@ declare const fullApi: ApiFromModules<{
   "notes/offline": typeof notes_offline;
   "notes/operations": typeof notes_operations;
   "notes/queries": typeof notes_queries;
+  "profiles/availability": typeof profiles_availability;
+  "profiles/moderation": typeof profiles_moderation;
   "profiles/mutations": typeof profiles_mutations;
   "profiles/queries": typeof profiles_queries;
   "prompts/actions": typeof prompts_actions;

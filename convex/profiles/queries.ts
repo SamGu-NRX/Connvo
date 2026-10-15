@@ -12,6 +12,7 @@ import { query, internalQuery } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { requireIdentity, assertOwnershipOrAdmin } from "@convex/auth/guards";
 import { Id } from "@convex/_generated/dataModel";
+import { chatsPerWeekV, intentsV } from "@convex/lib/availability";
 
 /**
  * Gets profile by user ID (internal use)
@@ -40,6 +41,10 @@ export const getProfileByUserId = internalQuery({
       jobTitle: v.optional(v.string()),
       company: v.optional(v.string()),
       linkedinUrl: v.optional(v.string()),
+      // Matching preferences (cv6-profile-availability)
+      intents: v.optional(intentsV),
+      timezone: v.optional(v.string()),
+      chatsPerWeek: v.optional(chatsPerWeekV),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -80,6 +85,10 @@ export const getCurrentUserProfile = query({
       jobTitle: v.optional(v.string()),
       company: v.optional(v.string()),
       linkedinUrl: v.optional(v.string()),
+      // Matching preferences (cv6-profile-availability)
+      intents: v.optional(intentsV),
+      timezone: v.optional(v.string()),
+      chatsPerWeek: v.optional(chatsPerWeekV),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
