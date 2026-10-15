@@ -23,6 +23,7 @@ const TEST_PATHS = [
   "/dev/auth-proof",
   "/api/test-auth/token",
   "/app/match-queue",
+  "/app/dashboard",
   "/app/smart-connection",
   "/app/professional/b2b",
   "/app/professional/collaboration",

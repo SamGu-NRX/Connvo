@@ -1,13 +1,6 @@
 import type { ComponentType } from "react";
 
-import {
-  Home,
-  BarChart2,
-  User,
-  Settings,
-  Briefcase,
-  Phone,
-} from "lucide-react";
+import { Home, User, Users, Settings, Briefcase, Phone } from "lucide-react";
 
 export type NavItem = {
   name: string;
@@ -27,10 +20,10 @@ export const navSections: { title: string; items: NavItem[] }[] = [
         description: "Welcome overview",
       },
       {
-        name: "Dashboard",
+        name: "Your network",
         href: "/app/dashboard",
-        icon: BarChart2,
-        description: "Metrics and insights",
+        icon: Users,
+        description: "People you met and kept",
       },
     ],
   },

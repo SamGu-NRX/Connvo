@@ -8,6 +8,7 @@
 import type { Id } from "@convex/_generated/dataModel";
 import { isAfterCallEnabled } from "@/lib/featureFlags";
 import { MeetingRecap } from "./MeetingRecap";
+import { PostCallPrompts } from "./PostCallPrompts";
 
 const recapHref = (meetingId: string) => `/app/meetings/${meetingId}`;
 
@@ -49,6 +50,7 @@ export function EndedRecap({ meetingId }: { meetingId: string }) {
           Full recap
         </a>
       </div>
+      <PostCallPrompts meetingId={meetingId as Id<"meetings">} />
       <MeetingRecap meetingId={meetingId as Id<"meetings">} compact />
     </section>
   );

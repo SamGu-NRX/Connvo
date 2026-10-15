@@ -16,6 +16,7 @@ import { CalendarDownload } from "./CalendarDownload";
 import { HistoryBoundary } from "./HistoryBoundary";
 import { formatMeetingTime } from "./MeetingList";
 import { MeetingRecapSkeleton, MeetingRecapView } from "./MeetingRecap";
+import { PostCallPrompts } from "./PostCallPrompts";
 import { StayInTouch } from "./StayInTouch";
 import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
 
@@ -73,6 +74,11 @@ function MeetingDetailData({ meetingId }: { meetingId: Id<"meetings"> }) {
       <Card>
         <CardContent>
           <MeetingRecapView history={history} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent>
+          <PostCallPrompts meetingId={meetingId} />
         </CardContent>
       </Card>
       <Card>

@@ -290,6 +290,11 @@ describe("guard (i): harness allowlist accepts the devEval seed module", () => {
     expect(isHarnessModulePath("notes/bar")).toBe(true);
   });
 
+  it("accepts the network directory (post-call feedback and connections)", () => {
+    expect(isHarnessModulePath("network/queries")).toBe(true);
+    expect(isHarnessModulePath("network/mutations:connectWith")).toBe(true);
+  });
+
   it("includes root-level function files (copied unconditionally by the tree builder)", () => {
     expect(isHarnessModulePath("schema")).toBe(true);
     expect(isHarnessModulePath("")).toBe(false);
