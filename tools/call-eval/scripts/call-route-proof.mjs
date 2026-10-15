@@ -9,6 +9,11 @@
 //   C5/C6  mic mute/unmute flips the remote tile from both sides
 //   C7     camera off/on releases and restores the capture track
 //   C8     a signed-in non-participant gets a named rejection and no media
+//   C11    the outsider also sees no notes editor and no prompts panel
+//   C12    shared notes: A types, B's editor shows it, the stored text carries it
+//   C13    live prompts: one pick shows the same prompt on both sides, used syncs
+//   C14    B's reload loses and duplicates nothing in the notes or the prompt
+//   C15    the recap shows the committed notes and the prompt from the call
 //   C9     a forced tab reload rejoins and the survivor loses the ghost
 //   C10    leaving ends tracks, closes connections, closes server sessions
 //          (no leaked room state) and concludes the meeting
@@ -16,7 +21,9 @@
 // Writes tools/call-eval/out/call-route-proof/results-<ts>.json plus a stable
 // results.json, and exits 0 only when every check passed. Missing remote media
 // or leaked room state fail the run. Local Convex, synthetic identities and
-// generated media only: no Stream, no paid services, no production data.
+// generated media only: no Stream, no paid services, no production data. The
+// prompt pick uses the deterministic bank selection (no OPENAI_API_KEY), and
+// the backend runs with --after-call so the recap screens are on for C15.
 
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
@@ -40,6 +47,7 @@ import {
 import {
   installSignalingCut,
   parseRunOutput,
+  storedNotes,
 } from "../runner/convex-signaling.mjs";
 import { launchPeer } from "../runner/peers.mjs";
 import {
@@ -342,6 +350,61 @@ async function expectConnected(peer) {
   );
 }
 
+// --- Collaboration helpers (shared notes and live prompts) -------------------
+
+/** The shared-notes editor selector (MeetingNotesPanel's textarea). */
+const NOTES_EDITOR = '[data-testid="notes-editor"]';
+/** The panel that carries the current live prompt. */
+const PROMPTS_PANEL = '[data-testid="conversation-prompts"]';
+/** The current prompt text element. */
+const CURRENT_PROMPT = '[data-testid="current-prompt"]';
+/** Deterministic note phrases; the proof counts each exactly once everywhere. */
+const NOTES_A = "A-alpha sync check";
+const NOTES_B = "B-bravo sync check";
+const NOTES_B2 = "B-charlie after reload";
+/** The prompt text both sides must see; set by C13, reused by C14 and C15. */
+let promptText = "";
+
+/** Type a full notes buffer into a peer's editor and commit it (blur flushes).
+ *  The editor holds the whole shared document, so callers append to the
+ *  current buffer; a bare fill would replace the other person's words.
+ *  @param {Awaited<ReturnType<typeof launchPeer>>} peer
+ *  @param {string} text
+ *  @returns {Promise<void>}
+ */
+async function typeNotes(peer, text) {
+  const editor = peer.page.locator(NOTES_EDITOR);
+  await editor.waitFor({ state: "visible", timeout: 60_000 });
+  await editor.fill(text);
+  await editor.blur();
+}
+
+/** The peer's current notes buffer text.
+ *  @param {Awaited<ReturnType<typeof launchPeer>>} peer
+ *  @returns {Promise<string>}
+ */
+async function editorText(peer) {
+  return peer.page.locator(NOTES_EDITOR).inputValue();
+}
+
+/** Count how many times marker occurs in text (0 when text is empty).
+ *  @param {string} text
+ *  @param {string} marker
+ *  @returns {number}
+ */
+function countOf(text, marker) {
+  if (!text) return 0;
+  let count = 0;
+  for (
+    let at = text.indexOf(marker);
+    at !== -1;
+    at = text.indexOf(marker, at + marker.length)
+  ) {
+    count += 1;
+  }
+  return count;
+}
+
 // --- Main ---------------------------------------------------------------------
 
 /** @type {{startedAt: string, gitSha: string | null, host: string, port: number, baseUrl: string, pass: boolean, stage: string, failure: string | null, meetingId: string | null, checks: {id: string, pass: boolean, detail: string, ms?: number, measurements?: unknown}[], completedAt?: string}} */
@@ -393,7 +456,13 @@ async function main() {
       const t0 = Date.now();
       const child = spawn(
         process.execPath,
-        [path.join(SCRIPTS_DIR, "local-backend.mjs"), `--port=${PORT}`],
+        [
+          path.join(SCRIPTS_DIR, "local-backend.mjs"),
+          `--port=${PORT}`,
+          // The recap screens are part of the collaboration path this proof
+          // now covers (C15 reads the recap page after the call concludes).
+          "--after-call",
+        ],
         {
           cwd: REPO,
         },
@@ -505,6 +574,9 @@ async function main() {
       return { meetingId: result.meetingId };
     },
   );
+
+  /** The matched meeting id; C1 guarantees it is set. */
+  const meetingId = /** @type {string} */ (result.meetingId);
 
   const meetingRow = devEval(
     "devEval/queueProof:meeting",
@@ -723,6 +795,99 @@ async function main() {
     },
   );
 
+  // 5b. Collaboration: the refused outsider, shared notes, live prompts.
+  stage = "collaboration";
+
+  await check(
+    "C11-outsider-collaboration-refused",
+    "the signed-in non-participant sees no notes editor and no prompts panel to read or write",
+    async () => {
+      const editors = await outsider.page.locator(NOTES_EDITOR).count();
+      const promptPanels = await outsider.page.locator(PROMPTS_PANEL).count();
+      assert.equal(editors, 0, "outsider must see no notes editor");
+      assert.equal(promptPanels, 0, "outsider must see no prompts panel");
+      return { editors, promptPanels };
+    },
+  );
+
+  await check(
+    "C12-notes-shared-both-see",
+    "A types shared notes; B's editor shows them and the stored text carries them",
+    async () => {
+      await typeNotes(a, NOTES_A);
+      await pollUntil(async () => (await editorText(b)).includes(NOTES_A), {
+        timeoutMs: 60_000,
+        label: "B's editor showing A's words",
+      });
+      // B appends to the shared buffer (the editor holds the whole document).
+      const bBuffer = await editorText(b);
+      await typeNotes(b, `${bBuffer} ${NOTES_B}`);
+      await pollUntil(async () => (await editorText(a)).includes(NOTES_B), {
+        timeoutMs: 60_000,
+        label: "A's editor showing B's words",
+      });
+      const stored = storedNotes(meetingId);
+      assert.ok(
+        stored.content.includes(NOTES_A) && stored.content.includes(NOTES_B),
+        `stored notes missing the typed phrases: ${JSON.stringify(stored.content.slice(0, 120))}`,
+      );
+      return { version: stored.version };
+    },
+  );
+
+  await check(
+    "C13-prompts-shared-both-see",
+    "one pick shows the same prompt on both sides and marking it used syncs back",
+    async () => {
+      // An automatic pick fires shortly after joining; if none has landed,
+      // request one manually, throttled well inside the 10 s manual gap.
+      let lastClick = 0;
+      await pollUntil(
+        async () => {
+          if (await a.page.locator(CURRENT_PROMPT).count()) return true;
+          const now = Date.now();
+          if (now - lastClick > 12_000) {
+            const button = a.page.getByRole("button", {
+              name: /Get an idea|Another one/,
+            });
+            if (await button.count()) {
+              try {
+                if (await button.isEnabled()) {
+                  await button.click();
+                  lastClick = now;
+                }
+              } catch {
+                // The panel re-disables between enabled-check and click; retry.
+              }
+            }
+          }
+          return false;
+        },
+        { timeoutMs: 120_000, intervalMs: 1500, label: "a prompt shown to A" },
+      );
+      const textA = (await a.page.locator(CURRENT_PROMPT).innerText()).trim();
+      assert.ok(textA.length > 0, "prompt text is empty");
+      await pollUntil(
+        async () =>
+          (await b.page
+            .locator(CURRENT_PROMPT)
+            .innerText()
+            .catch(() => "")) === textA,
+        { timeoutMs: 45_000, label: "B seeing the same prompt text" },
+      );
+      promptText = textA;
+      await b.page.getByRole("button", { name: "We used this" }).click();
+      await pollUntil(
+        async () =>
+          (await a.page.locator(PROMPTS_PANEL).innerText()).includes(
+            "Marked as used",
+          ),
+        { timeoutMs: 30_000, label: "A seeing B's used mark" },
+      );
+      return { prompt: textA.slice(0, 80) };
+    },
+  );
+
   // 6. Forced reload and recovery.
   stage = "reload-recovery";
   await check(
@@ -750,6 +915,52 @@ async function main() {
       );
       const recoveryMs = Date.now() - t0;
       return { recoveryMs };
+    },
+  );
+
+  await check(
+    "C14-collaboration-reconnect-no-dup-no-loss",
+    "after B's reload the notes show each phrase exactly once, B can add words, and the prompt persists",
+    async () => {
+      await pollUntil(
+        async () => {
+          if (!(await b.page.locator(NOTES_EDITOR).count())) return false;
+          const value = await editorText(b);
+          return countOf(value, NOTES_A) === 1 && countOf(value, NOTES_B) === 1;
+        },
+        {
+          timeoutMs: 60_000,
+          label: "B's reloaded editor showing each phrase exactly once",
+        },
+      );
+      // B appends after the reconnect; A sees the new words live.
+      const bBuffer = await editorText(b);
+      await typeNotes(b, `${bBuffer} ${NOTES_B2}`);
+      await pollUntil(async () => (await editorText(a)).includes(NOTES_B2), {
+        timeoutMs: 60_000,
+        label: "A seeing B's post-reload words",
+      });
+      const stored = storedNotes(meetingId);
+      for (const marker of [NOTES_A, NOTES_B, NOTES_B2]) {
+        assert.equal(
+          countOf(stored.content, marker),
+          1,
+          `${marker} must appear exactly once in the stored notes`,
+        );
+      }
+      // The reconnect must not lose or duplicate the live prompt either.
+      await pollUntil(
+        async () =>
+          (await b.page
+            .locator(CURRENT_PROMPT)
+            .innerText()
+            .catch(() => "")) === promptText,
+        {
+          timeoutMs: 45_000,
+          label: "B still seeing the same prompt after reload",
+        },
+      );
+      return { version: stored.version };
     },
   );
 
@@ -841,6 +1052,35 @@ async function main() {
         closedParticipants: closed.value,
         meetingState: meetingState.value,
       };
+    },
+  );
+
+  // 8. Recap: the after-call screens receive the committed state.
+  stage = "recap";
+  await check(
+    "C15-recap-receives-committed-state",
+    "A opens the recap and sees the committed notes and the prompt from the call",
+    async () => {
+      await a.page.goto(`/app/meetings/${meetingId}`, {
+        waitUntil: "domcontentloaded",
+      });
+      const recap = a.page.locator('[data-testid="meeting-recap"]');
+      await recap.waitFor({ state: "visible", timeout: 60_000 });
+      const notesText = await recap
+        .locator('[data-testid="recap-notes"]')
+        .innerText();
+      for (const marker of [NOTES_A, NOTES_B, NOTES_B2]) {
+        assert.ok(
+          notesText.includes(marker),
+          `recap notes must carry ${marker}`,
+        );
+      }
+      const recapText = (await recap.innerText()).replace(/\s+/g, " ");
+      assert.ok(
+        recapText.includes(promptText.replace(/\s+/g, " ")),
+        "recap must name the prompt that was shown during the call",
+      );
+      return { notesChars: notesText.length };
     },
   );
 
