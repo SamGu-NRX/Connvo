@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { chatsPerWeekV, intentsV } from "../lib/availability";
 
 export const userTables = {
   // User Management
@@ -48,6 +49,10 @@ export const userTables = {
     jobTitle: v.optional(v.string()),
     company: v.optional(v.string()),
     linkedinUrl: v.optional(v.string()),
+    // Matching preferences (cv6-profile-availability)
+    intents: v.optional(intentsV),
+    timezone: v.optional(v.string()),
+    chatsPerWeek: v.optional(chatsPerWeekV),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
