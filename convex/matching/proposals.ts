@@ -75,22 +75,18 @@ async function proposalForParticipant(
 
 /**
  * Refuses anything but a live proposal: a wrong state is rejected outright,
- * and a proposal past its deadline flips to "expired" and is rejected too,
- * so an accept can never land after the deadline even if the scheduled
- * expiry has not fired yet.
+ * and a proposal past its deadline is rejected too, so an accept can never
+ * land after the deadline even if the scheduled expiry has not fired yet.
+ * No state flip here: a thrown mutation rolls back its whole transaction,
+ * so the "expired" flip belongs to the scheduled function alone.
  */
 async function refuseExpired(
-  ctx: MutationCtx,
   row: { _id: Id<"matchProposals">; state: string; expiresAt: number },
 ) {
   if (row.state !== "proposed") {
     throw createError.validation(`This proposal is already ${row.state}`);
   }
   if (Date.now() >= row.expiresAt) {
-    await ctx.db.patch(row._id, {
-      state: "expired",
-      updatedAt: Date.now(),
-    });
     throw createError.validation("This proposal has expired");
   }
 }
@@ -134,7 +130,7 @@ export const accept = mutation({
       identity.userId,
       args.proposalId,
     );
-    await refuseExpired(ctx, row);
+    await refuseExpired(row);
 
     const now = Date.now();
     const isA = row.userAId === identity.userId;
@@ -193,7 +189,7 @@ export const chooseAlternative = mutation({
       identity.userId,
       args.proposalId,
     );
-    await refuseExpired(ctx, row);
+    await refuseExpired(row);
 
     if (
       !Number.isInteger(args.index) ||
@@ -244,7 +240,7 @@ export const decline = mutation({
       identity.userId,
       args.proposalId,
     );
-    await refuseExpired(ctx, row);
+    await refuseExpired(row);
 
     await ctx.db.patch(row._id, {
       state: "declined",
