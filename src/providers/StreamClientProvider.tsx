@@ -28,6 +28,12 @@ function createClientStore() {
 const serverClientSnapshot = () => null;
 
 const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
+  // Unconfigured queue pages do not need a WorkOS or Stream account.
+  if (!API_KEY) return <>{children}</>;
+  return <ConfiguredStreamVideoProvider>{children}</ConfiguredStreamVideoProvider>;
+};
+
+const ConfiguredStreamVideoProvider = ({ children }: { children: ReactNode }) => {
   const [clientStore] = useState(createClientStore);
   const connection = useSyncExternalStore(
     clientStore.subscribe,
@@ -72,9 +78,6 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
       }
     };
   }, [user, loading, clientStore]);
-
-  // If API key is not provided, render children (skip Stream provider)
-  if (!API_KEY) return <>{children}</>;
 
   // While client is initializing show loader
   if (!connection || loading || connection.userId !== user?.id)

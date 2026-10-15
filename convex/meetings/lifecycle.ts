@@ -42,6 +42,66 @@ import type {
 } from "@convex/types/entities/meeting";
 import type { User } from "@convex/types/entities/user";
 
+/** Shared transactional setup for manually created and mutually accepted queue meetings. */
+export async function createMeetingRecords(
+  ctx: MutationCtx,
+  args: {
+    organizerId: Id<"users">;
+    title: string;
+    description?: string;
+    scheduledAt?: number;
+    duration: number;
+    webrtcEnabled: boolean;
+    recordingEnabled: boolean;
+    participantIds?: Id<"users">[];
+    startImmediately?: boolean;
+  },
+): Promise<Id<"meetings">> {
+  const now = Date.now();
+  const participantIds = [
+    ...new Set([args.organizerId, ...(args.participantIds ?? [])]),
+  ];
+  const meetingId = await ctx.db.insert("meetings", {
+    organizerId: args.organizerId,
+    title: args.title,
+    description: args.description,
+    scheduledAt: args.scheduledAt,
+    duration: args.duration,
+    webrtcEnabled: args.webrtcEnabled,
+    state: args.startImmediately ? "active" : "scheduled",
+    participantCount: participantIds.length,
+    createdAt: now,
+    updatedAt: now,
+  });
+  for (const userId of participantIds) {
+    await ctx.db.insert("meetingParticipants", {
+      meetingId,
+      userId,
+      role: userId === args.organizerId ? "host" : "participant",
+      presence: "invited",
+      createdAt: now,
+    });
+  }
+  await ctx.db.insert("meetingState", {
+    meetingId,
+    active: args.startImmediately ?? false,
+    // An accepted WebRTC match is open before both call sessions arrive.
+    // Presence records its conversation start when the second session joins.
+    startedAt: args.startImmediately && !args.webrtcEnabled ? now : undefined,
+    topics: [],
+    recordingEnabled: args.recordingEnabled,
+    updatedAt: now,
+  });
+  await ctx.db.insert("meetingNotes", {
+    meetingId,
+    content: "",
+    version: 0,
+    lastRebasedAt: now,
+    updatedAt: now,
+  });
+  return meetingId;
+}
+
 /**
  * Creates a new meeting with comprehensive setup and hybrid video provider support.
  *
@@ -170,8 +230,6 @@ export const createMeeting = mutation({
         }
       }
 
-      const now = Date.now();
-
       // Determine video provider and features based on user plan and meeting requirements
       const maxParticipants = args.maxParticipants || 10;
       const recordingEnabled = args.recordingEnabled || false;
@@ -212,45 +270,14 @@ export const createMeeting = mutation({
         finalMaxParticipants = Math.min(maxParticipants, 4); // WebRTC practical limit
       }
 
-      // Create meeting with provider-specific configuration
-      const meetingId = await ctx.db.insert("meetings", {
+      const meetingId = await createMeetingRecords(ctx, {
         organizerId: organizer._id,
         title: args.title.trim(),
         description: args.description?.trim(),
         scheduledAt: args.scheduledAt,
-        duration: args.duration || 1800000, // Default 30 minutes in ms
+        duration: args.duration || 1800000,
         webrtcEnabled: videoProvider === "webrtc",
-        state: "scheduled",
-        participantCount: 1, // Organizer
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      // Add organizer as host participant
-      await ctx.db.insert("meetingParticipants", {
-        meetingId,
-        userId: organizer._id,
-        role: "host",
-        presence: "invited",
-        createdAt: now,
-      });
-
-      // Create initial meeting state with provider-specific settings
-      await ctx.db.insert("meetingState", {
-        meetingId,
-        active: false,
-        topics: [],
         recordingEnabled: finalRecordingEnabled,
-        updatedAt: now,
-      });
-
-      // Create initial empty notes
-      await ctx.db.insert("meetingNotes", {
-        meetingId,
-        content: "",
-        version: 0,
-        lastRebasedAt: now,
-        updatedAt: now,
       });
 
       // Provider-specific initialization

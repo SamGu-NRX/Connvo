@@ -75,3 +75,35 @@ it("after-call bench flags skip AuthKit only on the matching eval route", () => 
   expect(screen.getByText("Recap ready")).toBeVisible();
   expect(route.getAuth).not.toHaveBeenCalled();
 });
+
+it("updates AuthKit routing at the surviving outer owner", async () => {
+  vi.stubEnv("NEXT_PUBLIC_CONNVO_CALL_BENCH", "1");
+  vi.stubEnv("NEXT_PUBLIC_CONNVO_REAL_CALL", "1");
+  route.pathname = "/app/match-queue";
+  const page = render(
+    <ConvexClientProvider>
+      <ConvexClientProvider>
+        <p>Queue ready</p>
+      </ConvexClientProvider>
+    </ConvexClientProvider>,
+  );
+  expect(route.getAuth).not.toHaveBeenCalled();
+  route.pathname = "/app/call/meeting-42";
+  page.rerender(
+    <ConvexClientProvider>
+      <p>Call ready</p>
+    </ConvexClientProvider>,
+  );
+  expect(screen.getByText("Call ready")).toBeVisible();
+  expect(route.getAuth).not.toHaveBeenCalled();
+  route.pathname = "/app/profile";
+  page.rerender(
+    <ConvexClientProvider>
+      <ConvexClientProvider>
+        <LandingAuthConsumer />
+      </ConvexClientProvider>
+    </ConvexClientProvider>,
+  );
+  expect(await screen.findByText("Landing page ready")).toBeVisible();
+  await waitFor(() => expect(route.getAuth).toHaveBeenCalledOnce());
+});
