@@ -88,7 +88,7 @@ test("hydrates the light server markup into the saved dark theme without a misma
     expect(document.documentElement).toHaveClass("dark");
     expect(errors).toEqual([]);
   } finally {
-    if (root) act(() => root.unmount());
+    act(() => root?.unmount());
     container.remove();
   }
 });
