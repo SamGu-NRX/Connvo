@@ -1,0 +1,160 @@
+{
+  "fixture": true,
+  "results": [
+    {
+      "state": "loading",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "lobby",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "empty",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "current",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "pending",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "used",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "paused",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "limited",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "error",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "ended",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "exhausted",
+      "width": 1440,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 1440,
+      "keyboard": "passed",
+      "reducedMotion": {
+        "duration": "0.15s",
+        "transform": "none"
+      }
+    },
+    {
+      "state": "loading",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "lobby",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "empty",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "current",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "pending",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "used",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "paused",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "limited",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "error",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "ended",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "state": "exhausted",
+      "width": 390,
+      "axeViolations": 0,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 390,
+      "keyboard": "passed",
+      "reducedMotion": {
+        "duration": "0.15s",
+        "transform": "none"
+      }
+    },
+    {
+      "mountedCall": true,
+      "sharedBrowsers": 2,
+      "sharedManualPick": true,
+      "sharedUsedState": true,
+      "paidRequestsUpperBound": 1
+    }
+  ]
+}

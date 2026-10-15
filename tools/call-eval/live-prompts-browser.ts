@@ -49,12 +49,24 @@ async function main() {
       ]) {
         await page.getByLabel("Panel state").selectOption(state);
         await expect(panel).toBeVisible();
+        // Measure settled text contrast, after the question entrance transition.
+        await panel.evaluate((el) =>
+          Promise.all(
+            el
+              .getAnimations({ subtree: true })
+              .map((animation) => animation.finished),
+          ),
+        );
         const audit = await new AxeBuilder({ page })
           .include('[data-testid="conversation-prompts"]')
           .analyze();
         const violations = audit.violations.map((v) => ({
           id: v.id,
           impact: v.impact,
+          nodes: v.nodes.map((node) => ({
+            target: node.target,
+            summary: node.failureSummary,
+          })),
         }));
         assert.deepEqual(
           violations,
