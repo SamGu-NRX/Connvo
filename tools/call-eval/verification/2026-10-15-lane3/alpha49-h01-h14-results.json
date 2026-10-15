@@ -1,0 +1,284 @@
+[
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 1324,
+      "timeToFirstRemoteFrameMs": 1333,
+      "timeToFirstRemoteFrameMsReverse": 1336,
+      "fpsAtoB": 31.7,
+      "fpsBtoA": 31.7,
+      "colourMsAseesB": 1337,
+      "colourMsBseesA": 1339
+    },
+    "failure": null,
+    "ms": 11638
+  },
+  {
+    "scenario": "H-02",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
+    "measurements": {
+      "aHearsB": 656.7,
+      "bHearsA": 438.2
+    },
+    "failure": null,
+    "ms": 2664
+  },
+  {
+    "scenario": "H-03",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+    "measurements": {
+      "muteFlipMs": 186,
+      "silentAfterMs": 344,
+      "unmuteFlipMs": 194,
+      "restoredToneHz": 436.5
+    },
+    "failure": null,
+    "ms": 3101
+  },
+  {
+    "scenario": "H-04",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
+    "measurements": {
+      "offFlipMs": 187,
+      "resumedFps": 30.7
+    },
+    "failure": null,
+    "ms": 6200
+  },
+  {
+    "scenario": "H-05",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
+    "measurements": {
+      "fpsBefore": 33.3,
+      "fpsDuring": 29.3,
+      "fpsAfter": 32.8,
+      "phase": true,
+      "colorDistance": 1
+    },
+    "failure": null,
+    "ms": 7840
+  },
+  {
+    "scenario": "H-06",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "context without media permission shows an actionable error; granting and `retry-media` joins",
+    "measurements": {
+      "errorText": "Your browser is blocking the camera and microphone for this site.",
+      "phaseDenied": "idle",
+      "joinedAfterRetry": true,
+      "fpsBseesA": 31.8
+    },
+    "failure": null,
+    "ms": 3571
+  },
+  {
+    "scenario": "H-07",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "one peer offline 3 s, 10 s, 30 s: honest `reconnecting`, media resumes within 10 s of restore, no duplicate tiles",
+    "measurements": {
+      "seed": 1,
+      "relayPathB": [
+        {
+          "local": "relay",
+          "remote": "relay"
+        }
+      ],
+      "shaperB": {
+        "forwarded": 998,
+        "dropped": 3292,
+        "droppedUp": 1732,
+        "droppedDown": 1560,
+        "uplinks": 8
+      },
+      "drops": [
+        {
+          "durationS": 3,
+          "recoveryMs": 500,
+          "tilesA": 1,
+          "tilesB": 1
+        },
+        {
+          "durationS": 10,
+          "recoveryMs": 325,
+          "tilesA": 1,
+          "tilesB": 1
+        },
+        {
+          "durationS": 30,
+          "recoveryMs": 294,
+          "tilesA": 1,
+          "tilesB": 1
+        }
+      ],
+      "recovery10sMs": 325,
+      "sessionEvents": [
+        {
+          "participant": "B",
+          "reason": "replaced",
+          "at": 1792052004391
+        },
+        {
+          "participant": "B",
+          "reason": "expired",
+          "at": 1792052014393
+        },
+        {
+          "participant": "B",
+          "reason": "expired",
+          "at": 1792052030532
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 64046
+  },
+  {
+    "scenario": "H-08",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "recovers within 10 s",
+    "measurements": {
+      "recoveryMs": 1194,
+      "restartedPcs": 2,
+      "ufragsBefore": {
+        "A": [
+          "SPyM"
+        ],
+        "B": [
+          "io7h"
+        ]
+      }
+    },
+    "failure": null,
+    "ms": 3778
+  },
+  {
+    "scenario": "H-09",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "reloaded peer rejoins; no ghost participant after 10 s",
+    "measurements": {
+      "ghostTiles": 1
+    },
+    "failure": null,
+    "ms": 13228
+  },
+  {
+    "scenario": "H-10",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "survivor shows the peer gone within 15 s",
+    "measurements": {
+      "closed": true,
+      "tileGone": true,
+      "sessionEvents": [
+        {
+          "participant": "A",
+          "reason": "expired",
+          "at": 1792052087075
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 11758
+  },
+  {
+    "scenario": "H-11",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "all local tracks `ended`, all wrapped connections `closed`, no `getStats` traffic afterwards, server session closed",
+    "measurements": {
+      "trackStates": [
+        "ended",
+        "ended"
+      ],
+      "getStatsCallsStable": true,
+      "getStatsCalls": 1,
+      "sessionEvents": [
+        {
+          "participant": "A",
+          "reason": "left",
+          "at": 1792052089488
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 4307
+  },
+  {
+    "scenario": "H-12",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "simultaneous join in both orders, 20 seeds: always connects",
+    "measurements": {
+      "order": "A-first",
+      "bothConnected": true,
+      "fps": {
+        "AseesB": 34.4,
+        "BseesA": 30.3
+      }
+    },
+    "failure": null,
+    "ms": 5821
+  },
+  {
+    "scenario": "H-13",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "five leave/rejoin cycles: live connection and track counts return to baseline",
+    "measurements": {
+      "baseline": {
+        "live": 1,
+        "tracks": 2
+      },
+      "final": {
+        "live": 1,
+        "tracks": 2
+      }
+    },
+    "failure": null,
+    "ms": 5950
+  },
+  {
+    "scenario": "H-14",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "a signed-in non-participant gets a named rejection and no media",
+    "measurements": {
+      "rejection": "Access denied. Check your link or ask the host to invite you.",
+      "phase": "failed",
+      "tiles": 0,
+      "tracksCreated": 0,
+      "liveConnections": 0
+    },
+    "failure": null,
+    "ms": 2247
+  }
+]

@@ -1,0 +1,211 @@
+{
+  "pass": true,
+  "meetingId": "m976s5ackse440wwhnqtqgz6v58gb5r7",
+  "duration": "0 seconds",
+  "timestamps": {
+    "startedAt": 1792052330202,
+    "endedAt": 1792052330944
+  },
+  "audits": [
+    {
+      "state": "checking-call",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "checking-call",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "checking-call",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "checking-call",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "call-check-failed",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "call-check-failed",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "call-check-failed",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "call-check-failed",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "call-unavailable",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "call-unavailable",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "call-unavailable",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "call-unavailable",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "ended-link",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "ended-link",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "ended-link",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "ended-link",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "ended-rejoin",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "ended-rejoin",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "ended-rejoin",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "ended-rejoin",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "recap",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "recap",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "recap",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "recap",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "history",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "history",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "history",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "history",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "outsider",
+      "width": 1440,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "outsider",
+      "width": 1440,
+      "reducedMotion": true,
+      "violations": []
+    },
+    {
+      "state": "outsider",
+      "width": 390,
+      "reducedMotion": false,
+      "violations": []
+    },
+    {
+      "state": "outsider",
+      "width": 390,
+      "reducedMotion": true,
+      "violations": []
+    }
+  ],
+  "assertions": [
+    "last leave ends",
+    "first leaver loses rejoin",
+    "ended reload requests no media",
+    "duration matches stored timestamps in recap and history",
+    "recap link works by keyboard",
+    "outsider requests no media"
+  ]
+}

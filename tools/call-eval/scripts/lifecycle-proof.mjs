@@ -26,7 +26,7 @@ const browsers = [];
 /** @type {Array<{state: string, width: number, reducedMotion: boolean, violations: string[]}>} */
 const audits = [];
 
-/** @param {string} id @param {"hold" | "fail"} [statusFault] */
+/** @param {string} id @param {"hold" | "fail" | "unavailable"} [statusFault] */
 async function person(id, statusFault) {
   const browser = await chromium.launch({
     headless: true,
@@ -61,6 +61,31 @@ async function person(id, statusFault) {
     });
   });
   const tap = await tapConvex(context);
+  if (statusFault === "unavailable") {
+    // Scheduled-call UI fixture: change only this query's delivered value.
+    await context.routeWebSocket(/\/api\/[^/]+\/sync$/, (socket) => {
+      const server = socket.connectToServer();
+      const queryIds = new Set();
+      socket.onMessage((raw) => {
+        const message = JSON.parse(String(raw));
+        for (const modification of message.modifications ?? []) {
+          if (modification.udfPath === "meetings/webrtc/mesh:callStatus")
+            queryIds.add(modification.queryId);
+        }
+        server.send(raw);
+      });
+      server.onMessage((raw) => {
+        const message = JSON.parse(String(raw));
+        for (const modification of message.modifications ?? []) {
+          if (modification.type === "QueryUpdated" && queryIds.has(modification.queryId))
+            modification.value = "unavailable";
+        }
+        socket.send(JSON.stringify(message));
+      });
+      socket.onClose(() => void server.close().catch(() => {}));
+      server.onClose(() => void socket.close().catch(() => {}));
+    });
+  }
   if (statusFault === "hold")
     tap.holdQueries = ["meetings/webrtc/mesh:callStatus"];
   if (statusFault === "fail")
@@ -162,6 +187,11 @@ try {
   assert.deepEqual(await captureState(failed), { requests: 0, live: 0 });
   await capture(failed, "call-check-failed", "[data-call-phase]");
   await failed.context().close();
+  const unavailable = await person("A", "unavailable");
+  await unavailable.getByRole("heading", { name: "This call isn't open", exact: true }).waitFor();
+  assert.deepEqual(await captureState(unavailable), { requests: 0, live: 0 });
+  await capture(unavailable, "call-unavailable", "[data-call-phase]");
+  await unavailable.context().close();
   const a = await person("A");
   const b = await person("B");
   for (const page of [a, b]) await page.getByTestId("join-call").click();
