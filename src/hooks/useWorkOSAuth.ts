@@ -5,6 +5,16 @@ import { useConvexAuth } from "convex/react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useEffect } from "react";
+import {
+  TEST_AUTH_ENABLED,
+  testAuthUserParam,
+  useTestAuthState,
+} from "@/lib/test-auth";
+
+/* eslint-disable react-hooks/rules-of-hooks -- the TEST_AUTH_ENABLED branch is
+ * selected by a build-constant env flag (NEXT_PUBLIC_CONNVO_TEST_AUTH), so hook
+ * order is stable for any given build; each branch is unreachable in the other
+ * mode, and the WorkOS branch keeps its pre-adapter shape. */
 
 export interface WorkOSUser {
   id: string;
@@ -17,6 +27,44 @@ export interface WorkOSUser {
 }
 
 export function useWorkOSAuth() {
+  // Test-auth paths (/onboarding, /app under the eval harness) skip the
+  // AuthKitProvider entirely, so the WorkOS context hooks would throw here.
+  // Resolve the seeded identity from the test-auth adapter instead; the gate
+  // is a build-constant env flag, so hook order is stable per build.
+  if (TEST_AUTH_ENABLED) {
+    const testAuth = useTestAuthState(testAuthUserParam());
+    const { isLoading: convexLoading, isAuthenticated: convexAuthenticated } =
+      useConvexAuth();
+    const convexUser = useQuery(
+      api.users.queries.getCurrentUser,
+      convexAuthenticated ? {} : undefined,
+    );
+
+    const testUser = testAuth.user;
+    const nameParts = (testUser?.name ?? "").split(" ");
+    const user = testUser
+      ? {
+          id: testUser.id,
+          email: testUser.email,
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(" ") || undefined,
+          profilePictureUrl: undefined,
+        }
+      : null;
+
+    return {
+      loading: testAuth.isLoading || convexLoading,
+      isAuthenticated: !!testUser && convexAuthenticated,
+      user,
+      // Convex auth is handled inside the test-auth provider; no raw
+      // WorkOS access token exists on this path.
+      accessToken: null,
+      convexUser,
+      organizationId: undefined,
+      role: undefined,
+    };
+  }
+
   const { user, loading: authLoading } = useAuth();
   const { accessToken, loading: tokenLoading } = useAccessToken();
   const { isLoading: convexLoading, isAuthenticated: convexAuthenticated } =

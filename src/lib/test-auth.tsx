@@ -16,6 +16,10 @@ import { useCallback, useEffect, useState } from "react";
  * (NEXT_PUBLIC_CONNVO_LOCAL_BUILD=1).
  */
 
+/** Single source of truth for the adapter gate (provider + hooks import this). */
+export const TEST_AUTH_ENABLED =
+  process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1";
+
 function productionReasons(): string[] {
   const reasons: string[] = [];
   if (process.env.VERCEL_ENV === "production") {
@@ -52,22 +56,79 @@ export interface CachedToken {
 // can mount from one SPA session (client-side navigation between ?as=A and
 // ?as=B pages shares this module), so a single-slot cache would hand A's
 // token to B's mount.
+//
+// The Map is per JS realm, so a full page navigation loses it and every new
+// realm re-races its first getAccessToken against the page's first Convex
+// query — the query usually executes unauthenticated, getOnboardingState 401s,
+// and the route error boundary strands the page. Backing the cache with
+// sessionStorage keeps a fresh token across full navigations within one tab
+// (harness peers each load their own URL in their own tab, so identities
+// never share a storage), letting a warmed realm resolve auth before the
+// wizard's first query fires.
 const tokenCache = new Map<string, CachedToken>();
+
+const SESSION_KEY_PREFIX = "connvo-test-auth-token:";
+
+function sessionCacheRead(userParam: string): CachedToken | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY_PREFIX + userParam);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedToken;
+    return parsed && typeof parsed.token === "string" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function sessionCacheWrite(userParam: string, cached: CachedToken): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(
+      SESSION_KEY_PREFIX + userParam,
+      JSON.stringify(cached),
+    );
+  } catch {
+    // sessionStorage may be unavailable (privacy mode, quota); the in-memory
+    // Map still covers the SPA-session case.
+  }
+}
+
+function sessionCacheClear(userParam?: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (userParam === undefined) {
+      const stale: string[] = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const key = window.sessionStorage.key(i);
+        if (key?.startsWith(SESSION_KEY_PREFIX)) stale.push(key);
+      }
+      for (const key of stale) window.sessionStorage.removeItem(key);
+    } else {
+      window.sessionStorage.removeItem(SESSION_KEY_PREFIX + userParam);
+    }
+  } catch {
+    // Same availability caveat as sessionCacheWrite.
+  }
+}
 
 export function cacheTestAuthToken(
   userParam: string,
   cached: CachedToken,
 ): void {
   tokenCache.set(userParam, cached);
+  sessionCacheWrite(userParam, cached);
 }
 
 export function clearTestAuthCache(userParam?: string): void {
   if (userParam === undefined) tokenCache.clear();
   else tokenCache.delete(userParam);
+  sessionCacheClear(userParam);
 }
 
 function readFreshCache(userParam: string): CachedToken | null {
-  const cached = tokenCache.get(userParam) ?? null;
+  const cached =
+    tokenCache.get(userParam) ?? sessionCacheRead(userParam) ?? null;
   return cached && Date.now() < cached.expiresAtMs ? cached : null;
 }
 
@@ -90,8 +151,14 @@ async function fetchTestToken(userParam: string): Promise<CachedToken> {
   };
   return {
     token: data.token,
-    // Refetch a minute before actual expiry.
-    expiresAtMs: Math.min(data.expiresAt - 60_000, Date.now() + 5 * 60_000),
+    // Hold ONE token for its whole server-side life (minus 90s). Every refetch
+    // mints a token with a fresh iat, and the Convex client re-authenticates
+    // whenever it observes a different token string — refetching on a short
+    // client cap caused auth churn that stranded queued mutations mid-run
+    // (the onboarding submit never reached the backend). The JWT is valid for
+    // 600s server-side and the local backend shares this machine's clock, so
+    // a single stable token per mount is the correct shape.
+    expiresAtMs: data.expiresAt - 90_000,
     user: {
       id: data.workosUserId,
       email: data.email,
@@ -152,20 +219,43 @@ export function useTestAuthState(userParam: string): UseTestAuthResult {
   const getAccessToken = useCallback(async (): Promise<string | null> => {
     assertTestAuthAllowed();
     const cached = readFreshCache(userParam);
-    const token = cached ? Promise.resolve(cached) : fetchTestToken(userParam);
-    return token.then((resolved) => {
-      cacheTestAuthToken(userParam, resolved);
-      publish(resolved.user);
-      return resolved.token;
-    });
+    if (cached) {
+      cacheTestAuthToken(userParam, cached);
+      publish(cached.user);
+      return cached.token;
+    }
+    // The token route lives behind next dev: its first hit after a cold eval
+    // boot compiles the route (or races backend warmup) and can fail once.
+    // The auth provider runs this call once per realm and treats a throw as
+    // "unauthenticated" for the whole page, so retry transient failures
+    // before giving up.
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 750));
+      }
+      try {
+        const resolved = await fetchTestToken(userParam);
+        cacheTestAuthToken(userParam, resolved);
+        publish(resolved.user);
+        return resolved.token;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
   }, [userParam, publish]);
 
   useEffect(() => {
     let cancelled = false;
-    getAccessToken().catch((err: unknown) => {
-      console.error("[connvo test-auth] token fetch failed", err);
-      if (!cancelled) setState({ user: null, isLoading: false });
-    });
+    void (async () => {
+      try {
+        await getAccessToken();
+      } catch (err) {
+        console.error("[connvo test-auth] token fetch failed", err);
+        if (!cancelled) setState({ user: null, isLoading: false });
+      }
+    })();
     return () => {
       cancelled = true;
     };
