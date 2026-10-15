@@ -1,0 +1,308 @@
+{
+  "pass": true,
+  "gitSha": "4c28ad84a38da59d01711ab48a27bad4d5ee1375",
+  "startedAt": "2026-10-15T08:11:36.889Z",
+  "completedAt": "2026-10-15T08:11:53.188Z",
+  "stage": "accessibility-verdict",
+  "baseUrl": "http://localhost:3101",
+  "meetingId": "m97ad3tbn4n7dac5gxx9egy26h8ga3g5",
+  "checks": [
+    "Keyboard Tab and Shift+Tab, visible focus, reduced-motion durations, dark hover text contrast",
+    "Decline returns both participants to waiting with distinct notices",
+    "Invitation expiry, queue expiry, rejoin and automatic offline reconnect recovery",
+    "Both queue Join buttons create one meeting with exactly local-test-a and local-test-b, preserving identities",
+    "B decoded peer A fixture color and advancing frame counter",
+    "A decoded peer B fixture color and advancing frame counter",
+    "Both call Join buttons connect; each peer renders exactly one remote video with decoded frames",
+    "Both leave calls; A reenters a live waiting queue"
+  ],
+  "captures": [
+    "docs/match-to-call/screenshots/waiting-1440x900.png",
+    "docs/match-to-call/screenshots/waiting-390x844.png",
+    "docs/match-to-call/screenshots/matched-1440x900.png",
+    "docs/match-to-call/screenshots/matched-390x844.png",
+    "docs/match-to-call/screenshots/matched-dark-reduced-motion-1440x900.png",
+    "docs/match-to-call/screenshots/matched-dark-reduced-motion-390x844.png",
+    "docs/match-to-call/screenshots/accepted-1440x900.png",
+    "docs/match-to-call/screenshots/accepted-390x844.png",
+    "docs/match-to-call/screenshots/declined-1440x900.png",
+    "docs/match-to-call/screenshots/declined-390x844.png",
+    "docs/match-to-call/screenshots/partner_declined-1440x900.png",
+    "docs/match-to-call/screenshots/partner_declined-390x844.png",
+    "docs/match-to-call/screenshots/match_expired-1440x900.png",
+    "docs/match-to-call/screenshots/match_expired-390x844.png",
+    "docs/match-to-call/screenshots/expired-1440x900.png",
+    "docs/match-to-call/screenshots/expired-390x844.png",
+    "docs/match-to-call/screenshots/offline-error-1440x900.png",
+    "docs/match-to-call/screenshots/offline-error-390x844.png",
+    "docs/match-to-call/screenshots/connected-A-1440x900.png",
+    "docs/match-to-call/screenshots/connected-A-390x844.png",
+    "docs/match-to-call/screenshots/connected-B-1440x900.png",
+    "docs/match-to-call/screenshots/connected-B-390x844.png",
+    "docs/match-to-call/screenshots/queue-reentry-1440x900.png",
+    "docs/match-to-call/screenshots/queue-reentry-390x844.png"
+  ],
+  "audits": [
+    {
+      "state": "waiting",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "waiting",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "matched",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "matched",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "check": "dark-hover-contrast",
+      "button": "join",
+      "ratio": 7.683677009324036
+    },
+    {
+      "check": "dark-hover-contrast",
+      "button": "decline",
+      "ratio": 8.427827509504626
+    },
+    {
+      "state": "matched-dark-reduced-motion",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "matched-dark-reduced-motion",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "accepted",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "accepted",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "declined",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "declined",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "partner_declined",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "partner_declined",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "match_expired",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "match_expired",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "expired",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "expired",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "offline-error",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "offline-error",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "queue-reentry",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    },
+    {
+      "state": "queue-reentry",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "violations": [],
+      "incomplete": [
+        "color-contrast"
+      ],
+      "passes": 12
+    }
+  ],
+  "errors": [],
+  "recordings": "tools/call-eval/out/match-queue-proof/2026-10-15T08-11-36-889Z",
+  "limitations": [
+    "Axe incomplete rules require manual review; dark hover contrast measures opaque button text only."
+  ]
+}
