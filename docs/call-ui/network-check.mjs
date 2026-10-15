@@ -3,14 +3,26 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { RunContext } from "../../tools/call-eval/runner/context.mjs";
 import { joinPair } from "../../tools/call-eval/runner/scenario-kit.mjs";
-const ctx=new RunContext({transport:"p2p",page:"real",signaling:"reference",baseUrl:"http://localhost:3105",warmUp:false});
+const ctx=new RunContext({transport:"p2p",page:"real",signaling:"convex",baseUrl:"http://localhost:3105",warmUp:false});
+const openRealPage=ctx.openRealPage.bind(ctx);
+ctx.openRealPage=async(peer,participant,params)=>{
+ const relay=await ctx.rtcConfigFor(participant);
+ // The existing constructor probe forces local TURN. The production ICE
+ // loader later calls setConfiguration; retain the test relay there too.
+ // Media still traverses real RTP and the shaper; stats/sender APIs are native.
+ await peer.context.addInitScript(config=>{
+  const configure=RTCPeerConnection.prototype.setConfiguration;
+  RTCPeerConnection.prototype.setConfiguration=function(next){return configure.call(this,{...next,...config});};
+ },relay);
+ return openRealPage(peer,participant,params);
+};
 const results=[];
 async function snapshot(page){return page.evaluate(()=>({quality:document.querySelector('[data-testid="network-status"]')?.getAttribute('data-quality'),reduced:document.querySelector('[data-testid="network-status"]')?.getAttribute('data-video-reduced'),text:document.querySelector('[data-testid="network-status"]')?.textContent,senders:(window.__wrappedPcs||[]).flatMap(pc=>pc.getSenders().filter(s=>s.track?.kind==='video').map(s=>s.getParameters().encodings.map(e=>({maxBitrate:e.maxBitrate??null,scaleResolutionDownBy:e.scaleResolutionDownBy??null}))))}));}
 try{
  await ctx.start();ctx.newMeeting("Lane5 adaptive network proof");ctx.enableRelay();await ctx.shaperFor("B").ready;
  const {peerA,peerB}=await joinPair(ctx);const page=peerB.page;
  await page.getByTestId("network-status").filter({hasText:"Good connection"}).waitFor({timeout:20000});
- results.push({stage:"healthy",...(await snapshot(page))});
+ results.push({stage:"healthy",signaling:"convex",relay:"local TURN with UDP shaper",...(await snapshot(page))});
  ctx.shaperFor("B").applyProfile({lossPct:15,delayMs:300});
  await page.waitForFunction(()=>document.querySelector('[data-testid="network-status"]')?.getAttribute('data-video-reduced')==='true',null,{timeout:30000});
  const degraded=await snapshot(page);assert(degraded.senders.flat().some(e=>e.maxBitrate<=700000&&e.scaleResolutionDownBy>=1.5));

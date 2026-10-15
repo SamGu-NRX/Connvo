@@ -1,0 +1,367 @@
+[
+  {
+    "check": "axe-real-lobby",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "violations": []
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-lobby",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 16,
+        "y": 12,
+        "width": 1408,
+        "height": 68,
+        "top": 12,
+        "right": 1424,
+        "bottom": 80,
+        "left": 16
+      }
+    }
+  },
+  {
+    "check": "axe-real-lobby",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "violations": []
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-lobby",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 60,
+        "top": 0,
+        "right": 390,
+        "bottom": 60,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "axe-real-lobby",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "violations": []
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-lobby",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 48,
+        "top": 0,
+        "right": 844,
+        "bottom": 48,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "real-shared-prompts-and-notes",
+    "pass": true,
+    "meetingId": "mh7d9989tsp30x92bp4695h7ed8gak33",
+    "signaling": "convex",
+    "identities": [
+      "A",
+      "B"
+    ],
+    "sharedPrompt": "Was there anything you were hoping we'd get to talk about today?",
+    "notesPersisted": true
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-conversation-panel",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 16,
+        "y": 12,
+        "width": 1408,
+        "height": 68,
+        "top": 12,
+        "right": 1424,
+        "bottom": 80,
+        "left": 16
+      }
+    }
+  },
+  {
+    "check": "axe-real-panel",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "violations": []
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-conversation-notes",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 16,
+        "y": 12,
+        "width": 1408,
+        "height": 68,
+        "top": 12,
+        "right": 1424,
+        "bottom": 80,
+        "left": 16
+      }
+    }
+  },
+  {
+    "check": "keyboard-and-accessible-names",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "pass": true,
+    "traversed": [
+      {
+        "tag": "BUTTON",
+        "text": "Resume automatic prompts",
+        "testId": null
+      },
+      {
+        "tag": "TEXTAREA",
+        "text": "A shared thought from our conversation.\nLet's follow up next week.",
+        "testId": "notes-editor"
+      }
+    ],
+    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 6s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-conversation-panel",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 76,
+        "top": 0,
+        "right": 390,
+        "bottom": 76,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "axe-real-panel",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "violations": []
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-conversation-notes",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 76,
+        "top": 0,
+        "right": 390,
+        "bottom": 76,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "keyboard-and-accessible-names",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "pass": true,
+    "traversed": [
+      {
+        "tag": "BUTTON",
+        "text": "Resume automatic prompts",
+        "testId": null
+      },
+      {
+        "tag": "TEXTAREA",
+        "text": "A shared thought from our conversation.\nLet's follow up next week.",
+        "testId": "notes-editor"
+      }
+    ],
+    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 6s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-connected-sheet-closed",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 76,
+        "top": 0,
+        "right": 390,
+        "bottom": 76,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-conversation-panel",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 62,
+        "top": 0,
+        "right": 844,
+        "bottom": 62,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "axe-real-panel",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "violations": []
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-conversation-notes",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 62,
+        "top": 0,
+        "right": 844,
+        "bottom": 62,
+        "left": 0
+      }
+    }
+  },
+  {
+    "check": "keyboard-and-accessible-names",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "pass": true,
+    "traversed": [
+      {
+        "tag": "BUTTON",
+        "text": "Resume automatic prompts",
+        "testId": null
+      },
+      {
+        "tag": "TEXTAREA",
+        "text": "A shared thought from our conversation.\nLet's follow up next week.",
+        "testId": "notes-editor"
+      }
+    ],
+    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 5s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
+  },
+  {
+    "check": "capture-geometry",
+    "name": "real-connected-sheet-closed",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "geometry": {
+      "scrollY": 0,
+      "rootScroll": 0,
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 844,
+        "height": 62,
+        "top": 0,
+        "right": 844,
+        "bottom": 62,
+        "left": 0
+      }
+    }
+  }
+]
