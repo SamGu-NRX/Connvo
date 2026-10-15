@@ -63,6 +63,11 @@ async function peer(id, { devices = true, deny = false, viewport = VIEWPORTS[0] 
   }
   const page = await context.newPage();
   page.on("pageerror", (e) => console.error(`[pageerror ${id}]`, e.message.slice(0, 200)));
+  page.on("console", (msg) => {
+    // Capture all browser console levels — Convex client auth/reconnect
+    // activity logs at info/debug, which was invisible in earlier runs.
+    console.error(`[console ${id}] ${msg.type()}:`, msg.text().slice(0, 240));
+  });
   return { id, browser, context, page };
 }
 

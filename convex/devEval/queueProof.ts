@@ -1,6 +1,7 @@
 // Internal fixtures for the local queue-to-call browser proof. Never client-callable.
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import type { QueryCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { entryForUser, leaveQueue } from "../matching/callQueue";
 
@@ -101,5 +102,139 @@ export const meeting = internalQuery({
       })),
     );
     return { meeting: await ctx.db.get(meetingId), participants: identities };
+  },
+});
+
+// --- Full-journey harness helpers (tools/call-eval call-journey-proof) -------
+
+const HARNESS_SUBJECT_RE = /^local-test-[abco]$/;
+
+/** Turn onboarding back on for harness identities so the journey can drive the
+ *  shipped /onboarding wizard end to end. Deletes the profile and interest rows
+ *  so saveOnboarding writes fresh ones through its real path.
+ */
+export const resetOnboarding = internalMutation({
+  args: { subjects: v.array(v.string()) },
+  returns: v.object({ reset: v.number() }),
+  handler: async (ctx, { subjects }) => {
+    requireLocalTestBackend();
+    for (const subject of subjects) {
+      if (!HARNESS_SUBJECT_RE.test(subject))
+        throw new Error(`Only harness identities may be reset: ${subject}`);
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+        .unique();
+      if (!user) throw new Error(`Run devEval/seed first: ${subject} missing`);
+      await ctx.db.patch(user._id, {
+        onboardingComplete: false,
+        updatedAt: Date.now(),
+      });
+      const profile = await ctx.db
+        .query("profiles")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .unique();
+      if (profile) await ctx.db.delete(profile._id);
+      const interests = await ctx.db
+        .query("userInterests")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      for (const row of interests) await ctx.db.delete(row._id);
+    }
+    return { reset: subjects.length };
+  },
+});
+
+/** What the onboarding wizard actually persisted for a harness identity. */
+export const onboardingState = internalQuery({
+  args: { subject: v.string() },
+  returns: v.object({
+    complete: v.boolean(),
+    field: v.union(v.string(), v.null()),
+    jobTitle: v.union(v.string(), v.null()),
+    company: v.union(v.string(), v.null()),
+    interestsCount: v.number(),
+  }),
+  handler: async (ctx, { subject }) => {
+    requireLocalTestBackend();
+    if (!HARNESS_SUBJECT_RE.test(subject))
+      throw new Error(`Only harness identities may be read: ${subject}`);
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+      .unique();
+    if (!user) throw new Error(`Seeded user missing: ${subject}`);
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+    const interests = await ctx.db
+      .query("userInterests")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    return {
+      complete: user.onboardingComplete === true,
+      field: profile?.field ?? null,
+      jobTitle: profile?.jobTitle ?? null,
+      company: profile?.company ?? null,
+      interestsCount: interests.length,
+    };
+  },
+});
+
+/** The queue entry a harness identity currently holds, with its notice. */
+export const entryState = internalQuery({
+  args: { subject: v.string() },
+  returns: v.object({
+    state: v.string(),
+    noticeType: v.union(v.string(), v.null()),
+    matchState: v.union(v.string(), v.null()),
+  }),
+  handler: async (ctx, { subject }) => {
+    requireLocalTestBackend();
+    if (!HARNESS_SUBJECT_RE.test(subject))
+      throw new Error(`Only harness identities may be read: ${subject}`);
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+      .unique();
+    if (!user) throw new Error(`Seeded user missing: ${subject}`);
+    const entry = await entryForUser(ctx, user._id);
+    if (!entry) return { state: "idle", noticeType: null, matchState: null };
+    const match = entry.matchId ? await ctx.db.get(entry.matchId) : null;
+    return {
+      state: entry.state,
+      noticeType: entry.notice?.type ?? null,
+      matchState: match?.state ?? null,
+    };
+  },
+});
+
+/** Meetings a harness identity participates in; a declined introduction adds none. */
+export const participantMeetings = internalQuery({
+  args: { subject: v.string() },
+  returns: v.object({
+    meetings: v.number(),
+    states: v.array(v.string()),
+  }),
+  handler: async (ctx, { subject }) => {
+    requireLocalTestBackend();
+    if (!HARNESS_SUBJECT_RE.test(subject))
+      throw new Error(`Only harness identities may be read: ${subject}`);
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+      .unique();
+    if (!user) throw new Error(`Seeded user missing: ${subject}`);
+    const rows = await ctx.db
+      .query("meetingParticipants")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const states: string[] = [];
+    for (const row of rows) {
+      const meeting = await ctx.db.get(row.meetingId);
+      if (meeting) states.push(meeting.state);
+    }
+    return { meetings: rows.length, states };
   },
 });
