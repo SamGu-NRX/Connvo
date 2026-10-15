@@ -111,7 +111,11 @@ describe("probe connection records", () => {
     const forced = { iceServers: [], iceTransportPolicy: "relay" };
     const { windowObj, probe } = boot({ rtcConfig: forced });
     const pc = new windowObj.RTCPeerConnection({ iceServers: [] });
-    expect(pc.__cfg).toBe(forced); // super(window.__probeRtcConfig || cfg)
+    expect(pc.__cfg).toEqual(forced);
+    const policyOnly = boot({ rtcConfig: { iceTransportPolicy: "relay" } });
+    const endpointServers = [{ urls: "turn:127.0.0.1:3478", username: "temporary", credential: "temporary" }];
+    const endpointPc = new policyOnly.windowObj.RTCPeerConnection({ iceServers: endpointServers });
+    expect(endpointPc.__cfg).toEqual({ iceServers: endpointServers, iceTransportPolicy: "relay" });
     await pc.getStats();
     expect(probe.getStatsCalls).toBe(1);
     expect(windowObj.__wrappedPcs).toContain(pc);

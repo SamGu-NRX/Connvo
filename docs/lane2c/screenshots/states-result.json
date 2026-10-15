@@ -1,0 +1,59 @@
+{
+  "pass": true,
+  "networkError": "Can't reach the other person. A network may be blocking calls. Try again or switch networks.",
+  "keyboardRetry": true,
+  "reducedMotion": true,
+  "remoteFpsAfterRetry": 31.8,
+  "accessibility": [
+    {
+      "state": "lobby",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "state": "lobby",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "state": "relay-connected",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "state": "relay-connected",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "state": "reconnecting",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "state": "reconnecting",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "state": "network-failed",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "state": "network-failed",
+      "width": 390,
+      "violations": []
+    },
+    {
+      "state": "retry-connected",
+      "width": 1440,
+      "violations": []
+    },
+    {
+      "state": "retry-connected",
+      "width": 390,
+      "violations": []
+    }
+  ]
+}
