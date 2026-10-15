@@ -13,8 +13,10 @@ import {
   action,
   internalAction,
   internalQuery,
+  type QueryCtx,
 } from "@convex/_generated/server";
 import { internal } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import { ConvexError } from "convex/values";
 
 import {
@@ -154,8 +156,7 @@ export const calculateCompatibilityScore = action({
     }
 
     // Calculate individual features
-    const features = await calculateCompatibilityFeatures(
-      ctx,
+    const features = calculateCompatibilityFeatures(
       user1Data,
       user2Data,
       args.user1Constraints,
@@ -254,8 +255,7 @@ export const calculateCompatibilityScoreInternal = internalAction({
     }
 
     // Calculate individual features
-    const features = await calculateCompatibilityFeatures(
-      ctx,
+    const features = calculateCompatibilityFeatures(
       user1Data,
       user2Data,
       args.user1Constraints,
@@ -329,62 +329,66 @@ export const calculateCompatibilityScoreInternal = internalAction({
 export const getUserScoringData = internalQuery({
   args: { userId: v.id("users") },
   returns: v.union(v.null(), UserScoringDataV.full),
-  handler: async (ctx, args): Promise<UserScoringData | null> => {
-    const user = await ctx.db.get(args.userId);
-    if (!user) return null;
-
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .unique();
-
-    const userInterests = await ctx.db
-      .query("userInterests")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-
-    const interests = userInterests.map((ui) => ui.interestKey);
-
-    // Get latest user embedding for vector similarity
-    const embedding = await ctx.db
-      .query("embeddings")
-      .withIndex("by_source", (q) =>
-        q.eq("sourceType", "user").eq("sourceId", args.userId),
-      )
-      .order("desc")
-      .first();
-
-    return {
-      user: {
-        _id: user._id,
-        displayName: user.displayName,
-        orgId: user.orgId,
-        orgRole: user.orgRole,
-      },
-      profile: profile
-        ? {
-            experience: profile.experience,
-            languages: profile.languages,
-            field: profile.field,
-            company: profile.company,
-          }
-        : null,
-      interests,
-      embedding: embedding
-        ? {
-            vector: embedding.vector, // Already ArrayBuffer from schema
-            model: embedding.model,
-          }
-        : null,
-    };
-  },
+  handler: async (ctx, args) => readUserScoringData(ctx, args.userId),
 });
+
+export async function readUserScoringData(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+): Promise<UserScoringData | null> {
+  const user = await ctx.db.get(userId);
+  if (!user) return null;
+
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .unique();
+
+  const userInterests = await ctx.db
+    .query("userInterests")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+
+  const interests = userInterests.map((ui) => ui.interestKey);
+
+  // Get latest user embedding for vector similarity
+  const embedding = await ctx.db
+    .query("embeddings")
+    .withIndex("by_source", (q) =>
+      q.eq("sourceType", "user").eq("sourceId", userId),
+    )
+    .order("desc")
+    .first();
+
+  return {
+    user: {
+      _id: user._id,
+      displayName: user.displayName,
+      orgId: user.orgId,
+      orgRole: user.orgRole,
+    },
+    profile: profile
+      ? {
+          experience: profile.experience,
+          languages: profile.languages,
+          field: profile.field,
+          company: profile.company,
+        }
+      : null,
+    interests,
+    embedding: embedding
+      ? {
+          vector: embedding.vector, // Already ArrayBuffer from schema
+          model: embedding.model,
+        }
+      : null,
+  };
+}
 
 /**
  * Calculate all compatibility features between two users
  */
-async function calculateCompatibilityFeatures(
-  ctx: any, // Convex action context - keeping as any for simplicity
+function calculateCompatibilityFeatures(
   user1Data: UserScoringData,
   user2Data: UserScoringData,
   user1Constraints: {
@@ -397,7 +401,7 @@ async function calculateCompatibilityFeatures(
     roles: string[];
     orgConstraints?: string;
   },
-): Promise<CompatibilityFeatures> {
+): CompatibilityFeatures {
   // Interest overlap calculation
   const interestOverlap = calculateInterestOverlap(
     user1Data.interests,
@@ -534,8 +538,9 @@ function calculateExperienceGap(
     executive: 6,
   };
 
-  const level1 = experienceLevels[experience1.toLowerCase()] ?? 3;
-  const level2 = experienceLevels[experience2.toLowerCase()] ?? 3;
+  const level1 = experienceLevels[experience1.toLowerCase()];
+  const level2 = experienceLevels[experience2.toLowerCase()];
+  if (level1 === undefined || level2 === undefined) return 0.5;
 
   const gap = Math.abs(level1 - level2);
 
@@ -742,3 +747,58 @@ function generateScoreExplanation(
 }
 
 // Functions are available via generated internal API under internal.matching.scoring
+
+/** Queue pairing uses recorded profile evidence; timezone data is not stored yet. */
+export function scoreQueuePair(user1: UserScoringData, user2: UserScoringData) {
+  const constraints1 = { interests: user1.interests, roles: [] };
+  const constraints2 = { interests: user2.interests, roles: [] };
+  const features = calculateCompatibilityFeatures(
+    user1,
+    user2,
+    constraints1,
+    constraints2,
+  );
+  const weights = { ...DEFAULT_WEIGHTS, timezoneCompatibility: 0 };
+  const factors: Array<{ contribution: number; reason: string }> = [];
+  const add = (feature: keyof CompatibilityFeatures, reason: string) => {
+    factors.push({
+      contribution: (features[feature] ?? 0) * (weights[feature] ?? 0),
+      reason,
+    });
+  };
+  if (features.interestOverlap > 0.4)
+    add(
+      "interestOverlap",
+      features.interestOverlap > 0.7
+        ? "Strong interest alignment"
+        : "Some shared interests",
+    );
+  if (
+    user1.profile?.experience &&
+    user2.profile?.experience &&
+    features.experienceGap === 1
+  )
+    add("experienceGap", "Complementary experience levels");
+  if (
+    user1.profile?.field &&
+    user2.profile?.field &&
+    features.industryMatch >= 0.8
+  )
+    add("industryMatch", "Professional background in common");
+  if ((features.vectorSimilarity ?? 0) > 0.8)
+    add("vectorSimilarity", "Similar profile interests");
+  if (
+    user1.profile?.languages.length &&
+    user2.profile?.languages.length &&
+    features.languageOverlap > 0
+  )
+    add("languageOverlap", "A shared language for your conversation");
+  return {
+    score: calculateWeightedScore(features, weights),
+    features,
+    reasons: factors
+      .sort((a, b) => b.contribution - a.contribution)
+      .slice(0, 2)
+      .map((factor) => factor.reason),
+  };
+}

@@ -9,6 +9,19 @@ import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 const API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 
 const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
+  // Queue pages need no Stream account. Avoid mounting WorkOS consumers when
+  // Stream is unconfigured, including the local Convex queue-to-call proof.
+  if (!API_KEY) return <>{children}</>;
+  return (
+    <ConfiguredStreamVideoProvider>{children}</ConfiguredStreamVideoProvider>
+  );
+};
+
+const ConfiguredStreamVideoProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(
     null,
   );

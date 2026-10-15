@@ -19,7 +19,16 @@ vi.mock("@workos-inc/authkit-nextjs", () => ({
   authkitMiddleware: authkitMiddlewareMock,
 }));
 
-const TEST_PATHS = ["/dev/auth-proof", "/api/test-auth/token"] as const;
+const TEST_PATHS = [
+  "/dev/auth-proof",
+  "/api/test-auth/token",
+  "/app/match-queue",
+  "/app/smart-connection",
+  "/app/professional/b2b",
+  "/app/professional/collaboration",
+  "/app/professional/mentorship",
+  "/app/professional/investment",
+] as const;
 
 function request(path: string): NextRequest {
   return new NextRequest(`http://localhost:3000${path}`);
@@ -120,6 +129,9 @@ describe("proxy test-auth exemption (CALL-PLAN D3)", () => {
   it("does not exempt near-miss paths while the flag is on", async () => {
     vi.stubEnv("NEXT_PUBLIC_CONNVO_TEST_AUTH", "1");
     for (const path of [
+      "/app/match-queue/extra",
+      "/app/professional/unknown",
+      "/app/professional",
       "/dev/auth-proof/extra",
       "/api/test-auth/tokens",
       "/api/test-auth",
@@ -127,7 +139,10 @@ describe("proxy test-auth exemption (CALL-PLAN D3)", () => {
     ]) {
       handleAuthStub.mockClear();
       await run(path);
-      expect(handleAuthStub, `${path} must stay behind WorkOS`).toHaveBeenCalledTimes(1);
+      expect(
+        handleAuthStub,
+        `${path} must stay behind WorkOS`,
+      ).toHaveBeenCalledTimes(1);
     }
   });
 });
@@ -151,7 +166,10 @@ describe("testAuthProxyExempt predicate", () => {
       }),
     ).toBe(false);
     expect(
-      testAuthProxyExempt("/dev/auth-proof", { ...flagOn, NODE_ENV: "production" }),
+      testAuthProxyExempt("/dev/auth-proof", {
+        ...flagOn,
+        NODE_ENV: "production",
+      }),
     ).toBe(false);
   });
 });
