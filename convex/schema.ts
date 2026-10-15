@@ -26,6 +26,9 @@ import { historyTables } from "./schema/history";
 import { meetingFeedback } from "./schema/meetingFeedback";
 import { connections } from "./schema/connections";
 import { connectIntents } from "./schema/connectIntents";
+import { availabilityBlocks } from "./schema/availability";
+import { blocks } from "./schema/blocks";
+import { reports } from "./schema/reports";
 
 export default defineSchema({
   ...userTables,
@@ -45,4 +48,7 @@ export default defineSchema({
   meetingFeedback,
   connections,
   connectIntents,
+  availabilityBlocks,
+  blocks,
+  reports,
 });
