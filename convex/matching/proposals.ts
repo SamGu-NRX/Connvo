@@ -24,6 +24,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { requireIdentity } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
 import { createMeetingRecords } from "@convex/meetings/lifecycle";
+import { scheduleMeetingEmails } from "@convex/emails/schedule";
 
 /** Matcher meetings are 30 minutes (convex/matching/slots.ts). */
 const MEETING_DURATION_MS = 30 * 60 * 60_000;
@@ -38,7 +39,7 @@ const DECLINE_REASONS = [
 ] as const;
 
 /** Formats one UTC instant in a timezone, e.g. "Mon, Feb 9, 9:00 AM". */
-function formatInZone(at: number, timeZone: string): string {
+export function formatInZone(at: number, timeZone: string): string {
   try {
     return new Intl.DateTimeFormat("en-US", {
       weekday: "short",

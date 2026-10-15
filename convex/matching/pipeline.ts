@@ -18,6 +18,7 @@ import {
   type MatcherPerson,
 } from "./scoring";
 import { sharedSlots, hasFreeBlockSoon, type WeeklyBlock } from "./slots";
+import { STRIKES_PAUSE_THRESHOLD } from "./strikes";
 import { buildReasons, pickFirstQuestion } from "./reasons";
 import type { DecisionsPerson } from "./decisions";
 
@@ -46,6 +47,8 @@ export interface MatcherSnapshotPerson extends MatcherPerson {
   meetingsThisWeek: number;
   /** Distinct past runs where this person got a proposal that never confirmed. */
   waitingRuns: number;
+  /** Active no-show strikes in the last 30 days; two pause matching. */
+  strikes: number;
   /** People they shared a meeting with in the last 90 days (both directions). */
   metRecently: string[];
   /** People both sides said they would talk again with, for the waiver. */
@@ -95,6 +98,8 @@ export function selectEligible(snapshot: MatcherSnapshot): MatcherSnapshotPerson
       p.chatsPerWeek > 0 &&
       p.chatsPerWeek > p.meetingsThisWeek &&
       Boolean(p.timezone) &&
+      // Two no-show strikes in 30 days pause matching until they age out.
+      p.strikes < STRIKES_PAUSE_THRESHOLD &&
       hasFreeBlockSoon(p.blocks, p.timezone, snapshot.now),
   );
 }

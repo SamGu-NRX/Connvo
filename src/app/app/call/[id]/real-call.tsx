@@ -28,6 +28,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import styles from "@/components/call/call.module.css";
 import { useCallNetwork } from "@/hooks/useCallNetwork";
 import { ConversationPrompts } from "@/components/call/ConversationPrompts";
+import { NoShowControl } from "./no-show";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
@@ -265,6 +266,7 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         endedActions={<OpenRecapLink meetingId={meetingId} />}
         sidePanel={
           <>
+            <NoShowControl meetingId={meetingId as Id<"meetings">} />
             {ended ? (
               <EndedRecap meetingId={meetingId} />
             ) : (

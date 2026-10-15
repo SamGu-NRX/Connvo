@@ -31,6 +31,7 @@ import { connectIntents } from "./schema/connectIntents";
 import { availabilityBlocks } from "./schema/availability";
 import { blocks } from "./schema/blocks";
 import { reports } from "./schema/reports";
+import { noShowTables } from "./schema/noShows";
 
 export default defineSchema({
   ...userTables,
@@ -55,4 +56,5 @@ export default defineSchema({
   availabilityBlocks,
   blocks,
   reports,
+  ...noShowTables,
 });
