@@ -254,9 +254,7 @@ try {
   );
   await capture(a, "recap", '[data-testid="meeting-recap"]');
   await a.goto(`${baseUrl}/app/meetings?as=A`);
-  const row = a
-    .getByRole("link", { name: new RegExp(`Lifecycle proof`) })
-    .first();
+  const row = a.locator(`a[href="/app/meetings/${meetingId}"]`);
   await row.waitFor();
   assert.ok((await row.innerText()).includes(duration));
   await capture(a, "history", '[data-testid="meeting-list"]');
