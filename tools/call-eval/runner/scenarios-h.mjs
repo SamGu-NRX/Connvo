@@ -677,3 +677,62 @@ export async function scenario_H_16(ctx) {
     await Promise.all([peerA.close(), peerB.close(), peerC.close()]);
   }
 }
+
+/** H-17: endpoint-issued RFC TURN REST credentials carry real media with relay-only policy.
+ * @param {import('./context.mjs').RunContext} ctx
+ * @param {{ seed: number }} options
+ */
+export async function scenario_H_17(ctx, { seed }) {
+  if (ctx.page !== "real" || ctx.signalingMode !== "convex") throw new ScenarioError("H-17 requires the real page and local Convex signaling.");
+  const { randomBytes } = await import("node:crypto");
+  const { createTurn } = await import("./turn.mjs");
+  const { setLocalIceEnvironment } = await import("./ice-endpoint.mjs");
+  const secret = randomBytes(32).toString("base64url");
+  const relay = await createTurn({ sharedSecret: secret });
+  ctx.turn = relay;
+  const restore = await setLocalIceEnvironment({ TURN_SHARED_SECRET: secret, TURN_URLS: `turn:127.0.0.1:${relay.port}?transport=udp` });
+  try {
+    // Only the policy is overridden. The real page must obtain every server
+    // URL and credential from its authorized Convex action.
+    const peerA = await ctx.launchPeer("A", {}, { iceTransportPolicy: "relay" });
+    const peerB = await ctx.launchPeer("B", {}, { iceTransportPolicy: "relay" });
+    await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000 });
+    await waitFor(peerB, phaseIs("connected"), { timeoutMs: 30000 });
+    await installColorHook(peerA);
+    await installColorHook(peerB);
+    await waitForLiveMedia(peerA, "B", { deadlineAt: Date.now() + 15000, label: "B" });
+    await waitForLiveMedia(peerB, "A", { deadlineAt: Date.now() + 15000, label: "A" });
+    const frameA = await decodeRemoteFrame(peerA, "B");
+    const frameB = await decodeRemoteFrame(peerB, "A");
+    if (!matchPeerColor(frameA.color)?.ok || matchPeerColor(frameA.color).label !== "B" || !matchPeerColor(frameB.color)?.ok || matchPeerColor(frameB.color).label !== "A") throw new ScenarioError("H-17 remote video does not match the other participant.");
+    // Use H-02's three-second receipt window while the jitter buffer settles.
+    const audioDeadline = Date.now() + 3000;
+    let toneA = null;
+    let toneB = null;
+    do {
+      [toneA, toneB] = await Promise.all([sampleRemoteTone(peerA, "B", 400), sampleRemoteTone(peerB, "A", 400)]);
+      if (toneMatches(toneA, 660) && toneMatches(toneB, 440)) break;
+    } while (Date.now() < audioDeadline);
+    if (!toneMatches(toneA, 660) || !toneMatches(toneB, 440)) throw new ScenarioError(`H-17 remote audio does not match the other participant: ${JSON.stringify({ toneA, toneB })}`);
+    const paths = [await selectedCandidateTypes(peerA), await selectedCandidateTypes(peerB)];
+    if (!paths.every((path) => path.some((pair) => pair?.local === "relay" || pair?.remote === "relay"))) throw new ScenarioError("H-17 selected media path is not relayed", { paths });
+    const configuredByEndpoint = await Promise.all([peerA, peerB].map((peer) => peer.page.evaluate((port) => {
+      const pcs = /** @type {RTCPeerConnection[]} */ (/** @type {any} */ (window).__wrappedPcs ?? []);
+      return pcs.length > 0 && pcs.every((pc) => {
+        const config = pc.getConfiguration();
+        return config.iceTransportPolicy === "relay" && (config.iceServers ?? []).some((server) => {
+          const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+          return urls.includes(`turn:127.0.0.1:${port}?transport=udp`) && /^\d+:/.test(server.username ?? "");
+        });
+      });
+    }, relay.port)));
+    const relayStats = relay.stats();
+    if (!configuredByEndpoint.every(Boolean) || relayStats.allocations < 2 || !relayStats.relayedToPeer || !relayStats.relayedToClient) throw new ScenarioError("H-17 endpoint credentials did not carry TURN traffic.");
+    return { seed, endpointCredentialsUsed: configuredByEndpoint, relayStats, paths, audioHz: [toneA.peakHz, toneB.peakHz], colours: [matchPeerColor(frameA.color).label, matchPeerColor(frameB.color).label] };
+  } finally {
+    await ctx.closePeers();
+    await restore();
+    relay.stop();
+    ctx.turn = null;
+  }
+}

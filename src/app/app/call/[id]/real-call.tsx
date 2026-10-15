@@ -28,6 +28,11 @@ import styles from "@/components/call/call.module.css";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
+import {
+  IceAccessError,
+  isIceAccessRefusal,
+  sessionIceConfiguration,
+} from "@/lib/call/ice-config";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
 import {
@@ -94,16 +99,40 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
     [],
   );
 
+  const [path, setPath] = useState("unknown");
+  const getRtcConfig = useMemo(
+    () =>
+      sessionIceConfiguration(async () => {
+        if (!me?._id)
+          throw new IceAccessError(
+            "Sign in with the account invited to this meeting.",
+          );
+        try {
+          return await convex.action(api.meetings.webrtc.ice.configuration, {
+            meetingId: meetingId as Id<"meetings">,
+          });
+        } catch (error) {
+          if (isIceAccessRefusal(error))
+            throw new IceAccessError(
+              "Access denied: Calls are only for the people invited to this meeting. Sign in with the invited account.",
+            );
+          throw error;
+        }
+      }),
+    [convex, meetingId, me?._id],
+  );
   const createTransport = useCallback(
     () =>
       Promise.resolve(
         createP2PTransport({
+          getRtcConfig,
+          onConnectionPath: setPath,
           signaling: convexSignaling(convex as unknown as ConvexCallClient, {
             participantIdOf,
           }),
         }),
       ),
-    [convex],
+    [convex, getRtcConfig],
   );
   // The Convex client already carries the user's token.
   const identityToken = useCallback(async () => "", []);
@@ -137,7 +166,7 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   }
   // CallRoom owns responsive placement of the notes slot.
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-call-connection-path={path}>
       <CallRoom
         meetingId={meetingId}
         self={self}
