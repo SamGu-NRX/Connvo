@@ -31,9 +31,7 @@ export default function RootLayout({
   ) {
     return (
       <div className={`${inter.className} antialiased`}>
-        <Providers>
-          <main>{children}</main>
-        </Providers>
+        <Providers>{children}</Providers>
       </div>
     );
   }

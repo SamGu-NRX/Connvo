@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -124,9 +125,12 @@ export function CallRoom({
   const leavingRef = useRef(false);
   const transportRef = useRef<CallTransport | null>(null);
   const mediaRef = useRef(media);
-  mediaRef.current = media;
   const nameRef = useRef(nameFor);
-  nameRef.current = nameFor;
+  useLayoutEffect(() => {
+    mediaRef.current = media;
+    nameRef.current = nameFor;
+  }, [media, nameFor]);
+  const attemptRef = useRef(0);
   const previousPhase = useRef<CallPhase>("idle");
 
   // Ask for the camera as soon as the lobby opens, so the preview is live.
@@ -203,12 +207,22 @@ export function CallRoom({
   const join = useCallback(async () => {
     const m = mediaRef.current;
     if (m.status !== "ready") return;
+    const attempt = ++attemptRef.current;
+    const current = () => attempt === attemptRef.current;
     setCallError(null);
     setRemotes(new Map());
     setScreen("call");
+    setPhase("joining");
     try {
-      await transportRef.current?.leave();
+      const previous = transportRef.current;
+      transportRef.current = null;
+      await previous?.leave();
+      if (!current()) return;
       const transport = await createTransport();
+      if (!current()) {
+        await transport.leave();
+        return;
+      }
       transportRef.current = transport;
       await transport.connect(
         {
@@ -217,11 +231,37 @@ export function CallRoom({
           identityToken,
           getLocalStream: () => mediaRef.current.stream,
         },
-        events,
+        {
+          onPhase: (phase) => {
+            if (current()) events.onPhase(phase);
+          },
+          onRemoteJoined: (peer) => {
+            if (current()) events.onRemoteJoined(peer);
+          },
+          onRemoteLeft: (peer) => {
+            if (current()) events.onRemoteLeft(peer);
+          },
+          onRemoteStream: (peer) => {
+            if (current()) events.onRemoteStream(peer);
+          },
+          onRemoteState: (peer) => {
+            if (current()) events.onRemoteState(peer);
+          },
+          onError: (error) => {
+            if (current()) events.onError(error);
+          },
+        },
       );
-      transport.publishLocalStream(m.stream);
-      transport.publishLocalState({ micOn: m.micOn, cameraOn: m.cameraOn });
+      if (!current()) return;
+      // The person can change capture while connect awaits signaling.
+      const latest = mediaRef.current;
+      transport.publishLocalStream(latest.stream);
+      transport.publishLocalState({
+        micOn: latest.micOn,
+        cameraOn: latest.cameraOn,
+      });
     } catch (err) {
+      if (!current()) return;
       setCallError({
         message:
           err instanceof Error ? err.message : "The call could not start.",
@@ -243,6 +283,7 @@ export function CallRoom({
   }, [media.micOn, media.cameraOn]);
 
   const leave = useCallback(async () => {
+    attemptRef.current++;
     leavingRef.current = true;
     setConfirmLeave(false);
     const transport = transportRef.current;
@@ -263,7 +304,10 @@ export function CallRoom({
 
   useEffect(
     () => () => {
-      void transportRef.current?.leave();
+      attemptRef.current++;
+      const transport = transportRef.current;
+      transportRef.current = null;
+      void transport?.leave().catch(() => {});
     },
     [],
   );
@@ -287,7 +331,7 @@ export function CallRoom({
       if (
         target instanceof HTMLElement &&
         target.closest(
-          'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="alertdialog"]',
+          'input, textarea, select, dialog, [contenteditable="true"], [role="dialog"], [role="alertdialog"]',
         )
       )
         return;
@@ -452,7 +496,7 @@ function Lobby({
           />
         )}
         {media.status === "ready" ? (
-          <div className="absolute right-3 bottom-3 flex gap-2">
+          <div className="absolute right-3 bottom-3 flex gap-2 rounded-xl bg-[#0e1716]/90 p-1.5">
             <MicButton media={media} />
             <CameraButton media={media} />
           </div>
@@ -983,7 +1027,7 @@ function MediaSettings({
           <option value="data-saver">Save data · 360p / 15 fps</option>
         </select>
       </label>
-      <BlurButton media={media} />
+      {!dark ? <BlurButton media={media} /> : null}
       <button
         type="button"
         data-testid="switch-camera"
