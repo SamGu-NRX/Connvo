@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 // In-page code below runs in the browser through page.evaluate.
 /**
- * H-01..H-17. Every function is named scenario_<id> (the orchestrator binds
+ * H-01..H-18. Every function is named scenario_<id> (the orchestrator binds
  * by name) and returns the plan-schema measurement object for its result
  * entry. Pass conditions live verbatim in lib/scenario-contracts.ts and are
  * echoed by the summary; the assertions below implement them.
@@ -707,10 +707,70 @@ export async function scenario_H_16(ctx) {
   }
 }
 
-/** H-17: audio-only join, then camera on must produce decoded remote frames. */
-/** @param {RunContext} ctx @param {ScenarioOptions} options */
+/** H-17: endpoint-issued RFC TURN REST credentials carry real media with relay-only policy.
+ * @param {import('./context.mjs').RunContext} ctx
+ * @param {{ seed: number }} options
+ */
 export async function scenario_H_17(ctx, { seed }) {
-  if (ctx.page !== "real") throw new ScenarioError("H-17 requires --page=real to exercise the lobby camera control");
+  if (ctx.page !== "real" || ctx.signalingMode !== "convex") throw new ScenarioError("H-17 requires the real page and local Convex signaling.");
+  const { randomBytes } = await import("node:crypto");
+  const { createTurn } = await import("./turn.mjs");
+  const { setLocalIceEnvironment } = await import("./ice-endpoint.mjs");
+  const secret = randomBytes(32).toString("base64url");
+  const relay = await createTurn({ sharedSecret: secret });
+  ctx.turn = relay;
+  const restore = await setLocalIceEnvironment({ TURN_SHARED_SECRET: secret, TURN_URLS: `turn:127.0.0.1:${relay.port}?transport=udp` });
+  try {
+    // Only the policy is overridden. The real page must obtain every server
+    // URL and credential from its authorized Convex action.
+    const peerA = await ctx.launchPeer("A", {}, { iceTransportPolicy: "relay" });
+    const peerB = await ctx.launchPeer("B", {}, { iceTransportPolicy: "relay" });
+    await waitFor(peerA, phaseIs("connected"), { timeoutMs: 30000 });
+    await waitFor(peerB, phaseIs("connected"), { timeoutMs: 30000 });
+    await installColorHook(peerA);
+    await installColorHook(peerB);
+    await waitForLiveMedia(peerA, "B", { deadlineAt: Date.now() + 15000, label: "B" });
+    await waitForLiveMedia(peerB, "A", { deadlineAt: Date.now() + 15000, label: "A" });
+    const frameA = await decodeRemoteFrame(peerA, "B");
+    const frameB = await decodeRemoteFrame(peerB, "A");
+    if (!frameA.color || !frameB.color) throw new ScenarioError("H-17 remote video frames are absent.");
+    if (!matchPeerColor(frameA.color)?.ok || matchPeerColor(frameA.color).label !== "B" || !matchPeerColor(frameB.color)?.ok || matchPeerColor(frameB.color).label !== "A") throw new ScenarioError("H-17 remote video does not match the other participant.");
+    // Use H-02's three-second receipt window while the jitter buffer settles.
+    const audioDeadline = Date.now() + 3000;
+    let toneA = null;
+    let toneB = null;
+    do {
+      [toneA, toneB] = await Promise.all([sampleRemoteTone(peerA, "B", 400), sampleRemoteTone(peerB, "A", 400)]);
+      if (toneMatches(toneA, 660) && toneMatches(toneB, 440)) break;
+    } while (Date.now() < audioDeadline);
+    if (!toneA || !toneB || !toneMatches(toneA, 660) || !toneMatches(toneB, 440)) throw new ScenarioError(`H-17 remote audio does not match the other participant: ${JSON.stringify({ toneA, toneB })}`);
+    const paths = [await selectedCandidateTypes(peerA), await selectedCandidateTypes(peerB)];
+    if (!paths.every((path) => path.some((pair) => pair?.local === "relay" || pair?.remote === "relay"))) throw new ScenarioError("H-17 selected media path is not relayed", { paths });
+    const configuredByEndpoint = await Promise.all([peerA, peerB].map((peer) => peer.page.evaluate((port) => {
+      const pcs = /** @type {RTCPeerConnection[]} */ (/** @type {any} */ (window).__wrappedPcs ?? []);
+      return pcs.length > 0 && pcs.every((pc) => {
+        const config = pc.getConfiguration();
+        return config.iceTransportPolicy === "relay" && (config.iceServers ?? []).some((server) => {
+          const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+          return urls.includes(`turn:127.0.0.1:${port}?transport=udp`) && /^\d+:/.test(server.username ?? "");
+        });
+      });
+    }, relay.port)));
+    const relayStats = relay.stats();
+    if (!configuredByEndpoint.every(Boolean) || relayStats.allocations < 2 || !relayStats.relayedToPeer || !relayStats.relayedToClient) throw new ScenarioError("H-17 endpoint credentials did not carry TURN traffic.");
+    return { seed, endpointCredentialsUsed: configuredByEndpoint, relayStats, paths, audioHz: [toneA.peakHz, toneB.peakHz], colours: [matchPeerColor(frameA.color).label, matchPeerColor(frameB.color).label] };
+  } finally {
+    await ctx.closePeers();
+    await restore();
+    relay.stop();
+    ctx.turn = null;
+  }
+}
+
+/** H-18: audio-only join, then camera on must produce decoded remote frames. */
+/** @param {RunContext} ctx @param {ScenarioOptions} options */
+export async function scenario_H_18(ctx, { seed }) {
+  if (ctx.page !== "real") throw new ScenarioError("H-18 requires --page=real to exercise the lobby camera control");
   // Exercise the late sender on both sides of perfect negotiation.
   const late = seed % 2 ? "A" : "B";
   const other = late === "A" ? "B" : "A";
@@ -724,14 +784,14 @@ export async function scenario_H_17(ctx, { seed }) {
   await waitAttr(receiver, late, "data-video-off", "true", 5000);
   const captureBefore = await probeState(sender);
   if (captureBefore.tracks.live !== 1) {
-    throw new ScenarioError("H-17 audio-only sender must have exactly one live capture track", captureBefore);
+    throw new ScenarioError("H-18 audio-only sender must have exactly one live capture track", captureBefore);
   }
   const audioDeadline = Date.now() + 3000;
   let audio;
   for (;;) {
     audio = await sampleRemoteTone(receiver, late, 400);
     if (audio && toneMatches(audio, late === "A" ? 440 : 660)) break;
-    if (Date.now() > audioDeadline) throw new ScenarioError("H-17 audio-only join did not send the sender's tone", { audio });
+    if (Date.now() > audioDeadline) throw new ScenarioError("H-18 audio-only join did not send the sender's tone", { audio });
     await H(100);
   }
   await installColorHook(receiver);
@@ -745,6 +805,6 @@ export async function scenario_H_17(ctx, { seed }) {
     throw new ScenarioError(`${error instanceof Error ? error.message : String(error)} | diagnostics ${JSON.stringify(diagnostics)}`);
   }
   const fps = await measureFps(receiver, late, 2000);
-  if (fps.fps <= 0) throw new ScenarioError("H-17 remote camera frames did not advance", fps);
+  if (fps.fps <= 0) throw new ScenarioError("H-18 remote camera frames did not advance", fps);
   return { lateCameraParticipant: late, liveCaptureTracksBefore: captureBefore.tracks.live, audioHz: audio.peakHz, decoded: true, fps: fps.fps, liveAt: live.liveAt };
 }

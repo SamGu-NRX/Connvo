@@ -25,6 +25,7 @@
  *   GIVE_UP_MS ends in "failed" with a retryable error, so the UI never
  *   shows a spinner forever.
  */
+import { connectionPath, IceAccessError } from "../../ice-config";
 import type {
   CallPhase,
   CallTransport,
@@ -83,16 +84,22 @@ interface Peer {
   disconnectedTimer: ReturnType<typeof setTimeout> | null;
   watchdog: ReturnType<typeof setInterval> | null;
   politeOfferTimer: ReturnType<typeof setTimeout> | null;
-  /** When the last offer from the other side arrived (ms since epoch). */
-  lastRemoteOfferAt: number;
+  /** Changes on every received offer, including offers in the same millisecond. */
+  remoteOfferVersion: number;
+  requestOffer: () => void;
+  initialIceDeadline: ReturnType<typeof setTimeout> | null;
 }
 
 export interface P2PTransportOptions {
   signaling: SignalingAdapter;
+  getRtcConfig?: () => Promise<RTCConfiguration>;
+  onConnectionPath?: (path: "relay" | "direct" | "unknown") => void;
 }
 
 export function createP2PTransport({
   signaling,
+  getRtcConfig,
+  onConnectionPath,
 }: P2PTransportOptions): CallTransport {
   let ctx: TransportContext | null = null;
   let events: TransportEvents | null = null;
@@ -120,9 +127,7 @@ export function createP2PTransport({
         if (phase === next) {
           fail(
             "network",
-            next === "joining"
-              ? "Could not connect to the other people in this call."
-              : "The connection did not come back.",
+            "Can't reach the other person. A network may be blocking calls. Try again or switch networks.",
             true,
           );
         }
@@ -181,6 +186,30 @@ export function createP2PTransport({
     });
   }
 
+  async function refreshIce(peer: Peer): Promise<boolean> {
+    try {
+      const config = await getRtcConfig?.();
+      if (peers.get(peer.id) !== peer || leaving || phase === "failed")
+        return false;
+      if (config) {
+        peer.pc.setConfiguration({ ...peer.pc.getConfiguration(), ...config });
+        if (ctx) ctx.rtcConfig = config;
+      }
+      return true;
+    } catch (error) {
+      if (peers.get(peer.id) === peer && !leaving) {
+        if (error instanceof IceAccessError) fail("auth", error.message, false);
+        else
+          fail(
+            "network",
+            "The call connection service is unavailable. Try again.",
+            true,
+          );
+      }
+      return false;
+    }
+  }
+
   function createPeer(id: string): Peer {
     if (!ctx) throw new Error("p2p transport: createPeer before connect");
     const pc = new RTCPeerConnection(ctx.rtcConfig);
@@ -200,9 +229,26 @@ export function createP2PTransport({
       disconnectedTimer: null,
       watchdog: null,
       politeOfferTimer: null,
-      lastRemoteOfferAt: 0,
+      remoteOfferVersion: 0,
+      requestOffer: () => {},
+      initialIceDeadline: null,
     };
     peers.set(id, peer);
+    // Signaling can be connected while a newly arrived peer is unreachable.
+    // Give that peer the same 30-second join budget, including ICE restarts.
+    peer.initialIceDeadline = setTimeout(() => {
+      const hasConnectedPeer = [...peers.values()].some(
+        (other) => other !== peer && other.pc.connectionState === "connected",
+      );
+      // An unreachable newcomer must not close an established group call.
+      // Its watchdog can keep retrying while another connection works.
+      if (peers.get(id) === peer && !peer.everConnected && !hasConnectedPeer)
+        fail(
+          "network",
+          "Can't reach the other person. A network may be blocking calls. Try again or switch networks.",
+          true,
+        );
+    }, GIVE_UP_MS.joining);
 
     // Keep addTrack reuse for captured tracks. Reserve a sendrecv video slot
     // for audio-only joins so a later camera track has a negotiated sender.
@@ -244,6 +290,8 @@ export function createP2PTransport({
     const makeOffer = async () => {
       try {
         peer.makingOffer = true;
+        // A newcomer may arrive after the session's first credentials expired.
+        if (!(await refreshIce(peer))) return;
         await pc.setLocalDescription();
         trace(`${id} sent ${pc.localDescription?.type}`);
         if (pc.localDescription)
@@ -265,28 +313,59 @@ export function createP2PTransport({
     // collision, but the polite side no longer starts one:
     // - when it needs to negotiate (first offer, ICE restart, a new track)
     //   it waits POLITE_OFFER_DELAY_MS, and offers only if the other side
-    //   sent no offer meanwhile. If negotiation is still needed after
-    //   answering that offer, Chromium fires negotiationneeded again.
+    //   sent no offer meanwhile. An unassociated reserved video slot needs
+    //   an explicit follow-up after answering, since Chromium may leave its
+    //   negotiationneeded flag set without firing the event again.
     // - only the impolite side starts ICE restarts on its own timers.
-    pc.onnegotiationneeded = () => {
+    peer.requestOffer = () => {
       trace(`${id} negotiationneeded (${pc.signalingState})`);
       if (!peer.polite) {
         void makeOffer();
         return;
       }
       if (peer.politeOfferTimer) return;
-      const askedAt = Date.now();
+      const offeredVersion = peer.remoteOfferVersion;
       peer.politeOfferTimer = setTimeout(() => {
         peer.politeOfferTimer = null;
-        if (peer.lastRemoteOfferAt >= askedAt) return;
-        if (pc.signalingState === "stable" && pc.connectionState !== "closed") {
+        if (peer.remoteOfferVersion !== offeredVersion) return;
+        if (!peer.makingOffer && pc.signalingState === "stable" && pc.connectionState !== "closed") {
           trace(`${id} no offer arrived; offering`);
           void makeOffer();
         }
       }, POLITE_OFFER_DELAY_MS);
     };
+    pc.onnegotiationneeded = peer.requestOffer;
+    let restarting = false;
     const restart = () => {
-      if (!peer.polite) pc.restartIce();
+      if (
+        peer.polite ||
+        restarting ||
+        leaving ||
+        (phase as CallPhase) === "failed"
+      )
+        return;
+      restarting = true;
+      void (async () => {
+        try {
+          if (!(await refreshIce(peer))) return;
+          pc.restartIce();
+        } catch (error) {
+          if (
+            peers.get(id) === peer &&
+            !leaving &&
+            error instanceof IceAccessError
+          )
+            fail("auth", error.message, false);
+          else if (peers.get(id) === peer && !leaving)
+            fail(
+              "network",
+              "Can't reach the other person. A network may be blocking calls. Try again or switch networks.",
+              true,
+            );
+        } finally {
+          restarting = false;
+        }
+      })();
     };
     pc.oniceconnectionstatechange = () => {
       const state = pc.iceConnectionState;
@@ -300,7 +379,16 @@ export function createP2PTransport({
       }
     };
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") peer.everConnected = true;
+      if (pc.connectionState === "connected") {
+        peer.everConnected = true;
+        if (peer.initialIceDeadline) clearTimeout(peer.initialIceDeadline);
+        peer.initialIceDeadline = null;
+        void connectionPath(pc)
+          .then((path) => {
+            if (peers.get(id) === peer && !leaving) onConnectionPath?.(path);
+          })
+          .catch(() => {});
+      }
       refreshPhase();
     };
     peer.watchdog = setInterval(() => {
@@ -314,7 +402,9 @@ export function createP2PTransport({
     const { pc } = peer;
     if ("description" in signal) {
       const description = signal.description;
-      if (description.type === "offer") peer.lastRemoteOfferAt = Date.now();
+      if (description.type === "offer" && getRtcConfig) {
+        if (!(await refreshIce(peer))) return;
+      }
       const readyForOffer =
         !peer.makingOffer &&
         (pc.signalingState === "stable" || peer.settingRemoteAnswer);
@@ -335,6 +425,14 @@ export function createP2PTransport({
         await pc.setLocalDescription();
         if (pc.localDescription)
           send(peer.id, { description: pc.localDescription.toJSON() });
+        // Incoming offers cannot associate addTransceiver reservations. A
+        // polite audio-only join must offer its remaining video slot itself.
+        const video = pc.getTransceivers().find((slot) => slot.sender === peer.senders.video);
+        if (video && video.mid === null && pc.connectionState !== "closed" && peers.get(peer.id) === peer) {
+          if (peer.politeOfferTimer) clearTimeout(peer.politeOfferTimer);
+          peer.politeOfferTimer = null;
+          peer.requestOffer();
+        }
       }
       return;
     }
@@ -354,6 +452,7 @@ export function createP2PTransport({
 
   /** Closes one peer connection. Never stops local tracks (D5). */
   function closePeer(peer: Peer): void {
+    if (peer.initialIceDeadline) clearTimeout(peer.initialIceDeadline);
     if (peer.disconnectedTimer) clearTimeout(peer.disconnectedTimer);
     if (peer.watchdog) clearInterval(peer.watchdog);
     if (peer.politeOfferTimer) clearTimeout(peer.politeOfferTimer);
@@ -442,7 +541,7 @@ export function createP2PTransport({
             peer = createPeer(from);
           }
           if ("description" in signal && signal.description.type === "offer")
-            peer.lastRemoteOfferAt = Date.now();
+            peer.remoteOfferVersion++;
           const target = peer;
           enqueue(target, () => applySignal(target, signal));
         },
@@ -489,13 +588,37 @@ export function createP2PTransport({
       trace(`connect as ${context.selfId}`);
       teardownAll(false);
       closeSignaling();
-      ctx = context;
       events = transportEvents;
       leaving = false;
       reconnectAttempt = 0;
       phase = "idle";
+      onConnectionPath?.("unknown");
       setPhase("joining");
-      openSignaling();
+      const attempt = generation;
+      try {
+        const rtcConfig = getRtcConfig
+          ? await getRtcConfig()
+          : context.rtcConfig;
+        if (
+          attempt !== generation ||
+          leaving ||
+          (phase as CallPhase) === "failed"
+        )
+          return;
+        ctx = { ...context, rtcConfig };
+        openSignaling();
+      } catch (error) {
+        if (attempt === generation && !leaving) {
+          if (error instanceof IceAccessError)
+            fail("auth", error.message, false);
+          else
+            fail(
+              "network",
+              "The call connection service is unavailable. Try again.",
+              true,
+            );
+        }
+      }
     },
 
     publishLocalStream(stream: MediaStream | null): void {

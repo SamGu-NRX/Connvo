@@ -117,13 +117,13 @@ function tcpPortFree(port) {
 
 describe("wired scenario selection", () => {
   it("exposes all H ids for contract completeness", () => {
-    expect(H_IDS).toHaveLength(17);
+    expect(H_IDS).toHaveLength(18);
     expect(H_IDS[0]).toBe("H-01");
-    expect(H_IDS[16]).toBe("H-17");
+    expect(H_IDS[17]).toBe("H-18");
     expect(P_IDS).toEqual(["P-01", "P-02", "P-03", "P-04", "P-05"]);
     expect(H_IDS).toEqual(loadContracts().H_IDS);
     expect(P_IDS).toEqual(loadContracts().P_IDS);
-    expect(ALL_SCENARIOS).toHaveLength(22);
+    expect(ALL_SCENARIOS).toHaveLength(23);
   });
 
   it("wires bench scenarios without backend membership or the real-page lobby", () => {
@@ -131,6 +131,7 @@ describe("wired scenario selection", () => {
     expect(wired).toHaveLength(15);
     expect(wired).not.toContain("H-14");
     expect(wired).not.toContain("H-17");
+    expect(wired).not.toContain("H-18");
     expect(wired).toContain("H-13");
     expect(wired).toContain("H-15");
     expect(wired).toContain("H-16");
@@ -138,8 +139,8 @@ describe("wired scenario selection", () => {
 
   it("selects the late-camera scenario only for the real page", () => {
     const real = wiredScenarioIds("H", { signaling: "convex", page: "real" });
-    expect(real).toEqual(loadContracts().H_IDS);
-    expect(wiredScenarioIds("H", { signaling: "convex" })).not.toContain("H-17");
+    expect(real).toEqual(loadContracts().H_IDS.filter((id) => id !== "H-17"));
+    expect(wiredScenarioIds("H", { signaling: "convex" })).not.toContain("H-18");
   });
 
   it("wires all P checks and the combined suite", () => {

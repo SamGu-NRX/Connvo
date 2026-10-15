@@ -28,6 +28,11 @@ import type { Id } from "@convex/_generated/dataModel";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
+import {
+  IceAccessError,
+  isIceAccessRefusal,
+  sessionIceConfiguration,
+} from "@/lib/call/ice-config";
 import { createP2PTransport } from "@/lib/call/transports/p2p/p2p-transport";
 import { websocketSignaling } from "@/lib/call/transports/p2p/websocket-signaling";
 import {
@@ -122,16 +127,40 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
     [],
   );
 
+  const [path, setPath] = useState("unknown");
+  const getRtcConfig = useMemo(
+    () =>
+      sessionIceConfiguration(async () => {
+        if (!me?._id)
+          throw new IceAccessError(
+            "Sign in with the account invited to this meeting.",
+          );
+        try {
+          return await convex.action(api.meetings.webrtc.ice.configuration, {
+            meetingId: meetingId as Id<"meetings">,
+          });
+        } catch (error) {
+          if (isIceAccessRefusal(error))
+            throw new IceAccessError(
+              "Access denied: Calls are only for the people invited to this meeting. Sign in with the invited account.",
+            );
+          throw error;
+        }
+      }),
+    [convex, meetingId, me?._id],
+  );
   const createTransport = useCallback(
     () =>
       Promise.resolve(
         createP2PTransport({
+          getRtcConfig,
+          onConnectionPath: setPath,
           signaling: convexSignaling(convex as unknown as ConvexCallClient, {
             participantIdOf,
           }),
         }),
       ),
-    [convex],
+    [convex, getRtcConfig],
   );
   // The Convex client already carries the user's token.
   const identityToken = useCallback(async () => "", []);
@@ -211,7 +240,10 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // the app shell's floating navigation covers the bottom of the screen, so
   // the page leaves room to scroll the notes clear of it.
   return (
-    <div className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+    <div
+      data-call-connection-path={path}
+      className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]"
+    >
       <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
         <CallRoom
           meetingId={meetingId}

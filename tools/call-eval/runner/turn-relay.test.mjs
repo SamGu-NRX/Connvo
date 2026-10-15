@@ -134,3 +134,34 @@ describe("turn relay", () => {
     expect(decodeXorAddress(/** @type {Buffer} */ (res?.attrs.get(0x0020)))).toEqual({ address: "127.0.0.1", port: a.address().port });
   });
 });
+
+describe("RFC TURN REST authentication", () => {
+  it("allocates only for an unexpired username with the shared-secret password", async () => {
+    const secret = "local-test-shared-secret";
+    const relay = await startTurnRelay({ sharedSecret: secret });
+    cleanups.push(() => relay.stop());
+    const sock = await client();
+    const realm = "connvo-eval";
+    const username = `${Math.floor(Date.now() / 1000) + 3600}:member`;
+    const password = createHmac("sha1", secret).update(username).digest("base64");
+    /** @type {Array<[number, Buffer]>} */
+    const attrs = [[0x0006, Buffer.from(username)]];
+    const bad = await request(sock, relay.port, buildStun(ALLOCATE, 0, txid(), attrs, longTermKey(username, realm, "wrong-password")));
+    expect(bad.cls).toBe(3);
+    expect(relay.stats().allocations).toBe(0);
+    const valid = await request(sock, relay.port, buildStun(ALLOCATE, 0, txid(), attrs, longTermKey(username, realm, password)));
+    expect(valid.cls).toBe(2);
+    expect(relay.stats().allocations).toBe(1);
+  });
+  it("refuses an expired correctly signed username", async () => {
+    const secret = "local-test-shared-secret";
+    const relay = await startTurnRelay({ sharedSecret: secret });
+    cleanups.push(() => relay.stop());
+    const sock = await client();
+    const username = `${Math.floor(Date.now() / 1000) - 1}:member`;
+    const password = createHmac("sha1", secret).update(username).digest("base64");
+    const expired = await request(sock, relay.port, buildStun(ALLOCATE, 0, txid(), [[0x0006, Buffer.from(username)]], longTermKey(username, "connvo-eval", password)));
+    expect(expired.cls).toBe(3);
+    expect(relay.stats().allocations).toBe(0);
+  });
+});

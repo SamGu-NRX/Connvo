@@ -52,7 +52,7 @@ export function loadContracts() {
   const H_IDS = Object.keys(H_PASS_CONDITIONS);
   const P_IDS = Object.keys(P_PASS_CONDITIONS);
 
-  const expectedH = Array.from({ length: 17 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
+  const expectedH = Array.from({ length: 18 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
   const expectedP = ["P-01", "P-02", "P-03", "P-04", "P-05"];
   for (const id of expectedH) {
     if (!H_PASS_CONDITIONS[id]) throw new Error(`scenario-contracts.ts: missing verbatim pass condition for ${id}`);

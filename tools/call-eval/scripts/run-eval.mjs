@@ -6,7 +6,7 @@
  * Usage:
  *   node tools/call-eval/scripts/run-eval.mjs \
  *     [--transport=mock | reference | reference-<variant>] \
- *     [--scenarios=all | H-01,H-02 | H-01..H-17] \
+ *     [--scenarios=all | H-01,H-02 | H-01..H-18] \
  *     [--seeds=1,2 | 1..20] \
  *     [--suite=H|P|all] \
  *     [--base-url=https://<origin>] \

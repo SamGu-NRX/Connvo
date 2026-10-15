@@ -18,17 +18,15 @@ const CONTRACTS = loadContracts();
 const RUNNER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(RUNNER_DIR, "..", "out");
 
-export const H_IDS = Array.from({ length: 17 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
+export const H_IDS = Array.from({ length: 18 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
 export const P_IDS = Array.from({ length: 5 }, (_, i) => `P-0${i + 1}`);
 export const ALL_SCENARIOS = [...H_IDS, ...P_IDS];
 
 /**
- * H-14 stays out of scope for this shard: its membership/auth VERIFICATION
- * machinery ships (reference-signaling.mjs --jwks-file/--members-file), but
- * the scenario itself only runs when explicitly requested via
- * --scenarios=H-14 (it needs a live local backend to mint tokens).
+ * H-14 needs local authentication. H-17 additionally changes local provider
+ * settings, so it runs only when explicitly named, even with Convex signaling.
  */
-const UNWIRED_SCENARIOS = new Set(["H-14"]);
+const UNWIRED_SCENARIOS = new Set(["H-14", "H-17"]);
 
 /**
  * @param {string} [suite]
@@ -37,11 +35,11 @@ const UNWIRED_SCENARIOS = new Set(["H-14"]);
  */
 export function wiredScenarioIds(suite = "ALL", { signaling = "reference", page = "bench" } = {}) {
   const ids = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
-  // H-17 uses the product lobby to join without a camera. Bench pages have
+  // H-18 uses the product lobby to join without a camera. Bench pages have
   // no camera-off lobby, so include it only when driving the real page.
   return ids.filter((id) =>
-    (id !== "H-17" || page === "real") &&
-    (signaling === "convex" || !UNWIRED_SCENARIOS.has(id)),
+    (id !== "H-18" || page === "real") &&
+    id !== "H-17" && (signaling === "convex" || !UNWIRED_SCENARIOS.has(id)),
   );
 }
 
