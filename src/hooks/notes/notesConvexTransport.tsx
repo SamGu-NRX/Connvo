@@ -56,16 +56,18 @@ const OFFLINE_AFTER_MS = 1500;
 function useConnectedAfterGrace(): boolean {
   const { isWebSocketConnected, hasEverConnected } = useConvexConnectionState();
   const down = hasEverConnected && !isWebSocketConnected;
-  const [online, setOnline] = useState(true);
+  const [offline, setOffline] = useState(false);
+  const [previousDown, setPreviousDown] = useState(down);
+  if (down !== previousDown) {
+    setPreviousDown(down);
+    setOffline(false);
+  }
   useEffect(() => {
-    if (!down) {
-      setOnline(true);
-      return;
-    }
-    const timer = setTimeout(() => setOnline(false), OFFLINE_AFTER_MS);
+    if (!down) return;
+    const timer = setTimeout(() => setOffline(true), OFFLINE_AFTER_MS);
     return () => clearTimeout(timer);
   }, [down]);
-  return online;
+  return !down || !offline;
 }
 
 /** A completed read for a meeting with no notes row yet. */
@@ -96,15 +98,23 @@ function normalizeSnapshot(
   };
 }
 
-export function NotesConvexTransportProvider({
-  meetingId,
-  clientId,
-  children,
-}: {
+type NotesConvexTransportProviderProps = {
   meetingId: Id<"meetings">;
   clientId: string;
   children: ReactNode;
-}) {
+};
+
+export function NotesConvexTransportProvider(props: NotesConvexTransportProviderProps) {
+  // A new identity must reset snapshots and ledger subscribers together; otherwise
+  // a child can ingest the previous meeting's snapshot before this provider's effect runs.
+  return <NotesConvexTransportSession key={JSON.stringify([props.meetingId, props.clientId])} {...props} />;
+}
+
+function NotesConvexTransportSession({
+  meetingId,
+  clientId,
+  children,
+}: NotesConvexTransportProviderProps) {
   const raw = useQuery(api.notes.queries.getMeetingNotes, {
     meetingId,
     clientId,
@@ -115,22 +125,22 @@ export function NotesConvexTransportProvider({
 
   const online = useConnectedAfterGrace();
   const onlineRef = useRef(online);
-  onlineRef.current = online;
   const connectionListenerRef = useRef<((online: boolean) => void) | null>(
     null,
   );
   useEffect(() => {
+    onlineRef.current = online;
     connectionListenerRef.current?.(online);
   }, [online]);
 
   const listenerRef = useRef<
     ((snapshot: NotesServerSnapshot | undefined) => void) | null
   >(null);
-  const snapshotRef = useRef<NotesServerSnapshot | undefined>(undefined);
   const snapshot = useMemo(() => normalizeSnapshot(raw), [raw]);
-  snapshotRef.current = snapshot;
+  const snapshotRef = useRef<NotesServerSnapshot | undefined>(snapshot);
 
   useEffect(() => {
+    snapshotRef.current = snapshot;
     listenerRef.current?.(snapshot);
   }, [snapshot]);
 
