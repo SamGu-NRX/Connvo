@@ -18,6 +18,7 @@
     "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:app": "vitest run --project convex --project types --project frontend --project in-call --project notes",
     "test:watch": "vitest",
     "test:types": "vitest run convex/types/__tests__/",
     "call-eval:fixtures": "node tools/call-eval/scripts/generate-fixtures.mjs",
