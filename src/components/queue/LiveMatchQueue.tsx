@@ -14,6 +14,7 @@ import {
   useMutation,
   useQuery,
 } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "@convex/_generated/api";
 import { QueueView, type QueueViewState } from "./QueueView";
 import { enterQueueCall } from "./queue-navigation";
@@ -81,6 +82,7 @@ function ConnectedQueue({
   queueType: QueueType;
   title: string;
 }) {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const connection = useConvexConnectionState();
   const status = useQuery(
