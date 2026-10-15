@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useSyncExternalStore } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
 import Image from "next/image";
 import {
@@ -263,9 +263,27 @@ function StartCta({
   );
 }
 
+function subscribeTheme(listener: () => void) {
+  window.addEventListener("connvo-theme-change", listener);
+  return () => window.removeEventListener("connvo-theme-change", listener);
+}
+
+function getThemeSnapshot() {
+  return localStorage.getItem("theme") || "light";
+}
+
+function getServerThemeSnapshot() {
+  return "light";
+}
+
 // Main Landing Page component
 const LandingPage = () => {
-  const [theme, setTheme] = useState("light");
+  // The server keeps the existing light render; hydration reads the saved theme.
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot,
+  );
   const { scrollY } = useScroll();
   const parallaxY = useTransform(scrollY, [0, 1000], [0, -150]);
   const router = useRouter();
@@ -274,7 +292,6 @@ const LandingPage = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme") || "light";
-      setTheme(savedTheme);
       if (savedTheme === "dark") {
         document.documentElement.classList.add("dark");
       }
@@ -283,10 +300,10 @@ const LandingPage = () => {
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
     document.documentElement.classList.toggle("dark");
     if (typeof window !== "undefined") {
       localStorage.setItem("theme", newTheme);
+      window.dispatchEvent(new Event("connvo-theme-change"));
     }
   };
 
@@ -414,7 +431,7 @@ const LandingPage = () => {
                 className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-slate-600 dark:text-slate-300"
               >
                 Connvo opens the door to intentional connections. Have authentic
-                "coffee-chat" conversations with peers, mentors, and
+                &quot;coffee-chat&quot; conversations with peers, mentors, and
                 collaborators who align with your goals, interests, and
                 personality.
               </motion.p>

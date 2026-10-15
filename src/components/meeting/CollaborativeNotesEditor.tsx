@@ -53,21 +53,14 @@ export function CollaborativeNotesEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Initialize local content from remote
-  useEffect(() => {
-    if (remoteContent && localContent === "") {
-      setLocalContent(remoteContent);
-      setLastSyncedContent(remoteContent);
-    }
-  }, [remoteContent, localContent]);
-
-  // Sync remote changes to local if not currently editing
-  useEffect(() => {
-    if (remoteContent !== lastSyncedContent && !isSaving) {
-      setLocalContent(remoteContent);
-      setLastSyncedContent(remoteContent);
-    }
-  }, [remoteContent, lastSyncedContent, isSaving]);
+  // Adopt remote content before rendering, using the same initialization and idle guards.
+  if (
+    (remoteContent && localContent === "") ||
+    (remoteContent !== lastSyncedContent && !isSaving)
+  ) {
+    setLocalContent(remoteContent);
+    setLastSyncedContent(remoteContent);
+  }
 
   const handleChange = useCallback(
     (newText: string) => {

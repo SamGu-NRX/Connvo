@@ -94,6 +94,7 @@ function ConnectedQueue({
   const respond = useMutation(api.matching.queue.respond);
   const serverTime = useMutation(api.matching.queue.time);
   const [pending, setPending] = useState(false);
+  const [entryState, setEntryState] = useState<"loading" | "joining" | "settled">("loading");
   const [error, setError] = useState<string | null>(null);
   const [clock, setClock] = useState<number | null>(null);
   const [retryAction, setRetryAction] = useState<
@@ -101,6 +102,10 @@ function ConnectedQueue({
   >(null);
   const entered = useRef(false);
   const busy = useRef(false);
+
+  if (entryState === "loading" && status) {
+    setEntryState(status.state === "idle" ? "joining" : "settled");
+  }
 
   const run = useCallback(async (action: () => Promise<unknown>) => {
     if (busy.current) return;
@@ -155,8 +160,22 @@ function ConnectedQueue({
   useEffect(() => {
     if (!status || entered.current) return;
     entered.current = true;
-    if (status.state === "idle") void run(() => join({ queueType }));
-  }, [status, join, queueType, run]);
+    if (status.state !== "idle") return;
+    busy.current = true;
+    // The first query result selects the pending view during render. Keep it
+    // pending through subscription updates until this request settles.
+    void join({ queueType })
+      .catch(() => {
+        setRetryAction(() => () => join({ queueType }));
+        setError(
+          "We couldn't update your queue. Your place is saved if the request reached us. Retry to check and continue.",
+        );
+      })
+      .finally(() => {
+        busy.current = false;
+        setEntryState("settled");
+      });
+  }, [status, join, queueType]);
 
   useEffect(() => {
     if (status?.state !== "ready") return;
@@ -220,7 +239,7 @@ function ConnectedQueue({
           : title
       }
       state={view}
-      pending={pending}
+      pending={pending || entryState === "joining"}
       onJoin={() => void run(() => join({ queueType }))}
       onLeave={() =>
         void run(async () => {
