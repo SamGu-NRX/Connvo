@@ -215,3 +215,15 @@ describe("after-call pages in the local eval setup", () => {
     expect(benchPathPassesThrough("/app/meetings", { ...local, vercel: "1" })).toBe(false);
   });
 });
+
+describe("public call processing files", () => {
+  it("serves the bundled worker in production without exposing call routes", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("NEXT_PUBLIC_CONNVO_CALL_BENCH", "0");
+    expect(proxy(requestAt("/call/blur-worker.js"), event)).toBeInstanceOf(NextResponse);
+    expect(mocks.handleAuth).not.toHaveBeenCalled();
+    expect(proxy(requestAt("/app/call/meeting"), event)).toBe(mocks.AUTH_SENTINEL);
+    expect(proxy(requestAt("/call/mediapipe/private.js"), event)).toBe(mocks.AUTH_SENTINEL);
+  });
+});

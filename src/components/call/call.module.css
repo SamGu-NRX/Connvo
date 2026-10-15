@@ -397,6 +397,12 @@
   font-size: 12px;
 }
 .sidePanel {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: none;
+  max-height: none;
   flex: 0 0 330px;
   width: 330px;
   min-width: 0;
@@ -406,7 +412,7 @@
   background: #f6faf8;
   color: #193b2e;
 }
-.sidePanel[hidden] {
+.sidePanel:not([open]) {
   display: none;
 }
 .panelHeader {
@@ -456,7 +462,7 @@
     gap: 16px;
   }
 }
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-height: 500px) and (orientation: landscape) {
   .page {
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
       env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -508,7 +514,7 @@
     top: 8px;
     right: 12px;
   }
-  .sheetOverlay {
+  .sidePanel::backdrop {
     position: fixed;
     inset: 0;
     z-index: 40;
@@ -528,7 +534,7 @@
       opacity 200ms var(--ease-out);
   }
   @starting-style {
-    .sidePanel {
+    .sidePanel[data-pointer-opened="true"] {
       transform: translateY(12%);
       opacity: 0;
     }

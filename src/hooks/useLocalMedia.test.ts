@@ -51,10 +51,12 @@ const stream = (...tracks: MediaStreamTrack[]) =>
   new Stream(tracks) as unknown as MediaStream;
 const deferred = <T>() => {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((yes) => {
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => {
     resolve = yes;
+    reject = no;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 };
 let devices: EventTarget & {
   getUserMedia: ReturnType<typeof vi.fn>;
@@ -217,6 +219,188 @@ describe("camera and blur ownership", () => {
     expect(
       devices.getUserMedia.mock.calls.at(-1)?.[0].video.facingMode,
     ).toEqual({ exact: "environment" });
+  });
+
+  it.each(["camera", "quality"] as const)(
+    "pauses outgoing video during a blurred %s replacement",
+    async (change) => {
+      const { result, video, audio } = await opened();
+      const firstProcessed = track("video");
+      pipeline.create.mockResolvedValueOnce({
+        track: firstProcessed,
+        stop: () => firstProcessed.stop(),
+      });
+      await act(async () => result.current.setBlurEnabled(true));
+      const outgoing = result.current.stream!;
+      const publish = vi.spyOn(outgoing, "addTrack");
+      const replacement =
+        change === "camera"
+          ? track("video", { deviceId: "rear", facingMode: "environment" })
+          : video;
+      if (change === "camera")
+        devices.getUserMedia.mockResolvedValueOnce(stream(replacement));
+      const pending = deferred<BlurPipeline>();
+      pipeline.create.mockReturnValueOnce(pending.promise);
+      let transition!: Promise<void>;
+      await act(async () => {
+        transition =
+          change === "camera"
+            ? result.current.switchCamera()
+            : result.current.setQuality("hd");
+      });
+      expect(result.current.blurEnabled).toBe(true);
+      expect(result.current.blurStatus).toBe("loading");
+      expect(outgoing.getTracks()).toEqual([audio]);
+      expect(replacement.readyState).toBe("live");
+      expect(firstProcessed.readyState).toBe("ended");
+      expect(publish.mock.calls).toEqual([]);
+      const processed = track("video");
+      await act(async () => {
+        pending.resolve({ track: processed, stop: () => processed.stop() });
+        await transition;
+      });
+      expect(result.current.stream).toBe(outgoing);
+      expect(outgoing.getTracks()).toEqual([audio, processed]);
+      expect(result.current.blurStatus).toBe("active");
+      expect(publish.mock.calls).toEqual([[processed]]);
+    },
+  );
+
+  it.each(["camera-off", "blur-off", "release", "unmount"] as const)(
+    "%s cancels a pending blurred camera replacement without publishing its late result",
+    async (cancel) => {
+      const { result, unmount, video, audio } = await opened();
+      const firstProcessed = track("video");
+      pipeline.create.mockResolvedValueOnce({
+        track: firstProcessed,
+        stop: () => firstProcessed.stop(),
+      });
+      await act(async () => result.current.setBlurEnabled(true));
+      const outgoing = result.current.stream!;
+      const publish = vi.spyOn(outgoing, "addTrack");
+      const replacement = track("video", { deviceId: "rear" });
+      devices.getUserMedia.mockResolvedValueOnce(stream(replacement));
+      const pending = deferred<BlurPipeline>();
+      pipeline.create.mockReturnValueOnce(pending.promise);
+      let transition!: Promise<void>;
+      await act(async () => {
+        transition = result.current.switchCamera();
+      });
+      expect(result.current.blurStatus).toBe("loading");
+      expect(outgoing.getTracks()).toEqual([audio]);
+      const signal = pipeline.create.mock.calls.at(-1)![0].signal;
+      await act(async () => {
+        if (cancel === "camera-off") await result.current.setCameraOn(false);
+        else if (cancel === "blur-off")
+          await result.current.setBlurEnabled(false);
+        else if (cancel === "release") result.current.release();
+        else unmount();
+      });
+      const processed = track("video");
+      await act(async () => {
+        pending.resolve({ track: processed, stop: () => processed.stop() });
+        await transition;
+      });
+      expect(signal.aborted).toBe(true);
+      expect([
+        video.readyState,
+        firstProcessed.readyState,
+        processed.readyState,
+      ]).toEqual(["ended", "ended", "ended"]);
+      if (cancel === "blur-off") {
+        expect(result.current.blurEnabled).toBe(false);
+        expect(outgoing.getTracks()).toEqual([audio, replacement]);
+        expect(replacement.readyState).toBe("live");
+        expect(publish.mock.calls).toEqual([[replacement]]);
+      } else {
+        expect(replacement.readyState).toBe("ended");
+        expect(publish.mock.calls).toEqual([]);
+        expect(outgoing.getVideoTracks()).toEqual([]);
+      }
+      if (cancel === "release") {
+        expect(result.current.status).toBe("idle");
+        expect(result.current.stream).toBeNull();
+      }
+    },
+  );
+
+  it("discards a superseded blurred camera result and ignores its fallback", async () => {
+    const { result } = await opened();
+    const firstProcessed = track("video");
+    pipeline.create.mockResolvedValueOnce({
+      track: firstProcessed,
+      stop: () => firstProcessed.stop(),
+    });
+    await act(async () => result.current.setBlurEnabled(true));
+    const outgoing = result.current.stream!;
+    const publish = vi.spyOn(outgoing, "addTrack");
+    const obsolete = track("video", { deviceId: "obsolete" });
+    const newest = track("video", { deviceId: "newest" });
+    devices.getUserMedia
+      .mockResolvedValueOnce(stream(obsolete))
+      .mockResolvedValueOnce(stream(newest));
+    const pending = deferred<BlurPipeline>();
+    pipeline.create.mockReturnValueOnce(pending.promise);
+    let first!: Promise<void>;
+    await act(async () => {
+      first = result.current.selectDevice("videoinput", "obsolete");
+    });
+    const { signal, onFallback } = pipeline.create.mock.calls.at(-1)![0];
+    const processed = track("video");
+    pipeline.create.mockResolvedValueOnce({
+      track: processed,
+      stop: () => processed.stop(),
+    });
+    await act(async () => result.current.selectDevice("videoinput", "newest"));
+    const obsoleteProcessed = track("video");
+    await act(async () => {
+      onFallback(new BlurPipelineError("failed", "Obsolete worker failed"));
+      pending.resolve({
+        track: obsoleteProcessed,
+        stop: () => obsoleteProcessed.stop(),
+      });
+      await first;
+    });
+    expect(result.current.blurEnabled).toBe(true);
+    expect(result.current.blurStatus).toBe("active");
+    expect(result.current.selected.videoinput).toBe("newest");
+    expect(outgoing.getVideoTracks()).toEqual([processed]);
+    expect(publish.mock.calls).toEqual([[processed]]);
+    expect(signal.aborted).toBe(true);
+    expect([
+      obsolete.readyState,
+      obsoleteProcessed.readyState,
+      newest.readyState,
+    ]).toEqual(["ended", "ended", "live"]);
+  });
+
+  it("restores raw video only after a replacement blur failure disables blur", async () => {
+    const { result, audio } = await opened();
+    const firstProcessed = track("video");
+    pipeline.create.mockResolvedValueOnce({
+      track: firstProcessed,
+      stop: () => firstProcessed.stop(),
+    });
+    await act(async () => result.current.setBlurEnabled(true));
+    const replacement = track("video", { deviceId: "rear" });
+    devices.getUserMedia.mockResolvedValueOnce(stream(replacement));
+    const pending = deferred<BlurPipeline>();
+    pipeline.create.mockReturnValueOnce(pending.promise);
+    let transition!: Promise<void>;
+    await act(async () => {
+      transition = result.current.switchCamera();
+    });
+    expect(result.current.blurEnabled).toBe(true);
+    expect(result.current.stream?.getTracks()).toEqual([audio]);
+    await act(async () => {
+      pending.reject(new BlurPipelineError("failed", "Replacement failed"));
+      await transition;
+    });
+    expect(result.current.blurEnabled).toBe(false);
+    expect(result.current.blurStatus).toBe("failed");
+    expect(result.current.blurProblem).toBe("Replacement failed");
+    expect(result.current.stream?.getTracks()).toEqual([audio, replacement]);
+    expect(replacement.readyState).toBe("live");
   });
 
   it("camera-off during a pending permission prompt prevents the returned camera from publishing", async () => {

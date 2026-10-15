@@ -180,8 +180,11 @@ export function useLocalMedia(): LocalMedia {
   }, [stopBlur]);
 
   const applyBlur = useCallback(async () => {
-    if (pipelineRef.current && rawVideoRef.current) {
-      swapIn(rawVideoRef.current);
+    const stream = streamRef.current;
+    const outgoing = stream?.getVideoTracks() ?? [];
+    // Pause video while the replacement starts so blur never exposes raw frames.
+    for (const track of outgoing) stream?.removeTrack(track);
+    if (outgoing.length > 0) {
       bump();
     }
     stopBlur();
@@ -232,7 +235,7 @@ export function useLocalMedia(): LocalMedia {
       stopBlur();
       rawVideoRef.current?.stop();
       rawVideoRef.current = track;
-      swapIn(track);
+      if (!blurWantedRef.current) swapIn(track);
       rememberDevice("videoinput", track.getSettings().deviceId ?? null);
       const actualFacing = track.getSettings().facingMode;
       if (actualFacing === "user" || actualFacing === "environment") {
@@ -504,12 +507,7 @@ export function useLocalMedia(): LocalMedia {
         if (generation !== videoGenRef.current || track !== rawVideoRef.current)
           return;
         setProblem(null);
-        // Return to the raw camera while a resized blur canvas starts.
-        if (blurWantedRef.current) {
-          swapIn(track);
-          bump();
-          await applyBlur();
-        }
+        if (blurWantedRef.current) await applyBlur();
       } catch {
         if (generation !== videoGenRef.current || track !== rawVideoRef.current)
           return;
@@ -520,7 +518,7 @@ export function useLocalMedia(): LocalMedia {
         );
       }
     },
-    [applyBlur, bump, swapIn],
+    [applyBlur],
   );
 
   const switchCamera = useCallback(async () => {

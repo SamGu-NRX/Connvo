@@ -292,7 +292,10 @@ export function DeviceSelect({
   dark?: boolean;
 }) {
   const unique = useId();
-  const id = `device-${label.toLowerCase().replace(/\s+/g, "-")}-${unique}`;
+  const id =
+    label === "Camera"
+      ? "device-camera"
+      : `device-${label.toLowerCase().replace(/\s+/g, "-")}-${unique}`;
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <label
