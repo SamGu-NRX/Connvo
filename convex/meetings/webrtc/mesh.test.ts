@@ -89,6 +89,7 @@ async function addMeeting(
 }
 
 beforeEach(async () => {
+  vi.useFakeTimers();
   t = createTestEnvironment();
   meetingId = await addMeeting("active");
   const who = (k: string) =>
@@ -105,6 +106,12 @@ beforeEach(async () => {
     E: who("e"),
     O: who("o"),
   };
+});
+
+afterEach(async () => {
+  await t.finishInProgressScheduledFunctions();
+  vi.clearAllTimers();
+  vi.useRealTimers();
 });
 
 const join = (p: Who, sessionId: string, inMeeting = meetingId) =>
@@ -547,8 +554,6 @@ describe("sendSignal limits", () => {
     });
   const stored = () => t.run((ctx) => ctx.db.query("webrtcSignals").collect());
 
-  afterEach(() => vi.useRealTimers());
-
   test("oversized SDP and candidate fields are refused and nothing is stored", async () => {
     await join("A", "session-a-1");
     await join("B", "session-b-1");
@@ -588,7 +593,7 @@ describe("sendSignal limits", () => {
   });
 
   test("a session is limited per window, other sessions are not, and the next window resets it", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.useFakeTimers();
     // Start of a window, so the whole burst falls inside one.
     vi.setSystemTime(
       Math.ceil(Date.now() / SIGNAL_RATE_LIMIT.windowMs) *
@@ -609,7 +614,7 @@ describe("sendSignal limits", () => {
       delivered: true,
     });
 
-    vi.setSystemTime(Date.now() + SIGNAL_RATE_LIMIT.windowMs);
+    vi.setSystemTime(Date.now() + SIGNAL_RATE_LIMIT.windowMs - 1);
     // Keep A open across the window (its heartbeat would otherwise lapse).
     await as.A.mutation(api.meetings.webrtc.mesh.heartbeat, {
       meetingId,
@@ -619,6 +624,7 @@ describe("sendSignal limits", () => {
       meetingId,
       sessionId: "session-b-1",
     });
+    vi.setSystemTime(Date.now() + 1);
     expect(await send("A", "session-a-1", "session-b-1", candidate)).toEqual({
       delivered: true,
     });
@@ -643,8 +649,6 @@ describe("sendSignal limits", () => {
  * commit (see the PR body for the run).
  */
 describe("review fixes", () => {
-  afterEach(() => vi.useRealTimers());
-
   test("B1: a participant cannot mark another participant's session failed", async () => {
     await join("A", "session-a-1");
     await join("B", "session-b-1");
@@ -725,7 +729,7 @@ describe("review fixes", () => {
   });
 
   test("S4: a session keeps rate-limit counters only for its current window", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.useFakeTimers();
     vi.setSystemTime(
       Math.ceil(Date.now() / SIGNAL_RATE_LIMIT.windowMs) *
         SIGNAL_RATE_LIMIT.windowMs,
@@ -829,7 +833,8 @@ describe("review fixes", () => {
       });
     });
     await t.mutation(internal.meetings.webrtc.mesh.sweepStaleSessions, {});
-    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await vi.advanceTimersByTimeAsync(0);
+    await t.finishInProgressScheduledFunctions();
     expect((await sessionRow("stale-session"))?.state).toBe("closed");
     expect((await sessionRow("live-session-0"))?.state).toBe("connected");
   }, 60_000);
@@ -860,5 +865,137 @@ describe("review fixes", () => {
     await expect(
       sendIn(meetingId, "B", "session-b-1", "session-a-1", offer),
     ).rejects.toThrow(/not active/);
+  });
+});
+
+describe("call lifecycle", () => {
+  const state = () =>
+    t.run((ctx) =>
+      ctx.db
+        .query("meetingState")
+        .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+        .unique(),
+    );
+  const leave = (who: Who, sessionId: string) =>
+    as[who].mutation(api.meetings.webrtc.mesh.leaveCall, {
+      meetingId,
+      sessionId,
+    });
+
+  test("starts at the second present person, ends at the last leave and keeps the original times", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(100000);
+    await join("A", "session-a-1");
+    expect(
+      await as.A.query(api.meetings.webrtc.mesh.callStatus, { meetingId }),
+    ).toBe("active");
+    expect(await state()).toBeNull();
+    vi.setSystemTime(105000);
+    await join("B", "session-b-1");
+    expect(await state()).toMatchObject({ active: true, startedAt: 105000 });
+    vi.setSystemTime(108000);
+    await leave("A", "session-a-1");
+    expect(
+      await as.B.query(api.meetings.webrtc.mesh.callStatus, { meetingId }),
+    ).toBe("active");
+    vi.setSystemTime(109000);
+    await leave("B", "session-b-1");
+    expect(await state()).toMatchObject({
+      active: false,
+      startedAt: 105000,
+      endedAt: 109000,
+    });
+    vi.setSystemTime(110000);
+    await leave("B", "session-b-1");
+    expect(await state()).toMatchObject({ startedAt: 105000, endedAt: 109000 });
+    expect(
+      await as.B.query(api.meetings.webrtc.mesh.callStatus, { meetingId }),
+    ).toBe("ended");
+  });
+
+  test("scheduled expiry ends an abandoned call with no surviving heartbeat", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(200000);
+    await join("A", "session-a-1");
+    await join("B", "session-b-1");
+    await vi.advanceTimersByTimeAsync(10000);
+    await t.finishInProgressScheduledFunctions();
+    expect(await state()).toMatchObject({
+      active: false,
+      startedAt: 200000,
+      endedAt: 210000,
+    });
+    expect(await sessionRow("session-a-1")).toMatchObject({
+      state: "closed",
+      closedReason: "expired",
+    });
+    expect(await sessionRow("session-b-1")).toMatchObject({
+      state: "closed",
+      closedReason: "expired",
+    });
+    expect(
+      await as.A.query(api.meetings.webrtc.mesh.callStatus, { meetingId }),
+    ).toBe("ended");
+  });
+
+  test("fresh heartbeat reschedules expiry, and replacing a sole tab does not end the call", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(300000);
+    await join("A", "session-a-old");
+    await join("A", "session-a-new");
+    await vi.advanceTimersByTimeAsync(8000);
+    await as.A.mutation(api.meetings.webrtc.mesh.heartbeat, {
+      meetingId,
+      sessionId: "session-a-new",
+    });
+    await vi.advanceTimersByTimeAsync(2000);
+    await t.finishInProgressScheduledFunctions();
+    expect(await sessionRow("session-a-new")).toMatchObject({
+      state: "connected",
+      lastHeartbeatAt: 308000,
+    });
+    expect(
+      await as.A.query(api.meetings.webrtc.mesh.callStatus, { meetingId }),
+    ).toBe("active");
+    await vi.advanceTimersByTimeAsync(8000);
+    await t.finishInProgressScheduledFunctions();
+    expect(await state()).toMatchObject({ active: false, endedAt: 318000 });
+    expect((await state())?.startedAt).toBeUndefined();
+  });
+
+  test("the final explicit leave also expires abandoned peers before ending", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(400000);
+    await join("A", "session-a-1");
+    await join("B", "session-b-1");
+    vi.setSystemTime(411000);
+    await leave("A", "session-a-1");
+    expect(await state()).toMatchObject({
+      startedAt: 400000,
+      endedAt: 411000,
+      active: false,
+    });
+    expect(await sessionRow("session-b-1")).toMatchObject({
+      closedReason: "expired",
+    });
+  });
+
+  test("an ended meeting rejects new and reused sessions with the ended reason", async () => {
+    await join("A", "session-a-1");
+    await join("B", "session-b-1");
+    await leave("A", "session-a-1");
+    await leave("B", "session-b-1");
+    await expect(join("A", "session-a-new")).rejects.toThrow(
+      /This call has ended/,
+    );
+    await expect(join("B", "session-b-1")).rejects.toThrow(
+      /This call has ended/,
+    );
+    expect(
+      await as.A.query(api.meetings.webrtc.mesh.callStatus, { meetingId }),
+    ).toBe("ended");
+    expect(
+      await as.A.query(api.meetings.webrtc.mesh.callPresence, { meetingId }),
+    ).toEqual([]);
   });
 });

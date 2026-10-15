@@ -32,6 +32,7 @@ import type { Doc, Id } from "@convex/_generated/dataModel";
 import { assertMeetingAccess } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
 import { enforceUserLimit } from "@convex/lib/rateLimiter";
+import { finishMeeting, recordCallStart } from "../presenceLifecycle";
 
 /** A session with no heartbeat for this long is closed as expired. */
 export const HEARTBEAT_EXPIRY_MS = 10_000;
@@ -263,13 +264,67 @@ async function sweepMeeting(
 ): Promise<void> {
   for (const session of await openSessions(ctx, meetingId)) {
     if (
-      (session.lastHeartbeatAt ?? session.updatedAt) <
+      (session.lastHeartbeatAt ?? session.updatedAt) <=
       now - HEARTBEAT_EXPIRY_MS
     ) {
       await close(ctx, session, "expired", now);
     }
   }
 }
+
+/** End once all sessions have closed; replacement is atomic with its new join. */
+async function finishEmptyCall(
+  ctx: MutationCtx,
+  meetingId: Id<"meetings">,
+  now: number,
+): Promise<void> {
+  if ((await openSessions(ctx, meetingId)).length === 0) {
+    await finishMeeting(ctx, meetingId, now);
+  }
+}
+
+/** One scheduled check per live session, renewed from the latest heartbeat. */
+export const expireSession = internalMutation({
+  args: { meetingId: v.id("meetings"), sessionId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { meetingId, sessionId }): Promise<null> => {
+    const session = await sessionById(ctx, meetingId, sessionId);
+    if (!session || session.state !== OPEN) return null;
+    const now = Date.now();
+    const expiresAt =
+      (session.lastHeartbeatAt ?? session.updatedAt) + HEARTBEAT_EXPIRY_MS;
+    if (now < expiresAt) {
+      await ctx.scheduler.runAfter(
+        expiresAt - now,
+        internal.meetings.webrtc.mesh.expireSession,
+        { meetingId, sessionId },
+      );
+      return null;
+    }
+    await sweepMeeting(ctx, meetingId, now);
+    await finishEmptyCall(ctx, meetingId, now);
+    return null;
+  },
+});
+
+/** Read before opening capture so ended links never show a join lobby. */
+export const callStatus = query({
+  args: { meetingId: v.id("meetings") },
+  returns: v.union(
+    v.literal("active"),
+    v.literal("ended"),
+    v.literal("unavailable"),
+  ),
+  handler: async (ctx, { meetingId }) => {
+    await assertMeetingAccess(ctx, meetingId);
+    const meeting = await ctx.db.get(meetingId);
+    if (meeting?.state === "concluded" || meeting?.state === "cancelled")
+      return "ended" as const;
+    return meeting?.state === "active"
+      ? ("active" as const)
+      : ("unavailable" as const);
+  },
+});
 
 /**
  * Join the call with a new session. Any other open session of the same user
@@ -282,7 +337,14 @@ export const joinCall = mutation({
   handler: async (ctx, { meetingId, sessionId }) => {
     const participant = await assertMeetingAccess(ctx, meetingId);
     checkSessionId(sessionId);
-    if (!(await activeMeeting(ctx, meetingId))) {
+    const meeting = await ctx.db.get(meetingId);
+    if (meeting?.state === "concluded" || meeting?.state === "cancelled") {
+      throw createError.validation(
+        "This call has ended. Open the recap to see what was recorded.",
+        "meetingId",
+      );
+    }
+    if (meeting?.state !== "active") {
       throw createError.validation("This meeting is not active", "meetingId");
     }
     const user = await ctx.db.get(participant.userId);
@@ -296,6 +358,12 @@ export const joinCall = mutation({
           meetingId,
           sessionId,
         });
+      }
+      if (existing.state !== OPEN) {
+        throw createError.validation(
+          "This call session has closed. Join with a new session.",
+          "sessionId",
+        );
       }
       return { sessionId, participantId: user.workosUserId };
     }
@@ -329,6 +397,17 @@ export const joinCall = mutation({
       createdAt: now,
       updatedAt: now,
     });
+    await recordCallStart(
+      ctx,
+      meetingId,
+      (await openSessions(ctx, meetingId)).length,
+      now,
+    );
+    await ctx.scheduler.runAfter(
+      HEARTBEAT_EXPIRY_MS,
+      internal.meetings.webrtc.mesh.expireSession,
+      { meetingId, sessionId },
+    );
     return { sessionId, participantId: user.workosUserId };
   },
 });
@@ -385,7 +464,10 @@ export const leaveCall = mutation({
       sessionId,
       participant.userId,
     );
-    if (session.state === OPEN) await close(ctx, session, "left", Date.now());
+    const now = Date.now();
+    if (session.state === OPEN) await close(ctx, session, "left", now);
+    await sweepMeeting(ctx, meetingId, now);
+    await finishEmptyCall(ctx, meetingId, now);
     return null;
   },
 });
@@ -617,6 +699,11 @@ export const sweepStaleSessions = internalMutation({
       )
       .take(SWEEP_BATCH);
     for (const session of stale) await close(ctx, session, "expired", now);
+    for (const meetingId of new Set(
+      stale.map((session) => session.meetingId),
+    )) {
+      await finishEmptyCall(ctx, meetingId, now);
+    }
     if (stale.length === SWEEP_BATCH) {
       await ctx.scheduler.runAfter(
         0,

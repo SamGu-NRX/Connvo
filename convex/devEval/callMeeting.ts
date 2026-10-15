@@ -66,7 +66,6 @@ export const create = internalMutation({
     await ctx.db.insert("meetingState", {
       meetingId,
       active: true,
-      startedAt: now,
       topics: [],
       recordingEnabled: false,
       updatedAt: now,

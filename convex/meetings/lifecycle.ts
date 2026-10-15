@@ -20,6 +20,7 @@ import {
 } from "@convex/auth/guards";
 import { createError } from "@convex/lib/errors";
 import { closeMeetingSessions } from "@convex/meetings/webrtc/mesh";
+import { finishMeeting } from "./presenceLifecycle";
 import { internal } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { withIdempotency, IdempotencyUtils } from "@convex/lib/idempotency";
@@ -935,7 +936,8 @@ export const startMeeting = mutation({
     if (meetingState) {
       await ctx.db.patch(meetingState._id, {
         active: true,
-        startedAt: now,
+        // WebRTC starts when two call sessions are present, not when the host opens the room.
+        startedAt: meeting.webrtcEnabled ? undefined : now,
         updatedAt: now,
       });
     }
@@ -1085,41 +1087,8 @@ export const endMeeting = mutation({
 
     const now = Date.now();
 
-    // Update meeting state
-    await ctx.db.patch(meetingId, {
-      state: "concluded",
-      updatedAt: now,
-    });
     await closeMeetingSessions(ctx, meetingId);
-
-    // Update meeting state record and calculate duration
-    const meetingState = await ctx.db
-      .query("meetingState")
-      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
-      .unique();
-
-    let duration: number | undefined;
-    if (meetingState) {
-      duration = meetingState.startedAt
-        ? now - meetingState.startedAt
-        : undefined;
-      await ctx.db.patch(meetingState._id, {
-        active: false,
-        endedAt: now,
-        updatedAt: now,
-      });
-    }
-
-    // Schedule post-meeting processing
-    try {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.meetings.postProcessing.handleMeetingEnd,
-        { meetingId, endedAt: now },
-      );
-    } catch (error) {
-      console.warn("Failed to schedule post-meeting processing:", error);
-    }
+    const duration = await finishMeeting(ctx, meetingId, now);
 
     return {
       success: true,
