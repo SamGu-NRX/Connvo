@@ -9,6 +9,7 @@
  */
 
 import { MutationCtx } from "@convex/_generated/server";
+import { logAudit } from "@convex/lib/audit";
 import type { AlertSeverity } from "@convex/types/entities/system";
 
 /**
@@ -55,7 +56,6 @@ export async function recordMetric(
   );
 
   try {
-    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       resourceType: "system",
       resourceId: "metrics",
@@ -86,7 +86,6 @@ export async function sendAlert(ctx: MutationCtx, alert: Alert): Promise<void> {
   );
 
   try {
-    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       resourceType: "system",
       resourceId: "alerts",

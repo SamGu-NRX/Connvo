@@ -17,6 +17,7 @@ import {
   internalMutation,
 } from "@convex/_generated/server";
 import { Id } from "@convex/_generated/dataModel";
+import { logAudit } from "@convex/lib/audit";
 import { requireIdentity } from "@convex/auth/guards";
 import {
   PerformanceTracker,
@@ -674,7 +675,6 @@ export const recordCustomMetric = mutation({
   handler: async (ctx, { metricName, value, tags, timestamp }) => {
     const identity = await requireIdentity(ctx);
 
-    const { logAudit } = await import("@convex/lib/audit");
     await logAudit(ctx, {
       actorUserId: identity.userId as Id<"users">,
       resourceType: "performance_metric",
