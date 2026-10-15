@@ -80,9 +80,17 @@ it("binds real monitors to peer callbacks, adapts video and stops on peer remova
   await act(async () => result.current.onPeerConnection("B", replacement));
   await act(async () => vi.advanceTimersByTimeAsync(2000));
   expect(result.current.peers[0].quality).toBe("good");
+  vi.mocked(replacement.getStats).mockRejectedValue(
+    new Error("Stats unavailable"),
+  );
+  await act(async () => vi.advanceTimersByTimeAsync(2000));
+  expect(result.current.peers[0]).toMatchObject({
+    quality: "unknown",
+    error: { stage: "stats", message: "Stats unavailable" },
+  });
   unmount();
   await vi.advanceTimersByTimeAsync(6000);
-  expect(replacement.getStats).toHaveBeenCalledTimes(2);
+  expect(replacement.getStats).toHaveBeenCalledTimes(3);
 });
 it("announces the weakest peer and distinguishes applied reduction from unavailable adaptation", () => {
   const good: NetworkQualitySnapshot = {
@@ -115,4 +123,36 @@ it("announces the weakest peer and distinguishes applied reduction from unavaila
   );
   rerender(<NetworkStatus peers={[]} />);
   expect(screen.getByRole("status")).toHaveTextContent("Checking connection");
+});
+it("reports good only when every peer has healthy measurements", () => {
+  const good: NetworkQualitySnapshot = {
+    quality: "good",
+    tier: "full",
+    sample: { packetLossRatio: 0, roundTripTimeMs: 50 },
+    adaptation: "applied",
+    error: null,
+  };
+  const unknown: NetworkQualitySnapshot = {
+    ...good,
+    quality: "unknown",
+    sample: { packetLossRatio: null, roundTripTimeMs: null },
+  };
+  const { rerender } = render(<NetworkStatus peers={[good, unknown]} />);
+  expect(screen.getByRole("status")).toHaveAttribute("data-quality", "unknown");
+  expect(screen.getByRole("status")).toHaveTextContent("Checking connection");
+  rerender(
+    <NetworkStatus
+      peers={[
+        { ...unknown, error: { stage: "stats", message: "Stats unavailable" } },
+        good,
+      ]}
+    />,
+  );
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Connection data unavailable",
+  );
+  rerender(<NetworkStatus peers={[unknown, { ...good, quality: "poor" }]} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Poor connection");
+  rerender(<NetworkStatus peers={[good, good]} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Good connection");
 });

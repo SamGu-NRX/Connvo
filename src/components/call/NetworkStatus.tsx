@@ -2,7 +2,8 @@
 import type { NetworkQualitySnapshot } from "@/lib/call/network-quality";
 import styles from "./call.module.css";
 
-const rank = { unknown: 0, good: 1, fair: 2, poor: 3 };
+// A healthy peer cannot establish that a peer with missing stats is healthy.
+const rank = { good: 0, unknown: 1, fair: 2, poor: 3 };
 export function NetworkStatus({ peers }: { peers: NetworkQualitySnapshot[] }) {
   const worst = peers.reduce<NetworkQualitySnapshot | undefined>(
     (current, peer) =>
@@ -17,7 +18,9 @@ export function NetworkStatus({ peers }: { peers: NetworkQualitySnapshot[] }) {
     (peer) => peer.adaptation === "unsupported" || peer.adaptation === "failed",
   );
   const label = {
-    unknown: "Checking connection",
+    unknown: peers.some((peer) => peer.error?.stage === "stats")
+      ? "Connection data unavailable"
+      : "Checking connection",
     good: "Good connection",
     fair: "Unstable connection",
     poor: "Poor connection",

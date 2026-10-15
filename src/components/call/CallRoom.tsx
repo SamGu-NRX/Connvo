@@ -358,7 +358,7 @@ export function CallRoom({
       data-testid="call-root"
       className={cn(
         styles.room,
-        "relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[var(--stage)] text-[var(--ink)]",
+        "relative flex h-full min-h-0 w-full flex-col overflow-clip bg-[var(--stage)] text-[var(--ink)]",
       )}
     >
       <header className={styles.header}>

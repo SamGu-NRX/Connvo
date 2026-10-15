@@ -397,6 +397,8 @@
   font-size: 12px;
 }
 .sidePanel {
+  /* Only the body scrolls; focusing notes must leave the close button visible. */
+  overflow: clip;
   position: static;
   margin: 0;
   padding: 0;
@@ -427,6 +429,7 @@
   display: none;
 }
 .panelHeader {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -448,6 +451,12 @@
   overscroll-behavior: contain;
   min-height: 0;
   flex: 1;
+}
+/* The sheet owns entrance motion. Fading the notes again made its loading
+   badge and counts fail contrast during the real-page lobby axe check. */
+.panelBody > :global([data-motion="fade-rise"]) {
+  opacity: 1 !important;
+  transform: none !important;
 }
 @media (hover: hover) and (pointer: fine) {
   .pipHandle:hover span,
@@ -666,21 +675,28 @@
   background: #fda4af;
 }
 @media (max-width: 767px), (max-height: 500px) and (orientation: landscape) {
+  .header:has(.networkStatus) {
+    height: 76px;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
   .networkStatus {
     position: absolute;
-    top: 66px;
-    right: 16px;
-    z-index: 10;
-    padding: 5px 8px;
-    border-radius: 6px;
-    background: #0e1716ed;
+    top: 49px;
+    left: 20px;
+    margin: 0;
+    font-size: 10px;
   }
   .room:has(.panelTrigger) .networkStatus {
     margin-right: 0;
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
+  .header:has(.networkStatus) {
+    height: 62px;
+    padding-top: 8px;
+  }
   .networkStatus {
-    top: 56px;
+    top: 37px;
   }
 }
