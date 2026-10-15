@@ -23,6 +23,9 @@ import { legacyTables } from "./schema/legacy";
 import { userSettings } from "./schema/userSettings";
 import { livePromptTables } from "./schema/livePrompts";
 import { historyTables } from "./schema/history";
+import { meetingFeedback } from "./schema/meetingFeedback";
+import { connections } from "./schema/connections";
+import { connectIntents } from "./schema/connectIntents";
 import { availabilityBlocks } from "./schema/availability";
 import { blocks } from "./schema/blocks";
 import { reports } from "./schema/reports";
@@ -42,6 +45,9 @@ export default defineSchema({
   ...offlineTables,
   ...legacyTables,
   userSettings,
+  meetingFeedback,
+  connections,
+  connectIntents,
   availabilityBlocks,
   blocks,
   reports,
