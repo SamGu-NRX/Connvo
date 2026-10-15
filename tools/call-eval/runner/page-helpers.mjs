@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { loadContracts } from "./contracts.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+/** @type {string | null} */
 let bundle = null;
 
 /**
@@ -31,12 +32,14 @@ export function decoderBundle() {
   return bundle;
 }
 
+/** @param {string} bundleSrc @returns {import("./probe.mjs").Decoders} */
 function initDecodersInNode(bundleSrc) {
   const fn = new Function(bundleSrc + "\nreturn { decodeBarcodeColor, decodeFrameCounter, computeFps, decodeToneHz };");
   return fn();
 }
 
 /** Node-side tolerant color classification (y4m round-trip shifts ~±13/ch). */
+/** @param {{ r: number, g: number, b: number }} rgb */
 export function matchPeerColor(rgb) {
   const { PEER_COLORS, SECOND_CAMERA_COLOR, COLOR_TOLERANCE } = loadContracts();
   return classifyRemoteColor(rgb, peerPalette(PEER_COLORS, SECOND_CAMERA_COLOR), COLOR_TOLERANCE);
@@ -76,7 +79,7 @@ export function classifyRemoteColor(rgb, palette, tolerance) {
     const d = Math.max(Math.abs(rgb.r - ref[0]), Math.abs(rgb.g - ref[1]), Math.abs(rgb.b - ref[2]));
     if (!best || d < best.distance) best = { label, distance: d };
   }
-  return { ...best, ok: best.distance <= tolerance };
+  return { ...best, ok: best !== null && best.distance <= tolerance };
 }
 
 /**
@@ -111,37 +114,40 @@ export function toneIsSilent(decoded, { rmsFloor = 0.01 } = {}) {
 }
 
 /** Sample the pinned counter band; classification stays Node-side. */
+/** @param {{ page: import("@playwright/test").Page }} peer @param {string} participantId */
 export async function decodeRemoteFrame(peer, participantId) {
   const bundleSrc = await decoderBundle();
   return peer.page.evaluate(
     async ({ participantId, bundleSrc }) => {
-      if (!window.__connvoDecoders) {
-        window.__connvoDecoders = new Function(
+      const w = /** @type {import("./probe.mjs").HarnessWindow} */ (window);
+      if (!w.__connvoDecoders) {
+        w.__connvoDecoders = /** @type {import("./probe.mjs").Decoders} */ (new Function(
           bundleSrc + "\nreturn { decodeBarcodeColor, decodeFrameCounter, computeFps, decodeToneHz };",
-        )();
+        )());
       }
-      const { decodeBarcodeColor, decodeFrameCounter } = window.__connvoDecoders;
+      const { decodeBarcodeColor, decodeFrameCounter } = w.__connvoDecoders;
       const tile = document.querySelector(
         `[data-testid="remote-media"][data-participant-id="${participantId}"]`,
       );
       const video = tile?.querySelector("video");
       if (!video || !video.videoWidth) return { present: false };
-      const w = video.videoWidth;
+      const width = video.videoWidth;
       const h = video.videoHeight;
       const canvas = document.createElement("canvas");
-      canvas.width = w;
+      canvas.width = width;
       canvas.height = h;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(video, 0, 0, w, h);
+      if (!ctx) throw new Error("2D canvas context unavailable for remote frame decoding");
+      ctx.drawImage(video, 0, 0, width, h);
       // Color region: everything above the barcode band (band pinned at
       // y=200..239 of the 320x240 fixture).
-      const colorRegion = ctx.getImageData(0, 0, w, Math.min(200, h));
-      const band = ctx.getImageData(0, 200, w, Math.min(40, h - 200));
+      const colorRegion = ctx.getImageData(0, 0, width, Math.min(200, h));
+      const band = ctx.getImageData(0, 200, width, Math.min(40, h - 200));
       return {
         present: true,
         color: decodeBarcodeColor(colorRegion),
         counter: decodeFrameCounter(band),
-        videoWidth: w,
+        videoWidth: width,
         videoHeight: h,
       };
     },
@@ -150,27 +156,29 @@ export async function decodeRemoteFrame(peer, participantId) {
 }
 
 /** Remote audio tone via the remote MediaStream audio track (an AnalyserNode tap). */
+/** @param {{ page: import("@playwright/test").Page }} peer @param {string} participantId @param {number} [durationMs] */
 export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
   const bundleSrc = await decoderBundle();
   return peer.page.evaluate(
     async ({ participantId, durationMs, bundleSrc }) => {
-      if (!window.__connvoDecoders) {
-        window.__connvoDecoders = new Function(
+      const w = /** @type {import("./probe.mjs").HarnessWindow} */ (window);
+      if (!w.__connvoDecoders) {
+        w.__connvoDecoders = /** @type {import("./probe.mjs").Decoders} */ (new Function(
           bundleSrc + "\nreturn { decodeBarcodeColor, decodeFrameCounter, computeFps, decodeToneHz };",
-        )();
+        )());
       }
-      const { decodeToneHz } = window.__connvoDecoders;
+      const { decodeToneHz } = w.__connvoDecoders;
 
       const tile = document.querySelector(
         `[data-testid="remote-media"][data-participant-id="${participantId}"]`,
       );
       const stream = tile?.querySelector("video")?.srcObject;
-      if (!stream) return null;
+      if (!(stream instanceof MediaStream)) return null;
       const audioTrack = stream.getAudioTracks()[0];
       if (!audioTrack || audioTrack.readyState !== "live") return null;
 
-      window.__harnessAnalysers = window.__harnessAnalysers || new Map();
-      let hook = window.__harnessAnalysers.get(participantId);
+      w.__harnessAnalysers = w.__harnessAnalysers || new Map();
+      let hook = w.__harnessAnalysers.get(participantId);
       if (!hook || hook.trackId !== audioTrack.id) {
         if (hook) {
           try {
@@ -179,14 +187,14 @@ export async function sampleRemoteTone(peer, participantId, durationMs = 700) {
             /* already closed */
           }
         }
-        const ACtx = window.AudioContext || window.webkitAudioContext;
+        const ACtx = window.AudioContext || w.webkitAudioContext;
         const actx = new ACtx();
         await actx.resume();
         const analyser = actx.createAnalyser();
         analyser.fftSize = 4096;
         actx.createMediaStreamSource(new MediaStream([audioTrack])).connect(analyser);
         hook = { actx, analyser, buf: new Float32Array(analyser.fftSize), trackId: audioTrack.id };
-        window.__harnessAnalysers.set(participantId, hook);
+        w.__harnessAnalysers.set(participantId, hook);
       }
       const { actx, analyser, buf } = hook;
       const chunks = [];
@@ -232,11 +240,11 @@ export async function measureFps(peer, participantId, ms = 5000) {
   const sampled = await peer.page.evaluate(
     /** @param {{ participantId: string, ms: number, bundleSrc: string }} arg */
     async ({ participantId, ms, bundleSrc }) => {
-      const w = /** @type {any} */ (window);
+      const w = /** @type {import("./probe.mjs").HarnessWindow} */ (window);
       if (!w.__connvoDecoders) {
-        w.__connvoDecoders = new Function(
+        w.__connvoDecoders = /** @type {import("./probe.mjs").Decoders} */ (new Function(
           bundleSrc + "\nreturn { decodeBarcodeColor, decodeFrameCounter, computeFps, decodeToneHz };",
-        )();
+        )());
       }
       const { decodeFrameCounter } = w.__connvoDecoders;
       const video = document
@@ -293,7 +301,7 @@ export async function measureFps(peer, participantId, ms = 5000) {
   }
   if (samples.length < 3) return { fps: 0, samples: samples.length, implausible: true, firstAdvanceAt };
   const { computeFps } = initDecodersInNode(bundleSrc);
-  const plausible = (v) => Number.isFinite(v) && v > 0 && v <= 60;
+  const plausible = (/** @type {number} */ v) => Number.isFinite(v) && v > 0 && v <= 60;
   let computed = computeFps(samples);
   let implausible = !plausible(computed);
   if (implausible) {
@@ -304,6 +312,7 @@ export async function measureFps(peer, participantId, ms = 5000) {
 }
 
 /** Median of plausible per-step rates (mod-4096 wrap aware). */
+/** @param {Array<{ t: number, counter: number }>} samples */
 export function robustFps(samples) {
   const rates = [];
   for (let i = 1; i < samples.length; i++) {
@@ -324,16 +333,19 @@ export function robustFps(samples) {
  * receiver through the wrapped pc and aggregates inbound-rtp + the best
  * candidate-pair RTT. Returns null-shaped zeros when nothing flows yet.
  */
+/** @param {{ page: import("@playwright/test").Page }} peer @param {string} [kind] @param {string | null} [participantId] */
 export async function readRtpStats(peer, kind = "video", participantId = null) {
   return peer.page.evaluate(
     async ({ kindName, participantId }) => {
-      const pcs = window.__wrappedPcs || [];
+      const w = /** @type {import("./probe.mjs").HarnessWindow} */ (window);
+      const pcs = w.__wrappedPcs || [];
       const tile = participantId
         ? document.querySelector(`[data-testid="remote-media"][data-participant-id="${participantId}"]`)
         : null;
       const tileStream = tile?.querySelector("video")?.srcObject ?? null;
-      const tileTrackIds = tileStream ? new Set([...tileStream.getTracks()].map((t) => t.id)) : null;
+      const tileTrackIds = tileStream instanceof MediaStream ? new Set([...tileStream.getTracks()].map((t) => t.id)) : null;
 
+      /** @type {{ packetsReceived: number, packetsLost: number, bytesReceived: number, rttMs: number | null, reports: number }} */
       const out = { packetsReceived: 0, packetsLost: 0, bytesReceived: 0, rttMs: null, reports: 0 };
       for (const pc of pcs) {
         let receivers;
@@ -372,6 +384,7 @@ export async function readRtpStats(peer, kind = "video", participantId = null) {
  * between consent checks); returns start/end packet counts and the mean of
  * non-null RTT readings. Used by H-15's getStats proof and H-07 recovery.
  */
+/** @param {{ page: import("@playwright/test").Page }} peer @param {string} kind @param {number} ms @param {{ stepMs?: number, participantId?: string | null }} [opts] */
 export async function collectRtpStatsWindow(peer, kind, ms, { stepMs = 500, participantId = null } = {}) {
   const start = await readRtpStats(peer, kind, participantId);
   const t0 = Date.now();
@@ -395,8 +408,13 @@ export async function collectRtpStatsWindow(peer, kind, ms, { stepMs = 500, part
 }
 
 /** Probe snapshot (connection/track lifecycle + getStatsCalls). */
+/** @param {{ page: import("@playwright/test").Page }} peer @returns {Promise<import("./probe.mjs").ProbeState>} */
 export async function probeState(peer) {
-  return peer.page.evaluate(() => JSON.parse(JSON.stringify(window.__callProbe)));
+  return peer.page.evaluate(() => {
+    const probe = (/** @type {import("./probe.mjs").HarnessWindow} */ (window)).__callProbe;
+    if (!probe) throw new Error("call probe missing: browser init script did not run");
+    return JSON.parse(JSON.stringify(probe));
+  });
 }
 
 /**

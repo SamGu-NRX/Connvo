@@ -128,7 +128,6 @@ export function usePreCallPrompts(
       await updateFeedbackMutation({
         promptId,
         feedback,
-        timestamp: Date.now(),
       });
     } catch (err) {
       console.error("Failed to submit prompt feedback:", err);

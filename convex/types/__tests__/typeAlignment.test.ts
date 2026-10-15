@@ -32,7 +32,7 @@ import {
   generateCIValidationReport,
   exploreValidatorStructure,
   type ValidatorTypeAlignment,
-} from "./typeValidationUtils";
+} from "./typeValidationUtils.helpers";
 import {
   toEpochMs,
   toDurationMs,

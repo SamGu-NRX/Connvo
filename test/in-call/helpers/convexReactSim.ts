@@ -44,7 +44,7 @@ interface AttemptedBatch {
  * loss), like the matrix harness's ECONNRESET fault.
  */
 export class ConvexReactSim {
-  private readonly entries = new Map<
+  readonly entries = new Map<
     string,
     {
       args: QueryArgs;
@@ -60,24 +60,7 @@ export class ConvexReactSim {
     private readonly face: SimFace,
   ) {}
 
-  useQuery(_query: unknown, args: QueryArgs): RawQueryResult | undefined {
-    const key = `${String(args.meetingId)}|${args.clientId}`;
-    let entry = this.entries.get(key);
-    if (!entry) {
-      entry = { args, value: undefined, listeners: new Set() };
-      this.entries.set(key, entry);
-    }
-    const captured = entry;
-    const [, bump] = useReducer((x: number) => x + 1, 0);
-    useEffect(() => {
-      captured.listeners.add(bump);
-      void this.refreshEntry(key);
-      return () => {
-        captured.listeners.delete(bump);
-      };
-    }, [key]);
-    return captured.value;
-  }
+  useQuery = useConvexReactSimQuery.bind(this);
 
   /**
    * convex/react's useMutation returns the same function on every render;
@@ -95,8 +78,8 @@ export class ConvexReactSim {
   /** Make the transport identity change on every render (see useMutation). */
   churn = false;
 
-  private connected = true;
-  private readonly connectionListeners = new Set<() => void>();
+  connected = true;
+  readonly connectionListeners = new Set<() => void>();
 
   /** Take the simulated socket down or bring it back. */
   setConnected(connected: boolean): void {
@@ -104,19 +87,7 @@ export class ConvexReactSim {
     this.connectionListeners.forEach((listener) => listener());
   }
 
-  useConvexConnectionState(): {
-    isWebSocketConnected: boolean;
-    hasEverConnected: boolean;
-  } {
-    const connected = useSyncExternalStore(
-      (listener) => {
-        this.connectionListeners.add(listener);
-        return () => this.connectionListeners.delete(listener);
-      },
-      () => this.connected,
-    );
-    return { isWebSocketConnected: connected, hasEverConnected: true };
-  }
+  useConvexConnectionState = useConvexReactSimConvexConnectionState.bind(this);
 
   private readonly mutate = async (
     batch: OutgoingBatch,
@@ -157,7 +128,7 @@ export class ConvexReactSim {
   };
 
   /** Re-runs the real query for one registered entry and notifies. */
-  private async refreshEntry(key: string): Promise<void> {
+  async refreshEntry(key: string): Promise<void> {
     const entry = this.entries.get(key);
     if (!entry) return;
     const raw = (await this.face.query(api.notes.queries.getMeetingNotes, {
@@ -174,4 +145,41 @@ export class ConvexReactSim {
       await this.refreshEntry(key);
     }
   }
+}
+
+function useConvexReactSimQuery(
+  this: ConvexReactSim,
+  _query: unknown,
+  args: QueryArgs,
+): RawQueryResult | undefined {
+  const key = `${String(args.meetingId)}|${args.clientId}`;
+  let entry = this.entries.get(key);
+  if (!entry) {
+    entry = { args, value: undefined, listeners: new Set() };
+    this.entries.set(key, entry);
+  }
+  const captured = entry;
+  const [, bump] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => {
+    captured.listeners.add(bump);
+    void this.refreshEntry(key);
+    return () => {
+      captured.listeners.delete(bump);
+    };
+  }, [key]);
+  return captured.value;
+}
+
+function useConvexReactSimConvexConnectionState(this: ConvexReactSim): {
+  isWebSocketConnected: boolean;
+  hasEverConnected: boolean;
+} {
+  const connected = useSyncExternalStore(
+    (listener) => {
+      this.connectionListeners.add(listener);
+      return () => this.connectionListeners.delete(listener);
+    },
+    () => this.connected,
+  );
+  return { isWebSocketConnected: connected, hasEverConnected: true };
 }

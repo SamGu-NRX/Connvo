@@ -24,12 +24,14 @@ export default defineConfig({
       {
         test: {
           name: "convex",
+          sequence: { groupOrder: 1 },
           include: [
             "convex/**/*.test.ts",
             "convex/**/*.spec.ts",
             "test/convex/**/*.test.ts",
             "test/convex/**/*.spec.ts",
           ],
+          exclude: ["convex/types/__tests__/**"],
           environment: "edge-runtime",
           setupFiles: ["./test/convex/setup.ts"],
           pool: "threads",
@@ -45,7 +47,20 @@ export default defineConfig({
       },
       {
         test: {
+          name: "types",
+          // These inspect validators and files; they do not execute Convex functions.
+          environment: "node",
+          include: ["convex/types/__tests__/**/*.test.ts"],
+          maxWorkers: 1,
+          sequence: { groupOrder: 1 },
+        },
+        resolve: commonResolve,
+      },
+      {
+        test: {
           name: "frontend",
+          maxWorkers: 1,
+          sequence: { groupOrder: 2 },
           include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
           environment: "jsdom",
         },
@@ -57,6 +72,8 @@ export default defineConfig({
       {
         test: {
           name: "in-call",
+          maxWorkers: 1,
+          sequence: { groupOrder: 3 },
           // Transform AuthKit so the mounted provider test can replace server actions.
           server: { deps: { inline: ["@workos-inc/authkit-nextjs"] } },
           include: ["test/in-call/**/*.test.{ts,tsx}"],
@@ -76,6 +93,7 @@ export default defineConfig({
       {
         test: {
           name: "notes",
+          sequence: { groupOrder: 4 },
           include: ["test/notes/**/*.test.{ts,tsx}"],
           environment: "jsdom",
           setupFiles: ["./test/notes/setup.ts"],
@@ -92,6 +110,8 @@ export default defineConfig({
       {
         test: {
           name: "eval",
+          maxWorkers: 1,
+          sequence: { groupOrder: 5 },
           include: [
             "tools/call-eval/**/*.test.ts",
             "tools/call-eval/**/*.test.mjs",

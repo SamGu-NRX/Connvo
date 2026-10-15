@@ -27,11 +27,24 @@ class FakePeer {
   offerConfigurations: RTCConfiguration[] = [];
   restartConfigurations: RTCConfiguration[] = [];
   stats = new Map<string, Record<string, unknown>>();
+  transceivers: Array<{
+    sender: { track: MediaStreamTrack | null };
+    mid: string | null;
+    stopped: boolean;
+  }> = [];
   constructor(public config: RTCConfiguration) {
     FakePeer.instances.push(this);
   }
   getConfiguration() {
     return this.config;
+  }
+  addTransceiver() {
+    const slot = { sender: { track: null }, mid: null, stopped: false };
+    this.transceivers.push(slot);
+    return slot;
+  }
+  getTransceivers() {
+    return this.transceivers;
   }
   setConfiguration(config: RTCConfiguration) {
     this.config = config;
@@ -47,6 +60,10 @@ class FakePeer {
   async setLocalDescription() {
     this.offerConfigurations.push(this.config);
     const type = this.remoteDescription?.type === "offer" ? "answer" : "offer";
+    if (type === "offer")
+      this.transceivers.forEach((slot, index) => {
+        slot.mid = String(index);
+      });
     this.localDescription = { toJSON: () => ({ type, sdp: "test-sdp" }) };
     this.signalingState = type === "answer" ? "stable" : "have-local-offer";
   }

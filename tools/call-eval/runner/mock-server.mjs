@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { attachRelay } from "./relay.mjs";
 
+/** @type {Record<string, string>} */
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -17,9 +18,10 @@ const MIME = {
   ".svg": "image/svg+xml",
 };
 
-export async function startMockServer({ root, port = 0, relay } = {}) {
+/** @param {{ root: string, port?: number, relay?: Parameters<typeof attachRelay>[1] }} opts */
+export async function startMockServer({ root, port = 0, relay }) {
   const server = http.createServer((req, res) => {
-    const url = new URL(req.url, "http://localhost");
+    const url = new URL(req.url ?? "/", "http://localhost");
     let file = path.join(root, path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, ""));
     if (url.pathname === "/" || !path.extname(file)) file = path.join(file, "index.html");
     fs.readFile(file, (err, data) => {
@@ -38,7 +40,11 @@ export async function startMockServer({ root, port = 0, relay } = {}) {
 
   const relayHandle = attachRelay(server, relay ?? {});
   const listenPort = await new Promise((resolve, reject) => {
-    server.listen(port, "127.0.0.1", () => resolve(server.address().port));
+    server.listen(port, "127.0.0.1", () => {
+      const address = server.address();
+      if (!address || typeof address === "string") return reject(new Error("mock server has no TCP address"));
+      resolve(address.port);
+    });
     server.on("error", reject);
   });
 

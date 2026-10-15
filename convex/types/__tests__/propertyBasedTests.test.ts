@@ -9,7 +9,7 @@
  */
 
 import { describe, test, expect } from "vitest";
-import { validateValidatorStructure } from "./typeValidationUtils";
+import { validateValidatorStructure } from "./typeValidationUtils.helpers";
 
 // Property-based testing utilities
 interface PropertyTestCase<T> {

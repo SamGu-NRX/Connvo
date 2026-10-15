@@ -18,7 +18,7 @@ import {
   type CIValidationReport,
   type TypeDriftCheck,
   type TypePerformanceMetrics,
-} from "./typeValidationUtils";
+} from "./typeValidationUtils.helpers";
 
 // Import all validator collections
 import { UserV, MeetingV, TranscriptV } from "../validators";
@@ -330,7 +330,7 @@ export class TypeSystemMonitor {
     // General recommendations
     if (recommendations.length === 0) {
       recommendations.push(
-        "Type system is healthy! Consider adding more comprehensive tests.",
+        "Consider adding more comprehensive tests; the type system checks passed.",
       );
     }
 

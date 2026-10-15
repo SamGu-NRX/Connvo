@@ -164,6 +164,7 @@ describe("OpenAPI shared examples", () => {
     await createTestInterest(t, "ai-ml", "AI / ML", "academic");
     await createTestInterest(t, "startups", "Startups", "personal");
 
+    // The documented fallback example has shared interests and fields, without experience or goals.
     const host = await createCompleteTestUser(
       t,
       {
@@ -174,8 +175,6 @@ describe("OpenAPI shared examples", () => {
       },
       {
         field: "Technology",
-        experience: "senior",
-        goals: "Share AI adoption playbooks for enterprise teams.",
       },
       ["ai-ml"],
     );
@@ -189,8 +188,6 @@ describe("OpenAPI shared examples", () => {
       },
       {
         field: "Product",
-        experience: "mid-level",
-        goals: "Learn how to embed ML insights into product roadmaps.",
       },
       ["ai-ml", "startups"],
     );

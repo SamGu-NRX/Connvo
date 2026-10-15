@@ -6,7 +6,7 @@
  * Usage:
  *   node tools/call-eval/scripts/run-eval.mjs \
  *     [--transport=mock | reference | reference-<variant>] \
- *     [--scenarios=all | H-01,H-02 | H-01..H-16] \
+ *     [--scenarios=all | H-01,H-02 | H-01..H-18] \
  *     [--seeds=1,2 | 1..20] \
  *     [--suite=H|P|all] \
  *     [--base-url=https://<origin>] \
@@ -81,6 +81,7 @@ if (args.includes("--list")) {
   process.exit(0);
 }
 
+/** @type {Record<string, string>} */
 const flags = {};
 for (const arg of args) {
   const m = arg.match(/^--([a-z-]+)(?:=(.*))?$/i);
@@ -90,12 +91,14 @@ for (const arg of args) {
 
 const suite = (flags.suite ?? "H").toUpperCase();
 const signaling = flags.signaling ?? "reference";
-if (!["reference", "convex"].includes(signaling)) throw new Error(`--signaling must be reference or convex (got "${flags.signaling}")`);
+const page = flags.page ?? "bench";
+if (page !== "bench" && page !== "real") throw new Error(`--page must be bench or real (got "${page}")`);
+if (signaling !== "reference" && signaling !== "convex") throw new Error(`--signaling must be reference or convex (got "${flags.signaling}")`);
 if (!["H", "P", "ALL"].includes(suite)) throw new Error(`--suite must be H, P or ALL (got "${flags.suite}")`);
 // Defaults (no --scenarios / "all" / ranges) select the WIRED suite of this
 // shard; explicitly NAMED scenarios run as requested — the escape hatch.
 const fullUniverse = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
-const wired = new Set(wiredScenarioIds(suite, { signaling }));
+const wired = new Set(wiredScenarioIds(suite, { signaling, page }));
 const rawScenarios = flags.scenarios;
 let scenarios;
 if (rawScenarios && !rawScenarios.includes("..") && rawScenarios !== "all") {
@@ -114,20 +117,20 @@ if (rawScenarios && !rawScenarios.includes("..") && rawScenarios !== "all") {
 } else {
   scenarios = [...wired];
 }
-const seeds = parseSeeds(flags.seeds);
+const seeds = parseSeeds(flags.seeds ?? "");
 const transports = (flags.transport ?? "mock").split(",").map((s) => s.trim()).filter(Boolean);
 const baseUrl = flags["base-url"] ?? null;
 
 console.log(`call-eval: transports=${transports.join(",")} scenarios=${scenarios.length} seeds=${seeds.length} baseUrl=${baseUrl ?? "(mock)"}`);
 // --page=real drives the real call page (/app/call/<id>) instead of the
 // bench; it needs next dev with NEXT_PUBLIC_CONNVO_REAL_CALL=1 as well.
-const page = flags.page ?? "bench";
-if (!["bench", "real"].includes(page)) throw new Error(`--page must be bench or real (got "${page}")`);
 if (page === "real" && !baseUrl) throw new Error("--page=real needs --base-url");
 if (signaling === "convex" && page !== "real") throw new Error("--signaling=convex needs --page=real");
-const { results, wallMs, resultsPath, summaryPath } = await runScenarios({ transports, scenarios, seeds, baseUrl, page, signaling, log: console.log });
-console.log(`results: ${resultsPath}`);
-console.log(`summary: ${summaryPath}`);
+const run = await runScenarios({ transports, scenarios, seeds, baseUrl, page, signaling, log: console.log });
+const { results, wallMs } = run;
+if (!("resultsPath" in run) || !("summaryPath" in run)) throw new Error("Harness completed without writing result files");
+console.log(`results: ${run.resultsPath}`);
+console.log(`summary: ${run.summaryPath}`);
 const failed = results.filter((r) => !r.pass);
 console.log(`done in ${(wallMs / 1000).toFixed(1)}s — ${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length ? 1 : 0);

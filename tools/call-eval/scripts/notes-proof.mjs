@@ -35,7 +35,7 @@ const EDITOR = '[data-testid="notes-editor"]';
 const STATUS = '[data-testid="notes-status"]';
 const CONVERGE_TIMEOUT_MS = 30_000;
 
-/** @param {string} id */
+/** @param {string} id @param {string} meetingId */
 async function openPeer(id, meetingId) {
   const peer = await launchPeer({
     fixtureVideo: path.join(EVAL_DIR, "fixtures", `peer-${id}.y4m`),
@@ -51,6 +51,7 @@ async function openPeer(id, meetingId) {
 }
 
 /** Join from the lobby and wait for the call to connect (notes are in-call). */
+/** @param {import("@playwright/test").Page} page */
 async function joinCall(page) {
   await page.locator('[data-testid="join-call"]:not([disabled])').click({ timeout: 60_000 });
   await page.waitForFunction(
@@ -80,15 +81,19 @@ async function typeAt(page, where, text) {
   await page.keyboard.type(text, { delay: 15 });
 }
 
+/** @param {import("@playwright/test").Page} page */
 const editorText = (page) => page.locator(EDITOR).inputValue();
+/** @param {import("@playwright/test").Page} page */
 const statusText = (page) => page.locator(STATUS).innerText();
 
+/** @param {string} haystack @param {string} needle */
 const count = (haystack, needle) => haystack.split(needle).length - 1;
 
 /**
  * Wait until both editors show the same text, both say Synced, and the stored
  * text matches; then check every phrase is there exactly once.
  */
+/** @param {string} meetingId @param {Awaited<ReturnType<typeof openPeer>>[]} peers @param {string[]} phrases @param {number} since */
 async function converge(meetingId, peers, phrases, since) {
   const deadline = Date.now() + CONVERGE_TIMEOUT_MS;
   let last = null;
@@ -110,6 +115,7 @@ async function converge(meetingId, peers, phrases, since) {
 }
 
 const SCENARIOS = {
+/** @param {string} meetingId @param {Awaited<ReturnType<typeof openPeer>>} a @param {Awaited<ReturnType<typeof openPeer>>} b */
   async converge(meetingId, a, b) {
     const phrases = ["Agenda: budget review. ", "Owner: Bob. ", "Decision: ship Friday. ", "Risk: vendor delay. "];
     const t0 = Date.now();
@@ -124,6 +130,7 @@ const SCENARIOS = {
     return { phrases, steps: ["A appends, B types at the start, at once, twice"], ...result };
   },
 
+/** @param {string} meetingId @param {Awaited<ReturnType<typeof openPeer>>} a @param {Awaited<ReturnType<typeof openPeer>>} b */
   async reload(meetingId, a, b) {
     const phrases = ["Before reload from A. ", "Meanwhile from B. "];
     const t0 = Date.now();
@@ -141,6 +148,7 @@ const SCENARIOS = {
     };
   },
 
+/** @param {string} meetingId @param {Awaited<ReturnType<typeof openPeer>>} a @param {Awaited<ReturnType<typeof openPeer>>} b */
   async drop(meetingId, a, b) {
     const phrases = ["Typed by A while offline. ", "Typed by B while A was away. "];
     const t0 = Date.now();
@@ -191,6 +199,6 @@ for (const name of scenarios) {
   }
   results.push(record);
   fs.writeFileSync(path.join(outDir, `${name}.json`), JSON.stringify(record, null, 2) + "\n");
-  console.log(`${record.pass ? "PASS" : "FAIL"} ${name}${record.convergeMs != null ? ` converged in ${record.convergeMs} ms` : ""}${record.error ? `: ${record.error}` : ""}`);
+  console.log(`${record.pass ? "PASS" : "FAIL"} ${name}${"convergeMs" in record && record.convergeMs != null ? ` converged in ${record.convergeMs} ms` : ""}${"error" in record ? `: ${record.error}` : ""}`);
 }
 process.exit(results.every((r) => r.pass) ? 0 : 1);

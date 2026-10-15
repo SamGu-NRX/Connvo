@@ -12,7 +12,7 @@
 import {
   generateCIValidationReport,
   type CIValidationReport,
-} from "./typeValidationUtils";
+} from "./typeValidationUtils.helpers";
 
 // Import all validator collections for validation
 import { UserV } from "../validators/user";
@@ -130,7 +130,7 @@ export async function validateConvexCodegen(): Promise<boolean> {
     const { execSync } = require("child_process");
 
     // Run Convex codegen
-    execSync("npx convex codegen", {
+    execSync("pnpm convex:codegen", {
       cwd: process.cwd(),
       stdio: "pipe",
     });

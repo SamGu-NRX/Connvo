@@ -244,6 +244,8 @@ describe("live call queue", () => {
     expect(records.notes).toMatchObject([
       { meetingId: aliceState.meetingId, content: "", version: 0 },
     ]);
+    expect(records.state[0].startedAt).toBeUndefined();
+    vi.setSystemTime(Date.now() + 2_000);
     const sessionId = "queue-alice-session";
     expect(
       await alice.auth.mutation(api.meetings.webrtc.mesh.joinCall, {
@@ -251,12 +253,30 @@ describe("live call queue", () => {
         sessionId,
       }),
     ).toEqual({ sessionId, participantId: "Alice" });
+    vi.setSystemTime(Date.now() + 2_000);
+    const startedAt = Date.now();
+    await bob.auth.mutation(api.meetings.webrtc.mesh.joinCall, {
+      meetingId: aliceState.meetingId,
+      sessionId: "queue-bob-session",
+    });
+    vi.setSystemTime(Date.now() + 3_000);
     await alice.auth.mutation(api.meetings.webrtc.mesh.leaveCall, {
       meetingId: aliceState.meetingId,
       sessionId,
     });
     expect(await alice.status()).toEqual({ state: "idle" });
     expect(await bob.status()).toEqual(aliceState);
+    await bob.auth.mutation(api.meetings.webrtc.mesh.leaveCall, {
+      meetingId: aliceState.meetingId,
+      sessionId: "queue-bob-session",
+    });
+    expect(await bob.status()).toEqual({ state: "idle" });
+    const completed = await t.run(async (ctx) => ({
+      meeting: await ctx.db.get(aliceState.meetingId),
+      state: await ctx.db.query("meetingState").withIndex("by_meeting", q => q.eq("meetingId", aliceState.meetingId)).unique(),
+    }));
+    expect(completed.meeting?.state).toBe("concluded");
+    expect(completed.state).toMatchObject({ startedAt, endedAt: startedAt + 3_000, active: false });
     await alice.join();
     expect(await alice.status()).toMatchObject({ state: "waiting" });
   });

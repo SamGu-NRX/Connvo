@@ -11,7 +11,9 @@ import { axe } from "jest-axe";
 import { getFunctionName, type FunctionReturnType } from "convex/server";
 import type { Id } from "@convex/_generated/dataModel";
 import { api } from "@convex/_generated/api";
-import { QueueView, type QueueViewProps } from "@/components/queue/QueueView";
+import { QueueLoading, QueueView, type QueueViewProps } from "@/components/queue/QueueView";
+import SmartConnectionPage from "@/app/app/smart-connection/page";
+import { renderToString } from "react-dom/server";
 import LiveMatchQueue from "@/components/queue/LiveMatchQueue";
 import {
   callQueueDestination,
@@ -28,9 +30,14 @@ const mock = vi.hoisted(() => ({
   time: vi.fn(),
   replace: vi.fn(),
   push: vi.fn(),
+  suspendSearch: false,
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mock.replace, push: mock.push }),
+  useSearchParams: () => {
+    if (mock.suspendSearch) throw new Promise(() => {});
+    return new URLSearchParams();
+  },
 }));
 vi.mock("convex/react", () => ({
   useConvexAuth: () => ({
@@ -49,6 +56,7 @@ vi.mock("convex/react", () => ({
 }));
 
 beforeEach(() => {
+  mock.suspendSearch = false;
   mock.status = undefined;
   mock.authenticated = true;
   mock.loading = false;
@@ -63,6 +71,20 @@ beforeEach(() => {
     );
   mock.replace.mockReset();
   mock.push.mockReset();
+});
+
+it("keeps the normal queue-loading geometry while search params suspend without joining", () => {
+  mock.suspendSearch = true;
+  const { container } = render(<SmartConnectionPage />);
+  expect(screen.getByRole("heading", { name: "Checking your queue…" })).toBeVisible();
+  expect(container.querySelector('[data-queue-state="loading"]')).not.toBeNull();
+  expect(mock.mutation).not.toHaveBeenCalled();
+  const noAction = () => {};
+  expect(renderToString(<QueueLoading />)).toBe(renderToString(
+    <QueueView title="Match queue" state={{ kind: "loading" }} pending={false}
+      onJoin={noAction} onLeave={noAction} onAccept={noAction}
+      onDecline={noAction} onRetry={noAction} />,
+  ));
 });
 afterEach(() => vi.useRealTimers());
 

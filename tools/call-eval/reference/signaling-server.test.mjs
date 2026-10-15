@@ -9,10 +9,10 @@
 // presence, offer/answer/ICE relay keyed by peer id, state broadcast, and the
 // fail-closed auth paths (bad signature, wrong issuer, expiry, outsider,
 // missing members file).
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { spawn } from "node:child_process";
 import { createSign, createPrivateKey, generateKeyPairSync } from "node:crypto";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -111,7 +111,7 @@ class WsClient {
 }
 
 function spawnServer(args) {
-  const child = spawn(process.execPath, [SERVER, ...args], { stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(process.execPath, [SERVER, ...args, "--test-ephemeral=1"], { stdio: ["ignore", "pipe", "pipe"] });
   return child;
 }
 
@@ -158,15 +158,19 @@ beforeAll(() => {
   writeFileSync(membersPath, JSON.stringify({ meetingId: MEETING, members: MEMBERS }));
 });
 
-afterAll(() => {
-  for (const child of servers) {
-    if (child.exitCode === null && child.signalCode === null) child.kill();
-  }
+afterEach(async () => {
+  await Promise.all(servers.splice(0).map(async (child) => {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    const exited = new Promise((resolve) => child.once("exit", resolve));
+    child.kill();
+    await exited;
+  }));
 });
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
-function spawnOnPort(port) {
+function spawnOnPort() {
   const child = spawnServer([
-    `--port=${port}`,
+    "--port=0",
     "--variant=reference",
     `--jwks-file=${jwksPath}`,
     `--members-file=${membersPath}`,
@@ -176,19 +180,30 @@ function spawnOnPort(port) {
 }
 
 describe("reference signaling server", () => {
-  it("prints exactly one JSON ready line and verifies membership on the happy path", async () => {
-    const child = spawnOnPort(9305);
-    const ready = await waitForReady(child);
-    expect(ready).toEqual({ ok: true, port: 9305, variant: "reference" });
+  it("rejects port zero without the explicit test-only ephemeral flag", async () => {
+    const child = spawn(process.execPath, [SERVER, "--port=0", "--variant=reference", "--bench=1"], { stdio: ["ignore", "pipe", "pipe"] });
+    servers.push(child);
+    let stderr = "";
+    child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
+    const code = await new Promise((resolve) => child.once("exit", resolve));
+    expect(code).toBe(1);
+    expect(JSON.parse(stderr).error).toBe("--port must be an integer in [9301..9310]");
+  });
 
-    const a = new WsClient("ws://127.0.0.1:9305");
+  it("prints exactly one JSON ready line and verifies membership on the happy path", async () => {
+    const child = spawnOnPort();
+    const ready = await waitForReady(child);
+    expect(ready.port).toBeGreaterThan(0);
+    expect(ready).toEqual({ ok: true, port: ready.port, variant: "reference" });
+
+    const a = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await a.opened;
     a.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a"), meetingId: MEETING });
     const welcomeA = await a.next();
     expect(welcomeA.type).toBe("welcome");
     expect(welcomeA.selfId).toBe("local-test-a");
 
-    const b = new WsClient("ws://127.0.0.1:9305");
+    const b = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await b.opened;
     b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
     const welcomeB = await b.next();
@@ -219,10 +234,10 @@ describe("reference signaling server", () => {
   }, 15000);
 
   it("relays offer/answer/ICE payloads keyed by peer id", async () => {
-    const child = spawnOnPort(9306);
-    await waitForReady(child);
-    const a = new WsClient("ws://127.0.0.1:9306");
-    const b = new WsClient("ws://127.0.0.1:9306");
+    const child = spawnOnPort();
+    const ready = await waitForReady(child);
+    const a = new WsClient(`ws://127.0.0.1:${ready.port}`);
+    const b = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await Promise.all([a.opened, b.opened]);
     a.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a"), meetingId: MEETING });
     b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
@@ -254,8 +269,8 @@ describe("reference signaling server", () => {
   }, 15000);
 
   it("fails closed: bad signature, wrong issuer, expiry, outsider, no meeting, pre-hello traffic", async () => {
-    const child = spawnOnPort(9307);
-    await waitForReady(child);
+    const child = spawnOnPort();
+    const ready = await waitForReady(child);
 
     const expectAuthError = async (client, messagePart, closeCode) => {
       const err = await client.nextOrFail();
@@ -271,44 +286,44 @@ describe("reference signaling server", () => {
     forged[1] = Buffer.from(
       JSON.stringify({ sub: "local-test-o", iss: ISSUER, exp: Math.floor(Date.now() / 1000) + 600 }),
     ).toString("base64url");
-    const sig = new WsClient("ws://127.0.0.1:9307");
+    const sig = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await sig.opened;
     sig.send({ type: "hello", token: forged.join("."), meetingId: MEETING });
     await expectAuthError(sig, "bad signature", 4004);
 
     // Untrusted issuer.
-    const iss = new WsClient("ws://127.0.0.1:9307");
+    const iss = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await iss.opened;
     iss.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a", { issuer: "https://evil.invalid" }), meetingId: MEETING });
     await expectAuthError(iss, "untrusted issuer", 4004);
 
     // Expired token.
-    const exp = new WsClient("ws://127.0.0.1:9307");
+    const exp = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await exp.opened;
     exp.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a", { atMinusNowS: 1200 }), meetingId: MEETING });
     await expectAuthError(exp, "token expired", 4004);
 
     // Valid token, subject not a participant of the meeting: the named
     // rejection H-14 renders in [data-testid="call-error"].
-    const out = new WsClient("ws://127.0.0.1:9307");
+    const out = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await out.opened;
     out.send({ type: "hello", token: tokenFor(privateJwk, "local-test-o"), meetingId: MEETING });
     await expectAuthError(out, "local-test-o is not a participant of meeting", 4006);
 
     // Unknown meeting id from a real member.
-    const mtg = new WsClient("ws://127.0.0.1:9307");
+    const mtg = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await mtg.opened;
     mtg.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a"), meetingId: "no-such-meeting" });
     await expectAuthError(mtg, "is not a participant of meeting no-such-meeting", 4006);
 
     // hello without a meeting id.
-    const nomeet = new WsClient("ws://127.0.0.1:9307");
+    const nomeet = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await nomeet.opened;
     nomeet.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a"), meetingId: "" });
     await expectAuthError(nomeet, "no meeting id", 4005);
 
     // Traffic before hello is refused.
-    const early = new WsClient("ws://127.0.0.1:9307");
+    const early = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await early.opened;
     early.send({ type: "signal", to: "local-test-a", data: {} });
     await early.closed;
@@ -319,7 +334,7 @@ describe("reference signaling server", () => {
 
   it("refuses to start without a members file (fail closed)", async () => {
     const child = spawnServer([
-      "--port=9308",
+      "--port=0",
       "--variant=reference",
       `--jwks-file=${jwksPath}`,
     ]);
@@ -336,16 +351,16 @@ describe("reference signaling server", () => {
     // H-10/H-11 evidence path (the mock relay's sessionEvents equivalent).
     // The old server never called recordDeparture, always broadcast reason
     // "disconnected", and exposed no events route — this test fails there.
-    const child = spawnOnPort(9309);
+    const child = spawnOnPort();
     const ready = await waitForReady(child);
     const base = `http://127.0.0.1:${ready.port}`;
 
-    const a = new WsClient("ws://127.0.0.1:9309");
+    const a = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await a.opened;
     a.send({ type: "hello", token: tokenFor(privateJwk, "local-test-a"), meetingId: MEETING });
     expect((await a.next())?.type).toBe("welcome");
 
-    const b = new WsClient("ws://127.0.0.1:9309");
+    const b = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await b.opened;
     b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
     expect((await b.next())?.type).toBe("welcome");
@@ -382,15 +397,15 @@ describe("reference signaling server", () => {
   }, 15000);
 
   it("terminates a participant's socket on POST /drop without a bye (reference killPeerSocket hook)", async () => {
-    const child = spawnOnPort(9302);
-    await waitForReady(child);
+    const child = spawnOnPort();
+    const ready = await waitForReady(child);
 
-    const b = new WsClient("ws://127.0.0.1:9302");
+    const b = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await b.opened;
     b.send({ type: "hello", token: tokenFor(privateJwk, "local-test-b"), meetingId: MEETING });
     expect((await b.next())?.type).toBe("welcome");
 
-    const res = await fetch("http://127.0.0.1:9302/drop?participant=local-test-b", { method: "POST" });
+    const res = await fetch(`http://127.0.0.1:${ready.port}/drop?participant=local-test-b`, { method: "POST" });
     expect(res.status).toBe(200);
 
     await b.closed;
@@ -401,14 +416,14 @@ describe("reference signaling server", () => {
     const deadline = Date.now() + 3000;
     let events = [];
     do {
-      events = (await (await fetch("http://127.0.0.1:9302/?events=1")).json()).sessionEvents ?? [];
+      events = (await (await fetch(`http://127.0.0.1:${ready.port}/?events=1`)).json()).sessionEvents ?? [];
       if (events.length > 0) break;
       await new Promise((r) => setTimeout(r, 200));
     } while (Date.now() < deadline);
     expect(events).toContainEqual(expect.objectContaining({ participant: "local-test-b", reason: "disconnected" }));
 
     // Unknown participants fail with a named 404.
-    const missing = await fetch("http://127.0.0.1:9302/drop?participant=nobody", { method: "POST" });
+    const missing = await fetch(`http://127.0.0.1:${ready.port}/drop?participant=nobody`, { method: "POST" });
     expect(missing.status).toBe(404);
 
     child.kill();
@@ -417,17 +432,17 @@ describe("reference signaling server", () => {
 
 describe("bench mode (--bench=1): self-sufficient minting", () => {
   it("starts with no JWKS or members file and mints the bench subjects over the same verify path", async () => {
-    const child = spawnServer(["--port=9307", "--variant=reference", "--bench=1"]);
+    const child = spawnServer(["--port=0", "--variant=reference", "--bench=1"]);
     servers.push(child);
     const ready = await waitForReady(child);
     // Bench mode is additive to the pinned ready line: mint announces the
     // local mint endpoint (the old line stayed byte-identical otherwise).
-    expect(ready).toEqual({ ok: true, port: 9307, variant: "reference", mint: true });
+    expect(ready).toEqual({ ok: true, port: ready.port, variant: "reference", mint: true });
 
     // The mint issues the bench subjects, and the subject IS the harness id:
     // rooms, welcome.selfId, event logs and scenario lookups all say A/B
     // (the old flow minted local-test-a while scenarios looked for A).
-    const res = await fetch("http://127.0.0.1:9307/mint", {
+    const res = await fetch(`http://127.0.0.1:${ready.port}/mint`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ user: "A" }),
@@ -437,7 +452,7 @@ describe("bench mode (--bench=1): self-sufficient minting", () => {
     expect(minted.subject).toBe("A");
     expect(typeof minted.token).toBe("string");
 
-    const a = new WsClient("ws://127.0.0.1:9307");
+    const a = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await a.opened;
     a.send({ type: "hello", token: minted.token, meetingId: "any-meeting" });
     const welcome = await a.next();
@@ -448,12 +463,12 @@ describe("bench mode (--bench=1): self-sufficient minting", () => {
   }, 15000);
 
   it("fails closed: unknown users cannot mint, foreign keys cannot hello, and non-bench servers have no mint", async () => {
-    const child = spawnServer(["--port=9308", "--variant=reference", "--bench=1"]);
+    const child = spawnServer(["--port=0", "--variant=reference", "--bench=1"]);
     servers.push(child);
-    await waitForReady(child);
+    const ready = await waitForReady(child);
 
     // Only the fixed bench subjects mint.
-    const stranger = await fetch("http://127.0.0.1:9308/mint", {
+    const stranger = await fetch(`http://127.0.0.1:${ready.port}/mint`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ user: "Q" }),
@@ -463,7 +478,7 @@ describe("bench mode (--bench=1): self-sufficient minting", () => {
     // A token signed with a foreign key (the test fixture's key, not the
     // server's in-process key) is a bad signature — bench mode still
     // verifies signatures, it just owns the key.
-    const forged = new WsClient("ws://127.0.0.1:9308");
+    const forged = new WsClient(`ws://127.0.0.1:${ready.port}`);
     await forged.opened;
     forged.send({ type: "hello", token: tokenFor(privateJwk, "A"), meetingId: "any-meeting" });
     const rejection = await forged.next();
@@ -474,9 +489,9 @@ describe("bench mode (--bench=1): self-sufficient minting", () => {
 
     // A non-bench server has no mint route: the backend flow stays the only
     // path to tokens there (H-14's machinery).
-    const plain = spawnOnPort(9309);
-    await waitForReady(plain);
-    const noMint = await fetch("http://127.0.0.1:9309/mint", {
+    const plain = spawnOnPort();
+    const plainReady = await waitForReady(plain);
+    const noMint = await fetch(`http://127.0.0.1:${plainReady.port}/mint`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ user: "A" }),

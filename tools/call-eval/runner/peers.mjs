@@ -8,6 +8,7 @@
 import { chromium } from "@playwright/test";
 import { probeInit, probeConfigInit } from "./probe.mjs";
 
+/** @param {string} videoFixture @param {string} audioFixture */
 const HEADLESS_SHELL_ARGS = (videoFixture, audioFixture) => [
   "--use-fake-device-for-media-stream",
   "--use-fake-ui-for-media-stream",
@@ -42,10 +43,11 @@ export function peerLaunchArgs({ fullChromium = false, fixtureVideo, fixtureAudi
  * @param {string} opts.fixtureVideo y4m for the fake camera
  * @param {string} opts.fixtureAudio wav for the fake mic
  * @param {string} opts.baseUrl mock or bench origin (context base URL)
- * @param {object|null} opts.rtcConfig relay-only override for H-07/H-15
- * @param {boolean} opts.fullChromium use the full build (H-06 needs real
+ * @param {RTCConfiguration|null} [opts.rtcConfig] relay-only override for H-07/H-15
+ * @param {boolean} [opts.fullChromium] use the full build (H-06 needs real
  *   permission flow; the headless shell cannot run it)
- * @param {string} opts.participant A|B|C|O
+ * @param {string} [opts.participant] A|B|C|O
+ * @param {{ width: number, height: number }} [opts.viewport]
  */
 export async function launchPeer({
   fixtureVideo,
@@ -55,7 +57,8 @@ export async function launchPeer({
   fullChromium = false,
   participant = "A",
   viewport = { width: 1280, height: 720 },
-} = {}) {
+}) {
+  /** @type {import("@playwright/test").LaunchOptions} */
   const launchOpts = {
     headless: true,
     args: peerLaunchArgs({ fullChromium, fixtureVideo, fixtureAudio }),
@@ -96,6 +99,7 @@ export async function launchPeer({
  * H-10: hard-kill a peer's tab through CDP (Playwright 1.64's Browser has no
  * process() accessor; Target.closeTarget is the reliable path).
  */
+/** @param {Awaited<ReturnType<typeof launchPeer>>} peer */
 export async function killPeerTab(peer) {
   const cdp = await peer.context.newCDPSession(peer.page);
   const info = await cdp.send("Target.getTargetInfo");

@@ -1,0 +1,20 @@
+[
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 1788,
+      "timeToFirstRemoteFrameMs": 1795,
+      "timeToFirstRemoteFrameMsReverse": 1797,
+      "fpsAtoB": 31.7,
+      "fpsBtoA": 30.5,
+      "colourMsAseesB": 1799,
+      "colourMsBseesA": 1800
+    },
+    "failure": null,
+    "ms": 12110
+  }
+]

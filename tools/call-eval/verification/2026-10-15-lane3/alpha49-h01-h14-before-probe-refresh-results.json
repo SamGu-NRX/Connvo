@@ -1,0 +1,234 @@
+[
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 1513,
+      "timeToFirstRemoteFrameMs": 1528,
+      "timeToFirstRemoteFrameMsReverse": 1531,
+      "fpsAtoB": 32.7,
+      "fpsBtoA": 32.1,
+      "colourMsAseesB": 1533,
+      "colourMsBseesA": 1535
+    },
+    "failure": null,
+    "ms": 11814
+  },
+  {
+    "scenario": "H-02",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
+    "measurements": {
+      "aHearsB": 656.8,
+      "bHearsA": 437.7
+    },
+    "failure": null,
+    "ms": 2743
+  },
+  {
+    "scenario": "H-03",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+    "measurements": {
+      "muteFlipMs": 185,
+      "silentAfterMs": 336,
+      "unmuteFlipMs": 179,
+      "restoredToneHz": 438.3
+    },
+    "failure": null,
+    "ms": 2834
+  },
+  {
+    "scenario": "H-04",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
+    "measurements": {
+      "offFlipMs": 205,
+      "resumedFps": 34.7
+    },
+    "failure": null,
+    "ms": 5986
+  },
+  {
+    "scenario": "H-05",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
+    "measurements": {
+      "fpsBefore": 33.8,
+      "fpsDuring": 30.2,
+      "fpsAfter": 33.3,
+      "phase": true,
+      "colorDistance": 1
+    },
+    "failure": null,
+    "ms": 7842
+  },
+  {
+    "scenario": "H-06",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "context without media permission shows an actionable error; granting and `retry-media` joins",
+    "measurements": {
+      "errorText": "Your browser is blocking the camera and microphone for this site.",
+      "phaseDenied": "idle",
+      "joinedAfterRetry": true,
+      "fpsBseesA": 31.1
+    },
+    "failure": null,
+    "ms": 5043
+  },
+  {
+    "scenario": "H-07",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": false,
+    "passCondition": "one peer offline 3 s, 10 s, 30 s: honest `reconnecting`, media resumes within 10 s of restore, no duplicate tiles",
+    "measurements": null,
+    "failure": {
+      "message": "A: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"transceivers\":[[{\"mid\":\"0\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"audio\",\"receiverKind\":\"audio\"},{\"mid\":\"1\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"video\",\"receiverKind\":\"video\"}]],\"candidates\":[{\"local\":[],\"remote\":[]}],\"configs\":[{\"policy\":\"relay\",\"servers\":[[\"stun:stun.cloudflare.com:3478\"]]}],\"probeConfig\":\"{\\\"iceServers\\\":[{\\\"urls\\\":\\\"turn:127.0.0.1:3479?transport=udp\\\",\\\"username\\\":\\\"[redacted]\\\",\\\"credential\\\":\\\"[redacted]\\\"}],\\\"iceTransportPolicy\\\":\\\"relay\\\"}\",\"freshGather\":{\"found\":[\"relay\",\"end\"],\"state\":\"complete\"},\"visibility\":\"visible\",\"log\":[\"1030 connect as A\",\"1121 welcome [B]\",\"1121 B build peer (local tracks: 2)\",\"1125 B negotiationneeded (stable)\",\"1149 B got offer in stable\",\"1150 B applied offer; now have-remote-offer\",\"1155 B gathering gathering\",\"1271 B gathering complete\",\"1271 B local candidate end\",\"7140 B got offer in stable\",\"7140 B applied offer; now have-remote-offer\",\"7142 B gathering gathering\",\"7271 B gathering complete\",\"7271 B local candidate end\",\"13136 B got offer in stable\",\"13136 B applied offer; now have-remote-offer\",\"13138 B gathering gathering\",\"13254 B gathering complete\",\"13254 B local candidate end\",\"19139 B got offer in stable\",\"19140 B applied offer; now have-remote-offer\",\"19141 B gathering gathering\",\"19255 B gathering complete\",\"19255 B local candidate end\",\"25238 B got offer in stable\",\"25239 B applied offer; now have-remote-offer\",\"25241 B gathering gathering\",\"25365 B gathering complete\",\"25365 B local candidate end\"]},{\"peer\":\"B\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"transceivers\":[[{\"mid\":\"0\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"audio\",\"receiverKind\":\"audio\"},{\"mid\":\"1\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"video\",\"receiverKind\":\"video\"}]],\"candidates\":[{\"local\":[],\"remote\":[]}],\"configs\":[{\"policy\":\"relay\",\"servers\":[[\"stun:stun.cloudflare.com:3478\"]]}],\"probeConfig\":\"{\\\"iceServers\\\":[{\\\"urls\\\":\\\"turn:127.0.0.1:3480?transport=udp\\\",\\\"username\\\":\\\"[redacted]\\\",\\\"credential\\\":\\\"[redacted]\\\"}],\\\"iceTransportPolicy\\\":\\\"relay\\\"}\",\"freshGather\":{\"found\":[\"relay\",\"end\"],\"state\":\"complete\"},\"visibility\":\"visible\",\"log\":[\"1258 A local candidate end\",\"7125 A negotiationneeded (stable)\",\"7126 A sent offer\",\"7127 A gathering gathering\",\"7182 A got answer in have-local-offer\",\"7183 A applied answer; now stable\",\"7240 A gathering complete\",\"7240 A local candidate end\",\"13125 A negotiationneeded (stable)\",\"13126 A sent offer\",\"13127 A gathering gathering\",\"13153 A got answer in have-local-offer\",\"13154 A applied answer; now stable\",\"13241 A gathering complete\",\"13241 A local candidate end\",\"19123 A negotiationneeded (stable)\",\"19124 A sent offer\",\"19125 A gathering gathering\",\"19157 A got answer in have-local-offer\",\"19158 A applied answer; now stable\",\"19242 A gathering complete\",\"19242 A local candidate end\",\"25124 A negotiationneeded (stable)\",\"25125 A sent offer\",\"25126 A gathering gathering\",\"25240 A gathering complete\",\"25240 A local candidate end\",\"25278 A got answer in have-local-offer\",\"25279 A applied answer; now stable\",\"31047 peer-left A\"]}]",
+      "stack": "ScenarioError: A: phase 'connected' not reached within 30000 ms | [{\"peer\":\"A\",\"phase\":\"joining\",\"error\":null,\"tiles\":[\"B\"],\"pcs\":[\"stable/new/new\"],\"transceivers\":[[{\"mid\":\"0\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"audio\",\"receiverKind\":\"audio\"},{\"mid\":\"1\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"video\",\"receiverKind\":\"video\"}]],\"candidates\":[{\"local\":[],\"remote\":[]}],\"configs\":[{\"policy\":\"relay\",\"servers\":[[\"stun:stun.cloudflare.com:3478\"]]}],\"probeConfig\":\"{\\\"iceServers\\\":[{\\\"urls\\\":\\\"turn:127.0.0.1:3479?transport=udp\\\",\\\"username\\\":\\\"[redacted]\\\",\\\"credential\\\":\\\"[redacted]\\\"}],\\\"iceTransportPolicy\\\":\\\"relay\\\"}\",\"freshGather\":{\"found\":[\"relay\",\"end\"],\"state\":\"complete\"},\"visibility\":\"visible\",\"log\":[\"1030 connect as A\",\"1121 welcome [B]\",\"1121 B build peer (local tracks: 2)\",\"1125 B negotiationneeded (stable)\",\"1149 B got offer in stable\",\"1150 B applied offer; now have-remote-offer\",\"1155 B gathering gathering\",\"1271 B gathering complete\",\"1271 B local candidate end\",\"7140 B got offer in stable\",\"7140 B applied offer; now have-remote-offer\",\"7142 B gathering gathering\",\"7271 B gathering complete\",\"7271 B local candidate end\",\"13136 B got offer in stable\",\"13136 B applied offer; now have-remote-offer\",\"13138 B gathering gathering\",\"13254 B gathering complete\",\"13254 B local candidate end\",\"19139 B got offer in stable\",\"19140 B applied offer; now have-remote-offer\",\"19141 B gathering gathering\",\"19255 B gathering complete\",\"19255 B local candidate end\",\"25238 B got offer in stable\",\"25239 B applied offer; now have-remote-offer\",\"25241 B gathering gathering\",\"25365 B gathering complete\",\"25365 B local candidate end\"]},{\"peer\":\"B\",\"phase\":\"connected\",\"error\":null,\"tiles\":[\"A\"],\"pcs\":[\"stable/new/new\"],\"transceivers\":[[{\"mid\":\"0\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"audio\",\"receiverKind\":\"audio\"},{\"mid\":\"1\",\"direction\":\"sendrecv\",\"currentDirection\":\"sendrecv\",\"senderKind\":\"video\",\"receiverKind\":\"video\"}]],\"candidates\":[{\"local\":[],\"remote\":[]}],\"configs\":[{\"policy\":\"relay\",\"servers\":[[\"stun:stun.cloudflare.com:3478\"]]}],\"probeConfig\":\"{\\\"iceServers\\\":[{\\\"urls\\\":\\\"turn:127.0.0.1:3480?transport=udp\\\",\\\"username\\\":\\\"[redacted]\\\",\\\"credential\\\":\\\"[redacted]\\\"}],\\\"iceTransportPolicy\\\":\\\"relay\\\"}\",\"freshGather\":{\"found\":[\"relay\",\"end\"],\"state\":\"complete\"},\"visibility\":\"visible\",\"log\":[\"1258 A local candidate end\",\"7125 A negotiationneeded (stable)\",\"7126 A sent offer\",\"7127 A gathering gathering\",\"7182 A got answer in have-local-offer\",\"7183 A applied answer; now stable\",\"7240 A gathering complete\",\"7240 A local candidate end\",\"13125 A negotiationneeded (stable)\",\"13126 A sent offer\",\"13127 A gathering gathering\",\"13153 A got answer in have-local-offer\",\"13154 A applied answer; now stable\",\"13241 A gathering complete\",\"13241 A local candidate end\",\"19123 A negotiationneeded (stable)\",\"19124 A sent offer\",\"19125 A gathering gathering\",\"19157 A got answer in have-local-offer\",\"19158 A applied answer; now stable\",\"19242 A gathering complete\",\"19242 A local candidate end\",\"25124 A negotiationneeded (stable)\",\"25125 A sent offer\",\"25126 A gathering gathering\",\"25240 A gathering complete\",\"25240 A local candidate end\",\"25278 A got answer in have-local-offer\",\"25279 A applied answer; now stable\",\"31047 peer-left A\"]}]\n    at joinPair (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/scenario-kit.mjs:152:11)\n    at async scenario_H_07 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/scenarios-h.mjs:308:28)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/run.mjs:108:26)"
+    },
+    "ms": 32808
+  },
+  {
+    "scenario": "H-08",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "recovers within 10 s",
+    "measurements": {
+      "recoveryMs": 1335,
+      "restartedPcs": 2,
+      "ufragsBefore": {
+        "A": [
+          "3N/C"
+        ],
+        "B": [
+          "BSnX"
+        ]
+      }
+    },
+    "failure": null,
+    "ms": 4106
+  },
+  {
+    "scenario": "H-09",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "reloaded peer rejoins; no ghost participant after 10 s",
+    "measurements": {
+      "ghostTiles": 1
+    },
+    "failure": null,
+    "ms": 13212
+  },
+  {
+    "scenario": "H-10",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "survivor shows the peer gone within 15 s",
+    "measurements": {
+      "closed": true,
+      "tileGone": true,
+      "sessionEvents": [
+        {
+          "participant": "A",
+          "reason": "expired",
+          "at": 1792051863925
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 11790
+  },
+  {
+    "scenario": "H-11",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "all local tracks `ended`, all wrapped connections `closed`, no `getStats` traffic afterwards, server session closed",
+    "measurements": {
+      "trackStates": [
+        "ended",
+        "ended"
+      ],
+      "getStatsCallsStable": true,
+      "getStatsCalls": 1,
+      "sessionEvents": [
+        {
+          "participant": "A",
+          "reason": "left",
+          "at": 1792051866312
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 4350
+  },
+  {
+    "scenario": "H-12",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "simultaneous join in both orders, 20 seeds: always connects",
+    "measurements": {
+      "order": "A-first",
+      "bothConnected": true,
+      "fps": {
+        "AseesB": 30.8,
+        "BseesA": 33.8
+      }
+    },
+    "failure": null,
+    "ms": 5851
+  },
+  {
+    "scenario": "H-13",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "five leave/rejoin cycles: live connection and track counts return to baseline",
+    "measurements": {
+      "baseline": {
+        "live": 1,
+        "tracks": 2
+      },
+      "final": {
+        "live": 1,
+        "tracks": 2
+      }
+    },
+    "failure": null,
+    "ms": 5777
+  },
+  {
+    "scenario": "H-14",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "a signed-in non-participant gets a named rejection and no media",
+    "measurements": {
+      "rejection": "Access denied. Check your link or ask the host to invite you.",
+      "phase": "failed",
+      "tiles": 0,
+      "tracksCreated": 0,
+      "liveConnections": 0
+    },
+    "failure": null,
+    "ms": 2205
+  }
+]

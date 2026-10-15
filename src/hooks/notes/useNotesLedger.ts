@@ -11,7 +11,7 @@
  * options argument is additive and optional.
  */
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSyncExternalStore } from "react";
 import type { Id } from "@convex/_generated/dataModel";
 import { NotesLedger } from "./notesLedger";
@@ -33,17 +33,18 @@ export function useNotesLedger(
 ): UseNotesLedgerResult {
   const transport = useNotesTransport();
   const { clientId, debounceMs, storage } = options;
+  const [generatedClientId] = useState(() =>
+    `c-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`,
+  );
   const ledger = useMemo(
     () =>
       new NotesLedger({
         meetingId,
-        clientId:
-          clientId ??
-          `c-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`,
+        clientId: clientId ?? generatedClientId,
         debounceMs,
         storage,
       }),
-    [meetingId, clientId, debounceMs, storage],
+    [meetingId, clientId, generatedClientId, debounceMs, storage],
   );
 
   useEffect(() => {

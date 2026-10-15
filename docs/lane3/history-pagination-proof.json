@@ -1,0 +1,22 @@
+{
+  "pass": true,
+  "fixture": "Scoped empty history pages with more results remaining",
+  "automaticRequests": 5,
+  "manualRequests": 1,
+  "audits": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "seriousOrCriticalViolations": 0
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "seriousOrCriticalViolations": 0
+    }
+  ]
+}

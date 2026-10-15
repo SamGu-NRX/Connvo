@@ -1,0 +1,17 @@
+{
+  "server": "next dev on localhost:3103",
+  "sourceCommit": "4c817f2682f25266358104cec5d181a3e4eac5eb",
+  "scope": "Local seeded meetings page before live-prompts merge; not a production measurement",
+  "url": "http://localhost:3103/app/meetings?as=A",
+  "scores": {
+    "performance": 0.6,
+    "accessibility": 1
+  },
+  "metrics": {
+    "firstContentfulPaint": 1056,
+    "largestContentfulPaint": 9032,
+    "totalBlockingTime": 253,
+    "cumulativeLayoutShift": 0.2151346600762071
+  },
+  "runtimeError": null
+}

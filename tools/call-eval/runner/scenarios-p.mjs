@@ -32,9 +32,9 @@ const VIEWPORTS = [
  * @param {Record<string, string>} [params]
  */
 async function openState(ctx, stateName, params = {}) {
-  /** @type {any} */
+  /** @type {Awaited<ReturnType<import("./peers.mjs").launchPeer>>} */
   let peer;
-  /** @type {any[]} */
+  /** @type {Awaited<ReturnType<import("./peers.mjs").launchPeer>>[]} */
   const others = [];
   if (stateName === "lobby") {
     peer = await ctx.launchPeer("A", { autojoin: "0", ...params });
@@ -65,6 +65,7 @@ async function openState(ctx, stateName, params = {}) {
   return { peer, others, close: () => Promise.allSettled([peer, ...others].map((/** @type {{ close: () => Promise<void> }} */ p) => p.close())) };
 }
 
+/** @param {{width: number, height: number}} viewport @param {string} label @returns {(page: import("@playwright/test").Page) => Promise<{scrollW: number, clientW: number, scrollH: number}>} */
 function assertLayoutIntact(viewport, label) {
   return (page) =>
     page.evaluate(() => ({
@@ -80,6 +81,7 @@ function assertLayoutIntact(viewport, label) {
 }
 
 /** P-01 — lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed */
+/** @param {import("./context.mjs").RunContext} ctx */
 export async function scenario_P_01(ctx) {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
   const shots = [];
@@ -101,6 +103,7 @@ export async function scenario_P_01(ctx) {
 }
 
 /** P-02 — axe shows no serious or critical violations in any state */
+/** @param {import("./context.mjs").RunContext} ctx */
 export async function scenario_P_02(ctx) {
   const { AxeBuilder } = await import("@axe-core/playwright");
   const allStates = [];
@@ -165,6 +168,7 @@ async function tabTo(peer, id) {
 }
 
 /** P-03 — every control is reachable and operable by keyboard, with visible focus */
+/** @param {import("./context.mjs").RunContext} ctx */
 export async function scenario_P_03(ctx) {
   /** @type {any[]} */
   const results = [];
@@ -253,7 +257,7 @@ export async function scenario_P_03(ctx) {
     await tabTo(denied, "retry-media");
     const indicator = await denied.page.evaluate(`(${focusIndicator})()`);
     if (!indicator.visible) throw new ScenarioError("P-03: retry-media has no visible focus indicator", indicator);
-    await denied.context.grantPermissions(["camera", "microphone"], { origin: ctx.url });
+    await denied.context.grantPermissions(["camera", "microphone"], { origin: ctx.url ?? undefined });
     await denied.page.keyboard.press("Enter");
     // The error clears before capture resolves, so a cleared error proves
     // nothing. The retry worked only when a live local capture track exists.
@@ -271,6 +275,7 @@ export async function scenario_P_03(ctx) {
 }
 
 /** P-04 — prefers-reduced-motion removes non-essential motion */
+/** @param {import("./context.mjs").RunContext} ctx */
 export async function scenario_P_04(ctx) {
   const opened = await openState(ctx, "connected");
   const peer = opened.peer;
@@ -336,6 +341,7 @@ export async function scenario_P_04(ctx) {
 }
 
 /** P-05 — long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact */
+/** @param {import("./context.mjs").RunContext} ctx */
 export async function scenario_P_05(ctx) {
   const longName = "LongDisplayNameParticipantFromInternationalStudies";
   const viewport = { width: 390, height: 844 };

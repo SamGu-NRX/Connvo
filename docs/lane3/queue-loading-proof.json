@@ -1,0 +1,44 @@
+{
+  "pass": true,
+  "fixture": "Suspended search consumer and query-loading view in local app shell",
+  "comparisons": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fallback": {
+        "x": 469,
+        "y": 93,
+        "width": 768,
+        "height": 574.578125
+      },
+      "query": {
+        "x": 469,
+        "y": 93,
+        "width": 768,
+        "height": 574.578125
+      },
+      "seriousOrCriticalViolations": 0
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fallback": {
+        "x": 25,
+        "y": 93,
+        "width": 340,
+        "height": 547.078125
+      },
+      "query": {
+        "x": 25,
+        "y": 93,
+        "width": 340,
+        "height": 547.078125
+      },
+      "seriousOrCriticalViolations": 0
+    }
+  ]
+}

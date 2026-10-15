@@ -19,6 +19,7 @@ const RUNNER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(RUNNER_DIR, "..", "fixtures");
 const MOCK_DIR = path.join(RUNNER_DIR, "mock");
 
+/** @type {Record<string, {video: string, audio: string}>} */
 const FIXTURES = {
   A: { video: "peer-A.y4m", audio: "peer-A.wav" },
   B: { video: "peer-B.y4m", audio: "peer-B.wav" },
@@ -161,6 +162,7 @@ export class RunContext {
   }
 
   /** Fresh meeting per scenario-seed for isolation. */
+  /** @param {string} name */
   newMeeting(name) {
     if (this.signalingMode === "convex") {
       // A real meeting row: the mesh API refuses unknown meetings.
@@ -187,6 +189,7 @@ export class RunContext {
    * Returns null unless enableRelay() was called — the wrapper then uses the
    * page's own configuration.
    */
+  /** @param {string} participant */
   async rtcConfigFor(participant) {
     if (!this._relayEnabled) return null;
     const cached = this._relayConfigCache.get(participant);
@@ -220,6 +223,7 @@ export class RunContext {
     }
   }
 
+  /** @param {string} participant */
   shaperFor(participant) {
     let shaper = this.shapers.get(participant);
     if (!shaper) {
@@ -235,6 +239,7 @@ export class RunContext {
     return shaper;
   }
 
+  /** @param {string} participant */
   fixturePaths(participant) {
     const f = FIXTURES[participant] ?? FIXTURES.A;
     return {
@@ -243,6 +248,7 @@ export class RunContext {
     };
   }
 
+  /** @param {string} participant */
   fixturesExist(participant) {
     const { video, audio } = this.fixturePaths(participant);
     return [video, audio].every((p) => fs.existsSync(p));
@@ -266,16 +272,15 @@ export class RunContext {
     const { launchPeer: launch } = await import("./peers.mjs");
     const query = new URLSearchParams({ as: participant, meeting: this.meetingId ?? "bench-meeting", ...params });
     if (this.signalUrl) query.set("signal", this.signalUrl); // additive param: the page's reference client reads it; the mock page ignores it
+    if (!this.url) throw new Error("RunContext must start before launching a peer");
     const peer = await launch({
       fixtureVideo: video,
       fixtureAudio: audio,
       baseUrl: this.url,
-      benchPath: this.benchPath,
       rtcConfig: config,
       participant,
       fullChromium,
     });
-    peer.__query = query;
     if (this.page === "real") {
       // H-05: the real page switches cameras from its device menu, so it
       // needs a second camera to pick.
@@ -358,6 +363,7 @@ export class RunContext {
   }
 
   // Fault hooks (mock relay only; integration mode reports absence).
+  /** @param {string} participant */
   killPeerSocket(participant) {
     if (this.signalingMode === "convex") return this._signalingCut(participant).cut();
     if (this.relay) return this.relay.killPeerSocket(participant);

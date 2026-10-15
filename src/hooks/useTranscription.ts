@@ -22,21 +22,11 @@ import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { useMemo } from "react";
 
-export interface TranscriptSegment {
-  _id: Id<"transcriptSegments">;
-  _creationTime: number;
-  meetingId: Id<"meetings">;
-  startMs: number;
-  endMs: number;
-  speakers: string[];
-  text: string;
-  topics: string[];
-  sentiment?: {
-    score: number;
-    label: "positive" | "negative" | "neutral";
-  };
-  createdAt: number;
-}
+import type { TranscriptSegment as StoredTranscriptSegment } from "@convex/types/entities/transcript";
+
+export type TranscriptSegment = Omit<StoredTranscriptSegment, "sentiment"> & {
+  sentiment?: { score: number; label: "positive" | "negative" | "neutral" };
+};
 
 export interface UseTranscriptionResult {
   segments: TranscriptSegment[];
@@ -88,10 +78,18 @@ export function useTranscription(
   const limit = options?.limit || 100;
 
   // Query transcript segments from backend
-  const segments = useQuery(
+  const storedSegments = useQuery(
     api.transcripts.queries.getTranscriptSegments,
     { meetingId, limit }
   );
+
+  const segments = useMemo(() => storedSegments?.map(segment => ({
+    ...segment,
+    sentiment: segment.sentiment === undefined ? undefined : {
+      score: segment.sentiment,
+      label: segment.sentiment > 0 ? "positive" as const : segment.sentiment < 0 ? "negative" as const : "neutral" as const,
+    },
+  })), [storedSegments]);
 
   // Calculate total duration
   const totalDuration = useMemo(() => {

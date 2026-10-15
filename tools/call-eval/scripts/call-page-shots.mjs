@@ -29,13 +29,14 @@ const VIEWPORTS = [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
 ];
-const fixture = (id) => {
+const fixture = (/** @type {string} */ id) => {
   const f = id; // A, B, C and D each have their own colour and tone
   return { video: path.join(EVAL_DIR, "fixtures", `peer-${f}.y4m`), audio: path.join(EVAL_DIR, "fixtures", `peer-${f}.wav`) };
 };
 
 /** @type {import('@playwright/test').Browser[]} */
 const browsers = [];
+/** @param {string} id */
 async function peer(id, { devices = true, deny = false, viewport = VIEWPORTS[0] } = {}) {
   const { video, audio } = fixture(id);
   // Always the fake devices: without them Chromium would open this Mac's
@@ -65,10 +66,13 @@ async function peer(id, { devices = true, deny = false, viewport = VIEWPORTS[0] 
   return { id, browser, context, page };
 }
 
+/** @param {Awaited<ReturnType<typeof peer>>} p */
 const phaseOf = (p) => p.page.evaluate(() => document.querySelector("[data-call-phase]")?.getAttribute("data-call-phase"));
+/** @param {Awaited<ReturnType<typeof peer>>} p @param {string} phase @param {number} [timeout] */
 async function waitPhase(p, phase, timeout = 30000) {
   await p.page.waitForFunction((want) => document.querySelector("[data-call-phase]")?.getAttribute("data-call-phase") === want, phase, { timeout });
 }
+/** @param {Awaited<ReturnType<typeof peer>>} p @param {string} name */
 async function shoot(p, name) {
   const shots = [];
   for (const viewport of VIEWPORTS) {
@@ -84,7 +88,9 @@ async function shoot(p, name) {
 }
 
 const signaling = await startReferenceSignaling({ transport: "p2p", log: console.log });
+/** @param {string} id @param {string} meeting */
 const url = (id, meeting) => `${baseUrl}/app/call/${meeting}?as=${id}&signal=${encodeURIComponent(signaling.signalUrl)}`;
+/** @param {Awaited<ReturnType<typeof peer>>} p */
 const join = async (p) => {
   await p.page.click('[data-testid="join-call"]');
 };
@@ -128,10 +134,11 @@ try {
   await waitPhase(b, "connected");
   await a.page.waitForFunction(() => {
     const v = document.querySelector('[data-testid="remote-media"] video');
-    return v && v.videoWidth > 0;
+    return v instanceof HTMLVideoElement && v.videoWidth > 0;
   }, null, { timeout: 20000 });
   await a.page.waitForTimeout(1500);
   await shoot(a, "two-people");
+  /** @type {Array<{who: string, i: number, file: string}>} */
   const strip = [];
   for (let i = 0; i < 6; i++) {
     for (const p of [a, b]) {
@@ -181,7 +188,7 @@ try {
   // Leave: the ended state, with the camera released.
   await a.page.click('[data-testid="leave-call-confirm"]');
   await waitPhase(a, "left", 5000);
-  const live = await a.page.evaluate(() => window.__callProbe?.tracks.live);
+  const live = await a.page.evaluate(() => (/** @type {import("../runner/probe.mjs").HarnessWindow} */ (window)).__callProbe?.tracks.live);
   console.log(`after leave: ${live} live capture tracks`);
   await shoot(a, "ended");
 

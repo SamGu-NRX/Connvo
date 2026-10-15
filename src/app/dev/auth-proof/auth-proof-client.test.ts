@@ -55,4 +55,24 @@ describe("auth-proof page contract", () => {
     );
     expect(querying).toContain("calling getMeeting…");
   });
+  it("shows a missing meeting error only after authentication", () => {
+    vi.mocked(useConvexAuth).mockReturnValue({
+      isLoading: true,
+      isAuthenticated: false,
+      isRefreshing: false,
+    });
+    expect(
+      renderToString(createElement(AuthProof, { as: "A", meetingId: "" })),
+    ).toContain("waiting for authentication…");
+    vi.mocked(useConvexAuth).mockReturnValue({
+      isLoading: false,
+      isAuthenticated: true,
+      isRefreshing: false,
+    });
+    const result = renderToString(
+      createElement(AuthProof, { as: "A", meetingId: "" }),
+    );
+    expect(result).toContain('data-proof="error"');
+    expect(result).toContain("missing ?meeting=&lt;id&gt;");
+  });
 });
