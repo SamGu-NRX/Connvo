@@ -1,0 +1,46 @@
+[
+  {
+    "scenario": "H-17",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy",
+    "measurements": {
+      "seed": 1,
+      "endpointCredentialsUsed": [
+        true,
+        true
+      ],
+      "relayStats": {
+        "allocations": 2,
+        "relayedToPeer": 574,
+        "relayedToClient": 574,
+        "live": 2
+      },
+      "paths": [
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ],
+        [
+          {
+            "local": "relay",
+            "remote": "relay"
+          }
+        ]
+      ],
+      "audioHz": [
+        656.7,
+        437.3
+      ],
+      "colours": [
+        "B",
+        "A"
+      ]
+    },
+    "failure": null,
+    "ms": 7205
+  }
+]
