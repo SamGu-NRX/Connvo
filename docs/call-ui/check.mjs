@@ -58,6 +58,13 @@ try {
   await page.getByTestId("self-preview").waitFor();
   await capture(page, "connected");
   await axe(page, "connected");
+  const focusPath = [];
+  for (let i=0; i<25; i++) {
+    await page.keyboard.press("Tab");
+    focusPath.push(await page.evaluate(() => ({tag:document.activeElement?.tagName,id:document.activeElement?.getAttribute('data-testid'),html:document.activeElement?.outerHTML.slice(0,250)})));
+  }
+  console.log("focus-path", JSON.stringify(focusPath));
+  await page.evaluate(() => document.activeElement?.blur());
   const mic = page.getByTestId("toggle-mic");
   await page.keyboard.press("m");
   assert.equal(await mic.getAttribute("aria-pressed"), "true");
@@ -87,7 +94,7 @@ try {
   await peerB.page.getByTestId("toggle-camera").click();
   await page.getByTestId("device-settings").click();
   await capture(page, "call-settings");
-  await axe(page, "call-settings", "[data-slot=popover-content]");
+  await axe(page, "call-settings", "[data-testid=call-settings-panel]");
   await page.keyboard.press("Escape");
   await page.getByTestId("leave-call").click();
   await capture(page, "leave-confirmation");
@@ -123,13 +130,10 @@ for (const [name, browserType] of Object.entries({ chromium, webkit })) {
   try {
     browser = await browserType.launch({ headless: true });
     const context = await browser.newContext({ viewport: viewports[1] });
-    await context.route(`${base}/__panel/**`, route => {
-      const pathname = new URL(route.request().url()).pathname;
-      const file = bundle.outputFiles.find(file => pathname.endsWith(file.path.split("/").pop()));
-      return route.fulfill(file ? { body: file.contents, contentType: pathname.endsWith(".css") ? "text/css" : "application/javascript" } : { contentType: "text/html", body: '<!doctype html><html lang="en"><title>Call notes panel fixture</title><link rel="stylesheet" href="/__panel/stdin.css"><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}button{font:inherit}</style><main id="root"></main><script src="/__panel/stdin.js"></script></html>' });
-    });
     const page = await context.newPage();
-    await page.goto(`${base}/__panel/`, { waitUntil: "domcontentloaded" });
+    const css = bundle.outputFiles.find(file => file.path.endsWith(".css")).text;
+    const js = bundle.outputFiles.find(file => file.path.endsWith(".js")).text;
+    await page.setContent(`<!doctype html><html lang="en"><title>Call notes panel fixture</title><style>${css}</style><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}button{font:inherit}</style><main id="root"></main><script>${js.replaceAll("</script", "<\\/script")}</script></html>`);
     await page.locator("#outside").click();
     await page.getByTestId("toggle-side-panel").click();
     await page.getByRole("textbox").fill("A thought that survives closing the sheet.");

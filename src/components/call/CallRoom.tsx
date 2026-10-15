@@ -165,6 +165,8 @@ export function CallRoom({
       onPhase: (next) => {
         if (previousPhase.current === "reconnecting" && next === "connected")
           toast.success("You're connected again", {
+            // Bottom toasts cover the phone's call controls.
+            position: "top-center",
             id: "call-connection",
             duration: 3000,
           });
@@ -173,6 +175,7 @@ export function CallRoom({
       },
       onRemoteJoined: ({ participantId }) => {
         toast(`${nameRef.current(participantId)} joined`, {
+          position: "top-center",
           id: `call-person-${participantId}`,
           duration: 2500,
         });
@@ -180,6 +183,7 @@ export function CallRoom({
       },
       onRemoteLeft: ({ participantId }) => {
         toast(`${nameRef.current(participantId)} left`, {
+          position: "top-center",
           id: `call-person-${participantId}`,
           duration: 2500,
         });
@@ -930,6 +934,7 @@ function ControlBar({
           </button>
         </PopoverTrigger>
         <PopoverContent
+          data-testid="call-settings-panel"
           side="top"
           className="grid max-h-[70dvh] w-80 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) gap-3 overflow-y-auto motion-reduce:animate-none"
         >

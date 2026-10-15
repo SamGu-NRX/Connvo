@@ -1,0 +1,49 @@
+[
+  {
+    "check": "webkit-lobby-axe",
+    "violations": []
+  },
+  {
+    "check": "webkit-call",
+    "stage": "remote video decoded",
+    "error": "page.waitForFunction: Timeout 30000ms exceeded."
+  },
+  {
+    "check": "playback-diagnostic",
+    "state": {
+      "phase": "connected",
+      "videos": [
+        {
+          "remote": false,
+          "readyState": 0,
+          "paused": false,
+          "width": 0,
+          "time": 0,
+          "tracks": [
+            {
+              "kind": "audio",
+              "ready": "live",
+              "enabled": true,
+              "muted": false
+            },
+            {
+              "kind": "video",
+              "ready": "live",
+              "enabled": true,
+              "muted": false
+            }
+          ]
+        }
+      ],
+      "text": "Connvo.In conversationYou're the only one here. Others appear when they join.Copy linkGuest A (you)Leave"
+    }
+  },
+  {
+    "check": "playback-diagnostic",
+    "state": {
+      "phase": "failed",
+      "videos": [],
+      "text": "Connvo.In conversationThe call droppedCould not connect to the other people in this call.Try againBack to Connvo"
+    }
+  }
+]

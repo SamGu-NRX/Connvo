@@ -1,0 +1,37 @@
+import fs from "node:fs/promises";
+import { chromium } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+import { RunContext } from "../../tools/call-eval/runner/context.mjs";
+import { chromiumLaunchArgs } from "../../tools/call-eval/runner/peers.mjs";
+const ctx = new RunContext({transport:"p2p",page:"real",baseUrl:"http://localhost:3105",warmUp:false});
+let browser;
+try {
+  await ctx.start();ctx.newMeeting("lane5-recording");
+  const fixture=ctx.fixturePaths("A");
+  browser=await chromium.launch({headless:true,args:chromiumLaunchArgs(fixture.video,fixture.audio)});
+  const context=await browser.newContext({viewport:{width:1440,height:900},recordVideo:{dir:"/tmp/connvo-lane5-recording",size:{width:1440,height:900}}});
+  const page=await context.newPage();
+  const video=page.video();
+  await ctx.openRealPage({page},"A",{});
+  await ctx.launchPeer("B");
+  await page.getByTestId("self-preview").waitFor();
+  const handle=page.getByRole("button",{name:/Move self view/});
+  const box=await handle.boundingBox();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  await page.mouse.down();await page.mouse.move(160,190,{steps:35});await page.mouse.up();
+  await page.evaluate(()=>Promise.all(document.getAnimations().map(a=>a.finished.catch(()=>{}))));
+  await page.getByTestId("toggle-mic").click();
+  await page.getByTestId("toggle-mic").click();
+  await handle.focus();await page.keyboard.press("ArrowRight");await page.keyboard.press("ArrowDown");
+  await page.getByTestId("device-settings").click();
+  await page.getByTestId("video-quality").selectOption("data-saver");
+  await page.keyboard.press("Escape");
+  await page.getByTestId("leave-call").click();
+  await page.getByTestId("leave-call-confirm").click();
+  await page.getByRole("heading",{name:"You left the call"}).waitFor();
+  await context.close();
+  const file=await video.path();
+  execFileSync("ffmpeg",["-y","-i",file,"-an","-c:v","libx264","-preset","fast","-crf","24","-pix_fmt","yuv420p","-movflags","+faststart","docs/call-ui/interaction.mp4"],{stdio:"ignore"});
+  await fs.rm(file);
+  console.log("Recorded docs/call-ui/interaction.mp4");
+} finally {await browser?.close();await ctx.stop();}
