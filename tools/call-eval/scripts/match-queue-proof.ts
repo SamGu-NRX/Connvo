@@ -128,6 +128,9 @@ async function person(id: "A" | "B") {
     recordVideo: { dir: path.join(runDir, id), size: VIEWPORTS[0] },
   });
   const cut = await installSignalingCut(context);
+  // tsx preserves function names with this helper inside serialized evaluate
+  // callbacks. It changes no application state or behavior.
+  await context.addInitScript("globalThis.__name = (value) => value;");
   const page = await context.newPage();
   page.setDefaultTimeout(20_000);
   page.on("pageerror", (error) =>

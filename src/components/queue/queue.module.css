@@ -17,7 +17,7 @@
 .header h1 {
   font-size: clamp(1.8rem, 3vw, 2.7rem);
   line-height: 1.12;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.015em;
   font-weight: 600;
   text-wrap: balance;
 }
@@ -37,7 +37,7 @@
   font-size: clamp(1.4rem, 2.5vw, 1.9rem);
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 .cardTop {
@@ -249,6 +249,10 @@
 :global(.dark) .secondary {
   color: #ecfdf5;
   border-color: #648f7e;
+}
+:global(.dark) .primary:focus-visible,
+:global(.dark) .secondary:focus-visible {
+  outline-color: #6ee7b7;
 }
 :global(.dark) .notice {
   color: #064e3b;

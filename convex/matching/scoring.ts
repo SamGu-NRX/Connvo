@@ -654,16 +654,20 @@ function calculateOrgConstraintMatch(
   // If no constraints, neutral score
   if (!constraint1 && !constraint2) return 1.0;
 
-  for (const constraint of [constraint1, constraint2]) {
-    if (constraint === "same_org" && (!orgId1 || !orgId2 || orgId1 !== orgId2))
-      return 0;
-    if (
-      constraint === "different_org" &&
-      (!orgId1 || !orgId2 || orgId1 === orgId2)
-    )
-      return 0;
+  // Same org constraint
+  if (constraint1 === constraint2) return 1.0;
+
+  // Actual org matching
+  if (orgId1 && orgId2) {
+    if (constraint1 === "same_org" || constraint2 === "same_org") {
+      return orgId1 === orgId2 ? 1.0 : 0.0;
+    }
+    if (constraint1 === "different_org" || constraint2 === "different_org") {
+      return orgId1 !== orgId2 ? 1.0 : 0.0;
+    }
   }
-  return 1;
+
+  return 0.5; // Neutral if constraints don't match
 }
 
 // Vector similarity calculation is now handled by centralized VectorUtils

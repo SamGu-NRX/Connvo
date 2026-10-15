@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, internal } from "@convex/_generated/api";
 import { createTestEnvironment } from "../../test/convex/helpers";
+import { readUserScoringData, scoreQueuePair } from "./scoring";
 
 type TestServer = ReturnType<typeof createTestEnvironment>;
 
@@ -59,6 +60,34 @@ describe("live call queue", () => {
     vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
   });
   afterEach(() => vi.useRealTimers());
+
+  it("does not claim complementary experience for an unrecognized profile level", async () => {
+    const t = createTestEnvironment();
+    const alice = await person(t, "Alice");
+    const bob = await person(t, "Bob");
+    const score = await t.run(async (ctx) => {
+      for (const [userId, experience] of [
+        [alice.id, "unspecified"],
+        [bob.id, "junior"],
+      ] as const) {
+        const profile = await ctx.db
+          .query("profiles")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .unique();
+        if (!profile) throw new Error("Missing fixture profile");
+        await ctx.db.patch(profile._id, { experience });
+      }
+      const a = await readUserScoringData(ctx, alice.id);
+      const b = await readUserScoringData(ctx, bob.id);
+      if (!a || !b) throw new Error("Missing fixture scoring data");
+      return scoreQueuePair(a, b);
+    });
+    expect(score.features.experienceGap).toBe(0.5);
+    expect(score.reasons).toEqual([
+      "Strong interest alignment",
+      "A shared language for your conversation",
+    ]);
+  });
 
   it("pairs two people with genuine reasons while a third keeps waiting", async () => {
     const t = createTestEnvironment();
