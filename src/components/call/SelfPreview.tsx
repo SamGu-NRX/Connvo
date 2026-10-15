@@ -1,7 +1,13 @@
 "use client";
 
 import { animate } from "motion";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { Move } from "lucide-react";
 import { Tile, type TileProps } from "./call-parts";
 import styles from "./call.module.css";
@@ -55,7 +61,9 @@ export function SelfPreview({
     );
   };
   const snapRef = useRef(snap);
-  snapRef.current = snap;
+  useLayoutEffect(() => {
+    snapRef.current = snap;
+  });
   useEffect(() => {
     const observer = new ResizeObserver(() => snapRef.current(false));
     if (stage.current) observer.observe(stage.current);

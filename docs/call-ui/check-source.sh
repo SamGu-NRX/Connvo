@@ -11,7 +11,7 @@ pnpm exec vitest run \
   test/in-call/conversation-prompts.test.tsx \
   test/in-call/callRoomIceLoading.test.tsx src/lib/call/ice-config.test.ts \
   src/lib/call/transports/p2p/p2p-ice.test.ts
-pnpm exec eslint --config docs/call-ui/eslint.config.mjs \
+pnpm exec eslint \
   src/components/call/CallRoom.tsx src/components/call/call-parts.tsx \
   src/components/call/CallSidePanel.tsx src/components/call/SelfPreview.tsx \
   src/hooks/useLocalMedia.ts src/hooks/useCallNetwork.ts src/components/call/NetworkStatus.tsx \
@@ -19,4 +19,4 @@ pnpm exec eslint --config docs/call-ui/eslint.config.mjs \
   src/lib/call/blur-policy.ts src/lib/call/network-quality.ts \
   src/lib/call/camera-quality.ts src/lib/call/public-assets.ts src/proxy.ts \
   'src/app/app/call/[id]/real-call.tsx' src/app/app/layout.tsx src/app/layout.tsx
-node docs/call-ui/type-baseline.mjs
+pnpm type-check

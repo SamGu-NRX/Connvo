@@ -84,7 +84,10 @@ const stopAll = (stream: MediaStream | null) =>
 
 /** Owns both physical capture and processed outgoing tracks; transport owns neither. */
 export function useLocalMedia(): LocalMedia {
+  // Capture callbacks use the ref immediately; rendering uses the published
+  // stream identity and version, without reading mutable refs during render.
   const streamRef = useRef<MediaStream | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const rawVideoRef = useRef<MediaStreamTrack | null>(null);
   const pipelineRef = useRef<BlurPipeline | null>(null);
   const blurAbortRef = useRef<AbortController | null>(null);
@@ -128,27 +131,30 @@ export function useLocalMedia(): LocalMedia {
     },
     [],
   );
-  const refreshDevices = useCallback(async () => {
-    if (!navigator.mediaDevices?.enumerateDevices) return;
-    try {
-      const all = await navigator.mediaDevices.enumerateDevices();
-      if (!mountedRef.current) return;
-      setDevices({
-        audioinput: all.filter(
-          (device) => device.kind === "audioinput" && device.deviceId,
-        ),
-        videoinput: all.filter(
-          (device) => device.kind === "videoinput" && device.deviceId,
-        ),
+  const refreshDevices = useCallback(() => {
+    if (!navigator.mediaDevices?.enumerateDevices) return Promise.resolve();
+    return navigator.mediaDevices
+      .enumerateDevices()
+      .then((all) => {
+        if (!mountedRef.current) return;
+        setDevices({
+          audioinput: all.filter(
+            (device) => device.kind === "audioinput" && device.deviceId,
+          ),
+          videoinput: all.filter(
+            (device) => device.kind === "videoinput" && device.deviceId,
+          ),
+        });
+      })
+      .catch(() => {
+        // Enumeration can reject during permission changes. Capture remains live;
+        // the next devicechange or successful capture refreshes the list.
       });
-    } catch {
-      // Enumeration can reject during permission changes. Capture remains live;
-      // the next devicechange or successful capture refreshes the list.
-    }
   }, []);
 
   const swapIn = useCallback((track: MediaStreamTrack) => {
     const stream = streamRef.current ?? new MediaStream();
+    if (streamRef.current !== stream) setStream(stream);
     streamRef.current = stream;
     for (const previous of stream.getTracks()) {
       if (previous === track || previous.kind !== track.kind) continue;
@@ -543,6 +549,7 @@ export function useLocalMedia(): LocalMedia {
 
   const release = useCallback(() => {
     disposeCapture();
+    setStream(null);
     statusRef.current = "idle";
     setStatus("idle");
     setBlurStatus("off");
@@ -565,7 +572,7 @@ export function useLocalMedia(): LocalMedia {
   return {
     status,
     problem,
-    stream: streamRef.current,
+    stream,
     version,
     micOn,
     cameraOn,
