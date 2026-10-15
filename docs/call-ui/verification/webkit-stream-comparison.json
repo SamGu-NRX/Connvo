@@ -1,0 +1,136 @@
+[
+  {
+    "check": "webkit-lobby-axe",
+    "violations": []
+  },
+  {
+    "check": "same-page-stream-comparison",
+    "state": {
+      "app": {
+        "readyState": 4,
+        "width": 640,
+        "time": 2.362474999999904,
+        "paused": false,
+        "muted": true,
+        "playsInline": true,
+        "hidden": "visible",
+        "display": "block"
+      },
+      "sameStreamOnPlainVideo": {
+        "readyState": 4,
+        "width": 640,
+        "time": 1.9587270000001809,
+        "paused": false,
+        "muted": true,
+        "playsInline": true,
+        "hidden": "visible",
+        "display": "block"
+      },
+      "appVideoTrackAlone": {
+        "readyState": 4,
+        "width": 640,
+        "time": 1.958690249999563,
+        "paused": false,
+        "muted": true,
+        "playsInline": true,
+        "hidden": "visible",
+        "display": "block"
+      },
+      "freshCaptureOnPlainVideo": {
+        "readyState": 4,
+        "width": 640,
+        "time": 1.9490389583334036,
+        "paused": false,
+        "muted": true,
+        "playsInline": true,
+        "hidden": "visible",
+        "display": "block"
+      }
+    }
+  },
+  {
+    "check": "webkit-call",
+    "stage": "remote video decoded",
+    "error": "page.waitForFunction: Timeout 30000ms exceeded."
+  },
+  {
+    "check": "playback-diagnostic",
+    "state": {
+      "capture": {
+        "stage": "override installed",
+        "adapterWrites": 1,
+        "replacement": "(constraints)=>{\n            return _getUserMedia(shimConstraints(constraints));\n        }",
+        "lastRequest": {
+          "audio": true,
+          "video": true
+        },
+        "trackKinds": [
+          "audio",
+          "video"
+        ],
+        "current": "async (options) => {\n      window.__captureDiagnostic.lastRequest = options;\n      const tracks = [];\n      if (options.audio) tracks.push(output.stream.getAudioTracks()[0].clone());\n      if (options.video) {\n        const canvas = document.createElement(\"canvas\");\n        canvas.width = 640;\n        canvas.height = 360;\n        const paint = canvas.getContext(\"2d\");\n        let frame = 0;\n        const draw = () => {\n          paint.fillStyle = id === \"A\" ? \"#bc3434\" : \"#157b58\";\n          paint.fillRect(0, 0, 640, 360);\n          paint.fillStyle = \"white\";\n          paint.fillRect((frame++ * 4) % 640, 80, 30, 200);\n        };\n        draw();\n        const track = canvas.captureStream(20).getVideoTracks()[0];\n        const timer = setInterval(() => {\n          if (track.readyState === \"ended\") clearInterval(timer);\n          else draw();\n        }, 50);\n        tracks.push(track);\n      }\n      window.__captureDiagnostic.trackKinds = tracks.map((track) => track.kind);\n      return new MediaStream(tracks);\n    }"
+      },
+      "phase": "connected",
+      "videos": [
+        {
+          "remote": false,
+          "readyState": 0,
+          "paused": false,
+          "width": 0,
+          "time": 0,
+          "tracks": [
+            {
+              "kind": "audio",
+              "ready": "live",
+              "enabled": true,
+              "muted": false
+            },
+            {
+              "kind": "video",
+              "ready": "live",
+              "enabled": true,
+              "muted": false
+            }
+          ]
+        }
+      ],
+      "text": "Connvo.In conversationChecking connection. Video quality adjusts to the connection.Guest B leftYou're the only one here. Others appear when they join.Copy linkGuest A (you)Leave"
+    }
+  },
+  {
+    "check": "playback-diagnostic",
+    "state": {
+      "capture": {
+        "stage": "override installed",
+        "adapterWrites": 1,
+        "replacement": "(constraints)=>{\n            return _getUserMedia(shimConstraints(constraints));\n        }",
+        "lastRequest": {
+          "audio": true,
+          "video": {
+            "width": {
+              "ideal": 1280
+            },
+            "height": {
+              "ideal": 720
+            },
+            "frameRate": {
+              "ideal": 24,
+              "max": 24
+            },
+            "facingMode": {
+              "ideal": "user"
+            }
+          }
+        },
+        "trackKinds": [
+          "audio",
+          "video"
+        ],
+        "current": "async (options) => {\n      window.__captureDiagnostic.lastRequest = options;\n      const tracks = [];\n      if (options.audio) tracks.push(output.stream.getAudioTracks()[0].clone());\n      if (options.video) {\n        const canvas = document.createElement(\"canvas\");\n        canvas.width = 640;\n        canvas.height = 360;\n        const paint = canvas.getContext(\"2d\");\n        let frame = 0;\n        const draw = () => {\n          paint.fillStyle = id === \"A\" ? \"#bc3434\" : \"#157b58\";\n          paint.fillRect(0, 0, 640, 360);\n          paint.fillStyle = \"white\";\n          paint.fillRect((frame++ * 4) % 640, 80, 30, 200);\n        };\n        draw();\n        const track = canvas.captureStream(20).getVideoTracks()[0];\n        const timer = setInterval(() => {\n          if (track.readyState === \"ended\") clearInterval(timer);\n          else draw();\n        }, 50);\n        tracks.push(track);\n      }\n      window.__captureDiagnostic.trackKinds = tracks.map((track) => track.kind);\n      return new MediaStream(tracks);\n    }"
+      },
+      "phase": "failed",
+      "videos": [],
+      "text": "Connvo.In conversationChecking connection. Video quality adjusts to the connection.The call droppedCan't reach the other person. A network may be blocking calls. Try again or switch networks.Try againBack to Connvo"
+    }
+  }
+]

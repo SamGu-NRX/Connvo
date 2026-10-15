@@ -92,7 +92,7 @@
   {
     "check": "real-shared-prompts-and-notes",
     "pass": true,
-    "meetingId": "mh7d9989tsp30x92bp4695h7ed8gak33",
+    "meetingId": "mh7b7hbj2vmyn1njnzvkd44p398gavyx",
     "signaling": "convex",
     "identities": [
       "A",
@@ -172,7 +172,7 @@
         "testId": "notes-editor"
       }
     ],
-    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 6s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
+    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 5s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
   },
   {
     "check": "capture-geometry",
@@ -245,7 +245,7 @@
         "testId": "notes-editor"
       }
     ],
-    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 6s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
+    "accessibility": "- dialog \"Conversation\":\n  - heading \"Conversation\" [level=2]\n  - button \"Close conversation\"\n  - region \"A little inspiration\":\n    - heading \"A little inspiration\" [level=2]\n    - text: Shared with your partner\n    - paragraph: Something to ask\n    - paragraph: Was there anything you were hoping we'd get to talk about today?\n    - paragraph: Marked as used. Saved to your recap.\n    - button \"Used ✓\" [disabled]\n    - button \"Another one\" [disabled]\n    - paragraph: Another idea in 5s.\n    - paragraph: Automatic prompts are paused for both of you.\n    - button \"Resume automatic prompts\"\n  - text: Shared meeting notes\n  - status: Synced\n  - textbox \"Shared meeting notes\":\n    - /placeholder: Start taking shared notes…\n    - text: A shared thought from our conversation. Let's follow up next week.\n  - paragraph: 11 words · 66 characters\n  - paragraph: Version 1"
   },
   {
     "check": "capture-geometry",
@@ -363,5 +363,29 @@
         "left": 0
       }
     }
+  },
+  {
+    "check": "axe-real-meeting-ended",
+    "size": {
+      "width": 1440,
+      "height": 900
+    },
+    "violations": []
+  },
+  {
+    "check": "axe-real-meeting-ended",
+    "size": {
+      "width": 390,
+      "height": 844
+    },
+    "violations": []
+  },
+  {
+    "check": "axe-real-meeting-ended",
+    "size": {
+      "width": 844,
+      "height": 390
+    },
+    "violations": []
   }
 ]
