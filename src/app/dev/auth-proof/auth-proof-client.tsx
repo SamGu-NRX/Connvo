@@ -34,10 +34,16 @@ export function ProofError({ message }: { message: string }): ReactElement {
   return <div data-testid="call-error">{`ERROR: ${message}`}</div>;
 }
 
-export default function AuthProof({ as, meetingId }: { as: string; meetingId: string }) {
+export default function AuthProof({
+  as,
+  meetingId,
+}: {
+  as: string;
+  meetingId: string;
+}) {
   const convex = useConvex();
   const { isAuthenticated } = useConvexAuth();
-  const [state, setState] = useState<ProofState>({ kind: "pending" });
+  const [queryState, setState] = useState<ProofState>({ kind: "pending" });
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -46,10 +52,7 @@ export default function AuthProof({ as, meetingId }: { as: string; meetingId: st
     // stuck — the query never retried. isAuthenticated flips once the
     // adapter's token lands.
     if (!isAuthenticated) return;
-    if (!meetingId) {
-      setState({ kind: "error", message: "missing ?meeting=<id>" });
-      return;
-    }
+    if (!meetingId) return;
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
     convex
@@ -82,6 +85,11 @@ export default function AuthProof({ as, meetingId }: { as: string; meetingId: st
       if (retryTimer) clearTimeout(retryTimer);
     };
   }, [convex, isAuthenticated, meetingId, attempt]);
+
+  const state: ProofState =
+    isAuthenticated && !meetingId
+      ? { kind: "error", message: "missing ?meeting=<id>" }
+      : queryState;
 
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", padding: 24 }}>

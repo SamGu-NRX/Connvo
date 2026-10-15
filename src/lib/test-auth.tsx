@@ -54,7 +54,10 @@ export interface CachedToken {
 // token to B's mount.
 const tokenCache = new Map<string, CachedToken>();
 
-export function cacheTestAuthToken(userParam: string, cached: CachedToken): void {
+export function cacheTestAuthToken(
+  userParam: string,
+  cached: CachedToken,
+): void {
   tokenCache.set(userParam, cached);
 }
 
@@ -149,14 +152,12 @@ export function useTestAuthState(userParam: string): UseTestAuthResult {
   const getAccessToken = useCallback(async (): Promise<string | null> => {
     assertTestAuthAllowed();
     const cached = readFreshCache(userParam);
-    if (cached) {
-      publish(cached.user);
-      return cached.token;
-    }
-    const fetched = await fetchTestToken(userParam);
-    cacheTestAuthToken(userParam, fetched);
-    publish(fetched.user);
-    return fetched.token;
+    const token = cached ? Promise.resolve(cached) : fetchTestToken(userParam);
+    return token.then((resolved) => {
+      cacheTestAuthToken(userParam, resolved);
+      publish(resolved.user);
+      return resolved.token;
+    });
   }, [userParam, publish]);
 
   useEffect(() => {
