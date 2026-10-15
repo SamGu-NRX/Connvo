@@ -1,9 +1,16 @@
 import React from "react";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  cleanup,
+  act,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { axe } from "jest-axe";
 import {
   PromptPanel,
+  ConversationPrompts,
   type PromptViewState,
 } from "@/components/call/ConversationPrompts";
 import type { Id } from "@convex/_generated/dataModel";
@@ -104,7 +111,7 @@ describe("conversation prompts panel", () => {
     rerender(<PromptPanel {...props} state={{ ...state, autoPaused: true }} />);
     expect(
       screen.getByRole("button", { name: "Resume automatic prompts" }),
-    ).toHaveAttribute("aria-pressed", "true");
+    ).toBeEnabled();
   });
   it("stops controls at the cap and after the call", () => {
     const { rerender } = render(
@@ -113,7 +120,7 @@ describe("conversation prompts panel", () => {
     expect(screen.getByRole("button", { name: "Another one" })).toBeDisabled();
     expect(
       screen.getByText(
-        "You've reached the last prompt for this call. Enjoy the conversation.",
+        "You've reached the prompt limit for this call. Enjoy the conversation.",
       ),
     ).toBeInTheDocument();
     rerender(<PromptPanel {...props} state={{ ...state, active: false }} />);
@@ -121,8 +128,86 @@ describe("conversation prompts panel", () => {
       screen.getByText("This call has ended. Your prompts are saved."),
     ).toBeInTheDocument();
   });
+  it("offers an honest empty state when paused or ended", () => {
+    const { rerender } = render(
+      <PromptPanel
+        {...props}
+        state={{ ...state, prompt: null, autoPaused: true }}
+      />,
+    );
+    expect(
+      screen.getByText("Ready for an idea? Get one whenever you like."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Get an idea" })).toBeEnabled();
+    rerender(
+      <PromptPanel
+        {...props}
+        state={{ ...state, prompt: null, active: false }}
+      />,
+    );
+    expect(
+      screen.getByText("No prompts were shown during this call."),
+    ).toBeInTheDocument();
+  });
   it("has no axe violations", async () => {
     const { container } = render(<PromptPanel {...props} />);
     expect((await axe(container)).violations).toEqual([]);
+  });
+});
+
+const connected = vi.hoisted(() => ({
+  query: vi.fn(),
+  pick: vi.fn(),
+  mutate: vi.fn(),
+}));
+vi.mock("convex/react", () => ({
+  useQuery: () => connected.query(),
+  useAction: () => connected.pick,
+  useMutation: () => connected.mutate,
+}));
+
+describe("automatic prompt recovery", () => {
+  it("resumes automatic picking after a failed request and successful pause control", async () => {
+    vi.useFakeTimers();
+    connected.query.mockReturnValue({ ...state, nextAutoAt: 0 });
+    connected.pick
+      .mockReset()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue({ status: "shown" });
+    connected.mutate.mockReset().mockResolvedValue(null);
+    try {
+      await act(async () => {
+        render(
+          <ConversationPrompts
+            meetingId={"meeting-test" as Id<"meetings">}
+            inCall
+          />,
+        );
+      });
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Couldn't update the prompt",
+      );
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Pause automatic prompts" }),
+        );
+      });
+      expect(connected.mutate).toHaveBeenCalledWith({
+        meetingId: "meeting-test",
+        paused: true,
+      });
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(16_000);
+      });
+      expect(connected.pick).toHaveBeenCalledTimes(2);
+      expect(connected.pick).toHaveBeenLastCalledWith({
+        meetingId: "meeting-test",
+        automatic: true,
+      });
+    } finally {
+      cleanup();
+      vi.useRealTimers();
+    }
   });
 });

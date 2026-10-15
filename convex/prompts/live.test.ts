@@ -235,6 +235,13 @@ describe("shared live prompts", () => {
         meetingId: f.meetingId,
         automatic: true,
       }),
+    ).toEqual({ status: "idle_wait" });
+    now += 75_000;
+    expect(
+      await f.b.action(api.prompts.live.pick, {
+        meetingId: f.meetingId,
+        automatic: true,
+      }),
     ).toEqual({ status: "shown" });
     expect(
       await f.a.mutation(internal.prompts.live.publish, {
@@ -244,6 +251,61 @@ describe("shared live prompts", () => {
         probability: 0,
       }),
     ).toBe(false);
+  });
+  it("counts discarded first picks against the automatic rate and request budget", async () => {
+    const f = await fixture();
+    let now = Date.now();
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    for (let i = 0; i < 40; i++) {
+      expect(
+        (
+          await f.a.mutation(internal.prompts.live.reserve, {
+            meetingId: f.meetingId,
+            automatic: true,
+            reservationId: `discard-${i}`,
+          })
+        ).status,
+      ).toBe("reserved");
+      await f.b.mutation(api.prompts.live.pauseAuto, {
+        meetingId: f.meetingId,
+        paused: true,
+      });
+      expect(
+        await f.a.mutation(internal.prompts.live.publish, {
+          meetingId: f.meetingId,
+          reservationId: `discard-${i}`,
+          bankId: "opener-small-highlight",
+          probability: 0,
+        }),
+      ).toBe(false);
+      await f.b.mutation(api.prompts.live.pauseAuto, {
+        meetingId: f.meetingId,
+        paused: false,
+      });
+      const view = await f.b.query(api.prompts.live.current, {
+        meetingId: f.meetingId,
+      });
+      expect(view.nextAutoAt).toBe(now + 90_000);
+      expect(
+        (
+          await f.b.action(api.prompts.live.pick, {
+            meetingId: f.meetingId,
+            automatic: true,
+          })
+        ).status,
+      ).toBe(i === 39 ? "exhausted" : "idle_wait");
+      now += 90_001;
+    }
+    expect(
+      await f.a.action(api.prompts.live.pick, {
+        meetingId: f.meetingId,
+        automatic: false,
+      }),
+    ).toEqual({ status: "exhausted" });
+    expect(
+      (await f.a.query(api.prompts.live.current, { meetingId: f.meetingId }))
+        .exhausted,
+    ).toBe(true);
   });
   it("never starts or publishes after the meeting ends", async () => {
     const f = await fixture();

@@ -24,10 +24,26 @@ const normalize = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+// The default profile catalog uses industry keys (interests/queries.ts), while
+// the bank groups questions by topic. Keep that translation explicit.
+const INTEREST_TOPICS: Record<string, readonly string[]> = {
+  "software engineering": ["technology"],
+  "data science": ["technology", "science"],
+  "ai ml": ["technology", "science"],
+  "product management": ["technology", "design"],
+  startups: ["entrepreneurship"],
+};
+
 export function candidatesFor(context: PromptContext): BankPrompt[] {
   const stage = stageFor(context.elapsedSeconds, context.durationSeconds);
   const interests = context.participants.map(
-    (p) => new Set(p.interests.map(normalize)),
+    (p) =>
+      new Set(
+        p.interests.flatMap((interest) => {
+          const key = normalize(interest);
+          return [key, ...(INTEREST_TOPICS[key] ?? [])];
+        }),
+      ),
   );
   const score = (prompt: BankPrompt) =>
     prompt.tags.reduce((sum, tag) => {

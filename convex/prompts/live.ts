@@ -59,11 +59,15 @@ export const current = query({
           }
         : null,
       active: meeting?.state === "active",
-      exhausted: (session?.shown.length ?? 0) >= SESSION_CAP,
+      exhausted:
+        (session?.requestCount ?? session?.shown.length ?? 0) >= SESSION_CAP,
       autoPaused: session?.autoPaused ?? false,
-      nextAutoAt: session?.currentPromptId
-        ? Math.max(session.lastPickAt, notes?.updatedAt ?? 0) + AUTO_MS
-        : 0,
+      nextAutoAt: Math.max(
+        session?.lastAutoRequestAt ? session.lastAutoRequestAt + AUTO_MS : 0,
+        session?.currentPromptId
+          ? Math.max(session.lastPickAt, notes?.updatedAt ?? 0) + AUTO_MS
+          : 0,
+      ),
       nextManualAt: Math.max(
         session ? session.lastPickAt + MANUAL_GAP_MS : 0,
         windowRelease,
@@ -89,13 +93,20 @@ export const reserve = internalMutation({
     ]);
     if (session?.reservation && now < session.reservation.at + LEASE_MS)
       return { status: "pending" } as const;
-    if ((session?.shown.length ?? 0) >= SESSION_CAP)
+    if ((session?.requestCount ?? session?.shown.length ?? 0) >= SESSION_CAP)
       return { status: "exhausted" } as const;
     const manualRequests = (session?.manualRequests ?? []).filter(
       (at) => now - at < MANUAL_WINDOW_MS,
     );
     if (automatic) {
       if (session?.autoPaused) return { status: "paused" } as const;
+      // Charge attempts before external work: discarded results and crashed
+      // actions must not bypass the 90-second limit or the per-call budget.
+      if (
+        session?.lastAutoRequestAt &&
+        now < session.lastAutoRequestAt + AUTO_MS
+      )
+        return { status: "idle_wait" } as const;
       if (
         session?.currentPromptId &&
         now < Math.max(session.lastPickAt, notes?.updatedAt ?? 0) + AUTO_MS
@@ -116,6 +127,8 @@ export const reserve = internalMutation({
     if (session)
       await ctx.db.patch(session._id, {
         reservation,
+        requestCount: (session.requestCount ?? session.shown.length) + 1,
+        lastAutoRequestAt: automatic ? now : session.lastAutoRequestAt,
         manualRequests: automatic ? manualRequests : [...manualRequests, now],
       });
     else
@@ -123,6 +136,8 @@ export const reserve = internalMutation({
         meetingId,
         shown: [],
         lastPickAt: 0,
+        requestCount: 1,
+        ...(automatic ? { lastAutoRequestAt: now } : {}),
         manualRequests: automatic ? [] : [now],
         autoPaused: false,
         reservation,

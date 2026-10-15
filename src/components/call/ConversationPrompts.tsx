@@ -90,7 +90,16 @@ function ConnectedPrompts({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, now, inCall, error]);
 
-  async function useCurrent() {
+  async function toggleAuto() {
+    try {
+      await pause({ meetingId, paused: !state?.autoPaused });
+      setError(null);
+    } catch {
+      setError("Couldn't change automatic prompts. Try again.");
+    }
+  }
+
+  async function markCurrentUsed() {
     if (!state?.prompt) return;
     setError(null);
     try {
@@ -108,12 +117,8 @@ function ConnectedPrompts({
       busy={busy}
       error={error}
       onAnother={() => void request(false)}
-      onUsed={() => void useCurrent()}
-      onPause={() => {
-        void pause({ meetingId, paused: !state?.autoPaused }).catch(() =>
-          setError("Couldn't change automatic prompts. Try again."),
-        );
-      }}
+      onUsed={() => void markCurrentUsed()}
+      onPause={() => void toggleAuto()}
     />
   );
 }
@@ -183,9 +188,15 @@ export function PromptPanel({
           </>
         ) : (
           <p className={styles.question}>
-            {inCall
-              ? "An idea for your conversation is on its way."
-              : "A good conversation starts with a little curiosity."}
+            {!inCall
+              ? "A good conversation starts with a little curiosity."
+              : !state.active
+                ? "No prompts were shown during this call."
+                : state.autoPaused
+                  ? "Ready for an idea? Get one whenever you like."
+                  : error
+                    ? "Get an idea when you're ready to try again."
+                    : "An idea for your conversation is on its way."}
           </p>
         )}
       </div>
@@ -224,7 +235,7 @@ export function PromptPanel({
               : !state.active
                 ? "This call has ended. Your prompts are saved."
                 : state.exhausted
-                  ? "You've reached the last prompt for this call. Enjoy the conversation."
+                  ? "You've reached the prompt limit for this call. Enjoy the conversation."
                   : waiting
                     ? `Another idea in ${waitSeconds >= 60 ? `${Math.ceil(waitSeconds / 60)} min` : `${waitSeconds}s`}.`
                     : "You both see the same prompt."}
@@ -236,11 +247,7 @@ export function PromptPanel({
                   ? "Automatic prompts are paused for both of you."
                   : "A fresh idea after 90 seconds without shared-note edits."}
               </p>
-              <button
-                type="button"
-                aria-pressed={state.autoPaused}
-                onClick={onPause}
-              >
+              <button type="button" onClick={onPause}>
                 {state.autoPaused ? "Resume" : "Pause"}
                 <span className={styles.srOnly}> automatic prompts</span>
               </button>

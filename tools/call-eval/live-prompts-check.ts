@@ -9,7 +9,12 @@ async function main() {
   const output = "docs/live-prompts/live-check.jsonl";
   mkdirSync("docs/live-prompts", { recursive: true });
   const prior = existsSync(output)
-    ? readFileSync(output, "utf8").trim().split("\n").filter(Boolean).length
+    ? readFileSync(output, "utf8")
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as { kind: string })
+        .filter((entry) => entry.kind === "attempt").length
     : 0;
   if (prior >= 10) throw new Error("Live-check cap reached; no requests sent");
   const key = process.env.OPENAI_API_KEY_FALLBACK;

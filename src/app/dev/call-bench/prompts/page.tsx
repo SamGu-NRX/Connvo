@@ -28,7 +28,7 @@ export default function PromptPreview() {
           },
     active: scenario !== "ended",
     exhausted: scenario === "exhausted",
-    autoPaused: paused || scenario === "paused",
+    autoPaused: paused,
     nextAutoAt: 90_000,
     nextManualAt: scenario === "limited" ? 31_000 : 0,
     pendingUntil: 0,
@@ -47,7 +47,7 @@ export default function PromptPreview() {
           onChange={(event) => {
             setScenario(event.target.value);
             setUsed(false);
-            setPaused(false);
+            setPaused(event.target.value === "paused");
           }}
         >
           {[

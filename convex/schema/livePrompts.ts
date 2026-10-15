@@ -7,6 +7,8 @@ export const livePromptTables = {
     currentPromptId: v.optional(v.id("prompts")),
     shown: v.array(v.string()),
     lastPickAt: v.number(),
+    lastAutoRequestAt: v.optional(v.number()),
+    requestCount: v.optional(v.number()),
     manualRequests: v.array(v.number()),
     autoPaused: v.boolean(),
     reservation: v.optional(

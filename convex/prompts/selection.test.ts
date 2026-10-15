@@ -43,6 +43,24 @@ describe("live prompt selection", () => {
     );
   });
   it.each([
+    ["software-engineering", "career-technology-tradeoff"],
+    ["data-science", "career-science-work"],
+    ["ai-ml", "career-science-work"],
+    ["product-management", "career-design-process"],
+    ["startups", "career-business-problem"],
+  ])("ranks the profile catalog key %s by its topic", async (key, expected) => {
+    const result = await selectPrompt({
+      ...context,
+      elapsedSeconds: 800,
+      participants: [
+        { interests: [key], role: "" },
+        { interests: [key], role: "" },
+      ],
+    });
+    expect(result?.prompt.id).toBe(expected);
+    expect(result?.source).toBe("bank");
+  });
+  it.each([
     [0, "opener"],
     [180, "shared-interest"],
     [800, "career"],
