@@ -24,6 +24,7 @@ import { useConvex, useConvexAuth, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
+import styles from "@/components/call/call.module.css";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
@@ -134,41 +135,35 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
       />
     );
   }
-  // The shared notes sit beside the call on wide screens and below it on
-  // narrow ones; they work in the lobby too, before anyone joins. On phones
-  // the app shell's floating navigation covers the bottom of the screen, so
-  // the page leaves room to scroll the notes clear of it.
+  // CallRoom owns responsive placement of the notes slot.
   return (
-    <div className="grid gap-3 pb-48 md:pb-0 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
-      <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
-        <CallRoom
-          meetingId={meetingId}
-          self={self}
-          createTransport={createTransport}
-          identityToken={identityToken}
-          // Presence carries ids, not names; test users read as Guest A..O.
-          nameFor={(id) =>
-            TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
-          }
-          inviteLink={() => {
-            const url = new URL(window.location.href);
-            url.search = "";
-            return url.toString();
-          }}
-          exitHref="/app"
-          onScreenChange={onScreenChange}
-          endedActions={<OpenRecapLink meetingId={meetingId} />}
-        />
-      </div>
-      <aside
-        aria-label="Meeting notes"
-        className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
-      >
-        {ended ? <EndedRecap meetingId={meetingId} /> : null}
-        <NotesBoundary>
-          <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
-        </NotesBoundary>
-      </aside>
+    <div className={styles.page}>
+      <CallRoom
+        meetingId={meetingId}
+        self={self}
+        createTransport={createTransport}
+        identityToken={identityToken}
+        // Presence carries ids, not names; test users read as Guest A..O.
+        nameFor={(id) =>
+          TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
+        }
+        inviteLink={() => {
+          const url = new URL(window.location.href);
+          url.search = "";
+          return url.toString();
+        }}
+        exitHref="/app"
+        onScreenChange={onScreenChange}
+        endedActions={<OpenRecapLink meetingId={meetingId} />}
+        sidePanel={
+          <>
+            {ended ? <EndedRecap meetingId={meetingId} /> : null}
+            <NotesBoundary>
+              <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
+            </NotesBoundary>
+          </>
+        }
+      />
     </div>
   );
 }
@@ -274,9 +269,7 @@ function BenchCall({
   const self = useMemo(() => ({ id: selfId, name }), [selfId, name]);
 
   return (
-    // Phones: the app shell's floating navigation dock overlays the bottom
-    // of this panel, so the call area ends above it.
-    <div className="h-[calc(100dvh-19rem)] min-h-[28rem] md:h-[calc(100dvh-7rem)]">
+    <div className={styles.page}>
       <CallRoom
         meetingId={meetingId}
         self={self}

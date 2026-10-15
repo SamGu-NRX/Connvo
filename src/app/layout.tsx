@@ -2,13 +2,21 @@ import "./globals.css";
 import { cal, inter } from "@/styles/fonts";
 import { Analytics } from "@vercel/analytics/react";
 import { Providers } from "./providers";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cn } from "@/lib/shadcn";
 
 const title = "Connvo – Real Conversations, Better Connections";
 const description =
   "Connvo is a professional networking platform focused on authentic conversations that lead to meaningful connections.";
 const image = "https://connvo.com/thumbnail.png"; // Replace with your actual image URL
+
+// The call toolbar pads with safe-area insets in landscape and on iPhones.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata: Metadata = {
   title,

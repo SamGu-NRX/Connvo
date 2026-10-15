@@ -1,17 +1,16 @@
 "use client";
 
-/**
- * Owns the local camera and microphone for a call (CALL-PLAN D5): the
- * transport only forwards what this hook captures and never stops a track.
- *
- * - One MediaStream object lives for the whole call; device switches and
- *   camera on/off swap tracks inside it, and `version` changes so the caller
- *   can re-publish it.
- * - Muting the mic disables the track (instant, keeps the device open).
- *   Turning the camera off stops the track, so the camera light goes out.
- * - `release()` stops every track; call it on leave and on unmount.
- */
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createBlurPipeline,
+  type BlurPipeline,
+} from "@/lib/call/blur-pipeline";
+import { blurFailure, type BlurStatus } from "@/lib/call/blur-policy";
+import {
+  cameraConstraints,
+  type CameraFacing,
+  type CameraQuality,
+} from "@/lib/call/camera-quality";
 
 export type LocalMediaStatus =
   | "idle"
@@ -20,28 +19,32 @@ export type LocalMediaStatus =
   | "denied"
   | "no-device"
   | "error";
-
 export interface LocalMediaDevices {
   audioinput: MediaDeviceInfo[];
   videoinput: MediaDeviceInfo[];
 }
-
 export interface LocalMedia {
   status: LocalMediaStatus;
-  /** Plain-language reason when status is denied, no-device or error. */
   problem: string | null;
   stream: MediaStream | null;
-  /** Bumps whenever the stream's tracks change. */
+  /** A stable stream changes tracks in place; callers republish on version. */
   version: number;
   micOn: boolean;
   cameraOn: boolean;
-  /** True when no camera could be opened but the mic works. */
   audioOnly: boolean;
   devices: LocalMediaDevices;
   selected: { audioinput: string | null; videoinput: string | null };
+  blurEnabled: boolean;
+  blurStatus: BlurStatus;
+  blurProblem: string | null;
+  quality: CameraQuality;
+  facing: CameraFacing;
   start: () => Promise<void>;
   setMicOn: (on: boolean) => void;
   setCameraOn: (on: boolean) => Promise<void>;
+  setBlurEnabled: (on: boolean) => Promise<void>;
+  setQuality: (quality: CameraQuality) => Promise<void>;
+  switchCamera: () => Promise<void>;
   selectDevice: (
     kind: "audioinput" | "videoinput",
     deviceId: string,
@@ -51,43 +54,48 @@ export interface LocalMedia {
 
 function describe(err: unknown): { status: LocalMediaStatus; problem: string } {
   const name = err instanceof DOMException ? err.name : "";
-  if (name === "NotAllowedError" || name === "SecurityError") {
+  if (name === "NotAllowedError" || name === "SecurityError")
     return {
       status: "denied",
       problem:
         "Your browser is blocking the camera and microphone for this site.",
     };
-  }
-  if (name === "NotFoundError" || name === "OverconstrainedError") {
+  if (name === "NotFoundError" || name === "OverconstrainedError")
     return {
       status: "no-device",
       problem: "No camera or microphone was found.",
     };
-  }
-  if (name === "NotReadableError" || name === "AbortError") {
+  if (name === "NotReadableError" || name === "AbortError")
     return {
       status: "error",
       problem: "Another app is using your camera or microphone.",
     };
-  }
   return {
     status: "error",
     problem: "The camera and microphone could not start.",
   };
 }
-
-const constraint = (
+const audioConstraint = (
   deviceId: string | null,
 ): MediaTrackConstraints | boolean =>
   deviceId ? { deviceId: { exact: deviceId } } : true;
+const stopAll = (stream: MediaStream | null) =>
+  stream?.getTracks().forEach((track) => track.stop());
 
+/** Owns both physical capture and processed outgoing tracks; transport owns neither. */
 export function useLocalMedia(): LocalMedia {
   const streamRef = useRef<MediaStream | null>(null);
+  const rawVideoRef = useRef<MediaStreamTrack | null>(null);
+  const pipelineRef = useRef<BlurPipeline | null>(null);
+  const blurAbortRef = useRef<AbortController | null>(null);
   const [status, setStatus] = useState<LocalMediaStatus>("idle");
+  const statusRef = useRef(status);
   const [problem, setProblem] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [micOn, setMicState] = useState(true);
+  const micOnRef = useRef(true);
   const [cameraOn, setCameraState] = useState(true);
+  const cameraWantedRef = useRef(true);
   const [audioOnly, setAudioOnly] = useState(false);
   const [devices, setDevices] = useState<LocalMediaDevices>({
     audioinput: [],
@@ -98,59 +106,146 @@ export function useLocalMedia(): LocalMedia {
     videoinput: null,
   });
   const selectedRef = useRef(selected);
-  selectedRef.current = selected;
-  const micOnRef = useRef(true);
-
-  const bump = () => setVersion((v) => v + 1);
-
-  const refreshDevices = useCallback(async () => {
-    if (!navigator.mediaDevices?.enumerateDevices) return;
-    const all = await navigator.mediaDevices.enumerateDevices();
-    setDevices({
-      audioinput: all.filter((d) => d.kind === "audioinput" && d.deviceId),
-      videoinput: all.filter((d) => d.kind === "videoinput" && d.deviceId),
-    });
-  }, []);
-
-  // Every capture request checks, when it resolves, that nothing newer has
-  // happened since it started: release, unmount, a newer start(), or a newer
-  // camera/device change. A stale result is stopped at once, so a slow
-  // permission prompt can never reopen the camera after leave or camera-off.
+  const [blurEnabled, setBlurState] = useState(false);
+  const blurWantedRef = useRef(false);
+  const [blurStatus, setBlurStatus] = useState<BlurStatus>("off");
+  const [blurProblem, setBlurProblem] = useState<string | null>(null);
+  const [quality, setQualityState] = useState<CameraQuality>("standard");
+  const qualityRef = useRef(quality);
+  const [facing, setFacing] = useState<CameraFacing>("user");
+  const facingRef = useRef(facing);
   const sessionRef = useRef(0);
   const videoGenRef = useRef(0);
   const audioGenRef = useRef(0);
-  const cameraWantedRef = useRef(true);
-  const statusRef = useRef<LocalMediaStatus>("idle");
-  statusRef.current = status;
-  const stopAll = (s: MediaStream | null) =>
-    s?.getTracks().forEach((t) => t.stop());
+  const blurGenRef = useRef(0);
+  const mountedRef = useRef(true);
+  const bump = useCallback(() => setVersion((value) => value + 1), []);
 
-  /** Puts `track` into the stream in place of any track of its kind. */
+  const rememberDevice = useCallback(
+    (kind: "audioinput" | "videoinput", id: string | null) => {
+      selectedRef.current = { ...selectedRef.current, [kind]: id };
+      setSelected(selectedRef.current);
+    },
+    [],
+  );
+  const refreshDevices = useCallback(async () => {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const all = await navigator.mediaDevices.enumerateDevices();
+      if (!mountedRef.current) return;
+      setDevices({
+        audioinput: all.filter(
+          (device) => device.kind === "audioinput" && device.deviceId,
+        ),
+        videoinput: all.filter(
+          (device) => device.kind === "videoinput" && device.deviceId,
+        ),
+      });
+    } catch {
+      // Enumeration can reject during permission changes. Capture remains live;
+      // the next devicechange or successful capture refreshes the list.
+    }
+  }, []);
+
   const swapIn = useCallback((track: MediaStreamTrack) => {
     const stream = streamRef.current ?? new MediaStream();
     streamRef.current = stream;
-    for (const old of stream.getTracks()) {
-      if (old.kind === track.kind) {
-        stream.removeTrack(old);
-        old.stop();
-      }
+    for (const previous of stream.getTracks()) {
+      if (previous === track || previous.kind !== track.kind) continue;
+      stream.removeTrack(previous);
+      // A processed video track still needs its physical camera as input.
+      if (previous !== rawVideoRef.current) previous.stop();
     }
     if (track.kind === "audio") track.enabled = micOnRef.current;
-    stream.addTrack(track);
-    setSelected((s) => ({
-      ...s,
-      [track.kind === "audio" ? "audioinput" : "videoinput"]:
-        track.getSettings().deviceId ?? null,
-    }));
+    if (!stream.getTracks().includes(track)) stream.addTrack(track);
   }, []);
 
-  const dropVideo = () => {
+  const stopBlur = useCallback(() => {
+    blurGenRef.current++;
+    blurAbortRef.current?.abort();
+    blurAbortRef.current = null;
+    pipelineRef.current?.stop();
+    pipelineRef.current = null;
+  }, []);
+
+  const dropVideo = useCallback(() => {
+    stopBlur();
+    rawVideoRef.current?.stop();
+    rawVideoRef.current = null;
     const stream = streamRef.current;
     for (const track of stream?.getVideoTracks() ?? []) {
       stream?.removeTrack(track);
       track.stop();
     }
-  };
+  }, [stopBlur]);
+
+  const applyBlur = useCallback(async () => {
+    if (pipelineRef.current && rawVideoRef.current) {
+      swapIn(rawVideoRef.current);
+      bump();
+    }
+    stopBlur();
+    const input = rawVideoRef.current;
+    if (!input || input.readyState === "ended" || !blurWantedRef.current)
+      return;
+    const generation = blurGenRef.current;
+    const controller = new AbortController();
+    blurAbortRef.current = controller;
+    const current = () =>
+      generation === blurGenRef.current &&
+      rawVideoRef.current === input &&
+      blurWantedRef.current;
+    setBlurStatus("loading");
+    setBlurProblem(null);
+    const fallback = (error: unknown) => {
+      if (!current()) return;
+      const failure = blurFailure(error);
+      stopBlur();
+      blurWantedRef.current = false;
+      setBlurState(false);
+      setBlurStatus(failure.status);
+      setBlurProblem(failure.problem);
+      swapIn(input);
+      bump();
+    };
+    try {
+      const pipeline = await createBlurPipeline({
+        input,
+        signal: controller.signal,
+        onFallback: fallback,
+      });
+      if (!current()) {
+        pipeline.stop();
+        return;
+      }
+      pipelineRef.current = pipeline;
+      swapIn(pipeline.track);
+      setBlurStatus("active");
+      bump();
+    } catch (error) {
+      if (!controller.signal.aborted) fallback(error);
+    }
+  }, [bump, stopBlur, swapIn]);
+
+  const installCamera = useCallback(
+    async (track: MediaStreamTrack) => {
+      stopBlur();
+      rawVideoRef.current?.stop();
+      rawVideoRef.current = track;
+      swapIn(track);
+      rememberDevice("videoinput", track.getSettings().deviceId ?? null);
+      const actualFacing = track.getSettings().facingMode;
+      if (actualFacing === "user" || actualFacing === "environment") {
+        facingRef.current = actualFacing;
+        setFacing(actualFacing);
+      }
+      setCameraState(true);
+      setAudioOnly(false);
+      bump();
+      if (blurWantedRef.current) await applyBlur();
+    },
+    [applyBlur, bump, rememberDevice, stopBlur, swapIn],
+  );
 
   const start = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -159,30 +254,35 @@ export function useLocalMedia(): LocalMedia {
       return;
     }
     const session = ++sessionRef.current;
-    videoGenRef.current++;
-    audioGenRef.current++;
+    const videoGeneration = ++videoGenRef.current;
+    const audioGeneration = ++audioGenRef.current;
+    cameraWantedRef.current = true;
     const current = () => session === sessionRef.current;
+    statusRef.current = "requesting";
     setStatus("requesting");
     setProblem(null);
-    const wanted = selectedRef.current;
     let captured: MediaStream | null = null;
     let firstError: unknown = null;
     try {
       captured = await navigator.mediaDevices.getUserMedia({
-        audio: constraint(wanted.audioinput),
-        video: constraint(wanted.videoinput),
+        audio: audioConstraint(selectedRef.current.audioinput),
+        video: cameraConstraints({
+          quality: qualityRef.current,
+          facing: facingRef.current,
+          deviceId: selectedRef.current.videoinput,
+        }),
       });
-    } catch (err) {
-      firstError = err;
-      // A missing camera should not keep someone out of a call they can
-      // still hear and speak in.
+    } catch (error) {
+      firstError = error;
       if (
         current() &&
-        err instanceof DOMException &&
-        (err.name === "NotFoundError" || err.name === "NotReadableError")
+        error instanceof DOMException &&
+        (error.name === "NotFoundError" || error.name === "NotReadableError")
       ) {
         captured = await navigator.mediaDevices
-          .getUserMedia({ audio: true })
+          .getUserMedia({
+            audio: audioConstraint(selectedRef.current.audioinput),
+          })
           .catch(() => null);
       }
     }
@@ -191,21 +291,38 @@ export function useLocalMedia(): LocalMedia {
       return;
     }
     if (!captured) {
-      const { status: next, problem: why } = describe(firstError);
-      setStatus(next);
-      setProblem(why);
+      const failure = describe(firstError);
+      statusRef.current = failure.status;
+      setStatus(failure.status);
+      setProblem(failure.problem);
       return;
     }
-    for (const track of captured.getTracks()) swapIn(track);
-    const hasVideo = captured.getVideoTracks().length > 0;
-    if (!hasVideo) dropVideo();
-    cameraWantedRef.current = hasVideo;
-    setAudioOnly(!hasVideo);
-    setCameraState(hasVideo);
+    for (const track of captured.getAudioTracks()) {
+      if (audioGeneration !== audioGenRef.current) {
+        track.stop();
+        continue;
+      }
+      swapIn(track);
+      rememberDevice("audioinput", track.getSettings().deviceId ?? null);
+    }
+    const video = captured.getVideoTracks()[0];
+    const videoCurrent =
+      videoGeneration === videoGenRef.current && cameraWantedRef.current;
+    if (video && videoCurrent) void installCamera(video);
+    else {
+      captured.getVideoTracks().forEach((track) => track.stop());
+      if (videoCurrent) {
+        dropVideo();
+        cameraWantedRef.current = false;
+        setCameraState(false);
+        setAudioOnly(true);
+      }
+    }
+    statusRef.current = "ready";
     setStatus("ready");
     bump();
     await refreshDevices();
-  }, [refreshDevices, swapIn]);
+  }, [bump, dropVideo, installCamera, refreshDevices, rememberDevice, swapIn]);
 
   const setMicOn = useCallback((on: boolean) => {
     micOnRef.current = on;
@@ -214,117 +331,238 @@ export function useLocalMedia(): LocalMedia {
     setMicState(on);
   }, []);
 
-  const setCameraOn = useCallback(
-    async (on: boolean) => {
-      const gen = ++videoGenRef.current;
+  const captureCamera = useCallback(
+    async ({
+      deviceId,
+      facing: wantedFacing,
+      flip = false,
+    }: {
+      deviceId: string | null;
+      facing: CameraFacing;
+      flip?: boolean;
+    }) => {
+      const generation = ++videoGenRef.current;
       const session = sessionRef.current;
-      cameraWantedRef.current = on;
-      if (!on) {
-        dropVideo();
-        setCameraState(false);
-        bump();
-        return;
-      }
-      let fresh: MediaStream | null = null;
+      const current = () =>
+        generation === videoGenRef.current &&
+        session === sessionRef.current &&
+        cameraWantedRef.current;
+      const constraints = cameraConstraints({
+        quality: qualityRef.current,
+        facing: wantedFacing,
+        deviceId,
+      });
+      if (flip) constraints.facingMode = { exact: wantedFacing };
+      let fresh: MediaStream;
       try {
-        fresh = await navigator.mediaDevices.getUserMedia({
-          video: constraint(selectedRef.current.videoinput),
-        });
-      } catch (err) {
-        if (gen === videoGenRef.current && session === sessionRef.current) {
-          setProblem(describe(err).problem);
+        try {
+          fresh = await navigator.mediaDevices.getUserMedia({
+            video: constraints,
+          });
+        } catch (error) {
+          // iOS may allow only one physical camera at once. Release and retry
+          // only for a device-busy failure; permissions and missing cameras do
+          // not disturb the working input.
+          if (
+            !flip ||
+            !(error instanceof DOMException) ||
+            error.name !== "NotReadableError" ||
+            !current()
+          )
+            throw error;
+          dropVideo();
+          setCameraState(false);
+          bump();
+          fresh = await navigator.mediaDevices.getUserMedia({
+            video: constraints,
+          });
         }
+      } catch (error) {
+        if (current())
+          setProblem(`That camera could not start. ${describe(error).problem}`);
         return;
       }
-      if (
-        gen !== videoGenRef.current ||
-        session !== sessionRef.current ||
-        !cameraWantedRef.current
-      ) {
+      if (!current()) {
         stopAll(fresh);
         return;
       }
-      swapIn(fresh.getVideoTracks()[0]);
+      const track = fresh.getVideoTracks()[0];
+      if (!track) {
+        stopAll(fresh);
+        setProblem("That camera did not provide a video track.");
+        return;
+      }
+      facingRef.current = wantedFacing;
+      setFacing(wantedFacing);
       setProblem(null);
-      setCameraState(true);
-      setAudioOnly(false);
-      bump();
+      await installCamera(track);
+      await refreshDevices();
     },
-    [swapIn],
+    [bump, dropVideo, installCamera, refreshDevices],
+  );
+
+  const setCameraOn = useCallback(
+    async (on: boolean) => {
+      cameraWantedRef.current = on;
+      if (!on) {
+        videoGenRef.current++;
+        dropVideo();
+        setCameraState(false);
+        setBlurStatus("off");
+        bump();
+        return;
+      }
+      await captureCamera({
+        deviceId: selectedRef.current.videoinput,
+        facing: facingRef.current,
+      });
+    },
+    [bump, captureCamera, dropVideo],
   );
 
   const selectDevice = useCallback(
     async (kind: "audioinput" | "videoinput", deviceId: string) => {
-      const live =
-        statusRef.current === "ready" &&
-        (kind === "audioinput" || cameraWantedRef.current);
-      if (!live) {
-        // Remembered for the next capture; nothing to switch right now.
-        setSelected((s) => ({ ...s, [kind]: deviceId }));
-        selectedRef.current = { ...selectedRef.current, [kind]: deviceId };
+      if (
+        statusRef.current !== "ready" ||
+        (kind === "videoinput" && !cameraWantedRef.current)
+      ) {
+        rememberDevice(kind, deviceId);
         return;
       }
-      const genRef = kind === "audioinput" ? audioGenRef : videoGenRef;
-      const gen = ++genRef.current;
+      if (kind === "videoinput") {
+        await captureCamera({ deviceId, facing: facingRef.current });
+        return;
+      }
+      const generation = ++audioGenRef.current;
       const session = sessionRef.current;
-      let fresh: MediaStream | null = null;
+      let fresh: MediaStream;
       try {
-        fresh = await navigator.mediaDevices.getUserMedia(
-          kind === "audioinput"
-            ? { audio: constraint(deviceId) }
-            : { video: constraint(deviceId) },
-        );
-      } catch (err) {
-        // The previous device stays active and selected.
-        if (gen === genRef.current && session === sessionRef.current) {
+        fresh = await navigator.mediaDevices.getUserMedia({
+          audio: audioConstraint(deviceId),
+        });
+      } catch (error) {
+        if (
+          generation === audioGenRef.current &&
+          session === sessionRef.current
+        )
           setProblem(
-            `That ${kind === "audioinput" ? "microphone" : "camera"} could not start. ${describe(err).problem}`,
+            `That microphone could not start. ${describe(error).problem}`,
           );
-        }
         return;
       }
       if (
-        gen !== genRef.current ||
-        session !== sessionRef.current ||
-        (kind === "videoinput" && !cameraWantedRef.current)
+        generation !== audioGenRef.current ||
+        session !== sessionRef.current
       ) {
         stopAll(fresh);
         return;
       }
       for (const track of fresh.getTracks()) swapIn(track);
-      selectedRef.current = { ...selectedRef.current, [kind]: deviceId };
+      rememberDevice(kind, deviceId);
       setProblem(null);
       bump();
+      await refreshDevices();
     },
-    [swapIn],
+    [bump, captureCamera, refreshDevices, rememberDevice, swapIn],
   );
 
-  const release = useCallback(() => {
+  const setBlurEnabled = useCallback(
+    async (on: boolean) => {
+      if (on && blurWantedRef.current) return;
+      blurWantedRef.current = on;
+      setBlurState(on);
+      setBlurProblem(null);
+      if (on) await applyBlur();
+      else {
+        stopBlur();
+        if (rawVideoRef.current?.readyState === "live") {
+          swapIn(rawVideoRef.current);
+          bump();
+        }
+        setBlurStatus("off");
+      }
+    },
+    [applyBlur, bump, stopBlur, swapIn],
+  );
+
+  const setQuality = useCallback(
+    async (next: CameraQuality) => {
+      const previous = qualityRef.current;
+      qualityRef.current = next;
+      setQualityState(next);
+      const track = rawVideoRef.current;
+      if (!track || track.readyState === "ended") return;
+      const generation = ++videoGenRef.current;
+      try {
+        await track.applyConstraints(
+          cameraConstraints({
+            quality: next,
+            facing: facingRef.current,
+            deviceId: selectedRef.current.videoinput,
+          }),
+        );
+        if (generation !== videoGenRef.current || track !== rawVideoRef.current)
+          return;
+        setProblem(null);
+        // Return to the raw camera while a resized blur canvas starts.
+        if (blurWantedRef.current) {
+          swapIn(track);
+          bump();
+          await applyBlur();
+        }
+      } catch {
+        if (generation !== videoGenRef.current || track !== rawVideoRef.current)
+          return;
+        qualityRef.current = previous;
+        setQualityState(previous);
+        setProblem(
+          "This camera could not use that video quality. Your previous setting is still selected.",
+        );
+      }
+    },
+    [applyBlur, bump, swapIn],
+  );
+
+  const switchCamera = useCallback(async () => {
+    const next = facingRef.current === "user" ? "environment" : "user";
+    if (statusRef.current !== "ready" || !cameraWantedRef.current) {
+      facingRef.current = next;
+      setFacing(next);
+      rememberDevice("videoinput", null);
+      return;
+    }
+    await captureCamera({ deviceId: null, facing: next, flip: true });
+  }, [captureCamera, rememberDevice]);
+
+  const disposeCapture = useCallback(() => {
     sessionRef.current++;
     videoGenRef.current++;
     audioGenRef.current++;
+    dropVideo();
     stopAll(streamRef.current);
     streamRef.current = null;
+  }, [dropVideo]);
+
+  const release = useCallback(() => {
+    disposeCapture();
+    statusRef.current = "idle";
     setStatus("idle");
+    setBlurStatus("off");
     bump();
-  }, []);
+  }, [bump, disposeCapture]);
 
   useEffect(() => {
-    const md = navigator.mediaDevices;
-    if (!md?.addEventListener) return;
+    mountedRef.current = true;
+    const mediaDevices = navigator.mediaDevices;
     const onChange = () => void refreshDevices();
-    md.addEventListener("devicechange", onChange);
-    return () => md.removeEventListener("devicechange", onChange);
-  }, [refreshDevices]);
-
-  useEffect(
-    () => () => {
-      sessionRef.current++;
-      stopAll(streamRef.current);
-      streamRef.current = null;
-    },
-    [],
-  );
+    mediaDevices?.addEventListener?.("devicechange", onChange);
+    void refreshDevices();
+    return () => {
+      mountedRef.current = false;
+      disposeCapture();
+      mediaDevices?.removeEventListener?.("devicechange", onChange);
+    };
+  }, [disposeCapture, refreshDevices]);
 
   return {
     status,
@@ -336,9 +574,17 @@ export function useLocalMedia(): LocalMedia {
     audioOnly,
     devices,
     selected,
+    blurEnabled,
+    blurStatus,
+    blurProblem,
+    quality,
+    facing,
     start,
     setMicOn,
     setCameraOn,
+    setBlurEnabled,
+    setQuality,
+    switchCamera,
     selectDevice,
     release,
   };
