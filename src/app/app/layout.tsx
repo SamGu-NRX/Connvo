@@ -103,13 +103,17 @@ export default function RootLayout({
                 padding={false}
                 className="relative flex flex-1 flex-col overflow-hidden"
               >
-                <main className="relative z-10 flex-1 overflow-hidden px-3.5 py-4 sm:px-4 lg:px-6">
+                <main className="relative z-10 flex-1 overflow-hidden px-3.5 pt-4 pb-28 sm:px-4 md:pb-4 lg:px-6">
                   {children}
                 </main>
-                <div className="md:hidden">
-                  <MobileNavigation />
-                </div>
               </GlassPanel>
+            </div>
+
+            {/* Mobile dock mounts outside the GlassPanels: their backdrop-filter
+                would become the containing block for position:fixed and anchor
+                the dock to the panel's bottom instead of the viewport. */}
+            <div className="md:hidden">
+              <MobileNavigation />
             </div>
           </div>
         </div>
