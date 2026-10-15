@@ -16,6 +16,7 @@ import InterestsSection from "@/components/onboarding/InterestsSection";
 import ProfileSummary from "@/components/onboarding/ProfileSummary";
 import BasicInfo from "@/components/onboarding/BasicInfo";
 import Congratulations from "@/components/onboarding/Congratulations";
+import AvailabilityStep from "@/components/onboarding/AvailabilityStep";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/../convex/_generated/api";
 import { onboardingSchema, OnboardingFormData } from "@/schemas/onboarding";
@@ -25,6 +26,7 @@ import {
   Heart,
   CheckCircle,
   User,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +35,8 @@ const steps = [
   { id: 2, title: "Professional Info", icon: Briefcase },
   { id: 3, title: "Bio", icon: MessageSquare },
   { id: 4, title: "Interests", icon: Heart },
-  { id: 5, title: "Summary", icon: CheckCircle },
+  { id: 5, title: "Availability", icon: CalendarClock },
+  { id: 6, title: "Summary", icon: CheckCircle },
 ];
 
 const defaultValues: Partial<OnboardingFormData> = {
@@ -218,6 +221,12 @@ export default function OnboardingPage() {
                       />
                     )}
                     {currentStep === 5 && (
+                      <AvailabilityStep
+                        onNext={handleNext}
+                        onBack={handleBack}
+                      />
+                    )}
+                    {currentStep === 6 && (
                       <ProfileSummary
                         onBack={handleBack}
                         onEdit={(step) => setCurrentStep(step)}

@@ -18,6 +18,7 @@ import { buildRecap } from "@/lib/history/recap";
 import { cn } from "@/lib/utils";
 import { HistoryBoundary } from "./HistoryBoundary";
 import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
+import { ParticipantActions } from "./ParticipantActions";
 
 export type MeetingHistory = FunctionReturnType<
   typeof api.history.queries.getMeetingHistory
