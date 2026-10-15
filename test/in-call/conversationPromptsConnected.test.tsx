@@ -137,10 +137,9 @@ describe("ConversationPrompts — connected over the real prompts handlers", () 
       });
     } catch {
       await sim.refreshAll();
-      await waitFor(
-        () => expect(promptText(view)).not.toBeNull(),
-        { timeout: 1000 },
-      ).catch(() => undefined);
+      await waitFor(() => expect(promptText(view)).not.toBeNull(), {
+        timeout: 1000,
+      }).catch(() => undefined);
       const button = panel(view).getByRole("button", { name: "Get an idea" });
       await waitFor(() => expect(button).toBeEnabled(), { timeout: 5000 });
       fireEvent.click(button);
@@ -202,9 +201,7 @@ describe("ConversationPrompts — connected over the real prompts handlers", () 
         panel(viewB).getByText("Marked as used. Saved to your recap."),
       ).toBeInTheDocument(),
     );
-    expect(
-      panel(viewB).getByRole("button", { name: "Used ✓" }),
-    ).toBeDisabled();
+    expect(panel(viewB).getByRole("button", { name: "Used ✓" })).toBeDisabled();
 
     // A converges to used on the resync — shared truth, not per-caller state.
     await waitFor(() =>
@@ -212,9 +209,7 @@ describe("ConversationPrompts — connected over the real prompts handlers", () 
         panel(viewA).getByText("Marked as used. Saved to your recap."),
       ).toBeInTheDocument(),
     );
-    expect(
-      panel(viewA).getByRole("button", { name: "Used ✓" }),
-    ).toBeDisabled();
+    expect(panel(viewA).getByRole("button", { name: "Used ✓" })).toBeDisabled();
 
     // The real prompts row carries the used marker (recap evidence). One
     // transaction reads the session pointer and the prompt row together —

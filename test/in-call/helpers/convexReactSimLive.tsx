@@ -218,9 +218,7 @@ function useConvexReactSimLiveMutation(
     );
   }
   const cacheKey = `${tagged.tag}|mutation|${refPath(ref)}`;
-  return this.stableRunner(cacheKey, (args) =>
-    tagged.face.mutation(ref, args),
-  );
+  return this.stableRunner(cacheKey, (args) => tagged.face.mutation(ref, args));
 }
 
 /** convex/react useAction: one stable function per ref and identity. */
@@ -238,9 +236,7 @@ function useConvexReactSimLiveAction(
   return this.stableRunner(cacheKey, (args) => tagged.face.action(ref, args));
 }
 
-function useConvexReactSimLiveConnectionState(
-  this: ConvexReactSimLive,
-): {
+function useConvexReactSimLiveConnectionState(this: ConvexReactSimLive): {
   isWebSocketConnected: boolean;
   hasEverConnected: boolean;
 } {

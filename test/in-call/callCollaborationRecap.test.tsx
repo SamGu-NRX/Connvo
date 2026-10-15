@@ -55,7 +55,11 @@ vi.mock("convex/react", () => {
     // convex/react consumers never render in these tests.
     useConvexAuth: () => ({ isLoading: false, isAuthenticated: true }),
     useConvex: () => ({}),
-    usePaginatedQuery: () => ({ results: [], status: "Exhausted", loadMore: () => {} }),
+    usePaginatedQuery: () => ({
+      results: [],
+      status: "Exhausted",
+      loadMore: () => {},
+    }),
     ConvexReactClient: class {},
   } as unknown as Record<string, unknown>;
 });
@@ -132,7 +136,11 @@ describe("call collaboration over the real notes and history handlers", () => {
       clientId: "seed-client",
       operations: [
         {
-          operation: { type: "insert", position: 0, content: "participant words" },
+          operation: {
+            type: "insert",
+            position: 0,
+            content: "participant words",
+          },
           clientSequence: 0,
           clientOpId: "seed-op-0",
         },
@@ -187,9 +195,12 @@ describe("call collaboration over the real notes and history handlers", () => {
     // The after-call history read accepts a concluded meeting for a
     // participant and returns the committed notes verbatim.
     vi.stubEnv("CONNVO_AFTER_CALL", "1");
-    const history = await participant.query(api.history.queries.getMeetingHistory, {
-      meetingId,
-    });
+    const history = await participant.query(
+      api.history.queries.getMeetingHistory,
+      {
+        meetingId,
+      },
+    );
     expect(history.meeting.state).toBe("concluded");
     expect(history.notes?.content).toBe("recap chain committed words");
   });
