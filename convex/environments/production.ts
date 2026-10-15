@@ -12,7 +12,6 @@ export const config = {
     intelligentMatching: true,
     liveTranscription: true,
     collaborativeNotes: true,
-    vectorSimilarity: true,
   },
 
   // Rate limits (strict for production)

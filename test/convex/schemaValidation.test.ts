@@ -118,36 +118,6 @@ describe("Schema Validation and Performance Tests", () => {
       expect(transcript?.wordCount).toBe(2);
     });
 
-    test("should support vector embeddings with proper dimensions", async () => {
-      const t = createTestEnvironment();
-
-      const embeddingId = await t.run(async (ctx) => {
-        const vector = Array.from({ length: 1536 }, () => Math.random());
-        const vectorBuffer = new Float32Array(vector).buffer;
-
-        return await ctx.db.insert("embeddings", {
-          sourceType: "user",
-          sourceId: "user_123",
-          vector: vectorBuffer,
-          model: "text-embedding-ada-002",
-          dimensions: 1536,
-          version: "v1",
-          metadata: { test: true },
-          createdAt: Date.now(),
-        });
-      });
-
-      const embedding = await t.run(async (ctx) => {
-        return await ctx.db.get(embeddingId);
-      });
-
-      expect(embedding).toBeDefined();
-      expect(embedding?.vector.byteLength).toBe(
-        1536 * Float32Array.BYTES_PER_ELEMENT,
-      );
-      expect(new Float32Array(embedding!.vector)).toHaveLength(1536);
-      expect(embedding?.dimensions).toBe(1536);
-    });
   });
 
   describe("Index Performance Validation", () => {

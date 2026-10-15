@@ -103,7 +103,6 @@ export const mockServices = {
       }),
   },
   ai: {
-    generateEmbedding: () => Promise.resolve([0.1, 0.2, 0.3]),
     generateInsights: () =>
       Promise.resolve({
         summary: "Test summary",

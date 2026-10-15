@@ -65,10 +65,6 @@ export interface UserScoringData {
     company?: string;
   } | null;
   interests: string[];
-  embedding: {
-    vector: ArrayBuffer;
-    model: string;
-  } | null;
 }
 
 // Compatibility features for matching algorithm
@@ -77,7 +73,6 @@ export interface CompatibilityFeatures {
   experienceGap: number;
   industryMatch: number;
   timezoneCompatibility: number;
-  vectorSimilarity?: number;
   orgConstraintMatch: number;
   languageOverlap: number;
   roleComplementarity: number;

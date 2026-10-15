@@ -37,8 +37,6 @@ import {
   toEpochMs,
   toDurationMs,
   toNonEmptyString,
-  float32ArrayToBuffer,
-  bufferToFloat32Array,
 } from "../utils";
 
 // Type assertion helpers for compile-time validation
@@ -152,7 +150,6 @@ describe("Type-Validator Alignment", () => {
       // Test common field validators
       expect(CommonV.epochMs).toBeDefined();
       expect(CommonV.nonEmptyString).toBeDefined();
-      expect(CommonV.embeddingVector).toBeDefined();
 
       // Test error validators
       expect(ErrorV.apiError).toBeDefined();
@@ -165,11 +162,6 @@ describe("Type-Validator Alignment", () => {
       );
       expect(epochMsResult.isValid).toBe(true);
 
-      const embeddingVectorResult = validateValidatorStructure(
-        CommonV.embeddingVector,
-        "CommonV.embeddingVector",
-      );
-      expect(embeddingVectorResult.isValid).toBe(true);
     }).not.toThrow();
   });
 });
@@ -365,27 +357,5 @@ describe("Compile-time Type Safety", () => {
     }).not.toThrow();
   });
 
-  test("Embedding vector helpers work correctly", () => {
-    const originalArray = new Float32Array([1.0, 2.0, 3.0, 4.0]);
-    const buffer = float32ArrayToBuffer(originalArray);
-    const convertedArray = bufferToFloat32Array(buffer);
 
-    expect(convertedArray).toEqual(originalArray);
-    expect(buffer instanceof ArrayBuffer).toBe(true);
-  });
-
-  test("ArrayBuffer performance optimization", () => {
-    // Test that ArrayBuffer is more efficient than number[] for embeddings
-    const largeArray = new Float32Array(1536); // Common embedding size
-    for (let i = 0; i < largeArray.length; i++) {
-      largeArray[i] = Math.random();
-    }
-
-    const startTime = performance.now();
-    const buffer = float32ArrayToBuffer(largeArray);
-    const endTime = performance.now();
-
-    expect(buffer.byteLength).toBe(largeArray.length * 4); // 4 bytes per float32
-    expect(endTime - startTime).toBeLessThan(10); // Should be very fast
-  });
 });

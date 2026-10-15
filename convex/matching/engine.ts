@@ -382,7 +382,6 @@ export const getShardQueueEntries = internalQuery({
  *         "experienceGap": 1.0,
  *         "industryMatch": 0.7,
  *         "timezoneCompatibility": 1.0,
- *         "vectorSimilarity": 0.88,
  *         "orgConstraintMatch": 1.0,
  *         "languageOverlap": 0.9,
  *         "roleComplementarity": 1.0

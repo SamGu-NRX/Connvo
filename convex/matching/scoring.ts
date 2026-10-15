@@ -2,7 +2,7 @@
  * Compatibility Scoring Engine
  *
  * Implements multi-factor compatibility scoring using interest overlap,
- * experience gap, industry match, timezone compatibility, and vector similarity.
+ * experience gap, industry match, timezone compatibility, and more.
  *
  * Requirements: 12.2 - Multi-Factor Compatibility Scoring Engine
  * Compliance: steering/convex_rules.mdc - Uses new function syntax with proper validators
@@ -28,7 +28,6 @@ import type {
   CompatibilityFeatures,
   UserScoringData,
 } from "@convex/types/entities/matching";
-import { VectorUtils } from "@convex/types/entities/embedding";
 
 /**
  * Scoring weights validator (matches CompatibilityFeatures)
@@ -38,7 +37,6 @@ const scoringWeightsV = v.object({
   experienceGap: v.number(),
   industryMatch: v.number(),
   timezoneCompatibility: v.number(),
-  vectorSimilarity: v.number(),
   orgConstraintMatch: v.number(),
   languageOverlap: v.number(),
   roleComplementarity: v.number(),
@@ -52,7 +50,6 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
   experienceGap: 0.15,
   industryMatch: 0.1,
   timezoneCompatibility: 0.1,
-  vectorSimilarity: 0.2,
   orgConstraintMatch: 0.05,
   languageOverlap: 0.1,
   roleComplementarity: 0.05,
@@ -94,7 +91,6 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
  *       "experienceGap": 1.0,
  *       "industryMatch": 0.7,
  *       "timezoneCompatibility": 1.0,
- *       "vectorSimilarity": 0.88,
  *       "orgConstraintMatch": 1.0,
  *       "languageOverlap": 0.9,
  *       "roleComplementarity": 1.0
@@ -102,7 +98,6 @@ const DEFAULT_WEIGHTS: CompatibilityFeatures = {
  *     "explanation": [
  *       "Strong interest alignment",
  *       "Ideal experience gap for mentorship",
- *       "High semantic profile similarity",
  *       "Complementary professional roles"
  *     ]
  *   }
@@ -213,7 +208,6 @@ export const calculateCompatibilityScore = action({
  *       "experienceGap": 1.0,
  *       "industryMatch": 0.7,
  *       "timezoneCompatibility": 1.0,
- *       "vectorSimilarity": 0.88,
  *       "orgConstraintMatch": 1.0,
  *       "languageOverlap": 0.9,
  *       "roleComplementarity": 1.0
@@ -280,7 +274,7 @@ export const calculateCompatibilityScoreInternal = internalAction({
 /**
  * @summary Get user data needed for scoring calculations
  * @description Retrieves all data needed to calculate compatibility scores for a user including
- * profile information, interests, and latest embedding vector. Returns null if user not found.
+ * profile information and interests. Returns null if user not found.
  * Used internally by scoring functions to gather user data efficiently.
  *
  * @example request
@@ -310,10 +304,6 @@ export const calculateCompatibilityScoreInternal = internalAction({
  *       "company": "TechCorp"
  *     },
  *     "interests": ["technology", "ai", "startups", "mentorship"],
- *     "embedding": {
- *       "vector": "<ArrayBuffer>",
- *       "model": "text-embedding-3-small"
- *     }
  *   }
  * }
  * ```
@@ -351,15 +341,6 @@ export async function readUserScoringData(
 
   const interests = userInterests.map((ui) => ui.interestKey);
 
-  // Get latest user embedding for vector similarity
-  const embedding = await ctx.db
-    .query("embeddings")
-    .withIndex("by_source", (q) =>
-      q.eq("sourceType", "user").eq("sourceId", userId),
-    )
-    .order("desc")
-    .first();
-
   return {
     user: {
       _id: user._id,
@@ -376,12 +357,6 @@ export async function readUserScoringData(
         }
       : null,
     interests,
-    embedding: embedding
-      ? {
-          vector: embedding.vector, // Already ArrayBuffer from schema
-          model: embedding.model,
-        }
-      : null,
   };
 }
 
@@ -447,29 +422,11 @@ function calculateCompatibilityFeatures(
   // Timezone compatibility (simplified - would need actual timezone data)
   const timezoneCompatibility = 1.0; // Placeholder - implement with real timezone logic
 
-  // Vector similarity using centralized utilities
-  let vectorSimilarity: number | undefined;
-  if (
-    user1Data.embedding &&
-    user2Data.embedding &&
-    user1Data.embedding.model === user2Data.embedding.model
-  ) {
-    // Convert ArrayBuffer to Float32Array using centralized utilities
-    const vector1 = VectorUtils.bufferToFloatArray(user1Data.embedding.vector);
-    const vector2 = VectorUtils.bufferToFloatArray(user2Data.embedding.vector);
-
-    // Calculate cosine similarity using centralized utility
-    const similarity = VectorUtils.cosineSimilarity(vector1, vector2);
-    // Convert from [-1, 1] to [0, 1] range
-    vectorSimilarity = (similarity + 1) / 2;
-  }
-
   return {
     interestOverlap,
     experienceGap,
     industryMatch,
     timezoneCompatibility,
-    vectorSimilarity,
     orgConstraintMatch,
     languageOverlap,
     roleComplementarity,
@@ -670,8 +627,6 @@ function calculateOrgConstraintMatch(
   return 0.5; // Neutral if constraints don't match
 }
 
-// Vector similarity calculation is now handled by centralized VectorUtils
-
 /**
  * Calculate weighted final score
  */
@@ -688,7 +643,6 @@ function calculateWeightedScore(
     "experienceGap",
     "industryMatch",
     "timezoneCompatibility",
-    "vectorSimilarity",
     "orgConstraintMatch",
     "languageOverlap",
     "roleComplementarity",
@@ -725,10 +679,6 @@ function generateScoreExplanation(
     explanations.push("Ideal experience gap for mentorship");
   } else if (features.experienceGap > 0.7) {
     explanations.push("Similar experience levels");
-  }
-
-  if (features.vectorSimilarity && features.vectorSimilarity > 0.8) {
-    explanations.push("High semantic profile similarity");
   }
 
   if (features.roleComplementarity === 1.0) {
@@ -785,8 +735,6 @@ export function scoreQueuePair(user1: UserScoringData, user2: UserScoringData) {
     features.industryMatch >= 0.8
   )
     add("industryMatch", "Professional background in common");
-  if ((features.vectorSimilarity ?? 0) > 0.8)
-    add("vectorSimilarity", "Similar profile interests");
   if (
     user1.profile?.languages.length &&
     user2.profile?.languages.length &&

@@ -22,7 +22,6 @@ import { NoteV } from "../validators/note";
 import { PromptV } from "../validators/prompt";
 import { MatchingV } from "../validators/matching";
 import { WebRTCV } from "../validators/webrtc";
-import { EmbeddingV } from "../validators/embedding";
 import { MessagingV } from "../validators/messaging";
 import { SystemV } from "../validators/system";
 import { StreamV } from "../validators/stream";
@@ -44,7 +43,6 @@ export async function runCIValidation(): Promise<CIValidationReport> {
     PromptV,
     MatchingV,
     WebRTCV,
-    EmbeddingV,
     MessagingV,
     SystemV,
     StreamV,

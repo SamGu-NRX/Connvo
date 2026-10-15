@@ -46,7 +46,6 @@ export const FEATURE_KEYS = [
   "experienceGap",
   "industryMatch",
   "timezoneCompatibility",
-  "vectorSimilarity",
   "orgConstraintMatch",
   "languageOverlap",
   "roleComplementarity",
