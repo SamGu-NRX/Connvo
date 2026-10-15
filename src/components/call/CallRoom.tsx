@@ -182,8 +182,13 @@ export function CallRoom({
         },
         events,
       );
-      transport.publishLocalStream(m.stream);
-      transport.publishLocalState({ micOn: m.micOn, cameraOn: m.cameraOn });
+      // Credential loading can outlast a control change while joining.
+      const currentMedia = mediaRef.current;
+      transport.publishLocalStream(currentMedia.stream);
+      transport.publishLocalState({
+        micOn: currentMedia.micOn,
+        cameraOn: currentMedia.cameraOn,
+      });
     } catch (err) {
       setCallError({
         message:

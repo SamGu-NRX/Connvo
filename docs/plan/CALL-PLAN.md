@@ -83,6 +83,7 @@ DOM contract, which any call page must meet:
 | H-14 | Outsider | a signed-in non-participant gets a named rejection and no media |
 | H-15 | Lossy link | 5% and 15% loss with 300 ms delay, by a method `getStats` proves affects RTP: call stays connected, A/V recovers |
 | H-16 | Three peers | informational: all pairs receive media |
+| H-17 | Endpoint-issued TURN | endpoint-issued TURN credentials relay both peers' video and audio with relay-only ICE policy |
 
 Polish checks (P), on the real call page:
 - P-01: lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed;
@@ -121,3 +122,43 @@ locally; p95 recovery after H-07's 10 s drop <= 8 s; H-15 stays connected. P-01.
 
 Stop a direction when two consecutive rounds don't move its H pass rate or p95 numbers. Stop the project's local
 work when the pass bar is met on `alpha` for the chosen transport and P-01..P-05 pass. Record the reason here.
+
+## ICE connectivity, lane 2
+
+The real call page requests `meetings/webrtc/ice:configuration` before connecting.
+The action checks the existing `assertMeetingAccess` rule through an internal query
+before issuing credentials. The page keeps them in memory for that meeting session.
+Every initial offer and ICE restart requests configuration, refreshing the cache
+when fewer than 30 seconds of validity remain.
+After recovery runs out, the existing failed panel explains that a network may block
+calls and offers Retry. `data-call-connection-path` exposes `direct`, `relay` or
+`unknown` for diagnostics without addresses or credentials.
+
+Server environment names, set on the Convex deployment:
+
+- Cloudflare default: `TURN_CLOUDFLARE_KEY_ID`, `TURN_CLOUDFLARE_API_TOKEN`.
+- Coturn/shared-secret alternative: `TURN_SHARED_SECRET`, `TURN_URLS`.
+
+Cloudflare takes precedence when configured. `TURN_URLS` accepts comma-separated
+TURN URLs. Both providers issue one-hour credentials. Incomplete settings fail
+explicitly; with neither provider configured, the endpoint returns public STUN only.
+STUN cannot relay a call across restrictive networks. Secrets never use a
+`NEXT_PUBLIC_` name. Cloudflare's API contract is documented at
+https://developers.cloudflare.com/realtime/turn/generate-credentials/.
+
+Local proof, with the local backend on port 3102:
+
+```
+~/.long-run/bin/heavy node tools/call-eval/scripts/local-backend.mjs --port=3102
+~/.long-run/bin/heavy node tools/call-eval/scripts/run-eval.mjs --transport=reference --page=real --signaling=convex --base-url=http://localhost:3102 --scenarios=H-17 --seeds=1,2,3
+~/.long-run/bin/heavy node tools/call-eval/scripts/ice-states-proof.mjs --base-url=http://localhost:3102
+```
+
+H-17 changes only the browser's relay policy. It sets temporary provider settings
+on the checked anonymous local deployment and restores them afterward. The real
+action supplies the URLs and credentials. The relay verifies credential expiry
+and request integrity. The scenario decodes both remote video colours and audio
+tones, checks selected candidate types, and checks actual relay traffic counters.
+The state proof removes the relay, waits for recovery to fail, captures desktop and
+phone sizes with reduced motion, then restores the relay and uses Retry by keyboard.
+Captured states and the three-seed relay measurements are in `docs/lane2c/`.
