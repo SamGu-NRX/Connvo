@@ -288,7 +288,7 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
  * not a meeting. The call shows its own answer for those; the notes say
  * theirs here instead of taking the page down.
  */
-class NotesBoundary extends Component<
+export class NotesBoundary extends Component<
   { children: ReactNode },
   { error: Error | null }
 > {
