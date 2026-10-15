@@ -12,7 +12,6 @@
  * leave-call opens the dialog and leave-call-confirm leaves.
  */
 import Link from "next/link";
-import { toast } from "sonner";
 import {
   useCallback,
   useEffect,
@@ -121,6 +120,12 @@ export function CallRoom({
   } | null>(null);
   const [remotes, setRemotes] = useState<Map<string, Remote>>(new Map());
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [notification, setNotification] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notification) return;
+    const timer = setTimeout(() => setNotification(null), 3000);
+    return () => clearTimeout(timer);
+  }, [notification]);
   const leaveButtonRef = useRef<HTMLButtonElement>(null);
   const leavingRef = useRef(false);
   const transportRef = useRef<CallTransport | null>(null);
@@ -164,29 +169,16 @@ export function CallRoom({
     () => ({
       onPhase: (next) => {
         if (previousPhase.current === "reconnecting" && next === "connected")
-          toast.success("You're connected again", {
-            // Bottom toasts cover the phone's call controls.
-            position: "top-center",
-            id: "call-connection",
-            duration: 3000,
-          });
+          setNotification("You're connected again");
         previousPhase.current = next;
         setPhase(next);
       },
       onRemoteJoined: ({ participantId }) => {
-        toast(`${nameRef.current(participantId)} joined`, {
-          position: "top-center",
-          id: `call-person-${participantId}`,
-          duration: 2500,
-        });
+        setNotification(`${nameRef.current(participantId)} joined`);
         updateRemote(participantId, (r) => r);
       },
       onRemoteLeft: ({ participantId }) => {
-        toast(`${nameRef.current(participantId)} left`, {
-          position: "top-center",
-          id: `call-person-${participantId}`,
-          duration: 2500,
-        });
+        setNotification(`${nameRef.current(participantId)} left`);
         setRemotes((prev) => {
           if (!prev.has(participantId)) return prev;
           const next = new Map(prev);
@@ -388,6 +380,11 @@ export function CallRoom({
               : "In conversation"}
         </span>
       </header>
+      {/* Informational status stays out of the Tab order. The global toast
+          returned focus to Leave repeatedly in the P-03 keyboard scenario. */}
+      <div role="status" aria-live="polite" className={styles.callNotification}>
+        {notification ? <span className={styles.notice}>{notification}</span> : null}
+      </div>
       <div className={styles.workspace}>
         <div className={styles.callContent}>
           {screen === "lobby" ? (

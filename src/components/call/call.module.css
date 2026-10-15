@@ -590,3 +590,24 @@
 .room button:focus-visible {
   transition: none;
 }
+
+/* Above the stage so phone notifications never cover call controls. */
+.callNotification {
+  position: absolute;
+  z-index: 20;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  pointer-events: none;
+}
+.callNotification > span {
+  display: block;
+  padding: 10px 16px;
+  border: 1px solid #36554c;
+  border-radius: 10px;
+  background: #18352d;
+  color: var(--ink);
+  font-size: 14px;
+  box-shadow: 0 4px 16px #0003;
+}

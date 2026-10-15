@@ -6,15 +6,12 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocalMedia } from "@/hooks/useLocalMedia";
 import type { CallTransport, TransportEvents } from "@/lib/call/transport";
 import { CallRoom } from "@/components/call/CallRoom";
 const mocks = vi.hoisted(() => ({ media: null as LocalMedia | null }));
 vi.mock("@/hooks/useLocalMedia", () => ({ useLocalMedia: () => mocks.media }));
-vi.mock("sonner", () => ({
-  toast: Object.assign(vi.fn(), { success: vi.fn() }),
-}));
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((r) => {
@@ -39,7 +36,9 @@ const props = {
   exitHref: "/app",
   inviteLink: () => "https://example.test/call",
 };
+afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   mocks.media = {
     status: "ready",
     problem: null,
@@ -66,6 +65,18 @@ beforeEach(() => {
   };
 });
 describe("call room", () => {
+  it("announces joins without adding a notification to the Tab order", async () => {
+    const t = transport();
+    let events!: TransportEvents;
+    t.connect = vi.fn(async (_, next) => { events = next; });
+    render(<CallRoom {...props} createTransport={async () => t} />);
+    fireEvent.click(screen.getByTestId("join-call"));
+    await waitFor(() => expect(t.connect).toHaveBeenCalled());
+    act(() => events.onRemoteJoined({ participantId: "B" }));
+    const announcement = screen.getByText("Partner joined").closest('[role="status"]');
+    expect(announcement).toBeInTheDocument();
+    expect(announcement!.querySelector('button, a, [tabindex]')).toBeNull();
+  });
   it("publishes current mute state when signaling finishes after a capture change", async () => {
     const connected = deferred<void>();
     const t = transport();

@@ -58,13 +58,6 @@ try {
   await page.getByTestId("self-preview").waitFor();
   await capture(page, "connected");
   await axe(page, "connected");
-  const focusPath = [];
-  for (let i=0; i<25; i++) {
-    await page.keyboard.press("Tab");
-    focusPath.push(await page.evaluate(() => ({tag:document.activeElement?.tagName,id:document.activeElement?.getAttribute('data-testid'),html:document.activeElement?.outerHTML.slice(0,250)})));
-  }
-  console.log("focus-path", JSON.stringify(focusPath));
-  await page.evaluate(() => document.activeElement?.blur());
   const mic = page.getByTestId("toggle-mic");
   await page.keyboard.press("m");
   assert.equal(await mic.getAttribute("aria-pressed"), "true");
