@@ -34,8 +34,10 @@ jobs:
       - name: Run linting
         run: pnpm run lint
 
+      # App tests only. The call-eval harness's own tests (the "eval" project) check local
+      # macOS tooling, not Connvo, and run on demand with `pnpm test:run --project eval`.
       - name: Run tests
-        run: pnpm test:run
+        run: pnpm test:app
 
       - name: Start anonymous local backend for the build
         run: |
