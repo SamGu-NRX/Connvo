@@ -201,7 +201,10 @@ export async function pageDiagnostics(peer) {
           const c = pc.getConfiguration();
           return { policy: c.iceTransportPolicy, servers: (c.iceServers || []).map((s) => s.urls) };
         }),
-      probeConfig: w.__probeRtcConfig ? JSON.stringify(w.__probeRtcConfig).slice(0, 200) : null,
+      probeConfig: w.__probeRtcConfig ? {
+        policy: w.__probeRtcConfig.iceTransportPolicy ?? "all",
+        servers: (w.__probeRtcConfig.iceServers ?? []).map((server) => server.urls),
+      } : null,
       // Can this page gather at all? A fresh connection, 2 s of gathering.
       freshGather: await (async () => {
         try {

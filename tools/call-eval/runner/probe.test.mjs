@@ -39,6 +39,8 @@ class FakePC {
   getStats() {
     return Promise.resolve(new Map());
   }
+  /** @param {object} cfg */
+  setConfiguration(cfg) { this.__cfg = cfg; }
   getReceivers() {
     return [];
   }
@@ -116,6 +118,11 @@ describe("probe connection records", () => {
     const endpointServers = [{ urls: "turn:127.0.0.1:3478", username: "temporary", credential: "temporary" }];
     const endpointPc = new policyOnly.windowObj.RTCPeerConnection({ iceServers: endpointServers });
     expect(endpointPc.__cfg).toEqual({ iceServers: endpointServers, iceTransportPolicy: "relay" });
+    pc.setConfiguration({ iceServers: [{ urls: "stun:app.test" }] });
+    expect(pc.__cfg).toEqual(forced);
+    const refreshedServers = [{ urls: "turn:127.0.0.1:3478", username: "refreshed", credential: "refreshed" }];
+    endpointPc.setConfiguration({ iceServers: refreshedServers });
+    expect(endpointPc.__cfg).toEqual({ iceServers: refreshedServers, iceTransportPolicy: "relay" });
     await pc.getStats();
     expect(probe.getStatsCalls).toBe(1);
     expect(windowObj.__wrappedPcs).toContain(pc);

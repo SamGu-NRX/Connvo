@@ -82,6 +82,11 @@ export const probeInit = String.raw`
       probe.getStatsCalls++;
       return super.getStats(...args);
     }
+    // Credential refresh must keep H-07/H-15 on the measured relay path.
+    // H-17 overrides only policy, so its endpoint-issued servers stay intact.
+    setConfiguration(cfg) {
+      return super.setConfiguration({ ...cfg, ...(window.__probeRtcConfig || {}) });
+    }
     // close() fires no connectionstatechange event, so the record must
     // sync here or a cleanly closed pc would count as live forever.
     close() {
