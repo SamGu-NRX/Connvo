@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync, unlinkSync, rmdirSync } from "node:fs";
 import path from "node:path";
-import { chromium, type Browser } from "@playwright/test";
+import { chromium, expect, type Browser } from "@playwright/test";
 
 async function main() {
   const root = process.cwd();
@@ -53,6 +53,7 @@ export default function Page() { return <Suspense><State /></Suspense>; }
         `http://localhost:${port}/dev/call-bench/queue-component-proof?as=O&state=${state}`,
       );
       await page.locator(`[data-queue-state="${state}"]`).waitFor();
+      await expect(page.getByTestId("app-wordmark")).toHaveCSS("opacity", "1");
       for (const viewport of [
         { width: 1440, height: 900 },
         { width: 390, height: 844 },
