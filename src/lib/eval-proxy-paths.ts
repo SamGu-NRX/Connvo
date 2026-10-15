@@ -47,6 +47,13 @@ export function benchPathPassesThrough(
 const TEST_AUTH_PROXY_PATHS = new Set([
   "/dev/auth-proof",
   "/api/test-auth/token",
+  // Queue-to-call proofs use the same local identities as the call harness.
+  "/app/match-queue",
+  "/app/smart-connection",
+  "/app/professional/b2b",
+  "/app/professional/collaboration",
+  "/app/professional/mentorship",
+  "/app/professional/investment",
 ]);
 
 export function testAuthProxyExempt(

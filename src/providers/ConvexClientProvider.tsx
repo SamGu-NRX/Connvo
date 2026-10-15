@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { benchPathPassesThrough, testAuthProxyExempt } from "@/lib/eval-proxy-paths";
-import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import { ReactNode, createContext, useContext, useCallback, useEffect, useMemo, useRef } from "react";
 import { ConvexReactClient, useMutation } from "convex/react";
 import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
 import { AuthKitProvider, useAuth as useWorkOSAuth, useAccessToken } from "@workos-inc/authkit-nextjs/components";
@@ -91,7 +91,21 @@ function useAuth() {
   );
 }
 
+const ConvexOwner = createContext(false);
+
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  const hasOwner = useContext(ConvexOwner);
+  // Root and app layouts share one client. Two auth owners overwrite its
+  // authentication callback; removing either also clears the other's auth.
+  if (hasOwner) return children;
+  return (
+    <ConvexOwner.Provider value={true}>
+      <OwnedConvexClientProvider>{children}</OwnedConvexClientProvider>
+    </ConvexOwner.Provider>
+  );
+}
+
+function OwnedConvexClientProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const skipsAuthKit = TEST_AUTH_ENABLED && pathname !== null && (
     benchPathPassesThrough(pathname, {

@@ -1,0 +1,34 @@
+{
+  "sourceCommit": "4c28ad84a38da59d01711ab48a27bad4d5ee1375",
+  "lighthouseVersion": "13.5.0",
+  "fetchTime": "2026-10-15T08:12:04.039Z",
+  "url": "http://localhost:3101/app/match-queue?as=O",
+  "environment": "Next development server, local Convex and test identity O; not a production performance measurement",
+  "performance": 68.0,
+  "accessibility": 100,
+  "metrics": {
+    "first-contentful-paint": {
+      "value": 1358.346,
+      "unit": "millisecond"
+    },
+    "largest-contentful-paint": {
+      "value": 11709.6435,
+      "unit": "millisecond"
+    },
+    "total-blocking-time": {
+      "value": 241.00000000000182,
+      "unit": "millisecond"
+    },
+    "cumulative-layout-shift": {
+      "value": 0.09519017413713435,
+      "unit": "unitless"
+    },
+    "speed-index": {
+      "value": 1490.1807300003488,
+      "unit": "millisecond"
+    }
+  },
+  "queueAxeViolations": 0,
+  "queueAxeCaptures": 20,
+  "manualReview": "All 32 current screenshots inspected at full usable size. No blocking queue-card defects. Existing mobile navigation overlaps the redundant footer in tall states."
+}
