@@ -1,0 +1,20 @@
+[
+  {
+    "browser": "chromium",
+    "status": "processed",
+    "startupMs": 373,
+    "mean": 135.55555555555554,
+    "variance": 1.8287017746952188,
+    "outgoingLive": "live",
+    "stoppedOutput": "ended",
+    "retainedInput": "live",
+    "cancellation": "AbortError",
+    "fallbacks": []
+  },
+  {
+    "browser": "webkit",
+    "status": "unsupported",
+    "message": "Background blur is unavailable in this browser. Your camera is still on.",
+    "inputState": "live"
+  }
+]

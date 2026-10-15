@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "concurrentStatuses": [
+    "shown",
+    "pending"
+  ],
+  "latencyMs": 430,
+  "prompt": "Was there anything you were hoping we'd get to talk about today?",
+  "sharedSubscriptions": 2,
+  "usedInRecap": true,
+  "outsiderDenied": true,
+  "paidRequestsUpperBound": 1
+}

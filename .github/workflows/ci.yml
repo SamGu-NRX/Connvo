@@ -2,22 +2,28 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, alpha]
   pull_request:
-    branches: [main]
+    branches: [main, alpha]
 
 jobs:
   test:
-    runs-on: upnpmtu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: oven-sh/setup-pnpm@v2
+        uses: pnpm/action-setup@v4
         with:
-          pnpm-version: latest
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -28,15 +34,26 @@ jobs:
       - name: Run linting
         run: pnpm run lint
 
+      # App tests only. The call-eval harness's own tests (the "eval" project) check local
+      # macOS tooling, not Connvo, and run on demand with `pnpm test:run --project eval`.
       - name: Run tests
-        run: pnpm test
+        run: pnpm test:app
+
+      - name: Start anonymous local backend for the build
+        run: |
+          pnpm call-eval:backend -- --no-next --port=3103
+          node -e 'const fs = require("node:fs"); const state = JSON.parse(fs.readFileSync("tools/call-eval/out/state.json", "utf8")); fs.appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_CONVEX_URL=${state.convexUrl}\n`);'
 
       - name: Test build
         run: pnpm run build
 
+      - name: Stop anonymous local backend
+        if: always()
+        run: pnpm call-eval:backend -- --stop --port=3103
+
   deploy-staging:
     needs: test
-    runs-on: upnpmtu-latest
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
@@ -44,9 +61,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: oven-sh/setup-pnpm@v2
+        uses: pnpm/action-setup@v4
         with:
-          pnpm-version: latest
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -57,12 +80,12 @@ jobs:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID_STAGING }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY_STAGING }}
         run: |
-          pnpm run convex:codegen
-          pnpm run convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
+          pnpm exec convex codegen
+          pnpm exec convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
 
   deploy-production:
     needs: test
-    runs-on: upnpmtu-latest
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -70,9 +93,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: oven-sh/setup-pnpm@v2
+        uses: pnpm/action-setup@v4
         with:
-          pnpm-version: latest
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -83,5 +112,5 @@ jobs:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID_PROD }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY_PROD }}
         run: |
-          pnpm run convex:codegen
-          pnpm run convex deploy --prod --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
+          pnpm exec convex codegen
+          pnpm exec convex deploy --prod --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL

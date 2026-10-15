@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { StreamVideoClient, StreamVideo } from "@stream-io/video-react-sdk";
 import { tokenProvider } from "@/actions/stream.actions";
 import Loader from "@/components/Loader";
@@ -8,9 +8,37 @@ import { useWorkOSAuth } from "@/hooks/useWorkOSAuth";
 
 const API_KEY = process.env.NEXT_PUBLIC_STREAM_API_KEY;
 
+function createClientStore() {
+  let current: { userId: string; client: StreamVideoClient } | null = null;
+  const listeners = new Set<() => void>();
+  return {
+    getSnapshot: () => current,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    publish: (value: typeof current) => {
+      current = value;
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+const serverClientSnapshot = () => null;
+
 const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
-  const [videoClient, setVideoClient] = useState<StreamVideoClient | null>(
-    null,
+  // Unconfigured queue pages do not need a WorkOS or Stream account.
+  if (!API_KEY) return <>{children}</>;
+  return <ConfiguredStreamVideoProvider>{children}</ConfiguredStreamVideoProvider>;
+};
+
+const ConfiguredStreamVideoProvider = ({ children }: { children: ReactNode }) => {
+  const [clientStore] = useState(createClientStore);
+  const connection = useSyncExternalStore(
+    clientStore.subscribe,
+    clientStore.getSnapshot,
+    serverClientSnapshot,
   );
   const { user, loading } = useWorkOSAuth();
 
@@ -38,9 +66,10 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
       tokenProvider,
     });
 
-    setVideoClient(client);
+    clientStore.publish({ userId: user.id, client });
 
     return () => {
+      clientStore.publish(null);
       // best-effort cleanup
       if (client && typeof client.disconnectUser === "function") {
         client.disconnectUser().catch(() => {
@@ -48,15 +77,13 @@ const StreamVideoProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     };
-  }, [user, loading]);
-
-  // If API key is not provided, render children (skip Stream provider)
-  if (!API_KEY) return <>{children}</>;
+  }, [user, loading, clientStore]);
 
   // While client is initializing show loader
-  if (!videoClient) return <Loader />;
+  if (!connection || loading || connection.userId !== user?.id)
+    return <Loader />;
 
-  return <StreamVideo client={videoClient}>{children}</StreamVideo>;
+  return <StreamVideo client={connection.client}>{children}</StreamVideo>;
 };
 
 export default StreamVideoProvider;

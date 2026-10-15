@@ -1,5 +1,12 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+  Suspense,
+} from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -90,7 +97,19 @@ type MeetingSummaryPayload = {
   activePrompt: string;
 };
 
-export default function VideoMeeting() {
+const subscribeToHydration = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
+
+export default function VideoMeetingPage() {
+  return (
+    <Suspense fallback={<div role="status" className="grid min-h-screen place-items-center">Getting your meeting ready…</div>}>
+      <VideoMeeting />
+    </Suspense>
+  );
+}
+
+function VideoMeeting() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -113,7 +132,9 @@ export default function VideoMeeting() {
     }
   });
   const [timeElapsed, setTimeElapsed] = useState(0);
-  const [showTimeLeft, setShowTimeLeft] = useState(false);
+  const [timeDisplayOverride, setTimeDisplayOverride] = useState<
+    boolean | null
+  >(null);
   const prompts = useMemo(
     () => generatePrompts(userInterests.user1, userInterests.user2),
     [],
@@ -134,27 +155,45 @@ export default function VideoMeeting() {
     }
   });
   const [isChatOpen, setIsChatOpen] = useState(false);
-  // Defer reading localStorage until client mount to avoid SSR/client hydration mismatch
-  const [activeVideo, setActiveVideo] = useState<string | null>(null);
-  useEffect(() => {
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    clientSnapshot,
+    serverSnapshot,
+  );
+  const [activeVideoOverride, setActiveVideoOverride] = useState<{
+    value: string | null;
+  }>();
+  let savedActiveVideo: string | null = null;
+  if (hydrated) {
     try {
       const raw = localStorage.getItem(LS_KEYS.ACTIVE_VIDEO);
-      if (raw === null) return;
-      try {
-        const parsed = JSON.parse(raw);
-        setActiveVideo(parsed === null ? null : String(parsed));
-      } catch {
-        setActiveVideo(raw === "null" ? null : raw);
+      if (raw !== null) {
+        try {
+          const parsed = JSON.parse(raw);
+          savedActiveVideo = parsed === null ? null : String(parsed);
+        } catch {
+          savedActiveVideo = raw === "null" ? null : raw;
+        }
       }
     } catch {}
-  }, []);
-  const [visitedPromptIndices, setVisitedPromptIndices] = useState<number[]>(
-    [0],
-  );
+  }
+  const activeVideo = activeVideoOverride
+    ? activeVideoOverride.value
+    : savedActiveVideo;
+  const [visitedPromptIndices, setVisitedPromptIndices] = useState<number[]>([
+    0,
+  ]);
   const [showTimeAddedToast, setShowTimeAddedToast] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isAlmostOutOfTime, setIsAlmostOutOfTime] = useState(false);
-  const [messages, setMessages] = useState(() => {
+  const isAlmostOutOfTime = timeRemaining <= 60 && timeRemaining > 0;
+  const [previousTimeRemaining, setPreviousTimeRemaining] =
+    useState(timeRemaining);
+  if (timeRemaining !== previousTimeRemaining) {
+    setPreviousTimeRemaining(timeRemaining);
+    if (isAlmostOutOfTime) setTimeDisplayOverride(true);
+  }
+  const showTimeLeft = timeDisplayOverride ?? isAlmostOutOfTime;
+  const [messages, setMessages] = useState<typeof MOCK_MESSAGES>(() => {
     try {
       const raw = localStorage.getItem(LS_KEYS.MESSAGES);
       return raw ? JSON.parse(raw) : MOCK_MESSAGES;
@@ -254,7 +293,9 @@ export default function VideoMeeting() {
     () => persist(LS_KEYS.TIME_REMAINING, timeRemaining),
     [timeRemaining],
   );
-  useEffect(() => persist(LS_KEYS.ACTIVE_VIDEO, activeVideo), [activeVideo]);
+  useEffect(() => {
+    if (hydrated) persist(LS_KEYS.ACTIVE_VIDEO, activeVideo);
+  }, [activeVideo, hydrated]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -264,16 +305,6 @@ export default function VideoMeeting() {
     }, 1000);
     return () => clearInterval(timer);
   }, [timeManager]);
-
-  useEffect(() => {
-    // Check if time remaining is less than 1 minute
-    if (timeRemaining <= 60 && timeRemaining > 0) {
-      setShowTimeLeft(true);
-      setIsAlmostOutOfTime(true);
-    } else {
-      setIsAlmostOutOfTime(false);
-    }
-  }, [timeRemaining]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -289,7 +320,7 @@ export default function VideoMeeting() {
   };
 
   const handleVideoClick = (userId: string) => {
-    setActiveVideo((prev) => (prev === userId ? null : userId));
+    setActiveVideoOverride({ value: activeVideo === userId ? null : userId });
   };
   const addTime = () => {
     setTimeRemaining((prev) => prev + 300); // 300 seconds
@@ -460,12 +491,6 @@ export default function VideoMeeting() {
     );
   }, [timeManager]);
 
-  useEffect(() => {
-    if (isCallEnded) {
-      persistSummaryAndRedirect();
-    }
-  }, [isCallEnded, persistSummaryAndRedirect]);
-
   if (isCallEnded) {
     return (
       <div
@@ -495,7 +520,7 @@ export default function VideoMeeting() {
         showTimeLeft={showTimeLeft}
         isAlmostOutOfTime={isAlmostOutOfTime}
         isSidebarOpen={isSidebarOpen}
-        onToggleTimeDisplay={() => setShowTimeLeft(!showTimeLeft)}
+        onToggleTimeDisplay={() => setTimeDisplayOverride(!showTimeLeft)}
         onToggleSidebar={handleSidebarToggle}
         onOpenSettings={() => setIsSettingsOpen(true)}
         theme={theme}

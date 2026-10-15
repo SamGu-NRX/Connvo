@@ -1,0 +1,40 @@
+{
+  "alpha": "35895b1230112b5fc6d93be781da8187f02ac33e",
+  "capturedCommit": "7ed95f3b50a890af72073df7bc31d983053ec79a",
+  "tests": {
+    "convex": 42,
+    "inCall": 8,
+    "localBackend": 50
+  },
+  "typecheck": {
+    "passed": false,
+    "branchDiagnostics": 476,
+    "alphaDiagnostics": 476,
+    "addedDiagnosticLocations": []
+  },
+  "lint": {
+    "scopedFiles": 17,
+    "errors": 0,
+    "configuration": "installed eslint-config-next/core-web-vitals via temporary flat config",
+    "repositoryCommand": "pnpm lint uses next lint, removed in Next 16"
+  },
+  "visualReview": {
+    "screenshots": 28,
+    "viewports": [
+      "1440x900",
+      "390x844"
+    ],
+    "inspectedAtFullSize": true
+  },
+  "liveRequests": {
+    "selector": 10,
+    "integrationIncludingFailedCheck": 2,
+    "mountedBrowser": 1,
+    "total": 13,
+    "cap": 20
+  },
+  "limits": [
+    "Local development backend and seeded users; no production deployment",
+    "Desktop Chromium mobile viewport; no physical-device or VoiceOver run"
+  ]
+}

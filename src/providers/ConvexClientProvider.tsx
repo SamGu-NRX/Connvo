@@ -1,21 +1,37 @@
 "use client";
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { benchPathPassesThrough, testAuthProxyExempt } from "@/lib/eval-proxy-paths";
+import { ReactNode, createContext, useContext, useCallback, useEffect, useMemo, useRef } from "react";
 import { ConvexReactClient, useMutation } from "convex/react";
 import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
 import { AuthKitProvider, useAuth as useWorkOSAuth, useAccessToken } from "@workos-inc/authkit-nextjs/components";
 import { api } from "@convex/_generated/api";
+import { useTestAuth } from "@/lib/test-auth";
+
+// CALL-PLAN.md D3 (eval-only): test auth is opt-in via env and refuses to
+// start in production — see src/lib/test-auth.tsx.
+const TEST_AUTH_ENABLED = process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1";
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
 
-if (!convexUrl) {
-  throw new Error(
-    "ConvexClientProvider requires NEXT_PUBLIC_CONVEX_URL to be defined. " +
-      "Set this environment variable to your Convex deployment URL (e.g. https://your-app.convex.cloud).",
-  );
+// The Convex client is constructed lazily at first render instead of at
+// module evaluation: a top-level throw here crashes every route the moment
+// this module is imported — including the eval-only call bench, which must
+// boot with no Convex deployment at all (tools/call-eval/CONTRACT.md).
+// Normal routes still fail loudly: the provider throws the same error when
+// it renders without the env.
+let convexClient: ConvexReactClient | null = null;
+function getConvexClient(): ConvexReactClient {
+  if (!convexUrl) {
+    throw new Error(
+      "ConvexClientProvider requires NEXT_PUBLIC_CONVEX_URL to be defined. " +
+        "Set this environment variable to your Convex deployment URL (e.g. https://your-app.convex.cloud).",
+    );
+  }
+  convexClient ??= new ConvexReactClient(convexUrl);
+  return convexClient;
 }
-
-const convex = new ConvexReactClient(convexUrl);
 
 // Wrapper hook that matches ConvexProviderWithAuthKit's expected interface
 function useAuth() {
@@ -75,15 +91,49 @@ function useAuth() {
   );
 }
 
+const ConvexOwner = createContext(false);
+
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
+  const hasOwner = useContext(ConvexOwner);
+  // Root and app layouts share one client. Two auth owners overwrite its
+  // authentication callback; removing either also clears the other's auth.
+  if (hasOwner) return children;
   return (
-    <AuthKitProvider>
-      <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
-        <UpsertUserOnAuth />
-        {children}
-      </ConvexProviderWithAuthKit>
-    </AuthKitProvider>
+    <ConvexOwner.Provider value={true}>
+      <OwnedConvexClientProvider>{children}</OwnedConvexClientProvider>
+    </ConvexOwner.Provider>
   );
+}
+
+function OwnedConvexClientProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const skipsAuthKit = TEST_AUTH_ENABLED && pathname !== null && (
+    benchPathPassesThrough(pathname, {
+      benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,
+      realCallFlag: process.env.NEXT_PUBLIC_CONNVO_REAL_CALL,
+      afterCallFlag: process.env.NEXT_PUBLIC_CONNVO_AFTER_CALL,
+      nodeEnv: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV,
+      vercel: process.env.VERCEL,
+    }) || testAuthProxyExempt(pathname, {
+      NEXT_PUBLIC_CONNVO_TEST_AUTH: process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL: process.env.VERCEL,
+    })
+  );
+  const content = (
+    <ConvexProviderWithAuthKit
+      client={getConvexClient()}
+      useAuth={TEST_AUTH_ENABLED ? useTestAuth : useAuth}
+    >
+      {TEST_AUTH_ENABLED ? null : <UpsertUserOnAuth />}
+      {children}
+    </ConvexProviderWithAuthKit>
+  );
+  // Only proxy-exempt eval paths lack WorkOS middleware. Other routes, including
+  // the public landing page, need AuthKit for their useAuth consumers.
+  return skipsAuthKit ? content : <AuthKitProvider>{content}</AuthKitProvider>;
 }
 
 function UpsertUserOnAuth() {

@@ -1,0 +1,13 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v4.0.4 <repo>
+
+ ✓  frontend  src/app/api/test-auth/token/route.test.ts (3 tests) 20ms
+ ✓  frontend  src/lib/call/transports/p2p/convex-signaling.test.ts (11 tests) 695ms
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  12:50:06
+   Duration  868ms (transform 44ms, setup 0ms, collect 68ms, tests 714ms, environment 0ms, prepare 4ms)
+

@@ -1,0 +1,247 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+(node:45359) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ RUN  v4.0.4 <repo>
+
+stderr | convex/meetings/webrtc/mesh.test.ts > review fixes > B1: a participant cannot mark another participant's session failed
+WebRTC connection failure: ice_failed {
+  meetingId: '10006;meetings',
+  sessionId: 'session-a-1',
+  userId: '10001;users',
+  errorDetails: undefined
+}
+
+ ❯  convex  convex/meetings/webrtc/mesh.test.ts (26 tests | 9 failed | 16 skipped) 159ms
+     ↓ an outsider is refused by every public function
+     ↓ a signed-out caller is refused
+     ↓ a participant cannot use another participant's session
+     ↓ a meeting that is not active cannot be joined
+     ↓ a signal reaches only the session it is addressed to, until acknowledged
+     ↓ a signal to a session that is not open stores nothing
+     ↓ a reload replaces the old session: it stops, and its unread signals are dropped
+     ↓ closing a session leaves signals for a same-named session in another meeting unread
+     ↓ presence lists open sessions with their announced mic and camera state
+     ↓ leaving closes the session with reason left
+     ↓ a participant's heartbeat closes a peer whose heartbeat stopped
+     ↓ a fresh heartbeat keeps a session open
+     ↓ the cron closes stale sessions when nobody else heartbeats
+     ↓ cleanup deletes old signals even when nobody read them
+     ↓ oversized SDP and candidate fields are refused and nothing is stored
+     ✓ a session is limited per window, other sessions are not, and the next window resets it 46ms
+     ↓ closing a session deletes its rate-limit counters
+     × B1: a participant cannot mark another participant's session failed 24ms
+     × B2: signals for a same-named session in another meeting cannot bury a session's own 25ms
+     × B3: a recipient's unread queue is bounded and refuses with a named error when full 1ms
+     × S4: a call holds at most MAX_CALL_SESSIONS people 1ms
+     × S4: a session keeps rate-limit counters only for its current window 2ms
+     × S5: cleanup deletes one batch per run and schedules the rest 34ms
+     × S6: the stale sweep finds an expired session behind many live ones 10ms
+     × S8: ending the meeting closes its call sessions 14ms
+     × S8: a concluded meeting refuses heartbeats and signals 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > B1: a participant cannot mark another participant's session failed
+AssertionError: promise resolved "{ retryRecommended: false, …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "retryRecommended": false,
++   "success": true,
+  }
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:657:5
+    655|         errorType: "ice_failed",
+    656|       }),
+    657|     ).rejects.toThrow(/not your call session/);
+       |     ^
+    658|     expect((await sessionRow("session-a-1"))?.state).toBe("connected");
+    659|     // The owner still can.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > B2: signals for a same-named session in another meeting cannot bury a session's own
+AssertionError: expected [] to deeply equal [ { kind: 'description', …(2) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "kind": "description",
+-     "sdp": "v=0 offer",
+-     "type": "offer",
+-   },
+- ]
++ []
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:684:39
+    682|       sessionId: "session-b-1",
+    683|     });
+    684|     expect(forB.map((r) => r.signal)).toEqual([offer]);
+       |                                       ^
+    685|   });
+    686| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > B3: a recipient's unread queue is bounded and refuses with a named error when full
+AssertionError: promise resolved "{ delivered: true }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "delivered": true,
+  }
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:695:5
+    693|     await expect(
+    694|       sendIn(meetingId, "A", "session-a-1", "session-b-1", candidate),
+    695|     ).rejects.toThrow(/signal queue is full/);
+       |     ^
+    696|     const queued = await as.B.query(
+    697|       api.meetings.webrtc.mesh.signalsForSession,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > S4: a call holds at most MAX_CALL_SESSIONS people
+AssertionError: promise resolved "{ participantId: 'mesh-e', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "participantId": "mesh-e",
++   "sessionId": "session-x-1",
+  }
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:716:48
+    714|       await join(p, `session-${p.toLowerCase()}-1`);
+    715|     }
+    716|     await expect(join(who[FULL], "session-x-1")).rejects.toThrow(
+       |                                                ^
+    717|       /call is full/,
+    718|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > S4: a session keeps rate-limit counters only for its current window
+AssertionError: expected [ { …(8) }, { …(8) }, { …(8) } ] to have a length of 1 but got 3
+
+- Expected
++ Received
+
+- 1
++ 3
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:749:7
+    747|     expect(
+    748|       await t.run((ctx) => ctx.db.query("rateLimits").collect()),
+    749|     ).toHaveLength(1);
+       |       ^
+    750|   });
+    751| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > S5: cleanup deletes one batch per run and schedules the rest
+AssertionError: expected { sessionsDeleted: 501, …(1) } to deeply equal { signalsDeleted: 500, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "sessionsDeleted": 500,
+-   "signalsDeleted": 500,
++   "sessionsDeleted": 501,
++   "signalsDeleted": 501,
+  }
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:791:7
+    789|         {},
+    790|       ),
+    791|     ).toEqual({
+       |       ^
+    792|       signalsDeleted: BATCH,
+    793|       sessionsDeleted: BATCH,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > S6: the stale sweep finds an expired session behind many live ones
+AssertionError: expected 'connected' to be 'closed' // Object.is equality
+
+Expected: "closed"
+Received: "connected"
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:833:56
+    831|     await t.mutation(internal.meetings.webrtc.mesh.sweepStaleSessions,…
+    832|     await t.finishAllScheduledFunctions(vi.runAllTimers);
+    833|     expect((await sessionRow("stale-session"))?.state).toBe("closed");
+       |                                                        ^
+    834|     expect((await sessionRow("live-session-0"))?.state).toBe("connecte…
+    835|   }, 60_000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > S8: ending the meeting closes its call sessions
+AssertionError: expected { …(11) } to match object { state: 'closed', …(1) }
+(10 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "closedReason": "ended",
+-   "state": "closed",
++   "state": "connected",
+  }
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:843:45
+    841|     await join("B", "session-b-1");
+    842|     await as.A.mutation(api.meetings.lifecycle.endMeeting, { meetingId…
+    843|     expect(await sessionRow("session-a-1")).toMatchObject({
+       |                                             ^
+    844|       state: "closed",
+    845|       closedReason: "ended",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL   convex  convex/meetings/webrtc/mesh.test.ts > review fixes > S8: a concluded meeting refuses heartbeats and signals
+AssertionError: expected { alive: true } to deeply equal { alive: false, reason: 'ended' }
+
+- Expected
++ Received
+
+  {
+-   "alive": false,
+-   "reason": "ended",
++   "alive": true,
+  }
+
+ ❯ convex/meetings/webrtc/mesh.test.ts:859:7
+    857|         sessionId: "session-a-1",
+    858|       }),
+    859|     ).toEqual({ alive: false, reason: "ended" });
+       |       ^
+    860|     await expect(
+    861|       sendIn(meetingId, "B", "session-b-1", "session-a-1", offer),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 1 passed | 16 skipped (26)
+   Start at  12:49:54
+   Duration  361ms (transform 121ms, setup 33ms, collect 93ms, tests 159ms, environment 24ms, prepare 2ms)
+

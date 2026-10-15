@@ -8,7 +8,7 @@
 import { resetAllMocks, cleanupTestMocks } from "./mocks";
 
 type ViteImportMeta = ImportMeta & {
-  glob?: (pattern: string) => Record<string, () => Promise<unknown>>;
+  glob: (pattern: string) => Record<string, () => Promise<unknown>>;
 };
 
 const isVitestRuntime =

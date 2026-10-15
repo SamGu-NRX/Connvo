@@ -1,0 +1,34 @@
+{
+  "browser": "Native Safari 26.6.2 through CUA with physical MacBook Pro camera and Fifine microphone",
+  "startedAt": "2026-10-15T09:05:21.278Z",
+  "safariCameraReceivedByChromium": {
+    "readyState": 4,
+    "width": 640,
+    "height": 360,
+    "currentTime": 0.532663,
+    "tracks": [
+      {
+        "kind": "audio",
+        "muted": false,
+        "ready": "live"
+      },
+      {
+        "kind": "video",
+        "muted": false,
+        "ready": "live"
+      }
+    ]
+  },
+  "verifiedSourceHead": "051622937ac05575dbfd642174c0a7d81ef72314",
+  "nativeObservations": [
+    "Native Safari 26.6.2 accepted MacBook Pro Camera and Fifine Microphone for localhost. The call lobby showed the physical-camera preview and enabled Join.",
+    "Safari showed the Chromium peer moving green test video with black and white bars, and Good connection.",
+    "Leave confirmation reached You left the call and Your camera and microphone are off.",
+    "The owned Safari verification tab was closed; the original Start Page was preserved. No app instrumentation or Safari settings changes were used in this run."
+  ],
+  "priorNumericLocalPreview": "safari-native-pre-7fd.json records readyState4,1280x720 and currentTime6.2977 to10.8336 before alpha7fd8eb4. Those measurements used a temporary URL-gated probe that was removed.",
+  "limits": [
+    "Physical camera image was very dark; no identifiable face was recorded.",
+    "A physical iPhone and received audio quality were not verified."
+  ]
+}

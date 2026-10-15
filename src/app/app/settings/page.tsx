@@ -37,25 +37,10 @@ export default function SettingsPage() {
     !authLoading &&
     convexAuthState.isAuthenticated &&
     !convexAuthState.isLoading;
-  const settings = (() => {
-    try {
-      return useQuery(
-        api.settings.queries.getCurrentUserSettings,
-        readyForSettingsQuery ? {} : "skip"
-      );
-    } catch (error) {
-      console.error("[SettingsPage] useQuery threw", {
-        readyForSettingsQuery,
-        authLoading,
-        workosAuthenticated: isAuthenticated,
-        convexAuth: {
-          isAuthenticated: convexAuthState.isAuthenticated,
-          isLoading: convexAuthState.isLoading,
-        },
-      }, error);
-      throw error;
-    }
-  })();
+  const settings = useQuery(
+    api.settings.queries.getCurrentUserSettings,
+    readyForSettingsQuery ? {} : "skip",
+  );
   const updateSettings = useMutation(api.settings.mutations.updateSettings);
   
   // Local state for optimistic updates
@@ -68,8 +53,9 @@ export default function SettingsPage() {
     activityTracking: true,
   });
   
-  // Sync with backend when settings load
-  useEffect(() => {
+  const [previousSettings, setPreviousSettings] = useState<typeof settings>(undefined);
+  if (settings !== previousSettings) {
+    setPreviousSettings(settings);
     if (settings) {
       setLocalSettings({
         emailNotifications: settings.emailNotifications,
@@ -80,7 +66,7 @@ export default function SettingsPage() {
         activityTracking: settings.activityTracking,
       });
     }
-  }, [settings]);
+  }
   
   const handleToggle = async (
     key: keyof typeof localSettings,

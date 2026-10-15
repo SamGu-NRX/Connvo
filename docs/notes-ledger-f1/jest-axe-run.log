@@ -1,0 +1,32 @@
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v4.0.4 <repo>
+
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state loading: axe-clean, polite live region, exact status label 471ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state synced: axe-clean, polite live region, exact status label 384ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state saving: axe-clean, polite live region, exact status label 398ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state unconfirmed: axe-clean, polite live region, exact status label 391ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state conflict: axe-clean, polite live region, exact status label 391ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state offline: axe-clean, polite live region, exact status label 394ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state updating: axe-clean, polite live region, exact status label 397ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state loading never renders a plain Saved label 361ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state saving never renders a plain Saved label 368ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state unconfirmed never renders a plain Saved label 365ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state conflict never renders a plain Saved label 379ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state offline never renders a plain Saved label 370ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > state updating never renders a plain Saved label 374ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > unconfirmed state: unsaved list keeps the words visible with state words 399ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > conflict state: words stay visible and retry is offered 386ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel honest state matrix > offline state: typing still works (editor never disabled while syncing) 12ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel keyboard access > walkthrough: textarea → typing → retry via Enter → no trap → focus-visible rings 459ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel keyboard access > keeps natural tab order (no positive tabindex anywhere) 371ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel reduced motion > prefers-reduced-motion: no animation-affecting props; state visible via text 22ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel reduced motion > default motion: entrance animation present and settles to the visible panel 358ms
+ ✓  in-call  test/in-call/meetingNotesPanel.a11y.test.tsx > MeetingNotesPanel responsive classes > stacks on mobile, row on sm+; editor grows on md+ (class-level only) 5ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  13:54:43
+   Duration  7.96s (transform 158ms, setup 183ms, collect 348ms, tests 7.06s, environment 272ms, prepare 3ms)
+

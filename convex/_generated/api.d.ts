@@ -13,6 +13,10 @@ import type * as audit_logging from "../audit/logging.js";
 import type * as auth_guards from "../auth/guards.js";
 import type * as auth_permissions from "../auth/permissions.js";
 import type * as crons from "../crons.js";
+import type * as devEval_callMeeting from "../devEval/callMeeting.js";
+import type * as devEval_queueProof from "../devEval/queueProof.js";
+import type * as devEval_seed from "../devEval/seed.js";
+import type * as devEval_shape from "../devEval/shape.js";
 import type * as embeddings_actions from "../embeddings/actions.js";
 import type * as embeddings_index from "../embeddings/index.js";
 import type * as embeddings_mutations from "../embeddings/mutations.js";
@@ -20,6 +24,9 @@ import type * as embeddings_queries from "../embeddings/queries.js";
 import type * as environments_local from "../environments/local.js";
 import type * as environments_production from "../environments/production.js";
 import type * as environments_staging from "../environments/staging.js";
+import type * as history_flag from "../history/flag.js";
+import type * as history_mutations from "../history/mutations.js";
+import type * as history_queries from "../history/queries.js";
 import type * as http from "../http.js";
 import type * as insights_generation from "../insights/generation.js";
 import type * as insights_index from "../insights/index.js";
@@ -47,6 +54,7 @@ import type * as lib_utils from "../lib/utils.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_videoProviders from "../lib/videoProviders.js";
 import type * as matching_analytics from "../matching/analytics.js";
+import type * as matching_callQueue from "../matching/callQueue.js";
 import type * as matching_engine from "../matching/engine.js";
 import type * as matching_index from "../matching/index.js";
 import type * as matching_queue from "../matching/queue.js";
@@ -54,6 +62,7 @@ import type * as matching_scheduler from "../matching/scheduler.js";
 import type * as matching_scoring from "../matching/scoring.js";
 import type * as meetings_lifecycle from "../meetings/lifecycle.js";
 import type * as meetings_postProcessing from "../meetings/postProcessing.js";
+import type * as meetings_presenceLifecycle from "../meetings/presenceLifecycle.js";
 import type * as meetings_queries from "../meetings/queries.js";
 import type * as meetings_stateTracking from "../meetings/stateTracking.js";
 import type * as meetings_stream_cleanup from "../meetings/stream/cleanup.js";
@@ -61,7 +70,10 @@ import type * as meetings_stream_index from "../meetings/stream/index.js";
 import type * as meetings_stream_streamHandlers from "../meetings/stream/streamHandlers.js";
 import type * as meetings_stream_streamHelpers from "../meetings/stream/streamHelpers.js";
 import type * as meetings_stream_webhooks from "../meetings/stream/webhooks.js";
+import type * as meetings_webrtc_ice from "../meetings/webrtc/ice.js";
+import type * as meetings_webrtc_iceAccess from "../meetings/webrtc/iceAccess.js";
 import type * as meetings_webrtc_index from "../meetings/webrtc/index.js";
+import type * as meetings_webrtc_mesh from "../meetings/webrtc/mesh.js";
 import type * as meetings_webrtc_rooms from "../meetings/webrtc/rooms.js";
 import type * as meetings_webrtc_signaling from "../meetings/webrtc/signaling.js";
 import type * as migrations_createMissingProfiles from "../migrations/createMissingProfiles.js";
@@ -76,17 +88,22 @@ import type * as notes_queries from "../notes/queries.js";
 import type * as profiles_mutations from "../profiles/mutations.js";
 import type * as profiles_queries from "../profiles/queries.js";
 import type * as prompts_actions from "../prompts/actions.js";
+import type * as prompts_bank from "../prompts/bank.js";
 import type * as prompts_index from "../prompts/index.js";
+import type * as prompts_live from "../prompts/live.js";
 import type * as prompts_mutations from "../prompts/mutations.js";
 import type * as prompts_queries from "../prompts/queries.js";
 import type * as prompts_scheduler from "../prompts/scheduler.js";
+import type * as prompts_selection from "../prompts/selection.js";
 import type * as realtime_batchedOperations from "../realtime/batchedOperations.js";
 import type * as realtime_subscriptionActions from "../realtime/subscriptionActions.js";
 import type * as realtime_subscriptionManager from "../realtime/subscriptionManager.js";
 import type * as realtime_subscriptions from "../realtime/subscriptions.js";
 import type * as schema_ai from "../schema/ai.js";
+import type * as schema_history from "../schema/history.js";
 import type * as schema_interests from "../schema/interests.js";
 import type * as schema_legacy from "../schema/legacy.js";
+import type * as schema_livePrompts from "../schema/livePrompts.js";
 import type * as schema_matching from "../schema/matching.js";
 import type * as schema_meetings from "../schema/meetings.js";
 import type * as schema_messaging from "../schema/messaging.js";
@@ -106,9 +123,6 @@ import type * as transcripts_ingestion from "../transcripts/ingestion.js";
 import type * as transcripts_initialization from "../transcripts/initialization.js";
 import type * as transcripts_queries from "../transcripts/queries.js";
 import type * as transcripts_streaming from "../transcripts/streaming.js";
-import type * as types___tests___ciValidation from "../types/__tests__/ciValidation.js";
-import type * as types___tests___monitoringTools from "../types/__tests__/monitoringTools.js";
-import type * as types___tests___typeValidationUtils from "../types/__tests__/typeValidationUtils.js";
 import type * as types__template from "../types/_template.js";
 import type * as types_api_index from "../types/api/index.js";
 import type * as types_api_pagination from "../types/api/pagination.js";
@@ -157,20 +171,16 @@ import type {
   FunctionReference,
 } from "convex/server";
 
-/**
- * A utility for referencing Convex functions in your app's API.
- *
- * Usage:
- * ```js
- * const myFunctionReference = api.myModule.myFunction;
- * ```
- */
 declare const fullApi: ApiFromModules<{
   "analytics/meetings": typeof analytics_meetings;
   "audit/logging": typeof audit_logging;
   "auth/guards": typeof auth_guards;
   "auth/permissions": typeof auth_permissions;
   crons: typeof crons;
+  "devEval/callMeeting": typeof devEval_callMeeting;
+  "devEval/queueProof": typeof devEval_queueProof;
+  "devEval/seed": typeof devEval_seed;
+  "devEval/shape": typeof devEval_shape;
   "embeddings/actions": typeof embeddings_actions;
   "embeddings/index": typeof embeddings_index;
   "embeddings/mutations": typeof embeddings_mutations;
@@ -178,6 +188,9 @@ declare const fullApi: ApiFromModules<{
   "environments/local": typeof environments_local;
   "environments/production": typeof environments_production;
   "environments/staging": typeof environments_staging;
+  "history/flag": typeof history_flag;
+  "history/mutations": typeof history_mutations;
+  "history/queries": typeof history_queries;
   http: typeof http;
   "insights/generation": typeof insights_generation;
   "insights/index": typeof insights_index;
@@ -205,6 +218,7 @@ declare const fullApi: ApiFromModules<{
   "lib/validators": typeof lib_validators;
   "lib/videoProviders": typeof lib_videoProviders;
   "matching/analytics": typeof matching_analytics;
+  "matching/callQueue": typeof matching_callQueue;
   "matching/engine": typeof matching_engine;
   "matching/index": typeof matching_index;
   "matching/queue": typeof matching_queue;
@@ -212,6 +226,7 @@ declare const fullApi: ApiFromModules<{
   "matching/scoring": typeof matching_scoring;
   "meetings/lifecycle": typeof meetings_lifecycle;
   "meetings/postProcessing": typeof meetings_postProcessing;
+  "meetings/presenceLifecycle": typeof meetings_presenceLifecycle;
   "meetings/queries": typeof meetings_queries;
   "meetings/stateTracking": typeof meetings_stateTracking;
   "meetings/stream/cleanup": typeof meetings_stream_cleanup;
@@ -219,7 +234,10 @@ declare const fullApi: ApiFromModules<{
   "meetings/stream/streamHandlers": typeof meetings_stream_streamHandlers;
   "meetings/stream/streamHelpers": typeof meetings_stream_streamHelpers;
   "meetings/stream/webhooks": typeof meetings_stream_webhooks;
+  "meetings/webrtc/ice": typeof meetings_webrtc_ice;
+  "meetings/webrtc/iceAccess": typeof meetings_webrtc_iceAccess;
   "meetings/webrtc/index": typeof meetings_webrtc_index;
+  "meetings/webrtc/mesh": typeof meetings_webrtc_mesh;
   "meetings/webrtc/rooms": typeof meetings_webrtc_rooms;
   "meetings/webrtc/signaling": typeof meetings_webrtc_signaling;
   "migrations/createMissingProfiles": typeof migrations_createMissingProfiles;
@@ -234,17 +252,22 @@ declare const fullApi: ApiFromModules<{
   "profiles/mutations": typeof profiles_mutations;
   "profiles/queries": typeof profiles_queries;
   "prompts/actions": typeof prompts_actions;
+  "prompts/bank": typeof prompts_bank;
   "prompts/index": typeof prompts_index;
+  "prompts/live": typeof prompts_live;
   "prompts/mutations": typeof prompts_mutations;
   "prompts/queries": typeof prompts_queries;
   "prompts/scheduler": typeof prompts_scheduler;
+  "prompts/selection": typeof prompts_selection;
   "realtime/batchedOperations": typeof realtime_batchedOperations;
   "realtime/subscriptionActions": typeof realtime_subscriptionActions;
   "realtime/subscriptionManager": typeof realtime_subscriptionManager;
   "realtime/subscriptions": typeof realtime_subscriptions;
   "schema/ai": typeof schema_ai;
+  "schema/history": typeof schema_history;
   "schema/interests": typeof schema_interests;
   "schema/legacy": typeof schema_legacy;
+  "schema/livePrompts": typeof schema_livePrompts;
   "schema/matching": typeof schema_matching;
   "schema/meetings": typeof schema_meetings;
   "schema/messaging": typeof schema_messaging;
@@ -264,9 +287,6 @@ declare const fullApi: ApiFromModules<{
   "transcripts/initialization": typeof transcripts_initialization;
   "transcripts/queries": typeof transcripts_queries;
   "transcripts/streaming": typeof transcripts_streaming;
-  "types/__tests__/ciValidation": typeof types___tests___ciValidation;
-  "types/__tests__/monitoringTools": typeof types___tests___monitoringTools;
-  "types/__tests__/typeValidationUtils": typeof types___tests___typeValidationUtils;
   "types/_template": typeof types__template;
   "types/api/index": typeof types_api_index;
   "types/api/pagination": typeof types_api_pagination;
@@ -309,150 +329,33 @@ declare const fullApi: ApiFromModules<{
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
 }>;
-declare const fullApiWithMounts: typeof fullApi;
 
+/**
+ * A utility for referencing Convex functions in your app's public API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
+ */
 export declare const api: FilterApi<
-  typeof fullApiWithMounts,
+  typeof fullApi,
   FunctionReference<any, "public">
 >;
+
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
 export declare const internal: FilterApi<
-  typeof fullApiWithMounts,
+  typeof fullApi,
   FunctionReference<any, "internal">
 >;
 
 export declare const components: {
-  rateLimiter: {
-    lib: {
-      checkRateLimit: FunctionReference<
-        "query",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          count?: number;
-          key?: string;
-          name: string;
-          reserve?: boolean;
-          throws?: boolean;
-        },
-        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
-      >;
-      clearAll: FunctionReference<
-        "mutation",
-        "internal",
-        { before?: number },
-        null
-      >;
-      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
-      getValue: FunctionReference<
-        "query",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          key?: string;
-          name: string;
-          sampleShards?: number;
-        },
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          shard: number;
-          ts: number;
-          value: number;
-        }
-      >;
-      rateLimit: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: null;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          count?: number;
-          key?: string;
-          name: string;
-          reserve?: boolean;
-          throws?: boolean;
-        },
-        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
-      >;
-      resetRateLimit: FunctionReference<
-        "mutation",
-        "internal",
-        { key?: string; name: string },
-        null
-      >;
-    };
-    time: {
-      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
-    };
-  };
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

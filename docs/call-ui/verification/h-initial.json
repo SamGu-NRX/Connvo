@@ -1,0 +1,267 @@
+[
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 3361,
+      "timeToFirstRemoteFrameMs": 3480,
+      "timeToFirstRemoteFrameMsReverse": 3484,
+      "fpsAtoB": 24.3,
+      "fpsBtoA": 23.5,
+      "colourMsAseesB": 3488,
+      "colourMsBseesA": 3491
+    },
+    "failure": null,
+    "ms": 13559
+  },
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": false,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": null,
+    "failure": {
+      "message": "H-01: time to first remote frame exceeded the 5 s bar (A 7901 ms, B 7907 ms)",
+      "stack": "ScenarioError: H-01: time to first remote frame exceeded the 5 s bar (A 7901 ms, B 7907 ms)\n    at scenario_H_01 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-h.mjs:101:11)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/run.mjs:99:26)\n    at async runOne (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/run.mjs:78:12)"
+    },
+    "ms": 7911
+  },
+  {
+    "scenario": "H-01",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
+    "measurements": {
+      "joinMs": 3446,
+      "timeToFirstRemoteFrameMs": 3463,
+      "timeToFirstRemoteFrameMsReverse": 3474,
+      "fpsAtoB": 23.8,
+      "fpsBtoA": 23.1,
+      "colourMsAseesB": 3481,
+      "colourMsBseesA": 3589
+    },
+    "failure": null,
+    "ms": 13714
+  },
+  {
+    "scenario": "H-02",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
+    "measurements": {
+      "aHearsB": 655.9,
+      "bHearsA": 438.3
+    },
+    "failure": null,
+    "ms": 5927
+  },
+  {
+    "scenario": "H-02",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
+    "measurements": {
+      "aHearsB": 658.4,
+      "bHearsA": 437.9
+    },
+    "failure": null,
+    "ms": 3919
+  },
+  {
+    "scenario": "H-02",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
+    "measurements": {
+      "aHearsB": 660.2,
+      "bHearsA": 446.8
+    },
+    "failure": null,
+    "ms": 3922
+  },
+  {
+    "scenario": "H-03",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+    "measurements": {
+      "muteFlipMs": 61,
+      "silentAfterMs": 444,
+      "unmuteFlipMs": 50,
+      "restoredToneHz": 438.3
+    },
+    "failure": null,
+    "ms": 4815
+  },
+  {
+    "scenario": "H-03",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+    "measurements": {
+      "muteFlipMs": 55,
+      "silentAfterMs": 428,
+      "unmuteFlipMs": 54,
+      "restoredToneHz": 436.7
+    },
+    "failure": null,
+    "ms": 6713
+  },
+  {
+    "scenario": "H-03",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+    "measurements": {
+      "muteFlipMs": 56,
+      "silentAfterMs": 455,
+      "unmuteFlipMs": 60,
+      "restoredToneHz": 440.1
+    },
+    "failure": null,
+    "ms": 5917
+  },
+  {
+    "scenario": "H-04",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
+    "measurements": {
+      "offFlipMs": 59,
+      "resumedFps": 23.1
+    },
+    "failure": null,
+    "ms": 8921
+  },
+  {
+    "scenario": "H-04",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
+    "measurements": {
+      "offFlipMs": 42,
+      "resumedFps": 23.6
+    },
+    "failure": null,
+    "ms": 9877
+  },
+  {
+    "scenario": "H-04",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
+    "measurements": {
+      "offFlipMs": 46,
+      "resumedFps": 26.6
+    },
+    "failure": null,
+    "ms": 8218
+  },
+  {
+    "scenario": "H-05",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
+    "measurements": {
+      "fpsBefore": 23.7,
+      "fpsDuring": 33.5,
+      "fpsAfter": 31.6,
+      "phase": true,
+      "colorDistance": 1
+    },
+    "failure": null,
+    "ms": 10737
+  },
+  {
+    "scenario": "H-05",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
+    "measurements": {
+      "fpsBefore": 23,
+      "fpsDuring": 30.6,
+      "fpsAfter": 29.8,
+      "phase": true,
+      "colorDistance": 1
+    },
+    "failure": null,
+    "ms": 12514
+  },
+  {
+    "scenario": "H-05",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
+    "measurements": {
+      "fpsBefore": 27.7,
+      "fpsDuring": 32.3,
+      "fpsAfter": 33.2,
+      "phase": true,
+      "colorDistance": 1
+    },
+    "failure": null,
+    "ms": 10710
+  },
+  {
+    "scenario": "H-06",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "context without media permission shows an actionable error; granting and `retry-media` joins",
+    "measurements": {
+      "errorText": "Your browser is blocking the camera and microphone for this site.",
+      "phaseDenied": "idle",
+      "joinedAfterRetry": true,
+      "fpsBseesA": 25.9
+    },
+    "failure": null,
+    "ms": 10167
+  },
+  {
+    "scenario": "H-06",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "context without media permission shows an actionable error; granting and `retry-media` joins",
+    "measurements": {
+      "errorText": "Your browser is blocking the camera and microphone for this site.",
+      "phaseDenied": "idle",
+      "joinedAfterRetry": true,
+      "fpsBseesA": 22.3
+    },
+    "failure": null,
+    "ms": 18879
+  },
+  {
+    "scenario": "H-06",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "context without media permission shows an actionable error; granting and `retry-media` joins",
+    "measurements": {
+      "errorText": "Your browser is blocking the camera and microphone for this site.",
+      "phaseDenied": "idle",
+      "joinedAfterRetry": true,
+      "fpsBseesA": 22.3
+    },
+    "failure": null,
+    "ms": 30228
+  }
+]

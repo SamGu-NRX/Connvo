@@ -1,0 +1,54 @@
+[backend] 1/6 keys
+[backend] keys regenerated (kid connvo-local-test-1)
+[backend] 2/6 convex local deployment (anonymous, no account)
+[backend] harness tree: pruned 7 test artifact(s): auth/guards.test.ts, auth/permissions.test.ts, matching/matching.test.ts, notes/operations.test.ts, transcripts/ingestion.test.ts, ...
+[backend] harness tree: 25 entries in convex-harness/
+[backend] 2/6 waiting for convex dev provisioning (first run downloads the local backend binary)...
+[backend] convex deployment up: http://127.0.0.1:3210
+[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)
+[backend] deployment guard ok: anonymous:anonymous-connvo-int answering on 127.0.0.1:3210
+[backend] 4/6 re-push + seed
+[backend] TIMED OUT (push): the watch session did not complete a re-push within 540 s; convex-dev log tail:
+npm warn exec The following package was not found and will be installed: convex@1.46.0
+Setting up a new project...
+Downloading Convex backend binary
+waiting for local backend to start...
+Warning: Unknown property in `node`: `18`
+  These properties will be preserved but are not recognized by this version of Convex.
+✔ Configured a local deployment for http://127.0.0.1:3210 and saved its:
+    name as CONVEX_DEPLOYMENT
+    client URL as NEXT_PUBLIC_CONVEX_URL
+    HTTP actions URL as NEXT_PUBLIC_CONVEX_SITE_URL
+ to .env.local
+
+Write your Convex functions in convex-harness
+Give us feedback at https://convex.dev/community or support@convex.dev
+View the Convex dashboard at null
+
+▌ Developing against deployment:
+▌ [Local] Port 3210 • No Convex account (run npx convex login to link to a project)
+▌ └─ http://127.0.0.1:3210
+Convex AI files are not installed. Run npx convex ai-files install to get started or npx convex ai-files disable to hide this message.
+Downloading Convex dashboard
+- Preparing Convex functions...
+
+✘ [ERROR] Could not resolve "convex/server"
+
+    convex-harness/convex.config.ts:1:26:
+      1 │ import { defineApp } from "convex/server";
+        ╵                           ~~~~~~~~~~~~~~~
+
+  You can mark the path "convex/server" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+✘ [ERROR] Could not resolve "@convex-dev/rate-limiter/convex.config"
+
+    convex-harness/convex.config.ts:2:24:
+      2 │ import rateLimiter from "@convex-dev/rate-limiter/convex.config";
+        ╵                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "@convex-dev/rate-limiter/convex.config" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+[31m✖[39m esbuild failed: Error: Build failed with 2 errors:
+convex-harness/convex.config.ts:1:26: ERROR: Could not resolve "convex/server"
+convex-harness/convex.config.ts:2:24: ERROR: Could not resolve "@convex-dev/rate-limiter/convex.config"
+

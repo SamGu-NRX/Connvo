@@ -20,7 +20,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InCallPrompt {
   _id: Id<"prompts">;
@@ -88,7 +88,7 @@ export function useInCallPrompts(
   onNewPrompt?: (newPrompts: InCallPrompt[]) => void
 ): UseInCallPromptsResult {
   const previousPromptsRef = useRef<InCallPrompt[]>([]);
-  const lastSeenUpdateRef = useRef<number>(0);
+  const [lastSeenUpdate, setLastSeenUpdate] = useState(0);
 
   // Subscribe to real-time in-call prompts
   const subscription = useQuery(
@@ -118,12 +118,12 @@ export function useInCallPrompts(
   }, [prompts, subscription, onNewPrompt]);
 
   // Check if there are new prompts since last seen
-  const hasNewPrompts = lastUpdated !== undefined && lastUpdated > lastSeenUpdateRef.current;
+  const hasNewPrompts = lastUpdated !== undefined && lastUpdated > lastSeenUpdate;
 
   // Mark prompts as seen
   const markPromptsAsSeen = useCallback(() => {
     if (lastUpdated !== undefined) {
-      lastSeenUpdateRef.current = lastUpdated;
+      setLastSeenUpdate(lastUpdated);
     }
   }, [lastUpdated]);
 
@@ -136,7 +136,6 @@ export function useInCallPrompts(
       await updateFeedbackMutation({
         promptId,
         feedback,
-        timestamp: Date.now(),
       });
     } catch (err) {
       console.error("Failed to submit prompt feedback:", err);

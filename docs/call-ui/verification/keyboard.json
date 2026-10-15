@@ -1,0 +1,412 @@
+[
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "html": "<button type=\"button\" class=\"call-module__cM8oca__pipHandle\" aria-label=\"Move self view, bottom right. Use arrow keys or drag.\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move\" aria-hidden=\"t"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-mic",
+    "html": "<button type=\"button\" data-testid=\"toggle-mic\" aria-pressed=\"false\" aria-label=\"Mute microphone\" title=\"Mute microphone (M)\" aria-keyshortcuts=\"M\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hove"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-camera",
+    "html": "<button type=\"button\" data-testid=\"toggle-camera\" aria-pressed=\"false\" aria-label=\"Turn camera off\" title=\"Turn camera off (V)\" aria-keyshortcuts=\"V\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] h"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "device-settings",
+    "html": "<button type=\"button\" data-testid=\"device-settings\" aria-label=\"Camera and microphone settings\" title=\"Camera and microphone settings\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hover:bg-white/1"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "leave-call",
+    "html": "<button type=\"button\" data-testid=\"leave-call\" class=\"call-module__cM8oca__press ml-2 flex h-11 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-semibold text-white outline-none hover:bg-rose-500 focus-visible:ring-[3px] focus-visible:ring-rose-400/60\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fil"
+  },
+  {
+    "tag": "NEXTJS-PORTAL",
+    "id": null,
+    "html": "<nextjs-portal style=\"--nextjs-dev-tools-scale: 1;\"></nextjs-portal>"
+  },
+  {
+    "tag": "BODY",
+    "id": null,
+    "html": "<body class=\"cal_cfd742a-module__5mOhzW__variable inter_67e7efaf-module__937IpW__variable\"><div hidden=\"\"><!--$--><!--/$--></div><script>((e, i, s, u, m, a, l, h)=>{\n    let d = document.documentElement, w = [\n        \"light\",\n        \"dark\"\n    ];\n    function p(n) {\n        (Array.isArray(e) ? e : [\n            e\n        ]).forEach((y)=>{\n       "
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "html": "<button type=\"button\" class=\"call-module__cM8oca__pipHandle\" aria-label=\"Move self view, bottom right. Use arrow keys or drag.\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move\" aria-hidden=\"t"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-mic",
+    "html": "<button type=\"button\" data-testid=\"toggle-mic\" aria-pressed=\"false\" aria-label=\"Mute microphone\" title=\"Mute microphone (M)\" aria-keyshortcuts=\"M\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hove"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-camera",
+    "html": "<button type=\"button\" data-testid=\"toggle-camera\" aria-pressed=\"false\" aria-label=\"Turn camera off\" title=\"Turn camera off (V)\" aria-keyshortcuts=\"V\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] h"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "device-settings",
+    "html": "<button type=\"button\" data-testid=\"device-settings\" aria-label=\"Camera and microphone settings\" title=\"Camera and microphone settings\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hover:bg-white/1"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "leave-call",
+    "html": "<button type=\"button\" data-testid=\"leave-call\" class=\"call-module__cM8oca__press ml-2 flex h-11 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-semibold text-white outline-none hover:bg-rose-500 focus-visible:ring-[3px] focus-visible:ring-rose-400/60\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fil"
+  },
+  {
+    "tag": "NEXTJS-PORTAL",
+    "id": null,
+    "html": "<nextjs-portal style=\"--nextjs-dev-tools-scale: 1;\"></nextjs-portal>"
+  },
+  {
+    "tag": "BODY",
+    "id": null,
+    "html": "<body class=\"cal_cfd742a-module__5mOhzW__variable inter_67e7efaf-module__937IpW__variable\"><div hidden=\"\"><!--$--><!--/$--></div><script>((e, i, s, u, m, a, l, h)=>{\n    let d = document.documentElement, w = [\n        \"light\",\n        \"dark\"\n    ];\n    function p(n) {\n        (Array.isArray(e) ? e : [\n            e\n        ]).forEach((y)=>{\n       "
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "html": "<button type=\"button\" class=\"call-module__cM8oca__pipHandle\" aria-label=\"Move self view, bottom right. Use arrow keys or drag.\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move\" aria-hidden=\"t"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-mic",
+    "html": "<button type=\"button\" data-testid=\"toggle-mic\" aria-pressed=\"false\" aria-label=\"Mute microphone\" title=\"Mute microphone (M)\" aria-keyshortcuts=\"M\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hove"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-camera",
+    "html": "<button type=\"button\" data-testid=\"toggle-camera\" aria-pressed=\"false\" aria-label=\"Turn camera off\" title=\"Turn camera off (V)\" aria-keyshortcuts=\"V\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] h"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "device-settings",
+    "html": "<button type=\"button\" data-testid=\"device-settings\" aria-label=\"Camera and microphone settings\" title=\"Camera and microphone settings\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hover:bg-white/1"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "leave-call",
+    "html": "<button type=\"button\" data-testid=\"leave-call\" class=\"call-module__cM8oca__press ml-2 flex h-11 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-semibold text-white outline-none hover:bg-rose-500 focus-visible:ring-[3px] focus-visible:ring-rose-400/60\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fil"
+  },
+  {
+    "tag": "NEXTJS-PORTAL",
+    "id": null,
+    "html": "<nextjs-portal style=\"--nextjs-dev-tools-scale: 1;\"></nextjs-portal>"
+  },
+  {
+    "tag": "BODY",
+    "id": null,
+    "html": "<body class=\"cal_cfd742a-module__5mOhzW__variable inter_67e7efaf-module__937IpW__variable\"><div hidden=\"\"><!--$--><!--/$--></div><script>((e, i, s, u, m, a, l, h)=>{\n    let d = document.documentElement, w = [\n        \"light\",\n        \"dark\"\n    ];\n    function p(n) {\n        (Array.isArray(e) ? e : [\n            e\n        ]).forEach((y)=>{\n       "
+  },
+  {
+    "tag": "BUTTON",
+    "id": null,
+    "html": "<button type=\"button\" class=\"call-module__cM8oca__pipHandle\" aria-label=\"Move self view, bottom right. Use arrow keys or drag.\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move\" aria-hidden=\"t"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-mic",
+    "html": "<button type=\"button\" data-testid=\"toggle-mic\" aria-pressed=\"false\" aria-label=\"Mute microphone\" title=\"Mute microphone (M)\" aria-keyshortcuts=\"M\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hove"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "toggle-camera",
+    "html": "<button type=\"button\" data-testid=\"toggle-camera\" aria-pressed=\"false\" aria-label=\"Turn camera off\" title=\"Turn camera off (V)\" aria-keyshortcuts=\"V\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] h"
+  },
+  {
+    "tag": "BUTTON",
+    "id": "device-settings",
+    "html": "<button type=\"button\" data-testid=\"device-settings\" aria-label=\"Camera and microphone settings\" title=\"Camera and microphone settings\" class=\"call-module__cM8oca__press grid size-11 place-items-center rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-emerald-400/60 disabled:opacity-50 bg-white/10 text-[var(--ink)] hover:bg-white/1"
+  },
+  {
+    "seed": 1,
+    "result": {
+      "controls": [
+        {
+          "id": "toggle-mic",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Unmute microphone"
+        },
+        {
+          "id": "toggle-mic",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Mute microphone"
+        },
+        {
+          "id": "toggle-camera",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Turn camera on"
+        },
+        {
+          "id": "toggle-camera",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Turn camera off"
+        },
+        {
+          "id": "device-settings",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "popover opened and closed"
+        },
+        {
+          "id": "leave-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "join-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "retry-media",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "local tracks audio:live, video:live"
+        }
+      ]
+    }
+  },
+  {
+    "seed": 2,
+    "result": {
+      "controls": [
+        {
+          "id": "toggle-mic",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Unmute microphone"
+        },
+        {
+          "id": "toggle-mic",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Mute microphone"
+        },
+        {
+          "id": "toggle-camera",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Turn camera on"
+        },
+        {
+          "id": "toggle-camera",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Turn camera off"
+        },
+        {
+          "id": "device-settings",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "popover opened and closed"
+        },
+        {
+          "id": "leave-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "join-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "retry-media",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "local tracks audio:live, video:live"
+        }
+      ]
+    }
+  },
+  {
+    "seed": 3,
+    "result": {
+      "controls": [
+        {
+          "id": "toggle-mic",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Unmute microphone"
+        },
+        {
+          "id": "toggle-mic",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Mute microphone"
+        },
+        {
+          "id": "toggle-camera",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "true|Turn camera on"
+        },
+        {
+          "id": "toggle-camera",
+          "key": " ",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "false|Turn camera off"
+        },
+        {
+          "id": "device-settings",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "popover opened and closed"
+        },
+        {
+          "id": "leave-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "join-call",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": true
+        },
+        {
+          "id": "retry-media",
+          "key": "Enter",
+          "indicator": {
+            "visible": true,
+            "outline": true,
+            "ring": true,
+            "focusVisible": true
+          },
+          "observed": "local tracks audio:live, video:live"
+        }
+      ]
+    }
+  }
+]

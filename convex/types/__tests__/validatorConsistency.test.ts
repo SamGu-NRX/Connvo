@@ -9,7 +9,7 @@
  */
 
 import { describe, test, expect } from "vitest";
-import { validateValidatorStructure } from "./typeValidationUtils";
+import { validateValidatorStructure } from "./typeValidationUtils.helpers";
 import { UserV, MeetingV, TranscriptV } from "../validators";
 import { PaginationResultV } from "../validators/pagination";
 import { CommonV } from "../validators/common";

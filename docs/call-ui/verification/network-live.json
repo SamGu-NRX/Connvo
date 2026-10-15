@@ -1,0 +1,60 @@
+[
+  {
+    "stage": "healthy",
+    "signaling": "convex",
+    "relay": "local TURN with UDP shaper",
+    "quality": "good",
+    "reduced": "false",
+    "text": "Good connection. Video quality adjusts to the connection.",
+    "senders": [
+      [
+        {
+          "maxBitrate": null,
+          "scaleResolutionDownBy": null
+        }
+      ]
+    ]
+  },
+  {
+    "stage": "15-percent-loss-300ms-delay",
+    "quality": "poor",
+    "reduced": "true",
+    "text": "Poor connection. Video quality reduced to keep the call connected.",
+    "senders": [
+      [
+        {
+          "maxBitrate": 250000,
+          "scaleResolutionDownBy": 2
+        }
+      ]
+    ]
+  },
+  {
+    "stage": "recovered",
+    "quality": "good",
+    "reduced": "false",
+    "text": "Good connection. Video quality adjusts to the connection.",
+    "senders": [
+      [
+        {
+          "maxBitrate": null,
+          "scaleResolutionDownBy": null
+        }
+      ]
+    ]
+  },
+  {
+    "stage": "stats-failure",
+    "quality": "unknown",
+    "reduced": "false",
+    "text": "Connection data unavailable. Video quality adjusts to the connection.",
+    "senders": [
+      [
+        {
+          "maxBitrate": null,
+          "scaleResolutionDownBy": null
+        }
+      ]
+    ]
+  }
+]

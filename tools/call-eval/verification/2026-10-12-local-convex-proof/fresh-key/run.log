@@ -1,0 +1,25 @@
+68978320842fe1821d91fea647a1598a3de8726c
+2026-10-12T13:56:39.348Z [proof] start at 68978320842fe1821d91fea647a1598a3de8726c, load 6.52 8.69 8.86
+[backend] 1/6 keys
+[backend] keys regenerated (kid connvo-local-test-1)
+[backend] 2/6 convex local deployment (anonymous, no account)
+[backend] harness tree: pruned 7 test artifact(s): auth/guards.test.ts, auth/permissions.test.ts, matching/matching.test.ts, notes/operations.test.ts, transcripts/ingestion.test.ts, ...
+[backend] harness tree: 25 entries in convex-harness/
+[backend] convex dev already running in tmux
+[backend] 2/6 waiting for convex dev provisioning (first run downloads the local backend binary)...
+[backend] convex deployment up: http://127.0.0.1:3210
+[backend] 3/6 deployment env (dummy WORKOS_CLIENT_ID + local test JWKS)
+[backend] deployment guard ok: anonymous:anonymous-agent answering on 127.0.0.1:3210
+[backend] 4/6 re-push + seed
+[backend] push completed after the deployment env was set ("Convex functions ready!" in convex-dev.log)
+[backend] seeded meeting m973b3w70zyx98a315y0g9nv9s8g41nh
+[backend] seed shape verified: A host, B and C participants, O no row, meeting and meetingState active
+[backend] 5/6 restarting next dev on :3035 (env or key changed)
+[backend] 6/6 tokens + state.json
+[backend] READY — state.json at /Users/samgu/Programming Projects/fleet-leads/wt/connvo-35/tools/call-eval/out/state.json
+[backend]   convex: http://127.0.0.1:3210
+[backend]   next:   http://localhost:3035  (bench: http://localhost:3035/dev/call-bench/reference)
+2026-10-12T13:56:46.995Z [proof] stage 1/3 backend: exit 0, ready true, 7.6 s
+2026-10-12T13:56:47.704Z [proof] stage 2/3 A (read): ok true, 0.4 s
+2026-10-12T13:56:48.016Z [proof] stage 2/3 B (read): ok true, 0.3 s
+2026-10-12T13:56:50.096Z [proof] stage 2/3 O (refused): ok true, 2.1 s

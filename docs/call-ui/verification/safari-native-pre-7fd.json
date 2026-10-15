@@ -1,0 +1,50 @@
+{
+  "browser": "Native Safari 26.6.2 through CUA with physical MacBook Pro camera and Fifine microphone",
+  "startedAt": "2026-10-15T08:35:08.455Z",
+  "safariCameraReceivedByChromium": {
+    "readyState": 4,
+    "width": 320,
+    "height": 180,
+    "currentTime": 0.522511,
+    "tracks": [
+      {
+        "kind": "audio",
+        "muted": false,
+        "ready": "live"
+      },
+      {
+        "kind": "video",
+        "muted": false,
+        "ready": "live"
+      }
+    ]
+  },
+  "localPreviewObservedViaNativeSafariAccessibility": {
+    "method": "Temporary playbackProbe=1 DOM output in StreamVideo, read through native CUA accessibility; removed before final acceptance. Playback code unchanged.",
+    "readyState": 4,
+    "width": 1280,
+    "height": 720,
+    "muted": true,
+    "playsInline": true,
+    "paused": false,
+    "currentTimeObservations": [
+      6.297727625000334,
+      10.833595166666782
+    ]
+  },
+  "nativeObservations": [
+    "Safari displayed the Chromium peer's moving green test video with black/white bars.",
+    "Safari blur toggle reported Background blur is unavailable in this browser. Your camera is still on. Capture remained live and joined the Chromium peer.",
+    "Physical camera image was very dark with faint room detail; no identifiable face was recorded.",
+    "Owned Safari verification tab closed after checks; original Start Page preserved."
+  ],
+  "webdriver": {
+    "available": true,
+    "version": "Safari 26.6.2 (21624.5.1.11.3)",
+    "sessionCreated": false,
+    "error": "You must enable 'Allow remote automation' in the Developer section of Safari Settings to control Safari via WebDriver.",
+    "settingsChanged": false
+  },
+  "referenceBase": "6c0ae81045d02bcc9501221e39b00f5591ee93dd",
+  "revisionScope": "Before merging alpha7fd8eb4 and upgrading React; do not use these local preview dimensions as measurements of the final branch."
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -57,7 +57,7 @@ export default function ProfilePage() {
   const updateProfile = useMutation(api.profiles.mutations.updateProfile);
   
   const [isSaving, setIsSaving] = useState(false);
-  const [formInitialized, setFormInitialized] = useState(false);
+  const formInitialized = useRef(false);
 
   // Debug logging - track profile page state
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function ProfilePage() {
       } : null,
       profileIsUndefined: profile === undefined,
       profileIsNull: profile === null,
-      formInitialized,
+      formInitialized: formInitialized.current,
     });
   }, [user, isAuthenticated, authLoading, convexUser, profile, formInitialized]);
   
@@ -98,13 +98,13 @@ export default function ProfilePage() {
   // Update form when profile loads or create default from user data
   useEffect(() => {
     // Wait until we have definitive data (not undefined)
-    if (profile === undefined || formInitialized) return;
+    if (profile === undefined || formInitialized.current) return;
     
     console.log('[ProfilePage] Form initialization effect triggered:', {
       hasProfile: !!profile,
       profileDisplayName: profile?.displayName,
       hasUser: !!user,
-      formInitialized,
+      formInitialized: formInitialized.current,
     });
     
     // Build form data from profile or fallback to user data
@@ -130,7 +130,7 @@ export default function ProfilePage() {
       keepTouched: false
     });
     
-    setFormInitialized(true);
+    formInitialized.current = true;
   }, [profile, convexUser, user, formInitialized, form]);
   
   const onSubmit = async (data: ProfileFormValues) => {

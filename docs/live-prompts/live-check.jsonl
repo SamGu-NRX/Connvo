@@ -1,0 +1,20 @@
+{"kind":"attempt","elapsedSeconds":20}
+{"kind":"result","elapsedSeconds":20,"latencyMs":644,"source":"decisions","id":"opener-reading-mood","content":"What kind of reading do you tend to reach for when you have some time?","probability":0.41}
+{"kind":"attempt","elapsedSeconds":240}
+{"kind":"result","elapsedSeconds":240,"latencyMs":321,"source":"decisions","id":"shared-interest-music-discovery","content":"How do you usually find new music you like?","probability":0.46}
+{"kind":"attempt","elapsedSeconds":780}
+{"kind":"result","elapsedSeconds":780,"latencyMs":531,"source":"decisions","id":"career-current-focus","content":"What's taking up most of your attention these days, work or otherwise?","probability":0.58}
+{"kind":"attempt","elapsedSeconds":1250}
+{"kind":"result","elapsedSeconds":1250,"latencyMs":576,"source":"decisions","id":"going-deeper-technology-boundaries","content":"Is there something you prefer doing without technology?","probability":0.3}
+{"kind":"attempt","elapsedSeconds":1700}
+{"kind":"result","elapsedSeconds":1700,"latencyMs":160,"source":"decisions","id":"wrap-up-music-swap","content":"Want to leave each other with a song to listen to?","probability":0.23}
+{"kind":"attempt","elapsedSeconds":20}
+{"kind":"result","elapsedSeconds":20,"latencyMs":939,"source":"decisions","id":"opener-reading-mood","content":"What kind of reading do you tend to reach for when you have some time?","probability":0.41}
+{"kind":"attempt","elapsedSeconds":240}
+{"kind":"result","elapsedSeconds":240,"latencyMs":139,"source":"decisions","id":"shared-interest-music-discovery","content":"How do you usually find new music you like?","probability":0.46}
+{"kind":"attempt","elapsedSeconds":780}
+{"kind":"result","elapsedSeconds":780,"latencyMs":152,"source":"decisions","id":"career-current-focus","content":"What's taking up most of your attention these days, work or otherwise?","probability":0.58}
+{"kind":"attempt","elapsedSeconds":1250}
+{"kind":"result","elapsedSeconds":1250,"latencyMs":141,"source":"decisions","id":"going-deeper-technology-boundaries","content":"Is there something you prefer doing without technology?","probability":0.3}
+{"kind":"attempt","elapsedSeconds":1700}
+{"kind":"result","elapsedSeconds":1700,"latencyMs":176,"source":"decisions","id":"wrap-up-music-swap","content":"Want to leave each other with a song to listen to?","probability":0.23}

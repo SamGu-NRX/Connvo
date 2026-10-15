@@ -745,3 +745,55 @@ export const MatchingV = {
     fairnessMetrics: FairnessMetricsV,
   },
 } as const;
+
+export const callQueueTypeV = v.union(
+  v.literal("casual"),
+  v.literal("professional"),
+);
+export const callQueueNoticeV = v.object({
+  id: v.string(),
+  type: v.union(
+    v.literal("partner_declined"),
+    v.literal("declined"),
+    v.literal("match_expired"),
+  ),
+});
+export const callQueueStatusV = v.union(
+  v.object({ state: v.literal("idle") }),
+  v.object({
+    state: v.literal("waiting"),
+    queueType: callQueueTypeV,
+    joinedAt: v.number(),
+    serverNow: v.number(),
+    expiresAt: v.number(),
+    notice: v.optional(callQueueNoticeV),
+  }),
+  v.object({
+    state: v.literal("matched"),
+    queueType: callQueueTypeV,
+    joinedAt: v.number(),
+    serverNow: v.number(),
+    matchId: v.id("callQueueMatches"),
+    expiresAt: v.number(),
+    partner: v.object({
+      id: v.id("users"),
+      displayName: v.string(),
+      avatarUrl: v.optional(v.string()),
+    }),
+    reasons: v.array(v.string()),
+    accepted: v.boolean(),
+    partnerAccepted: v.boolean(),
+  }),
+  v.object({
+    state: v.literal("ready"),
+    matchId: v.id("callQueueMatches"),
+    meetingId: v.id("meetings"),
+  }),
+  v.object({
+    state: v.literal("expired"),
+    queueType: callQueueTypeV,
+    joinedAt: v.number(),
+    serverNow: v.number(),
+    expiresAt: v.number(),
+  }),
+);

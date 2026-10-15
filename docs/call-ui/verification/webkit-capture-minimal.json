@@ -1,0 +1,468 @@
+{
+  "browser": "27.2",
+  "scenarios": [
+    {
+      "attached": false,
+      "withAudio": false,
+      "stopPrevious": false,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.951279249999061,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": false,
+      "withAudio": false,
+      "stopPrevious": true,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.9500797916662123,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": false,
+      "withAudio": true,
+      "stopPrevious": false,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.94904941666573,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        },
+        {
+          "kind": "audio",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": false,
+      "withAudio": true,
+      "stopPrevious": true,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.9487442500012548,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        },
+        {
+          "kind": "audio",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": true,
+      "withAudio": false,
+      "stopPrevious": false,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.9976868333342281,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": true,
+      "withAudio": false,
+      "stopPrevious": true,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.948631708333778,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": true,
+      "withAudio": true,
+      "stopPrevious": false,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 1.9490839583340858,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        },
+        {
+          "kind": "audio",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    },
+    {
+      "attached": true,
+      "withAudio": true,
+      "stopPrevious": true,
+      "playback": "fulfilled",
+      "readyState": 4,
+      "width": 640,
+      "time": 2.001284666666834,
+      "advances": true,
+      "tracks": [
+        {
+          "kind": "video",
+          "muted": false,
+          "ready": "live"
+        },
+        {
+          "kind": "audio",
+          "muted": false,
+          "ready": "live"
+        }
+      ]
+    }
+  ],
+  "capture": {
+    "success": false,
+    "name": "NotAllowedError",
+    "message": "The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission."
+  },
+  "injectedCapturePlayback": {
+    "readyState": 4,
+    "width": 640,
+    "time": 1.965978708332841,
+    "paused": false,
+    "muted": true,
+    "playsInline": true,
+    "capture": {
+      "stage": "override installed",
+      "lastRequest": {
+        "audio": true,
+        "video": true
+      },
+      "trackKinds": [
+        "audio",
+        "video"
+      ]
+    },
+    "tracks": [
+      {
+        "kind": "audio",
+        "ready": "live",
+        "muted": false
+      },
+      {
+        "kind": "video",
+        "ready": "live",
+        "muted": false
+      }
+    ]
+  },
+  "injectedCaptureAfterRebind": {
+    "readyState": 4,
+    "width": 640,
+    "time": 1.9952045416666806,
+    "paused": false,
+    "tracks": [
+      {
+        "kind": "audio",
+        "ready": "live"
+      },
+      {
+        "kind": "video",
+        "ready": "live"
+      }
+    ]
+  },
+  "webrtcWithoutCapturePermission": {
+    "connectionA": "connected",
+    "connectionB": "connected",
+    "iceA": "connected",
+    "iceB": "connected",
+    "candidates": {
+      "a": 1,
+      "b": 1
+    },
+    "remoteReadyState": 4,
+    "remoteWidth": 320,
+    "errors": []
+  },
+  "crossPageSynthetic": {
+    "separateContexts": [
+      {
+        "visibility": "visible",
+        "connection": "new",
+        "ice": "new",
+        "candidates": 1,
+        "videos": [
+          {
+            "id": "local",
+            "readyState": 4,
+            "width": 640,
+            "time": 10.297402499998498,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": false
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": false
+              }
+            ]
+          },
+          {
+            "id": "remote",
+            "readyState": 0,
+            "width": 0,
+            "time": 0,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": true
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": true
+              }
+            ]
+          }
+        ],
+        "stats": [
+          {
+            "type": "outbound-rtp",
+            "kind": "audio",
+            "bytesSent": 0
+          },
+          {
+            "type": "outbound-rtp",
+            "kind": "video",
+            "framesEncoded": 0,
+            "bytesSent": 0
+          }
+        ]
+      },
+      {
+        "visibility": "visible",
+        "connection": "new",
+        "ice": "new",
+        "candidates": 1,
+        "videos": [
+          {
+            "id": "local",
+            "readyState": 4,
+            "width": 640,
+            "time": 10.136457000000519,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": false
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": false
+              }
+            ]
+          },
+          {
+            "id": "remote",
+            "readyState": 0,
+            "width": 0,
+            "time": 0,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": true
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": true
+              }
+            ]
+          }
+        ],
+        "stats": [
+          {
+            "type": "outbound-rtp",
+            "kind": "audio",
+            "bytesSent": 0
+          },
+          {
+            "type": "outbound-rtp",
+            "kind": "video",
+            "framesEncoded": 0,
+            "bytesSent": 0
+          }
+        ]
+      }
+    ],
+    "sameContext": [
+      {
+        "visibility": "visible",
+        "connection": "new",
+        "ice": "new",
+        "candidates": 1,
+        "videos": [
+          {
+            "id": "local",
+            "readyState": 4,
+            "width": 640,
+            "time": 10.27906774999974,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": false
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": false
+              }
+            ]
+          },
+          {
+            "id": "remote",
+            "readyState": 0,
+            "width": 0,
+            "time": 0,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": true
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": true
+              }
+            ]
+          }
+        ],
+        "stats": [
+          {
+            "type": "outbound-rtp",
+            "kind": "audio",
+            "bytesSent": 0
+          },
+          {
+            "type": "outbound-rtp",
+            "kind": "video",
+            "framesEncoded": 0,
+            "bytesSent": 0
+          }
+        ]
+      },
+      {
+        "visibility": "visible",
+        "connection": "new",
+        "ice": "new",
+        "candidates": 1,
+        "videos": [
+          {
+            "id": "local",
+            "readyState": 4,
+            "width": 640,
+            "time": 10.13632250000046,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": false
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": false
+              }
+            ]
+          },
+          {
+            "id": "remote",
+            "readyState": 0,
+            "width": 0,
+            "time": 0,
+            "paused": false,
+            "tracks": [
+              {
+                "kind": "audio",
+                "ready": "live",
+                "muted": true
+              },
+              {
+                "kind": "video",
+                "ready": "live",
+                "muted": true
+              }
+            ]
+          }
+        ],
+        "stats": [
+          {
+            "type": "outbound-rtp",
+            "kind": "audio",
+            "bytesSent": 0
+          },
+          {
+            "type": "outbound-rtp",
+            "kind": "video",
+            "framesEncoded": 0,
+            "bytesSent": 0
+          }
+        ]
+      }
+    ]
+  }
+}

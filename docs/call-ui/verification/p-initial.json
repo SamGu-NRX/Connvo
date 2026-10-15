@@ -1,0 +1,513 @@
+[
+  {
+    "scenario": "P-01",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": {
+      "states": [
+        "lobby",
+        "connected",
+        "reconnecting",
+        "failed",
+        "ended"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "screenshots": [
+        "tools/call-eval/out/screenshots/p01-lobby-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-lobby-390x844.png",
+        "tools/call-eval/out/screenshots/p01-connected-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-connected-390x844.png",
+        "tools/call-eval/out/screenshots/p01-reconnecting-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-reconnecting-390x844.png",
+        "tools/call-eval/out/screenshots/p01-failed-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-failed-390x844.png",
+        "tools/call-eval/out/screenshots/p01-ended-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-ended-390x844.png"
+      ]
+    },
+    "failure": null,
+    "ms": 58562
+  },
+  {
+    "scenario": "P-01",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": {
+      "states": [
+        "lobby",
+        "connected",
+        "reconnecting",
+        "failed",
+        "ended"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "screenshots": [
+        "tools/call-eval/out/screenshots/p01-lobby-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-lobby-390x844.png",
+        "tools/call-eval/out/screenshots/p01-connected-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-connected-390x844.png",
+        "tools/call-eval/out/screenshots/p01-reconnecting-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-reconnecting-390x844.png",
+        "tools/call-eval/out/screenshots/p01-failed-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-failed-390x844.png",
+        "tools/call-eval/out/screenshots/p01-ended-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-ended-390x844.png"
+      ]
+    },
+    "failure": null,
+    "ms": 56233
+  },
+  {
+    "scenario": "P-01",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "lobby, connected, reconnecting, failed and ended states at 1440x900 and 390x844, screenshots committed",
+    "measurements": {
+      "states": [
+        "lobby",
+        "connected",
+        "reconnecting",
+        "failed",
+        "ended"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "screenshots": [
+        "tools/call-eval/out/screenshots/p01-lobby-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-lobby-390x844.png",
+        "tools/call-eval/out/screenshots/p01-connected-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-connected-390x844.png",
+        "tools/call-eval/out/screenshots/p01-reconnecting-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-reconnecting-390x844.png",
+        "tools/call-eval/out/screenshots/p01-failed-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-failed-390x844.png",
+        "tools/call-eval/out/screenshots/p01-ended-1440x900.png",
+        "tools/call-eval/out/screenshots/p01-ended-390x844.png"
+      ]
+    },
+    "failure": null,
+    "ms": 55937
+  },
+  {
+    "scenario": "P-02",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": {
+      "states": [
+        {
+          "state": "lobby",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "connected",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "reconnecting",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "failed",
+          "violations": 0,
+          "passes": 11
+        },
+        {
+          "state": "ended",
+          "violations": 0,
+          "passes": 7
+        }
+      ],
+      "appShellFindings": [
+        {
+          "state": "lobby",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "connected",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "reconnecting",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "failed",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "ended",
+          "seriousOrCritical": []
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 54455
+  },
+  {
+    "scenario": "P-02",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": {
+      "states": [
+        {
+          "state": "lobby",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "connected",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "reconnecting",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "failed",
+          "violations": 0,
+          "passes": 11
+        },
+        {
+          "state": "ended",
+          "violations": 0,
+          "passes": 7
+        }
+      ],
+      "appShellFindings": [
+        {
+          "state": "lobby",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "connected",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "reconnecting",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "failed",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "ended",
+          "seriousOrCritical": []
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 58461
+  },
+  {
+    "scenario": "P-02",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "axe shows no serious or critical violations in any state",
+    "measurements": {
+      "states": [
+        {
+          "state": "lobby",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "connected",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "reconnecting",
+          "violations": 0,
+          "passes": 15
+        },
+        {
+          "state": "failed",
+          "violations": 0,
+          "passes": 11
+        },
+        {
+          "state": "ended",
+          "violations": 0,
+          "passes": 7
+        }
+      ],
+      "appShellFindings": [
+        {
+          "state": "lobby",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "connected",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "reconnecting",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "failed",
+          "seriousOrCritical": []
+        },
+        {
+          "state": "ended",
+          "seriousOrCritical": []
+        }
+      ]
+    },
+    "failure": null,
+    "ms": 53842
+  },
+  {
+    "scenario": "P-03",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": false,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": null,
+    "failure": {
+      "message": "P-03: toggle-mic is not reachable by Tab",
+      "stack": "ScenarioError: P-03: toggle-mic is not reachable by Tab\n    at tabTo (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:164:9)\n    at async operate (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:178:7)\n    at async scenario_P_03 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:201:7)"
+    },
+    "ms": 1607
+  },
+  {
+    "scenario": "P-03",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": false,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": null,
+    "failure": {
+      "message": "P-03: toggle-mic is not reachable by Tab",
+      "stack": "ScenarioError: P-03: toggle-mic is not reachable by Tab\n    at tabTo (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:164:9)\n    at async operate (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:178:7)\n    at async scenario_P_03 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:201:7)"
+    },
+    "ms": 1579
+  },
+  {
+    "scenario": "P-03",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "every control is reachable and operable by keyboard, with visible focus",
+    "measurements": null,
+    "failure": {
+      "message": "P-03: toggle-mic is not reachable by Tab",
+      "stack": "ScenarioError: P-03: toggle-mic is not reachable by Tab\n    at tabTo (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:164:9)\n    at async operate (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:178:7)\n    at async scenario_P_03 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-call-ui/tools/call-eval/runner/scenarios-p.mjs:201:7)"
+    },
+    "ms": 1725
+  },
+  {
+    "scenario": "P-04",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": {
+      "mq": true,
+      "animationCount": 0,
+      "allAnimations": [
+        "background-color 51.804264109722ms",
+        "background-color 150ms"
+      ],
+      "maxDurationMs": 0,
+      "transitions": []
+    },
+    "failure": null,
+    "ms": 1742
+  },
+  {
+    "scenario": "P-04",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": {
+      "mq": true,
+      "animationCount": 0,
+      "allAnimations": [
+        "background-color 86.29016675048537ms",
+        "background-color 51.874941042138026ms",
+        "background-color 150ms"
+      ],
+      "maxDurationMs": 0,
+      "transitions": []
+    },
+    "failure": null,
+    "ms": 1693
+  },
+  {
+    "scenario": "P-04",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "`prefers-reduced-motion` removes non-essential motion",
+    "measurements": {
+      "mq": true,
+      "animationCount": 0,
+      "allAnimations": [
+        "background-color 86.23304171946124ms",
+        "background-color 150ms"
+      ],
+      "maxDurationMs": 0,
+      "transitions": []
+    },
+    "failure": null,
+    "ms": 1730
+  },
+  {
+    "scenario": "P-05",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": true,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": {
+      "cases": [
+        {
+          "label": "long-name",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "missing-avatar",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "slow-join",
+          "joinMs": 5390,
+          "during": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          },
+          "after": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        }
+      ],
+      "nameLength": 50
+    },
+    "failure": null,
+    "ms": 9140
+  },
+  {
+    "scenario": "P-05",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": {
+      "cases": [
+        {
+          "label": "long-name",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "missing-avatar",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "slow-join",
+          "joinMs": 5928,
+          "during": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          },
+          "after": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        }
+      ],
+      "nameLength": 50
+    },
+    "failure": null,
+    "ms": 9970
+  },
+  {
+    "scenario": "P-05",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": true,
+    "passCondition": "long names (40+ characters), missing avatar and a slow join (5 s) keep the layout intact",
+    "measurements": {
+      "cases": [
+        {
+          "label": "long-name",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "missing-avatar",
+          "connected": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        },
+        {
+          "label": "slow-join",
+          "joinMs": 5409,
+          "during": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          },
+          "after": {
+            "scrollW": 390,
+            "clientW": 390,
+            "scrollH": 844
+          }
+        }
+      ],
+      "nameLength": 50
+    },
+    "failure": null,
+    "ms": 9229
+  }
+]

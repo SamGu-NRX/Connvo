@@ -33,6 +33,17 @@ import {
 } from "./operations";
 
 /**
+ * Single-op result extended with additive operation identity
+ * (notes-ledger F1). All new fields are optional so legacy callers see the
+ * exact shape they saw before.
+ */
+type NoteOperationResultWithIdentity = NoteOperationResult & {
+  clientOpId?: string;
+  clientSequence?: number;
+  deduped?: boolean;
+};
+
+/**
  * Applies a note operation with operational transform conflict resolution
  *
  * @summary Applies a single note operation with OT conflict resolution
@@ -116,14 +127,66 @@ export const applyNoteOperation = mutation({
     operation: NoteV.operation,
     clientSequence: v.number(),
     expectedVersion: v.optional(v.number()),
+    // Additive operation identity (notes-ledger F1). Optional; legacy callers omit them.
+    clientId: v.optional(v.string()),
+    clientOpId: v.optional(v.string()),
   },
-  returns: NoteV.operationResult,
+  returns: v.object({
+    ...NoteV.operationResult.fields,
+    clientOpId: v.optional(v.string()),
+    clientSequence: v.optional(v.number()),
+    deduped: v.optional(v.boolean()),
+  }),
   handler: async (
     ctx,
-    { meetingId, operation, clientSequence, expectedVersion },
-  ): Promise<NoteOperationResult> => {
+    {
+      meetingId,
+      operation,
+      clientSequence,
+      expectedVersion,
+      clientId,
+      clientOpId,
+    },
+  ): Promise<NoteOperationResultWithIdentity> => {
     // Verify user is a participant with write access
     const participant = await assertMeetingAccess(ctx, meetingId);
+
+    // Idempotent dedupe on operation identity (notes-ledger F1): if this op
+    // was already applied for this client, return the recorded result without
+    // reapplying. The stored row is the truth of what this clientOpId did.
+    if (clientId !== undefined && clientOpId !== undefined) {
+      const existingOp = await ctx.db
+        .query("noteOps")
+        .withIndex("by_meeting_client_op", (q) =>
+          q
+            .eq("meetingId", meetingId)
+            .eq("clientId", clientId)
+            .eq("clientOpId", clientOpId),
+        )
+        .unique();
+      if (existingOp) {
+        const existingNotes = await ctx.db
+          .query("meetingNotes")
+          .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+          .unique();
+        return {
+          success: true,
+          serverSequence: existingOp.sequence,
+          transformedOperation: {
+            type: existingOp.operation.type,
+            position: existingOp.operation.position,
+            content: existingOp.operation.content,
+            length: existingOp.operation.length,
+          },
+          // Nothing was reapplied: report the current stored version, no bump.
+          newVersion: existingNotes?.version ?? 0,
+          conflicts: [],
+          clientOpId: existingOp.clientOpId,
+          clientSequence: existingOp.clientSequence,
+          deduped: true,
+        };
+      }
+    }
 
     // Validate the operation
     if (!validateOperation(operation)) {
@@ -238,7 +301,9 @@ export const applyNoteOperation = mutation({
       throw createError.validation(`Failed to apply operation: ${error}`);
     }
 
-    // Insert the operation record
+    // Insert the operation record (identity fields ride along in the same
+    // transaction — persist-before-ack). Ops without clientOpId keep rows
+    // byte-identical to the legacy shape: the triple is written as a unit.
     await ctx.db.insert("noteOps", {
       meetingId,
       sequence: serverSequence,
@@ -251,6 +316,9 @@ export const applyNoteOperation = mutation({
       },
       timestamp: Date.now(),
       applied: true,
+      ...(clientOpId !== undefined
+        ? { clientId, clientOpId, clientSequence }
+        : {}),
     });
 
     // Update the materialized notes document
@@ -283,6 +351,8 @@ export const applyNoteOperation = mutation({
       transformedOperation: transformedOp,
       newVersion,
       conflicts,
+      clientOpId,
+      clientSequence,
     };
   },
 });
@@ -396,9 +466,13 @@ export const batchApplyNoteOperations = mutation({
       v.object({
         operation: NoteV.operation,
         clientSequence: v.number(),
+        // Additive per-op identity (notes-ledger F1). Optional; legacy callers omit it.
+        clientOpId: v.optional(v.string()),
       }),
     ),
     expectedVersion: v.optional(v.number()),
+    // Additive batch-level client identity. Optional; legacy callers omit it.
+    clientId: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -409,11 +483,28 @@ export const batchApplyNoteOperations = mutation({
         serverSequence: v.number(),
         transformedOperation: NoteV.operation,
         conflicts: v.array(v.string()),
+        clientOpId: v.optional(v.string()),
+        clientSequence: v.optional(v.number()),
+        deduped: v.optional(v.boolean()),
       }),
+    ),
+    // Per-op failure identity — today failures are invisible to the caller.
+    failedOps: v.optional(
+      v.array(
+        v.object({
+          index: v.number(),
+          clientOpId: v.optional(v.string()),
+          clientSequence: v.optional(v.number()),
+          reason: v.optional(v.string()),
+        }),
+      ),
     ),
     newVersion: v.number(),
   }),
-  handler: async (ctx, { meetingId, operations, expectedVersion }) => {
+  handler: async (
+    ctx,
+    { meetingId, operations, expectedVersion, clientId },
+  ) => {
     // Verify user is a participant
     const participant = await assertMeetingAccess(ctx, meetingId);
 
@@ -449,10 +540,20 @@ export const batchApplyNoteOperations = mutation({
 
     let processed = 0;
     let failed = 0;
+    let appliedNew = 0;
     const results: Array<{
       serverSequence: number;
       transformedOperation: Operation;
       conflicts: string[];
+      clientOpId?: string;
+      clientSequence?: number;
+      deduped?: boolean;
+    }> = [];
+    const failedOps: Array<{
+      index: number;
+      clientOpId?: string;
+      clientSequence?: number;
+      reason?: string;
     }> = [];
 
     let currentContent = meetingNotes.content;
@@ -468,11 +569,53 @@ export const batchApplyNoteOperations = mutation({
     let currentSequence = (lastOp?.sequence || 0) + 1;
 
     // Process operations in order
-    for (const { operation, clientSequence } of operations) {
+    for (const [
+      index,
+      { operation, clientSequence, clientOpId },
+    ] of operations.entries()) {
       try {
+        // Idempotent dedupe on operation identity (notes-ledger F1): if this
+        // op was already applied for this client, do NOT reapply — return the
+        // stored row as the result. The stored row is the truth of what this
+        // clientOpId did, regardless of what payload the retry carries.
+        if (clientId !== undefined && clientOpId !== undefined) {
+          const existingOp = await ctx.db
+            .query("noteOps")
+            .withIndex("by_meeting_client_op", (q) =>
+              q
+                .eq("meetingId", meetingId)
+                .eq("clientId", clientId)
+                .eq("clientOpId", clientOpId),
+            )
+            .unique();
+          if (existingOp) {
+            results.push({
+              serverSequence: existingOp.sequence,
+              transformedOperation: {
+                type: existingOp.operation.type,
+                position: existingOp.operation.position,
+                content: existingOp.operation.content,
+                length: existingOp.operation.length,
+              },
+              conflicts: [],
+              clientOpId: existingOp.clientOpId,
+              clientSequence: existingOp.clientSequence,
+              deduped: true,
+            });
+            processed++;
+            continue;
+          }
+        }
+
         // Validate operation
         if (!validateOperation(operation)) {
           failed++;
+          failedOps.push({
+            index,
+            clientOpId,
+            clientSequence,
+            reason: "Invalid operation format",
+          });
           continue;
         }
 
@@ -513,7 +656,9 @@ export const batchApplyNoteOperations = mutation({
         // Apply to current content
         currentContent = applyToDoc(currentContent, transformedOp);
 
-        // Insert operation record
+        // Insert operation record (identity fields ride along in the same
+        // transaction — persist-before-ack). Ops without clientOpId keep rows
+        // byte-identical to the legacy shape: the triple is written as a unit.
         await ctx.db.insert("noteOps", {
           meetingId,
           sequence: currentSequence,
@@ -526,51 +671,73 @@ export const batchApplyNoteOperations = mutation({
           },
           timestamp: Date.now(),
           applied: true,
+          ...(clientOpId !== undefined
+            ? { clientId, clientOpId, clientSequence }
+            : {}),
         });
 
         results.push({
           serverSequence: currentSequence,
           transformedOperation: transformedOp,
           conflicts,
+          clientOpId,
+          clientSequence,
         });
 
         currentSequence++;
         processed++;
+        appliedNew++;
       } catch (error) {
         console.error("Failed to process operation:", error);
         failed++;
+        failedOps.push({
+          index,
+          clientOpId,
+          clientSequence,
+          reason: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
-    // Update the materialized document
-    currentVersion++;
-    await ctx.db.patch(meetingNotes._id, {
-      content: currentContent,
-      version: currentVersion,
-      updatedAt: Date.now(),
-    });
+    // Update the materialized document — only when this batch actually
+    // applied something new. A fully-deduped retry (every operation already
+    // in the ledger) must not patch the document or bump its version: the
+    // version is the watermark fresh reads adopt, and a no-op bump would
+    // advance document history on every duplicate resend without any
+    // content change.
+    if (appliedNew > 0) {
+      currentVersion++;
+      await ctx.db.patch(meetingNotes._id, {
+        content: currentContent,
+        version: currentVersion,
+        updatedAt: Date.now(),
+      });
 
-    // Log batch operation
-    await ctx.db.insert("auditLogs", {
-      actorUserId: participant.userId,
-      resourceType: "meetingNotes",
-      resourceId: meetingId,
-      action: "batch_apply_operations",
-      metadata: {
-        totalOperations: operations.length,
-        processed,
-        failed,
-        newVersion: currentVersion,
-        contentLength: currentContent.length,
-      },
-      timestamp: Date.now(),
-    });
+      // Log batch operation
+      await ctx.db.insert("auditLogs", {
+        actorUserId: participant.userId,
+        resourceType: "meetingNotes",
+        resourceId: meetingId,
+        action: "batch_apply_operations",
+        metadata: {
+          totalOperations: operations.length,
+          processed,
+          failed,
+          newVersion: currentVersion,
+          contentLength: currentContent.length,
+        },
+        timestamp: Date.now(),
+      });
+    }
 
     return {
       success: processed > 0,
       processed,
       failed,
       results,
+      // Additive: only present when at least one op failed (legacy responses
+      // keep the exact legacy shape).
+      ...(failedOps.length > 0 ? { failedOps } : {}),
       newVersion: currentVersion,
     };
   },

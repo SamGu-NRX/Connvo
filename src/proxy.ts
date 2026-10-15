@@ -1,5 +1,15 @@
-import type { NextFetchEvent, NextRequest } from "next/server";
+import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
+import { isPublicCallAsset } from "@/lib/call/public-assets";
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs";
+
+import {
+  benchPathPassesThrough,
+  testAuthProxyExempt,
+} from "@/lib/eval-proxy-paths";
+export {
+  benchPathPassesThrough,
+  testAuthProxyExempt,
+} from "@/lib/eval-proxy-paths";
 
 const handleAuth = authkitMiddleware({
   middlewareAuth: {
@@ -14,6 +24,22 @@ const handleAuth = authkitMiddleware({
 });
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (isPublicCallAsset(request.nextUrl.pathname)) return NextResponse.next();
+  if (
+    benchPathPassesThrough(request.nextUrl.pathname, {
+      benchFlag: process.env.NEXT_PUBLIC_CONNVO_CALL_BENCH,
+      realCallFlag: process.env.NEXT_PUBLIC_CONNVO_REAL_CALL,
+      afterCallFlag: process.env.NEXT_PUBLIC_CONNVO_AFTER_CALL,
+      vercel: process.env.VERCEL,
+      nodeEnv: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV,
+    })
+  ) {
+    return NextResponse.next();
+  }
+  if (testAuthProxyExempt(request.nextUrl.pathname, process.env)) {
+    return NextResponse.next();
+  }
   return handleAuth(request, event);
 }
 

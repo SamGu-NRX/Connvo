@@ -333,6 +333,7 @@ export const handleConnectionFailure = action({
       {
         meetingId,
         sessionId,
+        userId: identity.userId as Id<"users">,
         state: "failed",
         metadata: {
           errorType,

@@ -1,0 +1,114 @@
+{
+  "evidenceStatus": "historical alpha receipt; old format without per-pixel contrast or complete keyboard checks; current receipts are in browser-proof/",
+  "ranAt": "2026-10-12T19:23:36.091Z",
+  "states": [
+    {
+      "state": "call-ended",
+      "shots": [
+        "docs/after-call/screenshots/call-ended-1440x900.png",
+        "docs/after-call/screenshots/call-ended-390x844.png"
+      ],
+      "violations": [],
+      "passes": 19,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "recap",
+      "shots": [
+        "docs/after-call/screenshots/recap-1440x900.png",
+        "docs/after-call/screenshots/recap-390x844.png"
+      ],
+      "violations": [],
+      "passes": 17,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "stay-in-touch-waiting",
+      "shots": [
+        "docs/after-call/screenshots/stay-in-touch-waiting-1440x900.png",
+        "docs/after-call/screenshots/stay-in-touch-waiting-390x844.png"
+      ],
+      "violations": [],
+      "passes": 17,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "stay-in-touch-both",
+      "shots": [
+        "docs/after-call/screenshots/stay-in-touch-both-1440x900.png",
+        "docs/after-call/screenshots/stay-in-touch-both-390x844.png"
+      ],
+      "violations": [],
+      "passes": 17,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "list",
+      "shots": [
+        "docs/after-call/screenshots/list-1440x900.png",
+        "docs/after-call/screenshots/list-390x844.png"
+      ],
+      "violations": [],
+      "passes": 13,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "list-loading",
+      "shots": [
+        "docs/after-call/screenshots/list-loading-1440x900.png",
+        "docs/after-call/screenshots/list-loading-390x844.png"
+      ],
+      "violations": [],
+      "passes": 11,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "recap-error",
+      "shots": [
+        "docs/after-call/screenshots/recap-error-1440x900.png",
+        "docs/after-call/screenshots/recap-error-390x844.png"
+      ],
+      "violations": [],
+      "passes": 14,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "recap-not-a-participant",
+      "shots": [
+        "docs/after-call/screenshots/recap-not-a-participant-1440x900.png",
+        "docs/after-call/screenshots/recap-not-a-participant-390x844.png"
+      ],
+      "violations": [],
+      "passes": 14,
+      "incomplete": [
+        "color-contrast"
+      ]
+    },
+    {
+      "state": "list-empty",
+      "shots": [
+        "docs/after-call/screenshots/list-empty-1440x900.png",
+        "docs/after-call/screenshots/list-empty-390x844.png"
+      ],
+      "violations": [],
+      "passes": 11,
+      "incomplete": [
+        "color-contrast"
+      ]
+    }
+  ]
+}

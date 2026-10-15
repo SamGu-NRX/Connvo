@@ -1,0 +1,45 @@
+[
+  {
+    "scenario": "H-17",
+    "transport": "p2p",
+    "seed": 1,
+    "pass": false,
+    "passCondition": "audio-only join, camera enabled after connect: the remote side decodes advancing video",
+    "measurements": null,
+    "failure": {
+      "message": "A's media not live by the deadline: need the right colour and >= 15 fps over 1 s (last {\"color\":{\"ok\":false,\"label\":\"none\"},\"fps\":null,\"firstAdvanceAt\":null})",
+      "stack": "Error: A's media not live by the deadline: need the right colour and >= 15 fps over 1 s (last {\"color\":{\"ok\":false,\"label\":\"none\"},\"fps\":null,\"firstAdvanceAt\":null})\n    at waitForLiveMedia (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/page-helpers.mjs:510:13)\n    at async scenario_H_17 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/scenarios-h.mjs:740:16)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/run.mjs:110:26)"
+    },
+    "ms": 13491
+  },
+  {
+    "scenario": "H-17",
+    "transport": "p2p",
+    "seed": 2,
+    "pass": true,
+    "passCondition": "audio-only join, camera enabled after connect: the remote side decodes advancing video",
+    "measurements": {
+      "lateCameraParticipant": "B",
+      "liveCaptureTracksBefore": 1,
+      "audioHz": 656.8,
+      "decoded": true,
+      "fps": 29.8,
+      "liveAt": 1792049723173
+    },
+    "failure": null,
+    "ms": 8229
+  },
+  {
+    "scenario": "H-17",
+    "transport": "p2p",
+    "seed": 3,
+    "pass": false,
+    "passCondition": "audio-only join, camera enabled after connect: the remote side decodes advancing video",
+    "measurements": null,
+    "failure": {
+      "message": "A's media not live by the deadline: need the right colour and >= 15 fps over 1 s (last {\"color\":{\"ok\":false,\"label\":\"none\"},\"fps\":null,\"firstAdvanceAt\":null})",
+      "stack": "Error: A's media not live by the deadline: need the right colour and >= 15 fps over 1 s (last {\"color\":{\"ok\":false,\"label\":\"none\"},\"fps\":null,\"firstAdvanceAt\":null})\n    at waitForLiveMedia (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/page-helpers.mjs:510:13)\n    at async scenario_H_17 (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/scenarios-h.mjs:740:16)\n    at async runOneInner (file:///Users/samgu/Programming%20Projects/fleet-leads/wt/connvo-lifecycle-ci/tools/call-eval/runner/run.mjs:110:26)"
+    },
+    "ms": 14213
+  }
+]

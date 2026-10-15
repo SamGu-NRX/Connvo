@@ -264,11 +264,14 @@ export function transformAgainst(opA: Operation, opB: Operation): Operation {
             length: 0,
           };
         } else {
-          // A extends beyond B
+          // A extends beyond B: the surviving tail of A's range sits at
+          // the deletion boundary in B's post-image (bEnd was an
+          // original-frame coordinate and would point past the shrunk
+          // document).
           const newLength = aEnd - bEnd;
           return {
             ...opA,
-            position: bEnd,
+            position: opB.position,
             length: newLength,
           };
         }
@@ -282,7 +285,9 @@ export function transformAgainst(opA: Operation, opB: Operation): Operation {
             length: 0,
           };
         } else {
-          // A extends beyond B
+          // A extends beyond B: same boundary rule — the part of A that
+          // survived B's deletion begins where B's deletion ended, at
+          // opB.position in the post-image.
           const newLength = aEnd - bEnd;
           return {
             ...opA,
@@ -486,17 +491,44 @@ export function transformOperationSequence(
   operations: Operation[],
   againstOperations: Operation[],
 ): Operation[] {
+  // Two-way sequence transform (the OT "diamond"): every pair must share one
+  // coordinate frame. Each local op is in the frame after the earlier local
+  // ops, so the against-ops must be carried through each local op's effect
+  // before transforming the next one. Transforming later local ops against
+  // stale original-frame against-ops (the naive version) mixes frames and
+  // yields out-of-range positions on multi-op sequences.
+  const pendingAgainst = [...againstOperations];
   const transformed: Operation[] = [];
 
-  for (let i = 0; i < operations.length; i++) {
-    let op = operations[i];
-
-    // Transform against all operations in the against sequence
-    for (const againstOp of againstOperations) {
-      op = transformAgainst(op, againstOp);
+  for (const localOp of operations) {
+    let current = localOp;
+    for (let j = 0; j < pendingAgainst.length; j++) {
+      const againstOp = pendingAgainst[j];
+      // Both ops are in the same frame here: `current` after the earlier
+      // local ops, `againstOp` carried through those same local ops.
+      const absorbedInsert =
+        againstOp.type === "insert" &&
+        current.type === "delete" &&
+        againstOp.position > current.position &&
+        againstOp.position < current.position + (current.length || 0);
+      pendingAgainst[j] = transformAgainst(againstOp, current);
+      current = transformAgainst(current, againstOp);
+      if (absorbedInsert) {
+        // Absorb reconciliation (design.md: an insert appears exactly once
+        // unless absorbed by a concurrent delete): this delete consumed the
+        // insert's characters, so the insert is gone. It must not survive
+        // in the carried frame — a surviving insert shifts the remaining
+        // local ops past characters this delete already removed, producing
+        // a self-inconsistent sequence that cannot apply over its own
+        // target document (observed at property seed 20261011, path 8610).
+        pendingAgainst[j] = {
+          type: "retain",
+          position: current.position,
+          length: 0,
+        };
+      }
     }
-
-    transformed.push(op);
+    transformed.push(current);
   }
 
   return transformed;

@@ -150,7 +150,7 @@ export const createStreamRoom = internalAction({
           const result = await withRetry<{ callId: string; call: StreamCall }>(
             async () => {
               return await CircuitBreakers.getstream.execute(async () => {
-                const call = getStreamCall(callId, callType);
+                const call = await getStreamCall(callId, callType);
 
                 // Get organizer user details
                 const organizer: User | null = await ctx.runQuery(
@@ -497,7 +497,7 @@ export const generateParticipantToken = internalAction({
                 const expiresAt = Math.floor(Date.now() / 1000) + 3600;
 
                 // Create JWT token with proper claims
-                const token = createStreamToken(user.workosUserId, {
+                const token = await createStreamToken(user.workosUserId, {
                   exp: expiresAt,
                   iat: Math.floor(Date.now() / 1000),
                   user_id: user.workosUserId,
@@ -689,7 +689,7 @@ export const startRecording = action({
         recordingUrl?: string;
       }>(async () => {
         return await CircuitBreakers.getstream.execute(async () => {
-          const call = getStreamCall(streamRoomId, STREAM_DEFAULT_CALL_TYPE);
+          const call = await getStreamCall(streamRoomId, STREAM_DEFAULT_CALL_TYPE);
 
           // Configure recording settings
           const config = {
@@ -899,7 +899,7 @@ export const stopRecording = action({
         duration?: number;
       }>(async () => {
         return await CircuitBreakers.getstream.execute(async () => {
-          const call = getStreamCall(streamRoomId2, STREAM_DEFAULT_CALL_TYPE);
+          const call = await getStreamCall(streamRoomId2, STREAM_DEFAULT_CALL_TYPE);
 
           // Stop recording
           const stopResponse = await call.stopRecording();
@@ -1035,7 +1035,7 @@ export const deleteStreamRoom = internalAction({
   returns: StreamApiResponseV.simpleSuccess,
   handler: async (ctx, { meetingId, roomId }): Promise<StreamSimpleSuccess> => {
     try {
-      const call = getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
+      const call = await getStreamCall(roomId, STREAM_DEFAULT_CALL_TYPE);
       await call.delete();
 
       console.log(`Deleted GetStream room ${roomId} for meeting ${meetingId}`);

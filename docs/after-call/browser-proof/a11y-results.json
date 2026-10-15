@@ -1,0 +1,5496 @@
+{
+  "commit": "a674f51c0ce5c4db93d2afa09c9ccfc3abb4e6d0",
+  "dirty": true,
+  "dirtyPaths": [
+    "convex.json"
+  ],
+  "diagnostics": [
+    {
+      "person": "A",
+      "level": "error",
+      "text": "%o\n\n%s Error: [CONVEX Q(history/queries:getMeetingHistory)] Server Error\n  Called by client\n    at OptimisticQueryResults.queryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:4566:19)\n    at BaseConvexClient.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:6452:44)\n    at Object.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8233:44)\n    at QueriesObserver.getLocalResults (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8652:31)\n    at useQueriesHelper.useMemo[subscription] (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8784:41)\n    at useSubscription.useEffect.checkForUpdates (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7979:43)\n    at basicStateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4813:47)\n    at updateReducerImpl (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4895:79)\n    at updateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4845:16)\n    at Object.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:15202:24)\n    at exports.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:1754:36)\n    at useSubscription (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7950:412)\n    at useQueriesHelper (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8798:275)\n    at useQueries (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8764:12)\n    at useQuery (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8470:274)\n    at MeetingDetailData (http://localhost:3043/_next/static/chunks/src_aa6f5924._.js:1623:267)\n    at Object.react_stack_bottom_frame (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:14746:24)\n    at renderWithHooks (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4636:24)\n    at updateFunctionComponent (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6091:21)\n    at beginWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6672:24)\n    at runWithFiberInDEV (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:959:74)\n    at performUnitOfWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9487:97)\n    at workLoopSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9381:40)\n    at renderRootSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9365:13)\n    at performWorkOnRoot (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9030:47)\n    at performWorkOnRootViaSchedulerTask (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:10155:9)\n    at MessagePort.performWorkUntilDeadline (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:2647:64) The above error occurred in the <MeetingDetailData> component. It was handled by the <HistoryBoundary> error boundary.",
+      "url": "http://localhost:3043/app/meetings/m97eqjrtwej661tr6z10wxrtrx8g9fbs",
+      "source": "http://localhost:3043/_next/static/chunks/941ca_next_dist_client_89ceecdc._.js",
+      "expected": true,
+      "expectedReason": "injected-history-error"
+    },
+    {
+      "person": "O",
+      "level": "error",
+      "text": "%o\n\n%s ConvexError: [CONVEX Q(history/queries:getMeetingHistory)] [Request ID: 2d0fc78554c52a5e] Server Error\nUncaught ConvexError: {\"code\":\"FORBIDDEN\",\"message\":\"Access denied: Not a meeting participant\",\"statusCode\":403,\"metadata\":{\"meetingId\":\"m97eqjrtwej661tr6z10wxrtrx8g9fbs\",\"userId\":\"p57en1jgt2t7sh8e20jnk5h5nn8g9qe6\"}}\n    at forbidden [as forbidden] (../../convex-harness/lib/errors.ts:78:23)\n    at assertMeetingAccess (../../convex-harness/auth/guards.ts:135:6)\n    at async handler (../../convex-harness/history/queries.ts:207:9)\n\n  Called by client\n    at forbidden [as forbidden] (../../convex-harness/lib/errors.ts:78:23)\n    at assertMeetingAccess (../../convex-harness/auth/guards.ts:135:6)\n    at async handler (../../convex-harness/history/queries.ts:207:9)\n\n  Called by client\n    at OptimisticQueryResults.queryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:4564:284)\n    at BaseConvexClient.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:6452:44)\n    at Object.localQueryResult (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8233:44)\n    at QueriesObserver.getLocalResults (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8652:31)\n    at useQueriesHelper.useMemo[subscription] (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8784:41)\n    at useSubscription.useEffect.checkForUpdates (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7979:43)\n    at basicStateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4813:47)\n    at updateReducerImpl (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4895:79)\n    at updateReducer (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4845:16)\n    at Object.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:15202:24)\n    at exports.useState (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:1754:36)\n    at useSubscription (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:7950:412)\n    at useQueriesHelper (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8798:275)\n    at useQueries (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8764:12)\n    at useQuery (http://localhost:3043/_next/static/chunks/node_modules__pnpm_dcea07c4._.js:8470:274)\n    at MeetingDetailData (http://localhost:3043/_next/static/chunks/src_aa6f5924._.js:1623:267)\n    at Object.react_stack_bottom_frame (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:14746:24)\n    at renderWithHooks (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:4636:24)\n    at updateFunctionComponent (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6091:21)\n    at beginWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:6672:24)\n    at runWithFiberInDEV (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:959:74)\n    at performUnitOfWork (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9487:97)\n    at workLoopSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9381:40)\n    at renderRootSync (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9365:13)\n    at performWorkOnRoot (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:9030:47)\n    at performWorkOnRootViaSchedulerTask (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_react-dom_eeb3f64f._.js:10155:9)\n    at MessagePort.performWorkUntilDeadline (http://localhost:3043/_next/static/chunks/941ca_next_dist_compiled_7554ed8a._.js:2647:64) The above error occurred in the <MeetingDetailData> component. It was handled by the <HistoryBoundary> error boundary.",
+      "url": "http://localhost:3043/app/meetings/m97eqjrtwej661tr6z10wxrtrx8g9fbs",
+      "source": "http://localhost:3043/_next/static/chunks/941ca_next_dist_client_89ceecdc._.js",
+      "expected": true,
+      "expectedReason": "outsider-refusal"
+    }
+  ],
+  "ranAt": "2026-10-14T19:33:47.940Z",
+  "states": [
+    {
+      "state": "call-ended",
+      "shots": [
+        "docs/after-call/browser-proof/call-ended-1440x900.png",
+        "docs/after-call/browser-proof/call-ended-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 19,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".dark\\:text-emerald-300",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"app\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"app\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"profile\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"profile\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(1) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(1) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(2) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(2) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".has-\\[\\>svg\\]\\:px-3",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "You left the call",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1567,
+            "worst": 15.7,
+            "pass": true
+          },
+          {
+            "selector": ".max-w-sm",
+            "inPage": true,
+            "text": "Your camera and microphone are off.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1108,
+            "worst": 8.27,
+            "pass": true
+          },
+          {
+            "selector": "button[data-testid=\"join-call\"]",
+            "inPage": true,
+            "text": "Rejoin",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 272,
+            "worst": 11.98,
+            "pass": true
+          },
+          {
+            "selector": "a[data-testid=\"open-recap\"]",
+            "inPage": true,
+            "text": "Open the recap",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 596,
+            "worst": 11.98,
+            "pass": true
+          },
+          {
+            "selector": ".bg-emerald-400",
+            "inPage": true,
+            "text": "Back to Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 623,
+            "worst": 7.83,
+            "pass": true
+          },
+          {
+            "selector": "#ended-recap-title",
+            "inPage": true,
+            "text": "What this meeting recorded",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 1565,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": ".text-primary",
+            "inPage": true,
+            "text": "Full recap",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 320,
+            "worst": 17.93,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(1) > h3",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 15.86,
+            "pass": true
+          },
+          {
+            "selector": ".text-foreground",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 137,
+            "worst": 16.01,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 376,
+            "worst": 18.8,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(2) > h3",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(3) > h3",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2106,
+            "worst": 19.13,
+            "pass": true
+          },
+          {
+            "selector": "#_r_3_",
+            "inPage": true,
+            "text": "Shared meeting notes",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 1174,
+            "worst": 15.05,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "Synced",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 323,
+            "worst": 5.27,
+            "pass": true
+          },
+          {
+            "selector": "textarea",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2106,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "p[data-testid=\"notes-counts\"]",
+            "inPage": true,
+            "text": "8 words · 58 characters",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 575,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".sm\\:flex-row > p:nth-child(2)",
+            "inPage": true,
+            "text": "Version 3",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 238,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "You left the call",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1567,
+            "worst": 15.7,
+            "pass": true
+          },
+          {
+            "selector": ".max-w-sm",
+            "inPage": true,
+            "text": "Your camera and microphone are off.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1108,
+            "worst": 8.27,
+            "pass": true
+          },
+          {
+            "selector": "button[data-testid=\"join-call\"]",
+            "inPage": true,
+            "text": "Rejoin",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 272,
+            "worst": 11.98,
+            "pass": true
+          },
+          {
+            "selector": "a[data-testid=\"open-recap\"]",
+            "inPage": true,
+            "text": "Open the recap",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 596,
+            "worst": 11.98,
+            "pass": true
+          },
+          {
+            "selector": ".bg-emerald-400",
+            "inPage": true,
+            "text": "Back to Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 626,
+            "worst": 7.83,
+            "pass": true
+          },
+          {
+            "selector": "#ended-recap-title",
+            "inPage": true,
+            "text": "What this meeting recorded",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 1565,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": ".text-primary",
+            "inPage": true,
+            "text": "Full recap",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 320,
+            "worst": 17.93,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(1) > h3",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 487,
+            "worst": 18.8,
+            "pass": true
+          },
+          {
+            "selector": ".text-foreground",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 133,
+            "worst": 18.8,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 376,
+            "worst": 18.8,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(2) > h3",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": ".gap-2:nth-child(3) > h3",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2121,
+            "worst": 15.86,
+            "pass": true
+          },
+          {
+            "selector": "#_r_3_",
+            "inPage": true,
+            "text": "Shared meeting notes",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 1174,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "Synced",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 323,
+            "worst": 5.27,
+            "pass": true
+          },
+          {
+            "selector": "textarea",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2106,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "p[data-testid=\"notes-counts\"]",
+            "inPage": true,
+            "text": "8 words · 58 characters",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 576,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".sm\\:flex-row > p:nth-child(2)",
+            "inPage": true,
+            "text": "Version 3",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 227,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.54,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "recap",
+      "shots": [
+        "docs/after-call/browser-proof/recap-1440x900.png",
+        "docs/after-call/browser-proof/recap-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 17,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".dark\\:text-emerald-300",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"app\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"app\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"profile\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"profile\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(1) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(1) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(2) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(2) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".border-white\\/30",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": ".hover\\:text-foreground",
+            "inPage": true,
+            "text": "All meetings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 480,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1623,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 393,
+            "worst": 15.72,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 860,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": ".shadow-xs",
+            "inPage": true,
+            "text": "Add to calendar",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 761,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(1) > h2",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 502,
+            "worst": 12.62,
+            "pass": true
+          },
+          {
+            "selector": ".px-1\\.5",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 135,
+            "worst": 16.46,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 375,
+            "worst": 14.29,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > h2",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(3) > h2",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2129,
+            "worst": 14.54,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > h2",
+            "inPage": true,
+            "text": "Prompts used",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 603,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > .text-muted-foreground:nth-child(2)",
+            "inPage": true,
+            "text": "No prompts were recorded.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 880,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "#_r_0_",
+            "inPage": true,
+            "text": "Stay in touch",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 505,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "#_r_1_",
+            "inPage": true,
+            "text": "Share your email with the people from this meeting who say y",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 3093,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1623,
+            "worst": 19.51,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 385,
+            "worst": 15.72,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 860,
+            "worst": 4.67,
+            "pass": true
+          },
+          {
+            "selector": ".shadow-xs",
+            "inPage": true,
+            "text": "Add to calendar",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 785,
+            "worst": 15.57,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(1) > h2",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 516,
+            "worst": 11.94,
+            "pass": true
+          },
+          {
+            "selector": ".px-1\\.5",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 139,
+            "worst": 15.86,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 375,
+            "worst": 14.29,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > h2",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.7,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(3) > h2",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.7,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2113,
+            "worst": 12.73,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > h2",
+            "inPage": true,
+            "text": "Prompts used",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 603,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > .text-muted-foreground:nth-child(2)",
+            "inPage": true,
+            "text": "No prompts were recorded.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 880,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "#_r_0_",
+            "inPage": true,
+            "text": "Stay in touch",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 505,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "#_r_1_",
+            "inPage": true,
+            "text": "Share your email with the people from this meeting who say y",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 3097,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "stay-in-touch-waiting",
+      "shots": [
+        "docs/after-call/browser-proof/stay-in-touch-waiting-1440x900.png",
+        "docs/after-call/browser-proof/stay-in-touch-waiting-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 17,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": "span[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "p[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "p[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".border-white\\/30",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1623,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 393,
+            "worst": 15.72,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 860,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": ".shadow-xs",
+            "inPage": true,
+            "text": "Add to calendar",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 761,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(1) > h2",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 502,
+            "worst": 12.62,
+            "pass": true
+          },
+          {
+            "selector": ".px-1\\.5",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 135,
+            "worst": 16.46,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 375,
+            "worst": 14.29,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > h2",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(3) > h2",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2129,
+            "worst": 14.54,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > h2",
+            "inPage": true,
+            "text": "Prompts used",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 603,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > .text-muted-foreground:nth-child(2)",
+            "inPage": true,
+            "text": "No prompts were recorded.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 880,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "#_r_0_",
+            "inPage": true,
+            "text": "Stay in touch",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 505,
+            "worst": 15.05,
+            "pass": true
+          },
+          {
+            "selector": "#_r_1_",
+            "inPage": true,
+            "text": "Share your email with the people from this meeting who say y",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 3093,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "div[role=\"status\"] > .text-muted-foreground",
+            "inPage": true,
+            "text": "You said yes. Nobody else has yet; anyone who does will show",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2251,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1623,
+            "worst": 19.51,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 388,
+            "worst": 15.72,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 860,
+            "worst": 4.67,
+            "pass": true
+          },
+          {
+            "selector": ".shadow-xs",
+            "inPage": true,
+            "text": "Add to calendar",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 787,
+            "worst": 15.57,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(1) > h2",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 516,
+            "worst": 11.94,
+            "pass": true
+          },
+          {
+            "selector": ".px-1\\.5",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 139,
+            "worst": 15.86,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 375,
+            "worst": 14.29,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > h2",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.7,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(3) > h2",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.7,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2113,
+            "worst": 12.73,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > h2",
+            "inPage": true,
+            "text": "Prompts used",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 603,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > .text-muted-foreground:nth-child(2)",
+            "inPage": true,
+            "text": "No prompts were recorded.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 880,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "#_r_0_",
+            "inPage": true,
+            "text": "Stay in touch",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 505,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "#_r_1_",
+            "inPage": true,
+            "text": "Share your email with the people from this meeting who say y",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 3097,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "div[role=\"status\"] > .text-muted-foreground",
+            "inPage": true,
+            "text": "You said yes. Nobody else has yet; anyone who does will show",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2251,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "stay-in-touch-both",
+      "shots": [
+        "docs/after-call/browser-proof/stay-in-touch-both-1440x900.png",
+        "docs/after-call/browser-proof/stay-in-touch-both-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 17,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": "span[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "p[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "p[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".border-white\\/30",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1623,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 393,
+            "worst": 15.72,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 860,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": ".shadow-xs",
+            "inPage": true,
+            "text": "Add to calendar",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 761,
+            "worst": 19.8,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(1) > h2",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/60.py-1:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 502,
+            "worst": 12.62,
+            "pass": true
+          },
+          {
+            "selector": ".px-1\\.5",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 135,
+            "worst": 16.46,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/60.py-1:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 375,
+            "worst": 14.29,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > h2",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(3) > h2",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2129,
+            "worst": 14.54,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > h2",
+            "inPage": true,
+            "text": "Prompts used",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 603,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > .text-muted-foreground:nth-child(2)",
+            "inPage": true,
+            "text": "No prompts were recorded.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 880,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "#_r_0_",
+            "inPage": true,
+            "text": "Stay in touch",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 505,
+            "worst": 15.05,
+            "pass": true
+          },
+          {
+            "selector": "#_r_1_",
+            "inPage": true,
+            "text": "Share your email with the people from this meeting who say y",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 3093,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".items-baseline > .font-medium",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 423,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": ".text-primary",
+            "inPage": true,
+            "text": "b@connvo-local.test",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 701,
+            "worst": 17.62,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1623,
+            "worst": 19.51,
+            "pass": true
+          },
+          {
+            "selector": ".px-2",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 15.72,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 860,
+            "worst": 4.67,
+            "pass": true
+          },
+          {
+            "selector": ".shadow-xs",
+            "inPage": true,
+            "text": "Add to calendar",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 786,
+            "worst": 15.57,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(1) > h2",
+            "inPage": true,
+            "text": "Who took part",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 614,
+            "worst": 4.7,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/60.py-1:nth-child(1)",
+            "inPage": true,
+            "text": "Alice AndersonHost",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 516,
+            "worst": 11.94,
+            "pass": true
+          },
+          {
+            "selector": ".px-1\\.5",
+            "inPage": true,
+            "text": "Host",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 139,
+            "worst": 15.86,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/60.py-1:nth-child(2)",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 375,
+            "worst": 14.29,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground:nth-child(3)",
+            "inPage": true,
+            "text": "Invited but didn't join: Carol Chen",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1033,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > h2",
+            "inPage": true,
+            "text": "Duration",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 401,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(2) > p",
+            "inPage": true,
+            "text": "Still going: no end has been recorded yet.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1322,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(3) > h2",
+            "inPage": true,
+            "text": "Shared notes",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 594,
+            "worst": 4.7,
+            "pass": true
+          },
+          {
+            "selector": ".bg-muted\\/40",
+            "inPage": true,
+            "text": "Agenda: budget review. Owner: Bob. Decision: ship Friday.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2113,
+            "worst": 12.73,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > h2",
+            "inPage": true,
+            "text": "Prompts used",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 603,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "section:nth-child(4) > .text-muted-foreground:nth-child(2)",
+            "inPage": true,
+            "text": "No prompts were recorded.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 880,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": "#_r_0_",
+            "inPage": true,
+            "text": "Stay in touch",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 505,
+            "worst": 14.92,
+            "pass": true
+          },
+          {
+            "selector": "#_r_1_",
+            "inPage": true,
+            "text": "Share your email with the people from this meeting who say y",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 3097,
+            "worst": 4.66,
+            "pass": true
+          },
+          {
+            "selector": ".items-baseline > .font-medium",
+            "inPage": true,
+            "text": "Bob Brown",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 423,
+            "worst": 15.05,
+            "pass": true
+          },
+          {
+            "selector": ".text-primary",
+            "inPage": true,
+            "text": "b@connvo-local.test",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 701,
+            "worst": 17.62,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "list",
+      "shots": [
+        "docs/after-call/browser-proof/list-1440x900.png",
+        "docs/after-call/browser-proof/list-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 13,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".dark\\:text-emerald-300",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"app\"] > .flex-col.relative > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"app\"] > .flex-col.relative > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col.relative > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col.relative > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"profile\"] > .flex-col.relative > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.text-emerald-900\\/85[href$=\"profile\"] > .flex-col.relative > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col.relative > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col.relative > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(1) > .flex-col.relative > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(1) > .flex-col.relative > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(2) > .flex-col.relative > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.text-emerald-900\\/85.focus-visible\\:outline-3:nth-child(2) > .flex-col.relative > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".has-\\[\\>svg\\]\\:px-3",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Meetings",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1124,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": "header > p",
+            "inPage": true,
+            "text": "The meetings you took part in, newest first, with what each ",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2243,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .truncate.font-medium",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 729,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1227,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .px-2.py-0\\.5.text-xs",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 356,
+            "worst": 19.63,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .truncate.font-medium",
+            "inPage": true,
+            "text": "Eval harness smoke meeting",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 1398,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1227,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .px-2.py-0\\.5.text-xs",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 356,
+            "worst": 19.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": "header > p",
+            "inPage": true,
+            "text": "The meetings you took part in, newest first, with what each ",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2247,
+            "worst": 4.67,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .truncate.font-medium",
+            "inPage": true,
+            "text": "Budget review",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 729,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1227,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(1) > .hover\\:bg-muted\\/50.px-4.py-3 > .px-2.py-0\\.5.text-xs",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 356,
+            "worst": 19.63,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .truncate.font-medium",
+            "inPage": true,
+            "text": "Eval harness smoke meeting",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 983,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .min-w-0.gap-0\\.5.flex-1 > .text-muted-foreground.text-sm",
+            "inPage": true,
+            "text": "Wed, Oct 14, 2026, 2:33 PM · You hosted",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1227,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "li:nth-child(2) > .hover\\:bg-muted\\/50.px-4.py-3 > .px-2.py-0\\.5.text-xs",
+            "inPage": true,
+            "text": "In progress",
+            "fontSize": 12,
+            "need": 4.5,
+            "coveredPixels": 356,
+            "worst": 19.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "list-loading",
+      "shots": [
+        "docs/after-call/browser-proof/list-loading-1440x900.png",
+        "docs/after-call/browser-proof/list-loading-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 11,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".dark\\:text-emerald-300",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".has-\\[\\>svg\\]\\:px-3",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Meetings",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1124,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": ".text-muted-foreground",
+            "inPage": true,
+            "text": "The meetings you took part in, newest first, with what each ",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2243,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": ".text-muted-foreground",
+            "inPage": true,
+            "text": "The meetings you took part in, newest first, with what each ",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2247,
+            "worst": 4.67,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "recap-error",
+      "shots": [
+        "docs/after-call/browser-proof/recap-error-1440x900.png",
+        "docs/after-call/browser-proof/recap-error-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 14,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".tracking-tight",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".has-\\[\\>svg\\]\\:px-3",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": ".hover\\:text-foreground",
+            "inPage": true,
+            "text": "All meetings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 480,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": ".bg-card",
+            "inPage": true,
+            "text": "This couldn't load. Reload the page to try again.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1515,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": ".bg-card",
+            "inPage": true,
+            "text": "This couldn't load. Reload the page to try again.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1515,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "recap-not-a-participant",
+      "shots": [
+        "docs/after-call/browser-proof/recap-not-a-participant-1440x900.png",
+        "docs/after-call/browser-proof/recap-not-a-participant-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 14,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".tracking-tight",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".has-\\[\\>svg\\]\\:px-3",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": ".hover\\:text-foreground",
+            "inPage": true,
+            "text": "All meetings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 480,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": ".bg-card",
+            "inPage": true,
+            "text": "This meeting's recap is only for the people who were in it.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1759,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": ".bg-card",
+            "inPage": true,
+            "text": "This meeting's recap is only for the people who were in it.",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 1761,
+            "worst": 4.74,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    },
+    {
+      "state": "list-empty",
+      "shots": [
+        "docs/after-call/browser-proof/list-empty-1440x900.png",
+        "docs/after-call/browser-proof/list-empty-390x844.png"
+      ],
+      "violations": {
+        "1440x900": [],
+        "390x844": []
+      },
+      "violationCount": 0,
+      "passes": 11,
+      "incomplete": [
+        "color-contrast"
+      ],
+      "contrastMeasured": {
+        "1440x900": [
+          {
+            "selector": ".dark\\:text-emerald-300",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(1) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"app\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"dashboard\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(2) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": ".h-10.gap-3[href$=\"profile\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "a[href$=\"settings\"] > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .tracking-\\[0\\.2em\\].dark\\:text-emerald-100\\/80.uppercase",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(1) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .leading-tight",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": ".space-y-2:nth-child(3) > .space-y-1 > .h-10.gap-3.text-emerald-900\\/85:nth-child(2) > .flex-col > .font-normal.transition-opacity.group-hover\\:opacity-100",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": ".has-\\[\\>svg\\]\\:px-3",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "h1",
+            "inPage": true,
+            "text": "Meetings",
+            "fontSize": 24,
+            "need": 3,
+            "coveredPixels": 1124,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "The meetings you took part in, newest first, with what each ",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2243,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": ".items-start > p:nth-child(1)",
+            "inPage": true,
+            "text": "No meetings yet",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 821,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": ".items-start > .text-muted-foreground",
+            "inPage": true,
+            "text": "Meetings you take part in show up here, with what each one r",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2192,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.23,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"1\"]",
+            "inPage": false,
+            "text": "Overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 328,
+            "worst": 4.85,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"2\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 231,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"3\"]",
+            "inPage": false,
+            "text": "Welcome overview",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 453,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"4\"]",
+            "inPage": false,
+            "text": "Dashboard",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 456,
+            "worst": 6.37,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"5\"]",
+            "inPage": false,
+            "text": "Metrics and insights",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 507,
+            "worst": 4.82,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"6\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 257,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"7\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 269,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"8\"]",
+            "inPage": false,
+            "text": "Personal details",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 398,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"9\"]",
+            "inPage": false,
+            "text": "Settings",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 384,
+            "worst": 6.38,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"10\"]",
+            "inPage": false,
+            "text": "Preferences and controls",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 597,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"11\"]",
+            "inPage": false,
+            "text": "Connections",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 468,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"12\"]",
+            "inPage": false,
+            "text": "Casual",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 295,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"13\"]",
+            "inPage": false,
+            "text": "Friendly voice introductions",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 649,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"14\"]",
+            "inPage": false,
+            "text": "Professional",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 517,
+            "worst": 6.39,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"15\"]",
+            "inPage": false,
+            "text": "Targeted matches",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 459,
+            "worst": 4.86,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"16\"]",
+            "inPage": false,
+            "text": "Log out",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 386,
+            "worst": 5.59,
+            "pass": true
+          }
+        ],
+        "390x844": [
+          {
+            "selector": "header > .text-muted-foreground",
+            "inPage": true,
+            "text": "The meetings you took part in, newest first, with what each ",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2247,
+            "worst": 4.67,
+            "pass": true
+          },
+          {
+            "selector": ".items-start > p:nth-child(1)",
+            "inPage": true,
+            "text": "No meetings yet",
+            "fontSize": 16,
+            "need": 4.5,
+            "coveredPixels": 821,
+            "worst": 19.55,
+            "pass": true
+          },
+          {
+            "selector": ".items-start > .text-muted-foreground",
+            "inPage": true,
+            "text": "Meetings you take part in show up here, with what each one r",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 2184,
+            "worst": 4.68,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "span[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"0\"]",
+            "inPage": false,
+            "text": "Connvo",
+            "fontSize": 14,
+            "need": 4.5,
+            "coveredPixels": 291,
+            "worst": 5.24,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"17\"]",
+            "inPage": false,
+            "text": "Home",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 197,
+            "worst": 5.59,
+            "pass": true
+          },
+          {
+            "selector": "[data-shell-contrast=\"18\"]",
+            "inPage": false,
+            "text": "Profile",
+            "fontSize": 11,
+            "need": 4.5,
+            "coveredPixels": 245,
+            "worst": 5.59,
+            "pass": true
+          }
+        ]
+      },
+      "contrastFailures": [],
+      "shellContrastFailures": []
+    }
+  ]
+}
