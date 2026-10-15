@@ -14,6 +14,7 @@ export const getKey = internalQuery({
     v.null(),
     v.object({
       _id: v.id("idempotencyKeys"),
+      _creationTime: v.float64(),
       key: v.string(),
       scope: v.string(),
       createdAt: v.number(),
