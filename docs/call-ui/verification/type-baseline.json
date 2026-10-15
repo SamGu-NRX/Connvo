@@ -1,6 +1,394 @@
 {
-  "base": "f504304bc10d43c5fe6ccf5c0062e593ac809b8c",
+  "base": "35895b1230112b5fc6d93be781da8187f02ac33e",
   "baseCount": 32,
   "currentCount": 32,
-  "added": []
+  "added": [],
+  "baseDiagnostics": [
+    {
+      "file": "src/app/videocall/[id]/page.tsx",
+      "line": 331,
+      "code": 7006,
+      "message": "Parameter 'msg' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/components/mvp/one-on-one-meeting.tsx",
+      "line": 90,
+      "code": 2741,
+      "message": "Property 'meetingId' is missing in type '{}' but required in type 'AfterCallScreenProps'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 119,
+      "code": 2339,
+      "message": "Property 'payload' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, \"ref\">'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 124,
+      "code": 2339,
+      "message": "Property 'label' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, \"ref\">'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 188,
+      "code": 7006,
+      "message": "Parameter 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 188,
+      "code": 7006,
+      "message": "Parameter 'index' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 264,
+      "code": 2344,
+      "message": "Type '\"verticalAlign\" | \"payload\"' does not satisfy the constraint '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'.   Type '\"payload\"' is not assignable to type '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 275,
+      "code": 2339,
+      "message": "Property 'length' does not exist on type '{}'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 288,
+      "code": 2339,
+      "message": "Property 'map' does not exist on type '{}'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 288,
+      "code": 7006,
+      "message": "Parameter 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/hooks/useCollaborativeNotes.ts",
+      "line": 112,
+      "code": 2322,
+      "message": "Type 'number | undefined' is not assignable to type 'number'.   Type 'undefined' is not assignable to type 'number'."
+    },
+    {
+      "file": "src/hooks/useCollaborativeNotes.ts",
+      "line": 133,
+      "code": 2322,
+      "message": "Type '{ type: \"insert\" | \"delete\" | \"retain\"; position: number | undefined; text: string | undefined; length: number | undefined; }[]' is not assignable to type '{ clientOpId?: string | undefined; operation: { length?: number | undefined; content?: string | undefined; type: \"insert\" | \"delete\" | \"retain\"; position: number; }; clientSequence: number; }[]'.   Type '{ type: \"insert\" | \"delete\" | \"retain\"; position: number | undefined; text: string | undefined; length: number | undefined; }' is missing the following properties from type '{ clientOpId?: string | undefined; operation: { length?: number | undefined; content?: string | undefined; type: \"insert\" | \"delete\" | \"retain\"; position: number; }; clientSequence: number; }': operation, clientSequence"
+    },
+    {
+      "file": "src/hooks/useCollaborativeNotes.ts",
+      "line": 150,
+      "code": 2322,
+      "message": "Type 'MeetingNotesWithWatermark | null | undefined' is not assignable to type 'MeetingNote | null | undefined'.   Type 'MeetingNotesWithWatermark' is not assignable to type 'MeetingNote | null | undefined'.     Type 'MeetingNotesWithWatermark' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt"
+    },
+    {
+      "file": "src/hooks/useInCallPrompts.ts",
+      "line": 139,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: \"used\" | \"dismissed\" | \"upvoted\"; promptId: Id<\"prompts\">; }'."
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 146,
+      "code": 2561,
+      "message": "Object literal may only specify known properties, but 'participantIds' does not exist in type '{ description?: string | undefined; organizerId?: Id<\"users\"> | undefined; scheduledAt?: number | undefined; duration?: number | undefined; recordingEnabled?: boolean | undefined; ... 4 more ...; title: string; }'. Did you mean to write 'maxParticipants'?"
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 149,
+      "code": 2345,
+      "message": "Argument of type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to parameter of type 'SetStateAction<Id<\"meetings\"> | null>'."
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 155,
+      "code": 2322,
+      "message": "Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<\"meetings\">'.   Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'."
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 164,
+      "code": 2322,
+      "message": "Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<\"meetings\">'.   Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'."
+    },
+    {
+      "file": "src/hooks/usePostCallInsights.ts",
+      "line": 169,
+      "code": 2339,
+      "message": "Property 'score' does not exist on type 'number'."
+    },
+    {
+      "file": "src/hooks/usePostCallInsights.ts",
+      "line": 205,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/usePostCallInsights\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/usePostCallInsights\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/usePostCallInsights.ts",
+      "line": 206,
+      "code": 2322,
+      "message": "Type 'MeetingNotesWithWatermark | null | undefined' is not assignable to type 'MeetingNote | null | undefined'.   Type 'MeetingNotesWithWatermark' is not assignable to type 'MeetingNote | null | undefined'.     Type 'MeetingNotesWithWatermark' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt"
+    },
+    {
+      "file": "src/hooks/usePreCallPrompts.ts",
+      "line": 131,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: \"used\" | \"dismissed\" | \"upvoted\"; promptId: Id<\"prompts\">; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 106,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 109,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 119,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 128,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 134,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "test/convex/openapiExamples.test.ts",
+      "line": 177,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'."
+    },
+    {
+      "file": "test/convex/openapiExamples.test.ts",
+      "line": 192,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'."
+    },
+    {
+      "file": "test/convex/setup.ts",
+      "line": 22,
+      "code": 2722,
+      "message": "Cannot invoke an object which is possibly 'undefined'."
+    },
+    {
+      "file": "test/test.setup.mts",
+      "line": 1,
+      "code": 2688,
+      "message": "Cannot find type definition file for 'vite/client'."
+    },
+    {
+      "file": "test/test.setup.mts",
+      "line": 3,
+      "code": 2339,
+      "message": "Property 'glob' does not exist on type 'ImportMeta'."
+    }
+  ],
+  "currentDiagnostics": [
+    {
+      "file": "src/app/videocall/[id]/page.tsx",
+      "line": 331,
+      "code": 7006,
+      "message": "Parameter 'msg' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/components/mvp/one-on-one-meeting.tsx",
+      "line": 90,
+      "code": 2741,
+      "message": "Property 'meetingId' is missing in type '{}' but required in type 'AfterCallScreenProps'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 119,
+      "code": 2339,
+      "message": "Property 'payload' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, \"ref\">'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 124,
+      "code": 2339,
+      "message": "Property 'label' does not exist on type 'Omit<Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; includeHidden?: boolean | undefined; ... 17 more ...; axisId?: AxisId | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }, \"ref\">'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 188,
+      "code": 7006,
+      "message": "Parameter 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 188,
+      "code": 7006,
+      "message": "Parameter 'index' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 264,
+      "code": 2344,
+      "message": "Type '\"verticalAlign\" | \"payload\"' does not satisfy the constraint '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'.   Type '\"payload\"' is not assignable to type '\"string\" | \"name\" | \"mode\" | \"id\" | \"type\" | \"key\" | \"filter\" | \"fill\" | \"values\" | \"role\" | \"content\" | \"version\" | \"local\" | \"cursor\" | \"layout\" | \"offset\" | \"result\" | \"target\" | ... 428 more ... | \"onBBoxUpdate\"'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 275,
+      "code": 2339,
+      "message": "Property 'length' does not exist on type '{}'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 288,
+      "code": 2339,
+      "message": "Property 'map' does not exist on type '{}'."
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "line": 288,
+      "code": 7006,
+      "message": "Parameter 'item' implicitly has an 'any' type."
+    },
+    {
+      "file": "src/hooks/useCollaborativeNotes.ts",
+      "line": 112,
+      "code": 2322,
+      "message": "Type 'number | undefined' is not assignable to type 'number'.   Type 'undefined' is not assignable to type 'number'."
+    },
+    {
+      "file": "src/hooks/useCollaborativeNotes.ts",
+      "line": 133,
+      "code": 2322,
+      "message": "Type '{ type: \"insert\" | \"delete\" | \"retain\"; position: number | undefined; text: string | undefined; length: number | undefined; }[]' is not assignable to type '{ clientOpId?: string | undefined; operation: { length?: number | undefined; content?: string | undefined; type: \"insert\" | \"delete\" | \"retain\"; position: number; }; clientSequence: number; }[]'.   Type '{ type: \"insert\" | \"delete\" | \"retain\"; position: number | undefined; text: string | undefined; length: number | undefined; }' is missing the following properties from type '{ clientOpId?: string | undefined; operation: { length?: number | undefined; content?: string | undefined; type: \"insert\" | \"delete\" | \"retain\"; position: number; }; clientSequence: number; }': operation, clientSequence"
+    },
+    {
+      "file": "src/hooks/useCollaborativeNotes.ts",
+      "line": 150,
+      "code": 2322,
+      "message": "Type 'MeetingNotesWithWatermark | null | undefined' is not assignable to type 'MeetingNote | null | undefined'.   Type 'MeetingNotesWithWatermark' is not assignable to type 'MeetingNote | null | undefined'.     Type 'MeetingNotesWithWatermark' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt"
+    },
+    {
+      "file": "src/hooks/useInCallPrompts.ts",
+      "line": 139,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: \"used\" | \"dismissed\" | \"upvoted\"; promptId: Id<\"prompts\">; }'."
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 146,
+      "code": 2561,
+      "message": "Object literal may only specify known properties, but 'participantIds' does not exist in type '{ description?: string | undefined; organizerId?: Id<\"users\"> | undefined; scheduledAt?: number | undefined; duration?: number | undefined; recordingEnabled?: boolean | undefined; ... 4 more ...; title: string; }'. Did you mean to write 'maxParticipants'?"
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 149,
+      "code": 2345,
+      "message": "Argument of type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to parameter of type 'SetStateAction<Id<\"meetings\"> | null>'."
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 155,
+      "code": 2322,
+      "message": "Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<\"meetings\">'.   Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'."
+    },
+    {
+      "file": "src/hooks/useMeetingLifecycle.ts",
+      "line": 164,
+      "code": 2322,
+      "message": "Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'Id<\"meetings\">'.   Type '{ meetingId: Id<\"meetings\">; webrtcReady: boolean; videoProvider: \"webrtc\" | \"getstream\"; features: { recording: boolean; transcription: true; maxParticipants: number; }; }' is not assignable to type 'string'."
+    },
+    {
+      "file": "src/hooks/usePostCallInsights.ts",
+      "line": 169,
+      "code": 2339,
+      "message": "Property 'score' does not exist on type 'number'."
+    },
+    {
+      "file": "src/hooks/usePostCallInsights.ts",
+      "line": 205,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/usePostCallInsights\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/usePostCallInsights\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/usePostCallInsights.ts",
+      "line": 206,
+      "code": 2322,
+      "message": "Type 'MeetingNotesWithWatermark | null | undefined' is not assignable to type 'MeetingNote | null | undefined'.   Type 'MeetingNotesWithWatermark' is not assignable to type 'MeetingNote | null | undefined'.     Type 'MeetingNotesWithWatermark' is missing the following properties from type 'MeetingNote': lastEditedAt, createdAt"
+    },
+    {
+      "file": "src/hooks/usePreCallPrompts.ts",
+      "line": 131,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'timestamp' does not exist in type '{ feedback: \"used\" | \"dismissed\" | \"upvoted\"; promptId: Id<\"prompts\">; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 106,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 109,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 119,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 128,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "src/hooks/useTranscription.ts",
+      "line": 134,
+      "code": 2322,
+      "message": "Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment[]' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment[]'.   Type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/convex/types/entities/transcript\").TranscriptSegment' is not assignable to type 'import(\"/Users/samgu/Programming Projects/fleet-leads/wt/connvo-call-ui/src/hooks/useTranscription\").TranscriptSegment'.     Types of property 'sentiment' are incompatible.       Type 'number | undefined' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; } | undefined'.         Type 'number' is not assignable to type '{ score: number; label: \"positive\" | \"negative\" | \"neutral\"; }'."
+    },
+    {
+      "file": "test/convex/openapiExamples.test.ts",
+      "line": 177,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'."
+    },
+    {
+      "file": "test/convex/openapiExamples.test.ts",
+      "line": 192,
+      "code": 2353,
+      "message": "Object literal may only specify known properties, and 'experience' does not exist in type 'TestProfileData'."
+    },
+    {
+      "file": "test/convex/setup.ts",
+      "line": 22,
+      "code": 2722,
+      "message": "Cannot invoke an object which is possibly 'undefined'."
+    },
+    {
+      "file": "test/test.setup.mts",
+      "line": 1,
+      "code": 2688,
+      "message": "Cannot find type definition file for 'vite/client'."
+    },
+    {
+      "file": "test/test.setup.mts",
+      "line": 3,
+      "code": 2339,
+      "message": "Property 'glob' does not exist on type 'ImportMeta'."
+    }
+  ]
 }

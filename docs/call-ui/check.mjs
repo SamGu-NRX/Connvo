@@ -105,6 +105,18 @@ try {
   await leaveCall(endedPair.peerA);
   await capture(endedPair.peerA.page, "ended");
   await ctx.closePeers();
+  ctx.newMeeting("lane5-network-blocked");
+  // The existing probe forces relay-only ICE with no relay server.
+  // This exercises the transport's real failure message without backend writes.
+  const blockedA = await ctx.launchPeer("A", {}, {iceTransportPolicy:"relay",iceServers:[]});
+  await ctx.launchPeer("B", {}, {iceTransportPolicy:"relay",iceServers:[]});
+  await capture(blockedA.page, "joining");
+  await blockedA.page.locator('[data-call-phase="failed"]').waitFor({timeout:70000});
+  assert.match(await blockedA.page.getByTestId("call-error").innerText(), /network may be blocking calls/);
+  await capture(blockedA.page, "network-blocked");
+  await axe(blockedA.page, "network-blocked");
+  results.push({check:"merged-transport-network-error",pass:true});
+  await ctx.closePeers();
 } catch (error) {
   results.push({ check: "chromium-ui", error: error.message });
   process.exitCode = 1;
@@ -138,6 +150,9 @@ for (const [name, browserType] of Object.entries({ chromium, webkit })) {
     await page.getByTestId("toggle-side-panel").click();
     assert.equal(await page.getByRole("textbox").inputValue(), "A thought that survives closing the sheet.");
     await page.setViewportSize(viewports[2]);
+    await capture(page, `${name}-side-panel-component`, false);
+    await page.setViewportSize(viewports[0]);
+    await page.locator('dialog[open]').waitFor();
     await capture(page, `${name}-side-panel-component`, false);
     results.push({ check: `${name}-native-sheet`, pass: true });
   } catch (error) { results.push({ check: `${name}-native-sheet`, error: error.message }); process.exitCode = 1; }

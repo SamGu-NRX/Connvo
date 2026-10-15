@@ -77,6 +77,18 @@ describe("call room", () => {
     expect(announcement).toBeInTheDocument();
     expect(announcement!.querySelector('button, a, [tabindex]')).toBeNull();
   });
+  it("keeps the network refusal and retry in the call layout", async () => {
+    const t = transport();
+    t.connect = vi.fn(async (_, events) => {
+      events.onError({kind:"network", message:"Can't reach the other person. A network may be blocking calls. Try again or switch networks.",retryable:true});
+      events.onPhase("failed");
+    });
+    render(<CallRoom {...props} createTransport={async () => t} />);
+    fireEvent.click(screen.getByTestId("join-call"));
+    await waitFor(() => expect(screen.getByTestId("call-root")).toHaveAttribute("data-call-phase","failed"));
+    expect(screen.getByTestId("call-error")).toHaveTextContent("Can't reach the other person");
+    expect(screen.getByTestId("retry-call")).toBeEnabled();
+  });
   it("publishes current mute state when signaling finishes after a capture change", async () => {
     const connected = deferred<void>();
     const t = transport();
@@ -87,6 +99,7 @@ describe("call room", () => {
     );
     fireEvent.click(screen.getByTestId("join-call"));
     await waitFor(() => expect(t.connect).toHaveBeenCalled());
+    expect(screen.getByText("Connecting to the call…")).toBeInTheDocument();
     mocks.media = {
       ...mocks.media!,
       micOn: false,
