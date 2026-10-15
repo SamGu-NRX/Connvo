@@ -5,6 +5,7 @@ import {
   useCallback,
   useMemo,
   useSyncExternalStore,
+  Suspense,
 } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -100,7 +101,15 @@ const subscribeToHydration = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 
-export default function VideoMeeting() {
+export default function VideoMeetingPage() {
+  return (
+    <Suspense fallback={<div role="status" className="grid min-h-screen place-items-center">Getting your meeting ready…</div>}>
+      <VideoMeeting />
+    </Suspense>
+  );
+}
+
+function VideoMeeting() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();

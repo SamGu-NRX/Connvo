@@ -31,6 +31,17 @@ export type QueueViewProps = {
   onRetry: () => void;
 };
 
+const noAction = () => {};
+
+export function QueueLoading() {
+  // Loading has no action controls; reuse the query-loading view's exact geometry.
+  return (
+    <QueueView title="Match queue" state={{ kind: "loading" }} pending={false}
+      onJoin={noAction} onLeave={noAction} onAccept={noAction}
+      onDecline={noAction} onRetry={noAction} />
+  );
+}
+
 export function elapsedLabel(seconds: number): string {
   const whole = Math.max(0, Math.floor(seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;

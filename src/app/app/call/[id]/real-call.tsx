@@ -326,7 +326,7 @@ function focusNoticeHeading(heading: HTMLHeadingElement | null) {
   heading?.focus();
 }
 
-function CallNotice({
+export function CallNotice({
   title,
   body,
   failed,
