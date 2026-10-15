@@ -8,7 +8,13 @@ import { AxeBuilder } from "@axe-core/playwright";
 async function main() {
   const out = "docs/live-prompts/screenshots";
   mkdirSync(out, { recursive: true });
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      "--use-fake-device-for-media-stream",
+      "--use-fake-ui-for-media-stream",
+    ],
+  });
   const results = [];
   try {
     for (const viewport of [
@@ -142,6 +148,59 @@ async function main() {
       await context.close();
       if (video) console.log(`Video: ${await video.path()}`);
     }
+    // Verify the mounted panel on the real call route with two seeded users.
+    // The integration check left automatic prompts paused, so this spends at most one pick.
+    const state = JSON.parse(
+      readFileSync("tools/call-eval/out/state.json", "utf8"),
+    );
+    const peers = await Promise.all(
+      ["A", "B"].map(async (who) => {
+        const context = await browser.newContext({
+          viewport: { width: 1440, height: 900 },
+          permissions: ["camera", "microphone"],
+        });
+        const page = await context.newPage();
+        await page.goto(
+          `http://localhost:3104/app/call/${state.meetingId}?as=${who}`,
+        );
+        await expect(page.getByTestId("join-call")).toBeVisible({
+          timeout: 30_000,
+        });
+        await page.getByTestId("join-call").click();
+        await expect(page.getByTestId("current-prompt")).toBeVisible();
+        return { context, page };
+      }),
+    );
+    const [a, b] = peers.map((p) => p.page);
+    const previous = await a.getByTestId("current-prompt").textContent();
+    await expect(a.getByRole("button", { name: "Another one" })).toBeEnabled();
+    await a.getByRole("button", { name: "Another one" }).click();
+    await expect(a.getByTestId("current-prompt")).not.toHaveText(previous!);
+    const next = await a.getByTestId("current-prompt").textContent();
+    await expect(b.getByTestId("current-prompt")).toHaveText(next!);
+    await b.getByRole("button", { name: "We used this" }).click();
+    await expect(
+      a.getByText("Marked as used. Saved to your recap."),
+    ).toBeVisible();
+    for (const viewport of [
+      { width: 1440, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      await a.setViewportSize(viewport);
+      await a.getByTestId("conversation-prompts").scrollIntoViewIfNeeded();
+      await a.screenshot({
+        path: `${out}/mounted-call-${viewport.width}x${viewport.height}.png`,
+        animations: "disabled",
+      });
+    }
+    await Promise.all(peers.map((p) => p.context.close()));
+    results.push({
+      mountedCall: true,
+      sharedBrowsers: 2,
+      sharedManualPick: true,
+      sharedUsedState: true,
+      paidRequestsUpperBound: 1,
+    });
     writeFileSync(
       "docs/live-prompts/browser-check.json",
       JSON.stringify({ fixture: true, results }, null, 2) + "\n",

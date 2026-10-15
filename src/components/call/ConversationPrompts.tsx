@@ -192,11 +192,13 @@ export function PromptPanel({
               ? "A good conversation starts with a little curiosity."
               : !state.active
                 ? "No prompts were shown during this call."
-                : state.autoPaused
-                  ? "Ready for an idea? Get one whenever you like."
-                  : error
-                    ? "Get an idea when you're ready to try again."
-                    : "An idea for your conversation is on its way."}
+                : state.exhausted
+                  ? "No more prompts are available for this call."
+                  : state.autoPaused
+                    ? "Ready for an idea? Get one whenever you like."
+                    : error
+                      ? "Get an idea when you're ready to try again."
+                      : "An idea for your conversation is on its way."}
           </p>
         )}
       </div>

@@ -148,6 +148,15 @@ describe("conversation prompts panel", () => {
     expect(
       screen.getByText("No prompts were shown during this call."),
     ).toBeInTheDocument();
+    rerender(
+      <PromptPanel
+        {...props}
+        state={{ ...state, prompt: null, exhausted: true }}
+      />,
+    );
+    expect(
+      screen.getByText("No more prompts are available for this call."),
+    ).toBeInTheDocument();
   });
   it("has no axe violations", async () => {
     const { container } = render(<PromptPanel {...props} />);
