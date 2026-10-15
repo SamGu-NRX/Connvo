@@ -1,8 +1,47 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { numericMapV } from "../lib/validators";
+import { callQueueTypeV, callQueueNoticeV } from "../types/validators/matching";
 
 export const matchingTables = {
+  // Separate from the legacy scheduler, which has no acceptance or meeting lifecycle.
+  callQueueEntries: defineTable({
+    userId: v.id("users"),
+    queueType: callQueueTypeV,
+    state: v.union(
+      v.literal("idle"),
+      v.literal("waiting"),
+      v.literal("matched"),
+      v.literal("ready"),
+      v.literal("expired"),
+    ),
+    joinedAt: v.number(),
+    expiresAt: v.number(),
+    matchId: v.optional(v.id("callQueueMatches")),
+    blockedUserIds: v.array(v.id("users")),
+    notice: v.optional(callQueueNoticeV),
+  })
+    .index("by_user", ["userId"])
+    .index("by_queue_state", ["queueType", "state"]),
+  callQueueMatches: defineTable({
+    user1Id: v.id("users"),
+    user2Id: v.id("users"),
+    entry1Id: v.id("callQueueEntries"),
+    entry2Id: v.id("callQueueEntries"),
+    state: v.union(
+      v.literal("pending"),
+      v.literal("declined"),
+      v.literal("expired"),
+      v.literal("ready"),
+    ),
+    user1Accepted: v.boolean(),
+    user2Accepted: v.boolean(),
+    reasons: v.array(v.string()),
+    score: v.number(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    meetingId: v.optional(v.id("meetings")),
+  }),
   // Matching System
   matchingQueue: defineTable({
     userId: v.id("users"),

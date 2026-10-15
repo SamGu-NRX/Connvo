@@ -9,6 +9,19 @@
  */
 
 import { v } from "convex/values";
+import type { Infer } from "convex/values";
+import {
+  callQueueTypeV,
+  callQueueStatusV,
+} from "@convex/types/validators/matching";
+import {
+  joinQueue,
+  leaveQueue,
+  pairWaiting,
+  queueState,
+  releaseMatch,
+  respondToMatch,
+} from "./callQueue";
 import { mutation, query, internalMutation } from "@convex/_generated/server";
 import { requireIdentity } from "@convex/auth/guards";
 import { ConvexError } from "convex/values";
@@ -522,5 +535,77 @@ export const cleanupExpiredEntries = internalMutation({
     return {
       expiredCount: expiredEntries.length,
     };
+  },
+});
+
+// The live queue owns its lifecycle separately from the legacy scheduled matcher.
+export const join = mutation({
+  args: { queueType: callQueueTypeV },
+  returns: v.null(),
+  handler: async (ctx, { queueType }) => {
+    const { userId } = await requireIdentity(ctx);
+    await joinQueue(ctx, userId, queueType);
+    return null;
+  },
+});
+export const leave = mutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const { userId } = await requireIdentity(ctx);
+    await leaveQueue(ctx, userId);
+    return null;
+  },
+});
+export const respond = mutation({
+  args: { matchId: v.id("callQueueMatches"), accept: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, { matchId, accept }) => {
+    const { userId } = await requireIdentity(ctx);
+    await respondToMatch(ctx, userId, matchId, accept);
+    return null;
+  },
+});
+export const status = query({
+  args: {},
+  returns: callQueueStatusV,
+  handler: async (ctx): Promise<Infer<typeof callQueueStatusV>> => {
+    const { userId } = await requireIdentity(ctx);
+    return queueState(ctx, userId);
+  },
+});
+export const expireMatch = internalMutation({
+  args: { matchId: v.id("callQueueMatches") },
+  returns: v.null(),
+  handler: async (ctx, { matchId }) => {
+    const match = await ctx.db.get(matchId);
+    if (match?.state === "pending" && match.expiresAt <= Date.now()) {
+      await releaseMatch(ctx, match, "expired");
+      const entry = await ctx.db.get(match.entry1Id);
+      if (entry) await pairWaiting(ctx, entry.queueType);
+    }
+    return null;
+  },
+});
+export const expireEntry = internalMutation({
+  args: { entryId: v.id("callQueueEntries"), expiresAt: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { entryId, expiresAt }) => {
+    const entry = await ctx.db.get(entryId);
+    if (
+      !entry ||
+      entry.expiresAt !== expiresAt ||
+      entry.expiresAt > Date.now() ||
+      entry.state === "idle" ||
+      entry.state === "ready"
+    )
+      return null;
+    if (entry.state === "matched" && entry.matchId) {
+      const match = await ctx.db.get(entry.matchId);
+      if (match) await releaseMatch(ctx, match, "expired");
+    }
+    await ctx.db.patch(entryId, { state: "expired", matchId: undefined });
+    await pairWaiting(ctx, entry.queueType);
+    return null;
   },
 });

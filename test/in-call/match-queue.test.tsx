@@ -1,0 +1,275 @@
+import React from "react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { axe } from "jest-axe";
+import { getFunctionName, type FunctionReturnType } from "convex/server";
+import { api } from "@convex/_generated/api";
+import { QueueView, type QueueViewProps } from "@/components/queue/QueueView";
+import LiveMatchQueue from "@/components/queue/LiveMatchQueue";
+import { callQueueDestination } from "@/components/queue/queue-navigation";
+
+type Status = FunctionReturnType<typeof api.matching.queue.status>;
+const mock = vi.hoisted(() => ({
+  status: undefined as Status | undefined,
+  authenticated: true,
+  loading: false,
+  connected: true,
+  mutation: vi.fn(),
+  replace: vi.fn(),
+  push: vi.fn(),
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: mock.replace, push: mock.push }),
+}));
+vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({
+    isAuthenticated: mock.authenticated,
+    isLoading: mock.loading,
+  }),
+  useConvexConnectionState: () => ({
+    isWebSocketConnected: mock.connected,
+    hasEverConnected: true,
+  }),
+  useQuery: () => mock.status,
+  useMutation:
+    (ref: Parameters<typeof getFunctionName>[0]) => (args: unknown) =>
+      mock.mutation(getFunctionName(ref), args),
+}));
+
+beforeEach(() => {
+  mock.status = undefined;
+  mock.authenticated = true;
+  mock.loading = false;
+  mock.connected = true;
+  mock.mutation.mockReset().mockResolvedValue(null);
+  mock.replace.mockReset();
+  mock.push.mockReset();
+});
+afterEach(() => vi.useRealTimers());
+
+function view(state: QueueViewProps["state"]) {
+  const callbacks = {
+    onJoin: vi.fn(),
+    onLeave: vi.fn(),
+    onAccept: vi.fn(),
+    onDecline: vi.fn(),
+    onRetry: vi.fn(),
+  };
+  return {
+    ...render(
+      <QueueView
+        state={state}
+        title="Match queue"
+        pending={false}
+        {...callbacks}
+      />,
+    ),
+    ...callbacks,
+  };
+}
+
+describe("match queue interface", () => {
+  it("announces the real partner and scorer reasons without announcing every countdown tick", () => {
+    const state = {
+      kind: "matched",
+      name: "Bob Brown",
+      reasons: ["Strong interest alignment", "Strong language compatibility"],
+      secondsLeft: 54,
+      accepted: false,
+      partnerAccepted: false,
+    } satisfies QueueViewProps["state"];
+    const rendered = view(state);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Match found with Bob Brown. Strong interest alignment. Strong language compatibility",
+    );
+    expect(screen.getByText("0:54")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Join", exact: true }));
+    expect(rendered.onAccept).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Decline" }));
+    expect(rendered.onDecline).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows elapsed time from the server join time across remounts", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      joinedAt: Date.now() - 75_000,
+      expiresAt: Date.now() + 60_000,
+    };
+    const mounted = render(<LiveMatchQueue />);
+    expect(screen.getByText("1:15 elapsed")).toBeVisible();
+    await act(() => vi.advanceTimersByTimeAsync(2000));
+    expect(screen.getByText("1:17 elapsed")).toBeVisible();
+    mounted.unmount();
+    render(<LiveMatchQueue />);
+    expect(screen.getByText("1:17 elapsed")).toBeVisible();
+  });
+
+  it("joins once on entry with the requested queue type", async () => {
+    mock.status = { state: "idle" };
+    render(
+      <React.StrictMode>
+        <LiveMatchQueue queueType="professional" />
+      </React.StrictMode>,
+    );
+    await waitFor(() =>
+      expect(mock.mutation.mock.calls).toEqual([
+        ["matching/queue:join", { queueType: "professional" }],
+      ]),
+    );
+    expect(screen.getByText("Professional conversations")).toBeVisible();
+  });
+
+  it("holds an expired session for explicit rejoin", async () => {
+    mock.status = {
+      state: "expired",
+      queueType: "casual",
+      joinedAt: 1,
+      expiresAt: 2,
+    };
+    render(<LiveMatchQueue />);
+    expect(
+      screen.getByRole("heading", { name: "Your queue session ended." }),
+    ).toBeVisible();
+    expect(mock.mutation.mock.calls).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "Rejoin queue" }));
+    await waitFor(() =>
+      expect(mock.mutation.mock.calls).toEqual([
+        ["matching/queue:join", { queueType: "casual" }],
+      ]),
+    );
+  });
+
+  it("renders partner decline as waiting and announces the recovery", () => {
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      joinedAt: Date.now(),
+      expiresAt: Date.now() + 60_000,
+      notice: { id: "decline-1", type: "partner_declined" },
+    };
+    render(<LiveMatchQueue />);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Your partner declined. You're still in the queue",
+    );
+    expect(screen.getByRole("button", { name: "Leave queue" })).toBeVisible();
+  });
+
+  it("retries a failed join and preserves the requested operation", async () => {
+    mock.status = { state: "idle" };
+    mock.mutation.mockRejectedValueOnce(new Error("request failed"));
+    render(<LiveMatchQueue />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "We couldn't update your queue",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() =>
+      expect(mock.mutation.mock.calls).toEqual([
+        ["matching/queue:join", { queueType: "casual" }],
+        ["matching/queue:join", { queueType: "casual" }],
+      ]),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Ready to meet someone?" }),
+      ).toBeVisible(),
+    );
+  });
+
+  it("does not navigate away until leaving succeeds", async () => {
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      joinedAt: Date.now(),
+      expiresAt: Date.now() + 60_000,
+    };
+    mock.mutation.mockRejectedValueOnce(new Error("offline"));
+    render(<LiveMatchQueue />);
+    fireEvent.click(screen.getByRole("button", { name: "Leave queue" }));
+    await screen.findByRole("alert");
+    expect(mock.push.mock.calls).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(mock.push.mock.calls).toEqual([["/app"]]));
+  });
+
+  it("shows an offline error instead of presenting stale match actions", () => {
+    mock.connected = false;
+    render(<LiveMatchQueue />);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Your connection dropped",
+    );
+    expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+  });
+
+  it("keeps join disabled after acceptance and when the deadline passes", () => {
+    const rendered = view({
+      kind: "matched",
+      name: "Bob Brown",
+      reasons: ["Strong interest alignment"],
+      secondsLeft: 25,
+      accepted: true,
+      partnerAccepted: false,
+    });
+    expect(
+      screen.getByRole("button", { name: "Waiting for partner" }),
+    ).toBeDisabled();
+    rendered.unmount();
+    view({
+      kind: "matched",
+      name: "Bob Brown",
+      reasons: ["Strong interest alignment"],
+      secondsLeft: 0,
+      accepted: false,
+      partnerAccepted: false,
+    });
+    expect(
+      screen.getByRole("button", { name: "Join", exact: true }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decline" })).toBeDisabled();
+  });
+
+  it("keeps test identity only in the local handoff", () => {
+    expect(callQueueDestination("meeting-42", "?as=B", true)).toBe(
+      "/app/call/meeting-42?as=B",
+    );
+    expect(callQueueDestination("meeting-42", "?as=B", false)).toBe(
+      "/app/call/meeting-42",
+    );
+    expect(callQueueDestination("meeting-42", "?as=unknown", true)).toBe(
+      "/app/call/meeting-42",
+    );
+  });
+
+  it.each([
+    { kind: "loading" },
+    { kind: "idle" },
+    { kind: "signed_out" },
+    { kind: "waiting", elapsedSeconds: 72 },
+    {
+      kind: "matched",
+      name: "Alexandra Catherine Montgomery-Wellington",
+      reasons: ["Strong interest alignment"],
+      secondsLeft: 55,
+      accepted: false,
+      partnerAccepted: false,
+    },
+    { kind: "expired" },
+    { kind: "ready" },
+    { kind: "error", message: "Connection interrupted. Please retry." },
+  ] satisfies QueueViewProps["state"][])(
+    "has no axe violations in $kind",
+    async (state) => {
+      const { container } = view(state);
+      const result = await axe(container);
+      expect(result.violations).toEqual([]);
+    },
+  );
+});
