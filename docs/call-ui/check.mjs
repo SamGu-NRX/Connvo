@@ -14,6 +14,8 @@ const results = [];
 const viewports = [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 844, height: 390 }];
 await fs.mkdir(shots, { recursive: true });
 async function capture(page, name, all = true) {
+  // The development inspector is not part of the shipped call UI.
+  await page.addStyleTag({content:"nextjs-portal { display: none !important; }"});
   for (const viewport of all ? viewports : [page.viewportSize()]) {
     await page.setViewportSize(viewport);
     await page.screenshot({ animations: "disabled", path: `${shots}/${name}-${viewport.width}x${viewport.height}.png` });
@@ -51,7 +53,15 @@ try {
   results.push({ check: "real-page-blur", active: blurActive === "true", text: await a.page.getByTestId("toggle-blur").innerText() });
   await capture(a.page, blurActive === "true" ? "lobby-blur-active" : "lobby-blur-fallback");
   if (blurActive === "true") await a.page.getByTestId("toggle-blur").click();
+  await a.page.goto(`${base}/app/call/unconfigured`, {waitUntil:"domcontentloaded"});
+  await a.page.getByText("Calls need the signaling service").waitFor();
+  await capture(a.page, "no-signaling");
+  await axe(a.page, "no-signaling");
   await a.close();
+  const denied = await ctx.launchPeer("A", {autojoin:"0"}, undefined, {fullChromium:true});
+  await denied.page.getByTestId("retry-media").waitFor();
+  await capture(denied.page, "permission-denied");
+  await denied.close();
   ctx.newMeeting("lane5-interactions");
   const { peerA, peerB } = await joinPair(ctx);
   const page = peerA.page;
@@ -74,12 +84,14 @@ try {
   await capture(page, "connected-reduced-motion");
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize(viewports[0]);
+  // Wait for the resized handle to settle before using its current geometry.
+  await handle.hover();
   const rect = await handle.boundingBox();
   await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
   await page.mouse.down();
   await page.mouse.move(90, 720, { steps: 20 });
   await page.mouse.up();
-  assert.equal(await page.getByTestId("self-preview").getAttribute("data-corner"), "bottom left");
+  await page.waitForFunction(() => document.querySelector('[data-testid="self-preview"]').getAttribute("data-corner") === "bottom left", null, {timeout:3000});
   results.push({ check: "mic-shortcut-and-pip-pointer-keyboard", pass: true });
   await peerB.page.getByTestId("toggle-camera").click();
   await page.locator('[data-testid="remote-media"][data-video-off="true"]').waitFor();
@@ -108,13 +120,14 @@ try {
   ctx.newMeeting("lane5-network-blocked");
   // The existing probe forces relay-only ICE with no relay server.
   // This exercises the transport's real failure message without backend writes.
-  const blockedA = await ctx.launchPeer("A", {}, {iceTransportPolicy:"relay",iceServers:[]});
-  await ctx.launchPeer("B", {}, {iceTransportPolicy:"relay",iceServers:[]});
-  await capture(blockedA.page, "joining");
-  await blockedA.page.locator('[data-call-phase="failed"]').waitFor({timeout:70000});
-  assert.match(await blockedA.page.getByTestId("call-error").innerText(), /network may be blocking calls/);
-  await capture(blockedA.page, "network-blocked");
-  await axe(blockedA.page, "network-blocked");
+  await ctx.launchPeer("A", {}, {iceTransportPolicy:"relay",iceServers:[]});
+  const blockedB = await ctx.launchPeer("B", {}, {iceTransportPolicy:"relay",iceServers:[]});
+  await blockedB.page.locator('[data-call-phase="joining"]').waitFor();
+  await capture(blockedB.page, "joining");
+  await blockedB.page.locator('[data-call-phase="failed"]').waitFor({timeout:70000});
+  assert.match(await blockedB.page.getByTestId("call-error").innerText(), /network may be blocking calls/);
+  await capture(blockedB.page, "network-blocked");
+  await axe(blockedB.page, "network-blocked");
   results.push({check:"merged-transport-network-error",pass:true});
   await ctx.closePeers();
 } catch (error) {
@@ -127,7 +140,7 @@ try {
 const require = createRequire(import.meta.url);
 const { build } = createRequire(require.resolve("tsx/package.json"))("esbuild");
 const bundle = await build({
-  stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import {CallSidePanel} from './src/components/call/CallSidePanel'; import styles from './src/components/call/call.module.css'; createRoot(document.getElementById('root')).render(<div className={styles.page}><div className={styles.room} style={{height:'100%',position:'relative'}}><header className={styles.header}>Connvo</header><div className={styles.workspace}><button id="outside">Call control</button><CallSidePanel><label>Notes draft<textarea style={{width:'100%',height:220,fontSize:16}} aria-label="Notes draft" /></label></CallSidePanel></div></div></div>);`, loader: "tsx", resolveDir: process.cwd() },
+  stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import {CallSidePanel} from './src/components/call/CallSidePanel'; import styles from './src/components/call/call.module.css'; createRoot(document.getElementById('root')).render(<div className={styles.page}><div className={styles.room} style={{height:'100%',position:'relative',display:'flex',flexDirection:'column',overflow:'hidden',background:'var(--stage)',color:'var(--ink)'}}><header className={styles.header}>Connvo</header><div className={styles.workspace}><div className={styles.callContent}><button id="outside">Call control</button></div><CallSidePanel><label>Notes draft<textarea style={{width:'100%',height:220,fontSize:16}} aria-label="Notes draft" /></label></CallSidePanel></div></div></div>);`, loader: "tsx", resolveDir: process.cwd() },
   bundle: true, write: false, outdir: "/tmp/connvo-lane5-panel", jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' },
 });
 for (const [name, browserType] of Object.entries({ chromium, webkit })) {
@@ -138,7 +151,7 @@ for (const [name, browserType] of Object.entries({ chromium, webkit })) {
     const page = await context.newPage();
     const css = bundle.outputFiles.find(file => file.path.endsWith(".css")).text;
     const js = bundle.outputFiles.find(file => file.path.endsWith(".js")).text;
-    await page.setContent(`<!doctype html><html lang="en"><title>Call notes panel fixture</title><style>${css}</style><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}button{font:inherit}</style><main id="root"></main><script>${js.replaceAll("</script", "<\\/script")}</script></html>`);
+    await page.setContent(`<!doctype html><html lang="en"><title>Call notes panel fixture</title><style>${css}</style><style>body{margin:0;font:16px system-ui}*{box-sizing:border-box}button{font:inherit;color:inherit;background:none;border:0}h2{font:inherit;margin:0}textarea{font:inherit}</style><main id="root"></main><script>${js.replaceAll("</script", "<\\/script")}</script></html>`);
     await page.locator("#outside").click();
     await page.getByTestId("toggle-side-panel").click();
     await page.getByRole("textbox").fill("A thought that survives closing the sheet.");

@@ -383,7 +383,9 @@ export function CallRoom({
       {/* Informational status stays out of the Tab order. The global toast
           returned focus to Leave repeatedly in the P-03 keyboard scenario. */}
       <div role="status" aria-live="polite" className={styles.callNotification}>
-        {notification ? <span className={styles.notice}>{notification}</span> : null}
+        {notification && screen === "call" && phase === "connected" ? (
+          <span className={styles.notice}>{notification}</span>
+        ) : null}
       </div>
       <div className={styles.workspace}>
         <div className={styles.callContent}>
@@ -425,7 +427,7 @@ export function CallRoom({
       </div>
       <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
         <AlertDialogContent
-          className="max-w-sm motion-reduce:animate-none"
+          className="w-[calc(100vw-2rem)] max-w-sm rounded-xl motion-reduce:animate-none"
           onCloseAutoFocus={(e) => {
             // Stay returns focus to Leave; leaving moves it to the ended
             // screen's heading instead.
@@ -441,10 +443,10 @@ export function CallRoom({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogCancel className="h-11">Stay</AlertDialogCancel>
             <AlertDialogAction
               data-testid="leave-call-confirm"
-              className="bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500/50"
+              className="h-11 bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500/50"
               onClick={() => void leave()}
             >
               Leave call
@@ -932,6 +934,7 @@ function ControlBar({
         </PopoverTrigger>
         <PopoverContent
           data-testid="call-settings-panel"
+          aria-label="Camera and microphone settings"
           side="top"
           className="grid max-h-[70dvh] w-80 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) gap-3 overflow-y-auto motion-reduce:animate-none"
         >

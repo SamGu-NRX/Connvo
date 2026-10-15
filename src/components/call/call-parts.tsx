@@ -63,8 +63,8 @@ export function VoiceLine({
       let sum = 0;
       for (const v of buf) sum += v * v;
       const rms = Math.sqrt(sum / buf.length);
-      // Speech sits around 0.02-0.2 rms; map it onto 0-1 with a quick
-      // attack and a slower release so the line does not flicker.
+      // This visual activity heuristic is not a calibrated speech detector.
+      // Quick attack and slower release keep the line from flickering.
       const target = Math.min(1, rms * 6);
       level = target > level ? target : level * 0.9 + target * 0.1;
       // Set both each frame, so switching the preference mid-call never

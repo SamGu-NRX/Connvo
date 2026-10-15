@@ -1,6 +1,8 @@
 export type CameraQuality = "data-saver" | "standard" | "hd";
 export type CameraFacing = "user" | "environment";
 
+// Standard requests fewer frames for local blur processing than 30fps.
+// These capture presets have not been benchmarked on physical phones.
 export const CAMERA_QUALITY = {
   "data-saver": { width: 640, height: 360, frameRate: 15 },
   standard: { width: 1280, height: 720, frameRate: 24 },

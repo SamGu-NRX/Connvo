@@ -38,7 +38,13 @@ const props = {
 };
 afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => {
-  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
   mocks.media = {
     status: "ready",
     problem: null,
@@ -68,26 +74,57 @@ describe("call room", () => {
   it("announces joins without adding a notification to the Tab order", async () => {
     const t = transport();
     let events!: TransportEvents;
-    t.connect = vi.fn(async (_, next) => { events = next; });
+    t.connect = vi.fn(async (_, next) => {
+      events = next;
+    });
     render(<CallRoom {...props} createTransport={async () => t} />);
     fireEvent.click(screen.getByTestId("join-call"));
     await waitFor(() => expect(t.connect).toHaveBeenCalled());
-    act(() => events.onRemoteJoined({ participantId: "B" }));
-    const announcement = screen.getByText("Partner joined").closest('[role="status"]');
+    act(() => {
+      events.onPhase("connected");
+      events.onRemoteJoined({ participantId: "B" });
+    });
+    const announcement = screen
+      .getByText("Partner joined")
+      .closest('[role="status"]');
     expect(announcement).toBeInTheDocument();
-    expect(announcement!.querySelector('button, a, [tabindex]')).toBeNull();
+    expect(announcement!.querySelector("button, a, [tabindex]")).toBeNull();
+    act(() => events.onPhase("reconnecting"));
+    expect(screen.queryByText("Partner joined")).not.toBeInTheDocument();
   });
   it("keeps the network refusal and retry in the call layout", async () => {
     const t = transport();
     t.connect = vi.fn(async (_, events) => {
-      events.onError({kind:"network", message:"Can't reach the other person. A network may be blocking calls. Try again or switch networks.",retryable:true});
+      events.onError({
+        kind: "network",
+        message:
+          "Can't reach the other person. A network may be blocking calls. Try again or switch networks.",
+        retryable: true,
+      });
       events.onPhase("failed");
     });
     render(<CallRoom {...props} createTransport={async () => t} />);
     fireEvent.click(screen.getByTestId("join-call"));
-    await waitFor(() => expect(screen.getByTestId("call-root")).toHaveAttribute("data-call-phase","failed"));
-    expect(screen.getByTestId("call-error")).toHaveTextContent("Can't reach the other person");
+    await waitFor(() =>
+      expect(screen.getByTestId("call-root")).toHaveAttribute(
+        "data-call-phase",
+        "failed",
+      ),
+    );
+    expect(screen.getByTestId("call-error")).toHaveTextContent(
+      "Can't reach the other person",
+    );
     expect(screen.getByTestId("retry-call")).toBeEnabled();
+  });
+  it("names the camera settings dialog for assistive technology", async () => {
+    const t = transport();
+    render(<CallRoom {...props} createTransport={async () => t} />);
+    fireEvent.click(screen.getByTestId("join-call"));
+    await waitFor(() => expect(t.connect).toHaveBeenCalled());
+    fireEvent.click(screen.getByTestId("device-settings"));
+    expect(
+      screen.getByRole("dialog", { name: "Camera and microphone settings" }),
+    ).toBeInTheDocument();
   });
   it("publishes current mute state when signaling finishes after a capture change", async () => {
     const connected = deferred<void>();

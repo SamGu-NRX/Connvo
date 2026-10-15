@@ -241,24 +241,26 @@ function CallNotice({
   failed?: boolean;
 }) {
   return (
-    <div
-      data-call-phase={failed ? "failed" : "idle"}
-      className="grid h-full min-h-[24rem] place-items-center p-6"
-    >
-      <div className="flex max-w-md flex-col gap-3 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
-        <p
-          data-testid={failed ? "call-error" : undefined}
-          className="text-muted-foreground text-sm"
-        >
-          {body}
-        </p>
-        <Link
-          href="/app"
-          className="bg-primary text-primary-foreground focus-visible:ring-ring/50 mx-auto mt-1 grid h-10 place-items-center rounded-md px-4 text-sm font-medium outline-none focus-visible:ring-[3px]"
-        >
-          Back to Connvo
-        </Link>
+    <div className={styles.page}>
+      <div
+        data-call-phase={failed ? "failed" : "idle"}
+        className={`${styles.room} grid h-full place-items-center bg-[var(--stage)] p-6 text-[var(--ink)]`}
+      >
+        <div className="flex max-w-md flex-col gap-3 text-center">
+          <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
+          <p
+            data-testid={failed ? "call-error" : undefined}
+            className="text-sm text-[var(--ink-muted)]"
+          >
+            {body}
+          </p>
+          <Link
+            href="/app"
+            className="mx-auto mt-1 grid h-11 place-items-center rounded-md bg-emerald-400 px-4 text-sm font-semibold text-emerald-950 outline-none hover:bg-emerald-300 focus-visible:ring-[3px] focus-visible:ring-emerald-300/60"
+          >
+            Back to Connvo
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -325,25 +327,10 @@ function BenchCall({
 
 function NoSignaling() {
   return (
-    <div
-      data-call-phase="failed"
-      className="grid h-full min-h-[24rem] place-items-center p-6"
-    >
-      <div className="flex max-w-md flex-col gap-3 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">
-          Calls need the signaling service
-        </h1>
-        <p data-testid="call-error" className="text-muted-foreground text-sm">
-          This build has no call signaling configured, so it cannot connect you
-          to anyone yet.
-        </p>
-        <Link
-          href="/app"
-          className="bg-primary text-primary-foreground focus-visible:ring-ring/50 mx-auto mt-1 grid h-10 place-items-center rounded-md px-4 text-sm font-medium outline-none focus-visible:ring-[3px]"
-        >
-          Back to Connvo
-        </Link>
-      </div>
-    </div>
+    <CallNotice
+      title="Calls need the signaling service"
+      body="This build has no call signaling configured, so it cannot connect you to anyone yet."
+      failed
+    />
   );
 }
