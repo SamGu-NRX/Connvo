@@ -55,6 +55,8 @@ import type * as matching_callQueue from "../matching/callQueue.js";
 import type * as matching_engine from "../matching/engine.js";
 import type * as matching_index from "../matching/index.js";
 import type * as matching_queue from "../matching/queue.js";
+import type * as matching_proposals from "../matching/proposals.js";
+import type * as matching_run from "../matching/run.js";
 import type * as matching_scheduler from "../matching/scheduler.js";
 import type * as matching_scoring from "../matching/scoring.js";
 import type * as meetings_lifecycle from "../meetings/lifecycle.js";
@@ -223,6 +225,8 @@ declare const fullApi: ApiFromModules<{
   "matching/engine": typeof matching_engine;
   "matching/index": typeof matching_index;
   "matching/queue": typeof matching_queue;
+  "matching/proposals": typeof matching_proposals;
+  "matching/run": typeof matching_run;
   "matching/scheduler": typeof matching_scheduler;
   "matching/scoring": typeof matching_scoring;
   "meetings/lifecycle": typeof meetings_lifecycle;

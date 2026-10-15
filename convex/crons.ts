@@ -69,6 +69,20 @@ crons.interval(
   { olderThanMs: 24 * 60 * 60 * 1000 },
 );
 
-// Matching jobs are not registered here to avoid reference errors.
+// Async matcher: build and write proposals twice a week (docs/plan/
+// MATCHING-PLAN.md). 15:00 UTC lands mid-afternoon across the Americas and
+// evening in Europe, inside the 18h lead window for the next day.
+crons.weekly(
+  "matcher proposals tuesday",
+  { dayOfWeek: "tuesday", hourUTC: 15, minuteUTC: 0 },
+  internal.matching.run.matchupCron,
+  {},
+);
+crons.weekly(
+  "matcher proposals saturday",
+  { dayOfWeek: "saturday", hourUTC: 15, minuteUTC: 0 },
+  internal.matching.run.matchupCron,
+  {},
+);
 
 export default crons;

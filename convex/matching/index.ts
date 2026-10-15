@@ -11,6 +11,10 @@
 // Re-export public functions from queue management
 export { enterMatchingQueue, cancelQueueEntry, getQueueStatus } from "@convex/matching/queue";
 
+// Async matcher run (docs/plan/MATCHING-PLAN.md); the read query lives at
+// api.matching.proposals.matchup.
+export { matchup } from "@convex/matching/run";
+
 // Re-export public functions from matching engine
 export { runMatchingCycle } from "@convex/matching/engine";
 
