@@ -329,9 +329,10 @@ export const cleanupOldPrompts = internalMutation({
       .order("desc")
       .collect();
 
-    // Delete prompts beyond the keep count
     // Live prompts are the recap record, so legacy cleanup must retain them.
-    const promptsToDelete = prompts.filter((p) => !p.tags.includes("live-prompt")).slice(keepCount);
+    const promptsToDelete = prompts
+      .filter((p) => !p.tags.includes("live-prompt"))
+      .slice(keepCount);
     let deletedCount = 0;
 
     for (const prompt of promptsToDelete) {

@@ -91,7 +91,10 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   const [ended, setEnded] = useState(false);
   const [inCall, setInCall] = useState(false);
   const onScreenChange = useCallback(
-    (screen: "lobby" | "call" | "ended") => { setEnded(screen === "ended"); setInCall(screen === "call"); },
+    (screen: "lobby" | "call" | "ended") => {
+      setEnded(screen === "ended");
+      setInCall(screen === "call");
+    },
     [],
   );
 
@@ -163,11 +166,16 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         />
       </div>
       <aside
-        aria-label="Conversation prompts and meeting notes"
+        aria-label="Meeting notes"
         className="min-w-0 lg:h-[calc(100dvh-7rem)] lg:overflow-y-auto"
       >
         {ended ? <EndedRecap meetingId={meetingId} /> : null}
-        {!ended ? <ConversationPrompts meetingId={meetingId as Id<"meetings">} inCall={inCall} /> : null}
+        {!ended ? (
+          <ConversationPrompts
+            meetingId={meetingId as Id<"meetings">}
+            inCall={inCall}
+          />
+        ) : null}
         <NotesBoundary>
           <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
         </NotesBoundary>
