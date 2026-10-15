@@ -207,6 +207,47 @@ describe("match queue interface", () => {
     expect(screen.getByText("Professional conversations")).toBeVisible();
   });
 
+  it("keeps entry pending until join settles even when the subscription updates first", async () => {
+    let finishJoin!: () => void;
+    mock.mutation.mockImplementation(() => new Promise<void>((resolve) => {
+      finishJoin = resolve;
+    }));
+    const mounted = render(<LiveMatchQueue />);
+    mock.status = { state: "idle" };
+    mounted.rerender(<LiveMatchQueue />);
+    expect(screen.getByRole("button", { name: "Join queue" })).toBeDisabled();
+
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      joinedAt: Date.now(),
+      serverNow: Date.now(),
+      expiresAt: Date.now() + 60_000,
+    };
+    mounted.rerender(<LiveMatchQueue />);
+    expect(screen.getByRole("button", { name: "Leave queue" })).toBeDisabled();
+    await act(async () => finishJoin());
+    expect(screen.getByRole("button", { name: "Leave queue" })).toBeEnabled();
+    expect(mock.mutation.mock.calls).toEqual([
+      ["matching/queue:join", { queueType: "casual" }],
+    ]);
+  });
+
+  it("allows joining after another tab leaves an existing queue", () => {
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      joinedAt: Date.now(),
+      serverNow: Date.now(),
+      expiresAt: Date.now() + 60_000,
+    };
+    const mounted = render(<LiveMatchQueue />);
+    expect(screen.getByRole("button", { name: "Leave queue" })).toBeEnabled();
+    mock.status = { state: "idle" };
+    mounted.rerender(<LiveMatchQueue />);
+    expect(screen.getByRole("button", { name: "Join queue" })).toBeEnabled();
+  });
+
   it("refreshes elapsed time when the subscription restores a cached queue result", async () => {
     mock.status = {
       state: "waiting",
