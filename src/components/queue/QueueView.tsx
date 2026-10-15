@@ -159,8 +159,8 @@ export function QueueView({
             </div>
             <h2>Looking for your next conversation</h2>
             <p className={styles.explanation}>
-              We'll let you know when someone compatible is here. Keep this page
-              open while you wait.
+              We&apos;ll let you know when someone compatible is here. Keep this
+              page open while you wait.
             </p>
             <div className={styles.waitDetail}>
               <Check size={16} aria-hidden="true" />
@@ -177,7 +177,7 @@ export function QueueView({
         ) : state.kind === "error" ? (
           <>
             <p className={styles.status}>Connection interrupted</p>
-            <h2>Let's try that again.</h2>
+            <h2>Let&apos;s try that again.</h2>
             <p role="alert" className={styles.explanation}>
               {state.message}
             </p>
@@ -212,7 +212,7 @@ export function QueueView({
             <div className={styles.emptyIcon}>
               <Check size={30} aria-hidden="true" />
             </div>
-            <h2>You're both ready.</h2>
+            <h2>You&apos;re both ready.</h2>
             <p className={styles.explanation}>
               Opening your shared call lobby.
             </p>
@@ -250,7 +250,7 @@ export function QueueView({
             <p className={styles.status}>Getting ready</p>
             <h2>Checking your queue…</h2>
             <p className={styles.explanation}>
-              Restoring your place if you're already waiting.
+              Restoring your place if you&apos;re already waiting.
             </p>
           </>
         )}

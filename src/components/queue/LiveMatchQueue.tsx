@@ -92,9 +92,10 @@ function ConnectedQueue({
   const join = useMutation(api.matching.queue.join);
   const leave = useMutation(api.matching.queue.leave);
   const respond = useMutation(api.matching.queue.respond);
+  const serverTime = useMutation(api.matching.queue.time);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  const [clock, setClock] = useState<number | null>(null);
   const [retryAction, setRetryAction] = useState<
     (() => Promise<unknown>) | null
   >(null);
@@ -121,9 +122,31 @@ function ConnectedQueue({
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
+    if (!isAuthenticated || !connection.isWebSocketConnected) return;
+    // Deadlines come from the server. A skewed or adjusted device clock must
+    // not disable a fresh invitation or invent elapsed waiting time.
+    let cancelled = false;
+    let timer: number | undefined;
+    void serverTime({})
+      .then((sample) => {
+        if (cancelled) return;
+        const receivedAt = performance.now();
+        const update = () => setClock(sample + performance.now() - receivedAt);
+        update();
+        timer = window.setInterval(update, 1000);
+      })
+      .catch(() => {
+        if (!cancelled)
+          setError(
+            "We couldn't check your queue timer. Reconnect, then retry.",
+          );
+      });
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [isAuthenticated, connection.isWebSocketConnected, serverTime]);
+  const now = clock ?? (status && "serverNow" in status ? status.serverNow : 0);
 
   useEffect(() => {
     if (!status || entered.current) return;

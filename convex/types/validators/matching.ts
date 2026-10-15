@@ -764,6 +764,7 @@ export const callQueueStatusV = v.union(
     state: v.literal("waiting"),
     queueType: callQueueTypeV,
     joinedAt: v.number(),
+    serverNow: v.number(),
     expiresAt: v.number(),
     notice: v.optional(callQueueNoticeV),
   }),
@@ -771,6 +772,7 @@ export const callQueueStatusV = v.union(
     state: v.literal("matched"),
     queueType: callQueueTypeV,
     joinedAt: v.number(),
+    serverNow: v.number(),
     matchId: v.id("callQueueMatches"),
     expiresAt: v.number(),
     partner: v.object({
@@ -791,6 +793,7 @@ export const callQueueStatusV = v.union(
     state: v.literal("expired"),
     queueType: callQueueTypeV,
     joinedAt: v.number(),
+    serverNow: v.number(),
     expiresAt: v.number(),
   }),
 );

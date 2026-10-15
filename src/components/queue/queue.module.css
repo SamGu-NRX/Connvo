@@ -256,3 +256,8 @@
 :global(.dark) .emptyIcon {
   color: #064e3b;
 }
+@media (hover: hover) and (pointer: fine) {
+  :global(.dark) .secondary:not(:disabled):hover {
+    background: #245244;
+  }
+}

@@ -539,6 +539,16 @@ export const cleanupExpiredEntries = internalMutation({
 });
 
 // The live queue owns its lifecycle separately from the legacy scheduled matcher.
+// A query result can be cached across remounts. A mutation gives each client a
+// fresh clock sample without writing data or trusting its device clock.
+export const time = mutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    await requireIdentity(ctx);
+    return Date.now();
+  },
+});
 export const join = mutation({
   args: { queueType: callQueueTypeV },
   returns: v.null(),

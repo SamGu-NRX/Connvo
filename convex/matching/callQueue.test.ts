@@ -85,6 +85,7 @@ describe("live call queue", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt: Date.now(),
+      serverNow: Date.now(),
       expiresAt: Date.now() + 900_000,
     });
     expect(
@@ -103,6 +104,7 @@ describe("live call queue", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt,
+      serverNow: Date.now(),
       expiresAt: joinedAt + 900_000,
     });
     expect(
@@ -204,17 +206,25 @@ describe("live call queue", () => {
       { meetingId: aliceState.meetingId, userId: bob.id, role: "participant" },
     ]);
     expect(records.state).toMatchObject([
-      { meetingId: aliceState.meetingId, recordingEnabled: false, active: true },
+      {
+        meetingId: aliceState.meetingId,
+        recordingEnabled: false,
+        active: true,
+      },
     ]);
     expect(records.notes).toMatchObject([
       { meetingId: aliceState.meetingId, content: "", version: 0 },
     ]);
     const sessionId = "queue-alice-session";
-    expect(await alice.auth.mutation(api.meetings.webrtc.mesh.joinCall, {
-      meetingId: aliceState.meetingId, sessionId,
-    })).toEqual({ sessionId, participantId: "Alice" });
+    expect(
+      await alice.auth.mutation(api.meetings.webrtc.mesh.joinCall, {
+        meetingId: aliceState.meetingId,
+        sessionId,
+      }),
+    ).toEqual({ sessionId, participantId: "Alice" });
     await alice.auth.mutation(api.meetings.webrtc.mesh.leaveCall, {
-      meetingId: aliceState.meetingId, sessionId,
+      meetingId: aliceState.meetingId,
+      sessionId,
     });
     expect(await alice.status()).toEqual({ state: "idle" });
     expect(await bob.status()).toEqual(aliceState);
@@ -318,6 +328,7 @@ describe("live call queue", () => {
       state: "expired",
       queueType: "casual",
       joinedAt,
+      serverNow: Date.now(),
       expiresAt: joinedAt + 900_000,
     });
     await alice.join();
@@ -325,6 +336,7 @@ describe("live call queue", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt: Date.now(),
+      serverNow: Date.now(),
       expiresAt: Date.now() + 900_000,
     });
   });
@@ -349,6 +361,7 @@ describe("live call queue", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt: entry.joinedAt + 1_000,
+      serverNow: Date.now(),
       expiresAt: entry.expiresAt + 1_000,
     });
   });
@@ -426,9 +439,27 @@ describe("live call queue", () => {
     await expect(t.query(api.matching.queue.status, {})).rejects.toThrow(
       "Authentication required",
     );
+    await expect(t.mutation(api.matching.queue.time, {})).rejects.toThrow(
+      "Authentication required",
+    );
     await expect(
       t.mutation(api.matching.queue.respond, { matchId, accept: true }),
     ).rejects.toThrow("Authentication required");
+  });
+
+  it("samples current server time without changing the person's queue", async () => {
+    const t = createTestEnvironment();
+    const alice = await person(t, "Alice");
+    await alice.join();
+    const first = await alice.auth.mutation(api.matching.queue.time, {});
+    vi.setSystemTime(first + 120_000);
+    expect(await alice.auth.mutation(api.matching.queue.time, {})).toBe(
+      first + 120_000,
+    );
+    expect(await alice.status()).toMatchObject({
+      state: "waiting",
+      joinedAt: first,
+    });
   });
 
   it("leaving a pending match releases the partner and prevents a late acceptance", async () => {

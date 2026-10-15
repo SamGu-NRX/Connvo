@@ -21,6 +21,7 @@ const mock = vi.hoisted(() => ({
   loading: false,
   connected: true,
   mutation: vi.fn(),
+  time: vi.fn(),
   replace: vi.fn(),
   push: vi.fn(),
 }));
@@ -37,9 +38,10 @@ vi.mock("convex/react", () => ({
     hasEverConnected: true,
   }),
   useQuery: () => mock.status,
-  useMutation:
-    (ref: Parameters<typeof getFunctionName>[0]) => (args: unknown) =>
-      mock.mutation(getFunctionName(ref), args),
+  useMutation: (ref: Parameters<typeof getFunctionName>[0]) =>
+    getFunctionName(ref) === "matching/queue:time"
+      ? mock.time
+      : (args: unknown) => mock.mutation(getFunctionName(ref), args),
 }));
 
 beforeEach(() => {
@@ -48,6 +50,13 @@ beforeEach(() => {
   mock.loading = false;
   mock.connected = true;
   mock.mutation.mockReset().mockResolvedValue(null);
+  mock.time
+    .mockReset()
+    .mockImplementation(async () =>
+      mock.status && "serverNow" in mock.status
+        ? mock.status.serverNow
+        : Date.now(),
+    );
   mock.replace.mockReset();
   mock.push.mockReset();
 });
@@ -89,7 +98,7 @@ describe("match queue interface", () => {
       "Match found with Bob Brown. Strong interest alignment. Strong language compatibility",
     );
     expect(screen.getByText("0:54")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Join", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Join$/ }));
     expect(rendered.onAccept).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Decline" }));
     expect(rendered.onDecline).toHaveBeenCalledTimes(1);
@@ -102,6 +111,7 @@ describe("match queue interface", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt: Date.now() - 75_000,
+      serverNow: Date.now(),
       expiresAt: Date.now() + 60_000,
     };
     const mounted = render(<LiveMatchQueue />);
@@ -109,7 +119,25 @@ describe("match queue interface", () => {
     await act(() => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByText("1:17 elapsed")).toBeVisible();
     mounted.unmount();
+    mock.status.serverNow = Date.now();
     render(<LiveMatchQueue />);
+    expect(screen.getByText("1:17 elapsed")).toBeVisible();
+  });
+
+  it("uses server time even when the device clock is two minutes fast", async () => {
+    vi.useFakeTimers();
+    const serverNow = Date.parse("2026-10-15T12:00:00Z");
+    vi.setSystemTime(serverNow + 120_000);
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      serverNow,
+      joinedAt: serverNow - 75_000,
+      expiresAt: serverNow + 60_000,
+    };
+    render(<LiveMatchQueue />);
+    expect(screen.getByText("1:15 elapsed")).toBeVisible();
+    await act(() => vi.advanceTimersByTimeAsync(2000));
     expect(screen.getByText("1:17 elapsed")).toBeVisible();
   });
 
@@ -128,11 +156,25 @@ describe("match queue interface", () => {
     expect(screen.getByText("Professional conversations")).toBeVisible();
   });
 
+  it("refreshes elapsed time when the subscription restores a cached queue result", async () => {
+    mock.status = {
+      state: "waiting",
+      queueType: "casual",
+      joinedAt: 1_000,
+      serverNow: 1_000,
+      expiresAt: 901_000,
+    };
+    mock.time.mockResolvedValue(76_000);
+    render(<LiveMatchQueue />);
+    expect(await screen.findByText("1:15 elapsed")).toBeVisible();
+  });
+
   it("holds an expired session for explicit rejoin", async () => {
     mock.status = {
       state: "expired",
       queueType: "casual",
       joinedAt: 1,
+      serverNow: Date.now(),
       expiresAt: 2,
     };
     render(<LiveMatchQueue />);
@@ -153,6 +195,7 @@ describe("match queue interface", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt: Date.now(),
+      serverNow: Date.now(),
       expiresAt: Date.now() + 60_000,
       notice: { id: "decline-1", type: "partner_declined" },
     };
@@ -189,6 +232,7 @@ describe("match queue interface", () => {
       state: "waiting",
       queueType: "casual",
       joinedAt: Date.now(),
+      serverNow: Date.now(),
       expiresAt: Date.now() + 60_000,
     };
     mock.mutation.mockRejectedValueOnce(new Error("offline"));
@@ -230,9 +274,7 @@ describe("match queue interface", () => {
       accepted: false,
       partnerAccepted: false,
     });
-    expect(
-      screen.getByRole("button", { name: "Join", exact: true }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Join$/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Decline" })).toBeDisabled();
   });
 

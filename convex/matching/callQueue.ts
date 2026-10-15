@@ -34,23 +34,27 @@ async function readyMeetingIsClosed(
     throw new ConvexError(
       "Your accepted match has no meeting. Leave the queue and try again.",
     );
-  const meeting = await ctx.db.get(match.meetingId);
+  const meetingId = match.meetingId;
+  const meeting = await ctx.db.get(meetingId);
   if (!meeting)
     throw new ConvexError(
       "Your conversation is unavailable. Leave the queue and try again.",
     );
-  if (meeting.state === "concluded" || meeting.state === "cancelled") return true;
+  if (meeting.state === "concluded" || meeting.state === "cancelled")
+    return true;
   // Leaving the real call closes a session, not the meeting. Release only
   // this person's reservation; their partner may still be in the call.
   const latestSession = await ctx.db
     .query("webrtcSessions")
     .withIndex("by_user_and_meeting", (q) =>
-      q.eq("userId", userId).eq("meetingId", match.meetingId!),
+      q.eq("userId", userId).eq("meetingId", meetingId),
     )
     .order("desc")
     .first();
-  return latestSession?.state === "closed" &&
-    latestSession.closedReason !== "replaced";
+  return (
+    latestSession?.state === "closed" &&
+    latestSession.closedReason !== "replaced"
+  );
 }
 
 export async function queueState(
@@ -62,6 +66,7 @@ export async function queueState(
   const timing = {
     queueType: entry.queueType,
     joinedAt: entry.joinedAt,
+    serverNow: Date.now(),
     expiresAt: entry.expiresAt,
   };
   if (entry.state === "expired") return { state: "expired", ...timing };
@@ -77,7 +82,8 @@ export async function queueState(
       "Your queue match is unavailable. Leave the queue and try again.",
     );
   if (match.state === "ready" && match.meetingId) {
-    if (await readyMeetingIsClosed(ctx, match, userId)) return { state: "idle" };
+    if (await readyMeetingIsClosed(ctx, match, userId))
+      return { state: "idle" };
     return { state: "ready", matchId: match._id, meetingId: match.meetingId };
   }
   if (match.state !== "pending")
@@ -94,6 +100,7 @@ export async function queueState(
     state: "matched",
     queueType: entry.queueType,
     joinedAt: entry.joinedAt,
+    serverNow: Date.now(),
     matchId: match._id,
     expiresAt: match.expiresAt,
     partner: {
