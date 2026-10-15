@@ -77,9 +77,11 @@ export const create = internalMutation({
 /** Closed call sessions in a meeting and why they closed (H-10/H-11 evidence). */
 export const sessionEvents = internalQuery({
   args: { meetingId: v.id("meetings") },
-  returns: v.array(
-    v.object({ participant: v.string(), reason: v.string(), at: v.number() }),
-  ),
+  returns: v.object({
+    events: v.array(
+      v.object({ participant: v.string(), reason: v.string(), at: v.number() }),
+    ),
+  }),
   handler: async (ctx, { meetingId }) => {
     requireEvalBackend("sessionEvents");
     const sessions = await ctx.db
@@ -96,7 +98,7 @@ export const sessionEvents = internalQuery({
         at: s.updatedAt,
       });
     }
-    return out.sort((a, b) => a.at - b.at);
+    return { events: out.sort((a, b) => a.at - b.at) };
   },
 });
 
@@ -111,5 +113,39 @@ export const notes = internalQuery({
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
     return { content: row?.content ?? "", version: row?.version ?? 0 };
+  },
+});
+
+/** Open (not closed) call sessions in a meeting: the leave-cleanup leak check.
+ *  Returns an object wrapper because the eval runner's parseRunOutput only
+ *  accepts JSON objects, never bare arrays. */
+export const openSessions = internalQuery({
+  args: { meetingId: v.id("meetings") },
+  returns: v.object({
+    sessions: v.array(
+      v.object({
+        participant: v.string(),
+        state: v.string(),
+        updatedAt: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx, { meetingId }) => {
+    requireEvalBackend("openSessions");
+    const sessions = await ctx.db
+      .query("webrtcSessions")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .collect();
+    const out = [];
+    for (const s of sessions) {
+      if (s.state === "closed") continue;
+      const user = await ctx.db.get(s.userId);
+      out.push({
+        participant: user?.workosUserId ?? "",
+        state: s.state,
+        updatedAt: s.updatedAt,
+      });
+    }
+    return { sessions: out.sort((a, b) => a.updatedAt - b.updatedAt) };
   },
 });

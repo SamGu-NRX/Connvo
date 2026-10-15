@@ -15,6 +15,7 @@
     "type-diag": "tsc --noEmit --extendedDiagnostics --listFiles",
     "call-eval:backend": "node tools/call-eval/scripts/local-backend.mjs",
     "call-eval:proof": "node tools/call-eval/scripts/run-proof.mjs",
+    "call-eval:call-route-proof": "node tools/call-eval/scripts/call-route-proof.mjs",
     "type-trace": "tsc --noEmit --generateTrace ./ts-trace",
     "test": "vitest",
     "test:run": "vitest run",
