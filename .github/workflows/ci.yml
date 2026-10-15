@@ -37,8 +37,17 @@ jobs:
       - name: Run tests
         run: pnpm test:run
 
+      - name: Start anonymous local backend for the build
+        run: |
+          pnpm call-eval:backend -- --no-next --port=3103
+          node -e 'const fs = require("node:fs"); const state = JSON.parse(fs.readFileSync("tools/call-eval/out/state.json", "utf8")); fs.appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_CONVEX_URL=${state.convexUrl}\n`);'
+
       - name: Test build
         run: pnpm run build
+
+      - name: Stop anonymous local backend
+        if: always()
+        run: pnpm call-eval:backend -- --stop --port=3103
 
   deploy-staging:
     needs: test
@@ -69,8 +78,8 @@ jobs:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID_STAGING }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY_STAGING }}
         run: |
-          pnpm run convex:codegen
-          pnpm run convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
+          pnpm exec convex codegen
+          pnpm exec convex deploy --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
 
   deploy-production:
     needs: test
@@ -101,5 +110,5 @@ jobs:
           WORKOS_CLIENT_ID: ${{ secrets.WORKOS_CLIENT_ID_PROD }}
           WORKOS_API_KEY: ${{ secrets.WORKOS_API_KEY_PROD }}
         run: |
-          pnpm run convex:codegen
-          pnpm run convex deploy --prod --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
+          pnpm exec convex codegen
+          pnpm exec convex deploy --prod --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
