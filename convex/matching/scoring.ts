@@ -750,3 +750,212 @@ export function scoreQueuePair(user1: UserScoringData, user2: UserScoringData) {
       .map((factor) => factor.reason),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Asynchronous matcher score (docs/plan/MATCHING-PLAN.md, "How matching works").
+//
+// The weights live here and are starting guesses, not tuned values. They stay
+// as written until there are at least 200 outcomes (plan section 9).
+// ---------------------------------------------------------------------------
+
+/** The weights of the deterministic matcher score; they sum to 1. */
+export const MATCHER_WEIGHTS = {
+  interests: 0.45,
+  goal: 0.3,
+  experience: 0.15,
+  field: 0.1,
+} as const;
+
+/** A minimal, serializable person for the matcher score. */
+export interface MatcherPerson {
+  userId: string | Id<"users">;
+  intents: string[];
+  /** Raw profile-catalog interest keys. */
+  interests: string[];
+  field?: string | null;
+  jobTitle?: string | null;
+  experience?: string | null;
+}
+
+/** Small synonym/alias map; LinkedUp's normalizer is the starting point. */
+const TAG_SYNONYMS: Record<string, string> = {
+  ai: "artificial intelligence",
+  ml: "machine learning",
+  js: "javascript",
+  ts: "typescript",
+  nodejs: "node",
+  reactjs: "react",
+  nextjs: "next",
+  vc: "venture capital",
+  llms: "llm",
+};
+
+/** Normalize an interest tag: lowercase, collapse separators, alias, singular. */
+export function normalizeInterestTag(tag: string): string {
+  const cleaned = tag
+    .toLowerCase()
+    .replace(/[^a-z0-9+#]+/g, " ")
+    .trim();
+  const aliased = TAG_SYNONYMS[cleaned] ?? cleaned;
+  // Simple singular: "startups" -> "startup", but keep "stress" or "bus".
+  if (aliased.length > 4 && aliased.endsWith("s") && !aliased.endsWith("ss")) {
+    return aliased.slice(0, -1);
+  }
+  return aliased;
+}
+
+/**
+ * Interest overlap weighted by inverse document frequency: sharing "rust" or
+ * "bouldering" counts for more than sharing "technology". `docFrequency` maps
+ * a normalized tag to the number of eligible profiles holding it; `totalDocs`
+ * is the eligible population of the run. The score is the rarity-weighted
+ * fraction of the smaller interest set that the pair shares.
+ */
+export function rarityWeightedInterestOverlap(
+  interestsA: string[],
+  interestsB: string[],
+  docFrequency: Map<string, number>,
+  totalDocs: number,
+): { score: number; shared: string[] } {
+  const tagsA = [...new Set(interestsA.map(normalizeInterestTag))];
+  const tagsB = [...new Set(interestsB.map(normalizeInterestTag))];
+  if (tagsA.length === 0 || tagsB.length === 0) {
+    return { score: 0, shared: [] };
+  }
+  const idf = (tag: string) =>
+    Math.log(1 + totalDocs / (1 + (docFrequency.get(tag) ?? 0)));
+  const shared = tagsA.filter((t) => tagsB.includes(t));
+  if (shared.length === 0) return { score: 0, shared: [] };
+  // Rarest shared tags first, for the reasons.
+  shared.sort((a, b) => idf(b) - idf(a) || a.localeCompare(b));
+  const smaller = tagsA.length <= tagsB.length ? tagsA : tagsB;
+  const denominator = smaller.reduce((sum, t) => sum + idf(t), 0);
+  const numerator = shared.reduce((sum, t) => sum + idf(t), 0);
+  return { score: denominator > 0 ? numerator / denominator : 0, shared };
+}
+
+/**
+ * Goal fit from a small explicit table, keyed by the sorted intent pair.
+ * Mentor and mentee is the strongest; collaborator pairs and hiring with
+ * job-seeking are strong; peers in the same field come next; someone
+ * exploring a field paired with someone working in one comes after that;
+ * anything else is weak.
+ */
+export const GOAL_FIT: Record<string, number> = {
+  "find_mentor|mentor": 1.0,
+  "collaborate|collaborate": 0.9,
+  "hiring|job_seeking": 0.9,
+  "peers|peers": 0.7,
+  "explore_field|find_mentor": 0.6,
+  "explore_field|hiring": 0.6,
+  "explore_field|mentor": 0.6,
+  "explore_field|peers": 0.6,
+  "explore_field|collaborate": 0.6,
+  "explore_field|explore_field": 0.4,
+  "explore_field|job_seeking": 0.4,
+  "find_mentor|find_mentor": 0.2,
+  "hiring|hiring": 0.2,
+  "job_seeking|job_seeking": 0.3,
+  "mentor|mentor": 0.2,
+  "find_mentor|job_seeking": 0.5,
+};
+
+export function goalPairKey(intentsA: string[], intentsB: string[]): string {
+  return [intentsA[0] ?? "", intentsB[0] ?? ""].sort().join("|");
+}
+
+export function goalFit(intentsA: string[], intentsB: string[]): number {
+  const key = goalPairKey(intentsA, intentsB);
+  return GOAL_FIT[key] ?? 0.2;
+}
+
+/** Rough years of experience per profile level, for mentorship distance. */
+const EXPERIENCE_YEARS: Record<string, number> = {
+  entry: 1,
+  junior: 3,
+  mid: 6,
+  senior: 9,
+  lead: 14,
+  executive: 18,
+};
+
+function yearsOf(experience?: string | null): number | null {
+  if (!experience) return null;
+  return EXPERIENCE_YEARS[experience.toLowerCase()] ?? null;
+}
+
+function isMentorshipPair(intentsA: string[], intentsB: string[]): boolean {
+  return goalPairKey(intentsA, intentsB) === "find_mentor|mentor";
+}
+
+/**
+ * Experience alignment. For mentorship the mentor should have roughly 3 to 10
+ * more years; peers should be close; other pairs are neutral.
+ */
+export function experienceFit(
+  a: MatcherPerson,
+  b: MatcherPerson,
+): number {
+  const yearsA = yearsOf(a.experience);
+  const yearsB = yearsOf(b.experience);
+  if (yearsA === null || yearsB === null) return 0.5;
+  if (isMentorshipPair(a.intents, b.intents)) {
+    const mentorYears = a.intents.includes("mentor") ? yearsA : yearsB;
+    const menteeYears = mentorYears === yearsA ? yearsB : yearsA;
+    const gap = mentorYears - menteeYears;
+    if (gap >= 3 && gap <= 10) return 1.0;
+    if (gap >= 1 && gap <= 12) return 0.7;
+    return 0.3;
+  }
+  const gap = Math.abs(yearsA - yearsB);
+  if (goalPairKey(a.intents, b.intents) === "peers|peers") {
+    return gap <= 2 ? 1.0 : gap <= 4 ? 0.6 : 0.3;
+  }
+  return gap <= 4 ? 0.8 : 0.5;
+}
+
+/** Field closeness: exact field match, or neutral when data is missing. */
+export function fieldFit(a: MatcherPerson, b: MatcherPerson): number {
+  if (!a.field || !b.field) return 0.5;
+  return a.field.toLowerCase() === b.field.toLowerCase() ? 1.0 : 0.4;
+}
+
+export interface MatcherScore {
+  /** 0-1 deterministic score. */
+  score: number;
+  /** Shared normalized interest tags, rarest first. */
+  sharedTags: string[];
+  /** The sorted intent pair that drove the goal fit, for the reasons. */
+  goalPairKey: string;
+  /** Per-feature contributions, for picking the top reasons. */
+  features: { interests: number; goal: number; experience: number; field: number };
+}
+
+/** The deterministic matcher score for an allowed pair. */
+export function scoreMatcherPair(
+  a: MatcherPerson,
+  b: MatcherPerson,
+  docFrequency: Map<string, number>,
+  totalDocs: number,
+): MatcherScore {
+  const interests = rarityWeightedInterestOverlap(
+    a.interests,
+    b.interests,
+    docFrequency,
+    totalDocs,
+  );
+  const goal = goalFit(a.intents, b.intents);
+  const experience = experienceFit(a, b);
+  const field = fieldFit(a, b);
+  const score =
+    interests.score * MATCHER_WEIGHTS.interests +
+    goal * MATCHER_WEIGHTS.goal +
+    experience * MATCHER_WEIGHTS.experience +
+    field * MATCHER_WEIGHTS.field;
+  return {
+    score,
+    sharedTags: interests.shared,
+    goalPairKey: goalPairKey(a.intents, b.intents),
+    features: { interests: interests.score, goal, experience, field },
+  };
+}

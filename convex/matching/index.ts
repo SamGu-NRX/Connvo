@@ -11,6 +11,12 @@
 // Re-export public functions from queue management
 export { enterMatchingQueue, cancelQueueEntry, getQueueStatus } from "@convex/matching/queue";
 
+// Async matcher run (docs/plan/MATCHING-PLAN.md). The proposal state machine
+// and caller-scoped read live in proposals: api.matching.proposals.accept /
+// chooseAlternative / decline / myProposal, with scheduled expiry written at
+// proposal time and api.matching.run.runNow for an on-demand dev run.
+export { matchup } from "@convex/matching/run";
+
 // Re-export public functions from matching engine
 export { runMatchingCycle } from "@convex/matching/engine";
 
