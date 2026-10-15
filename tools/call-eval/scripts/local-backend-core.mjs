@@ -176,6 +176,7 @@ export const HARNESS_INCLUDE_DIRS = [
   "auth", "users", "meetings", "participants", "messaging", "realtime",
   "transcripts", "matching", "interests", "settings", "system",
   "schema", "lib", "types", "environments", "_generated",
+  "prompts", // live conversation prompt selection and recap records
   "notes", // notes ledger modules the call/meeting closure imports
   "devEval", // eval seed mutation (devEval/seed) invoked in step 4/6
   "history", // after-call history (#33), behind CONNVO_AFTER_CALL
