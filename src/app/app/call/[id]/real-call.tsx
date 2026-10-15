@@ -25,6 +25,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
 import styles from "@/components/call/call.module.css";
+import { ConversationPrompts } from "@/components/call/ConversationPrompts";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
 import { EndedRecap, OpenRecapLink } from "@/components/history/EndedRecap";
@@ -94,8 +95,12 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // After the person leaves, the page shows what the meeting recorded
   // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
   const [ended, setEnded] = useState(false);
+  const [inCall, setInCall] = useState(false);
   const onScreenChange = useCallback(
-    (screen: "lobby" | "call" | "ended") => setEnded(screen === "ended"),
+    (screen: "lobby" | "call" | "ended") => {
+      setEnded(screen === "ended");
+      setInCall(screen === "call");
+    },
     [],
   );
 
@@ -164,7 +169,7 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
       />
     );
   }
-  // CallRoom owns responsive placement of the notes slot.
+  // CallRoom keeps prompts and notes in the same responsive panel.
   return (
     <div className={styles.page} data-call-connection-path={path}>
       <CallRoom
@@ -186,7 +191,12 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         endedActions={<OpenRecapLink meetingId={meetingId} />}
         sidePanel={
           <>
-            {ended ? <EndedRecap meetingId={meetingId} /> : null}
+            {ended ? <EndedRecap meetingId={meetingId} /> : (
+              <ConversationPrompts
+                meetingId={meetingId as Id<"meetings">}
+                inCall={inCall}
+              />
+            )}
             <NotesBoundary>
               <MeetingNotesPanel meetingId={meetingId as Id<"meetings">} />
             </NotesBoundary>

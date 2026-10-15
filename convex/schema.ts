@@ -21,6 +21,7 @@ import { systemTables } from "./schema/system";
 import { offlineTables } from "./schema/offline";
 import { legacyTables } from "./schema/legacy";
 import { userSettings } from "./schema/userSettings";
+import { livePromptTables } from "./schema/livePrompts";
 import { historyTables } from "./schema/history";
 
 export default defineSchema({
@@ -28,6 +29,7 @@ export default defineSchema({
   ...interestTables,
   ...meetingTables,
   ...historyTables,
+  ...livePromptTables,
   ...transcriptTables,
   ...aiTables,
   ...matchingTables,
