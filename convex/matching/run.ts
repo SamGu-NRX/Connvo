@@ -80,33 +80,6 @@ async function snapshotPerson(
     endMinute: row.endMinute,
   }));
 
-  // Exclusions: a block or a report in either direction.
-  const excluded = new Set<string>();
-  for (const row of await ctx.db
-    .query("blocks")
-    .withIndex("by_blocker", (q) => q.eq("blockerId", profile.userId))
-    .collect()) {
-    excluded.add(row.blockedId);
-  }
-  for (const row of await ctx.db
-    .query("blocks")
-    .withIndex("by_blocked", (q) => q.eq("blockedId", profile.userId))
-    .collect()) {
-    excluded.add(row.blockerId);
-  }
-  for (const row of await ctx.db
-    .query("reports")
-    .withIndex("by_reporter", (q) => q.eq("reporterId", profile.userId))
-    .collect()) {
-    excluded.add(row.reportedId);
-  }
-  for (const row of await ctx.db
-    .query("reports")
-    .withIndex("by_reported", (q) => q.eq("reportedId", profile.userId))
-    .collect()) {
-    excluded.add(row.reporterId);
-  }
-
   // Meetings in the last 90 days: partners, talk-again pairs, cadence count.
   const weekStart = weekStartUtc(now);
   const metRecently = new Set<string>();
@@ -193,7 +166,6 @@ async function snapshotPerson(
     waitingRuns: waitingRuns.size,
     metRecently: [...metRecently],
     talkAgainBoth: [...talkAgainYes],
-    excluded: [...excluded],
   };
 }
 
@@ -297,7 +269,11 @@ export const writeProposals = internalMutation({
         skipped += 1;
         continue;
       }
-      await ctx.db.insert("matchProposals", {
+      const expiresAt = Math.min(
+        args.runAt + PROPOSAL_TTL_MS,
+        draft.scheduledAt - PRE_MEETING_TTL_MS,
+      );
+      const inserted = await ctx.db.insert("matchProposals", {
         userAId,
         userBId,
         state: "proposed",
@@ -311,13 +287,19 @@ export const writeProposals = internalMutation({
         sharedInterestKeys: draft.sharedInterestKeys,
         goalPair: draft.goalPair,
         runAt: args.runAt,
-        expiresAt: Math.min(
-          args.runAt + PROPOSAL_TTL_MS,
-          draft.scheduledAt - PRE_MEETING_TTL_MS,
-        ),
+        expiresAt: expiresAt,
         createdAt: args.runAt,
         updatedAt: args.runAt,
       });
+      const proposalId = inserted;
+      // The proposal dies on its own at expiresAt: state flips to "expired"
+      // unless a person has already acted. The accept mutation still guards
+      // on expiresAt, so a late accept can never slip through.
+      await ctx.scheduler.runAt(
+        expiresAt,
+        internal.matching.proposals.expireProposal,
+        { proposalId },
+      );
       created += 1;
     }
     return { created, skipped };
@@ -367,7 +349,15 @@ async function runMatchup(ctx: ActionCtx, useDecisions?: boolean): Promise<Match
     internal.matching.run.gatherSnapshot,
     {},
   );
-  const prepared = prepare(snapshot);
+  // Blocks gate pairing through the canonical helper, so the matcher always
+  // agrees with what profiles/moderation enforces elsewhere.
+  const prepared = await prepare(snapshot, {
+    isBlocked: (a, b) =>
+      ctx.runQuery(internal.profiles.moderation.isBlockedEither, {
+        a: a as Id<"users">,
+        b: b as Id<"users">,
+      }),
+  });
   const apiKey =
     useDecisions === false ? undefined : process.env.OPENAI_API_KEY;
   const rerank = apiKey ? makeCachedRerank(ctx, apiKey) : undefined;
@@ -396,6 +386,12 @@ export const matchup = action({
 
 /** Cron entry: the same run, on the twice-weekly schedule in crons.ts. */
 export const matchupCron = internalAction({
+  args: {},
+  handler: async (ctx) => runMatchup(ctx, true),
+});
+
+/** Internal "run now": the cron run, on demand for development. */
+export const runNow = internalAction({
   args: {},
   handler: async (ctx) => runMatchup(ctx, true),
 });

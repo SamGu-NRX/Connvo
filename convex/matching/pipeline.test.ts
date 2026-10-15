@@ -27,7 +27,6 @@ function person(overrides: Partial<MatcherSnapshotPerson>): MatcherSnapshotPerso
     waitingRuns: 0,
     metRecently: [],
     talkAgainBoth: [],
-    excluded: [],
     ...overrides,
   };
 }
@@ -103,14 +102,15 @@ describe("buildProposals", () => {
     expect(drafts[0].firstQuestion.length).toBeGreaterThan(0);
   });
 
-  it("never proposes people who blocked or reported each other", async () => {
-    const drafts = await buildProposals({
-      now: NOW,
-      people: [
-        person({ userId: "u_a", excluded: ["u_b"] }),
-        person({ userId: "u_b" }),
-      ],
-    });
+  it("never proposes pairs where either person blocked the other", async () => {
+    const drafts = await buildProposals(
+      {
+        now: NOW,
+        people: [person({ userId: "u_a" }), person({ userId: "u_b" })],
+      },
+      // Production injects profiles/moderation.isBlockedEither here.
+      { isBlocked: async (a, b) => (a === "u_a" && b === "u_b") || (a === "u_b" && b === "u_a") },
+    );
     expect(drafts).toEqual([]);
   });
 
@@ -188,11 +188,11 @@ describe("buildProposals", () => {
     expect(pairs).toContain("u_mentor|u_wait");
   });
 
-  it("caps each shortlist at 8 candidates", () => {
+  it("caps each shortlist at 8 candidates", async () => {
     const crowd = Array.from({ length: 20 }, (_, i) =>
       person({ userId: `u_c${String(i).padStart(2, "0")}` }),
     );
-    const prepared = prepare({ now: NOW, people: crowd });
+    const prepared = await prepare({ now: NOW, people: crowd });
     for (const list of prepared.shortlists.values()) {
       expect(list.length).toBeLessThanOrEqual(SHORTLIST_SIZE);
     }
@@ -217,21 +217,30 @@ describe("hardRuleAllowed", () => {
   const a = person({ userId: "u_a" });
   const b = person({ userId: "u_b" });
 
-  it("allows a pair with a shared slot", () => {
-    expect(hardRuleAllowed(a, b, NOW)).toBe(true);
+  it("allows a pair with a shared slot", async () => {
+    expect(await hardRuleAllowed(a, b, NOW)).toBe(true);
   });
 
-  it("blocks a pair with no shared free time", () => {
+  it("blocks a pair with no shared free time", async () => {
     const c = person({
       userId: "u_c",
       blocks: [{ weekday: 5, startMinute: 9 * 60, endMinute: 10 * 60 }],
     });
-    expect(hardRuleAllowed(a, c, NOW)).toBe(false);
+    expect(await hardRuleAllowed(a, c, NOW)).toBe(false);
   });
 
-  it("blocks a pair where either side excluded the other", () => {
-    const blocked = person({ userId: "u_b", excluded: ["u_a"] });
-    expect(hardRuleAllowed(a, blocked, NOW)).toBe(false);
+  it("blocks a pair where either person blocked the other", async () => {
+    const blocked = person({ userId: "u_b" });
+    expect(
+      await hardRuleAllowed(a, blocked, NOW, {
+        isBlocked: async (x, y) =>
+          (x === "u_a" && y === "u_b") || (x === "u_b" && y === "u_a"),
+      }),
+    ).toBe(false);
+  });
+
+  it("ignores the block check when no dependency is injected", async () => {
+    expect(await hardRuleAllowed(a, b, NOW, {})).toBe(true);
   });
 });
 
@@ -256,7 +265,7 @@ describe("assign with an injected rerank", () => {
       probabilities.set(ids[1], 0.1);
       return probabilities;
     };
-    const prepared = prepare(snapshot);
+    const prepared = await prepare(snapshot);
     const withRerank = await assign(snapshot, prepared, rerank);
     const withoutRerank = await assign(snapshot, prepared);
     // Same pair count; the rerank may reorder which pairs win but never
@@ -269,7 +278,7 @@ describe("assign with an injected rerank", () => {
       now: NOW,
       people: [person({ userId: "u_a" }), person({ userId: "u_b" })],
     };
-    const prepared = prepare(snapshot);
+    const prepared = await prepare(snapshot);
     const drafts = await assign(snapshot, prepared, async () => null);
     expect(drafts).toHaveLength(1);
   });

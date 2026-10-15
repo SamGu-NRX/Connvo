@@ -26,6 +26,11 @@ import { historyTables } from "./schema/history";
 import { matchProposalsTable } from "./schema/matchProposals";
 import { decisionsCacheTable } from "./schema/decisionsCache";
 import { meetingFeedback } from "./schema/meetingFeedback";
+import { connections } from "./schema/connections";
+import { connectIntents } from "./schema/connectIntents";
+import { availabilityBlocks } from "./schema/availability";
+import { blocks } from "./schema/blocks";
+import { reports } from "./schema/reports";
 
 export default defineSchema({
   ...userTables,

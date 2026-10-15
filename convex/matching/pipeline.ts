@@ -50,8 +50,6 @@ export interface MatcherSnapshotPerson extends MatcherPerson {
   metRecently: string[];
   /** People both sides said they would talk again with, for the waiver. */
   talkAgainBoth: string[];
-  /** People either side blocked or reported (both directions). */
-  excluded: string[];
 }
 
 export interface MatcherSnapshot {
@@ -119,19 +117,27 @@ function metWithin90Days(
 }
 
 /**
- * Pairs that are never allowed: no shared language, no free time in common at
- * least 18 hours from now, a block or report in either direction, or a shared
+ * Pair dependencies that reach outside the snapshot. Production passes the
+ * canonical block check, convex/profiles/moderation.isBlockedEither, so the
+ * matcher inherits the exact semantics of the blocks table.
+ */
+export interface MatcherDeps {
+  /** True when either person has blocked the other. */
+  isBlocked?: (a: string, b: string) => Promise<boolean>;
+}
+
+/**
+ * Pairs that are never allowed: either person blocked the other, no shared
+ * language, no free time in common at least 18 hours from now, or a shared
  * meeting in the last 90 days unless both said they would talk again.
  */
-export function hardRuleAllowed(
+export async function hardRuleAllowed(
   a: MatcherSnapshotPerson,
   b: MatcherSnapshotPerson,
   now: number,
-): boolean {
-  if (
-    a.excluded.includes(b.userId) ||
-    b.excluded.includes(a.userId)
-  ) {
+  deps?: MatcherDeps,
+): Promise<boolean> {
+  if (deps?.isBlocked && (await deps.isBlocked(a.userId, b.userId))) {
     return false;
   }
   if (!sharesLanguage(a, b)) return false;
@@ -158,7 +164,10 @@ export function normalizePair(a: string, b: string): [string, string] {
  * Split from assignment so the action can resolve the Decisions rerank (with
  * caching) in between.
  */
-export function prepare(snapshot: MatcherSnapshot): PreparedRun {
+export async function prepare(
+  snapshot: MatcherSnapshot,
+  deps?: MatcherDeps,
+): Promise<PreparedRun> {
   const eligible = selectEligible(snapshot);
 
   // Document frequency over the eligible population, for rarity weighting.
@@ -181,7 +190,7 @@ export function prepare(snapshot: MatcherSnapshot): PreparedRun {
     for (let j = i + 1; j < eligible.length; j++) {
       const a = eligible[i];
       const b = eligible[j];
-      if (!hardRuleAllowed(a, b, snapshot.now)) continue;
+      if (!(await hardRuleAllowed(a, b, snapshot.now, deps))) continue;
       const scored = scoreMatcherPair(a, b, docFrequency, eligible.length);
       const key = pairKey(a.userId, b.userId);
       pairScores.set(key, scored.score);
@@ -347,8 +356,9 @@ function personSummary(person: MatcherSnapshotPerson): DecisionsPerson {
 /** The whole run without a rerank: deterministic only. */
 export async function buildProposals(
   snapshot: MatcherSnapshot,
+  deps?: MatcherDeps,
 ): Promise<ProposalDraft[]> {
-  return await assign(snapshot, prepare(snapshot));
+  return await assign(snapshot, await prepare(snapshot, deps));
 }
 
 export { SHARED_MEETING_STATES };
