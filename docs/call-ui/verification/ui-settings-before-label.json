@@ -1,0 +1,53 @@
+[
+  {
+    "check": "axe-lobby",
+    "violations": []
+  },
+  {
+    "check": "real-page-blur",
+    "active": true,
+    "text": "Background blur\nOn"
+  },
+  {
+    "check": "axe-connected",
+    "violations": []
+  },
+  {
+    "check": "mic-shortcut-and-pip-pointer-keyboard",
+    "pass": true
+  },
+  {
+    "check": "axe-call-settings",
+    "violations": [
+      {
+        "id": "aria-dialog-name",
+        "impact": "serious",
+        "nodes": [
+          [
+            "#radix-_r_4_"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "check": "chromium-ui",
+    "error": "call-settings: [{\"id\":\"aria-dialog-name\",\"impact\":\"serious\",\"nodes\":[[\"#radix-_r_4_\"]]}]\n\n1 !== 0\n"
+  },
+  {
+    "check": "axe-chromium-panel",
+    "violations": []
+  },
+  {
+    "check": "chromium-native-sheet",
+    "pass": true
+  },
+  {
+    "check": "axe-webkit-panel",
+    "violations": []
+  },
+  {
+    "check": "webkit-native-sheet",
+    "pass": true
+  }
+]

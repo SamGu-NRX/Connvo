@@ -14,11 +14,32 @@
       "phase": "connected",
       "videos": [
         {
-          "remote": false,
+          "remote": true,
           "readyState": 0,
           "paused": false,
           "width": 0,
           "time": 0,
+          "tracks": [
+            {
+              "kind": "audio",
+              "ready": "live",
+              "enabled": true,
+              "muted": true
+            },
+            {
+              "kind": "video",
+              "ready": "live",
+              "enabled": true,
+              "muted": true
+            }
+          ]
+        },
+        {
+          "remote": false,
+          "readyState": 4,
+          "paused": false,
+          "width": 640,
+          "time": 29.91199887500079,
           "tracks": [
             {
               "kind": "audio",
@@ -35,15 +56,58 @@
           ]
         }
       ],
-      "text": "Connvo.In conversationYou're the only one here. Others appear when they join.Copy linkGuest A (you)Leave"
+      "text": "Connvo.In conversationGuest BGuest A (you)MoveLeave"
     }
   },
   {
     "check": "playback-diagnostic",
     "state": {
-      "phase": "failed",
-      "videos": [],
-      "text": "Connvo.In conversationThe call droppedCould not connect to the other people in this call.Try againBack to Connvo"
+      "phase": "joining",
+      "videos": [
+        {
+          "remote": true,
+          "readyState": 0,
+          "paused": true,
+          "width": 0,
+          "time": 0,
+          "tracks": [
+            {
+              "kind": "audio",
+              "ready": "ended",
+              "enabled": true,
+              "muted": true
+            },
+            {
+              "kind": "video",
+              "ready": "ended",
+              "enabled": true,
+              "muted": true
+            }
+          ]
+        },
+        {
+          "remote": false,
+          "readyState": 4,
+          "paused": false,
+          "width": 640,
+          "time": 29.930459916667132,
+          "tracks": [
+            {
+              "kind": "audio",
+              "ready": "live",
+              "enabled": true,
+              "muted": false
+            },
+            {
+              "kind": "video",
+              "ready": "live",
+              "enabled": true,
+              "muted": false
+            }
+          ]
+        }
+      ],
+      "text": "Connvo.In conversationConnecting to the call…Guest AGuest B (you)MoveLeave"
     }
   }
 ]

@@ -9,6 +9,10 @@
     "text": "Background blur\nOn"
   },
   {
+    "check": "axe-no-signaling",
+    "violations": []
+  },
+  {
     "check": "axe-connected",
     "violations": []
   },
@@ -17,15 +21,31 @@
     "pass": true
   },
   {
-    "check": "chromium-ui",
-    "error": "frame.evaluate: Error: No elements found for include in page Context\n    at validateContext (eval at evaluate (:370:30), <anonymous>:19556:15)\n    at new Context (eval at evaluate (:370:30), <anonymous>:19537:7)\n    at Object._getFrameContexts (eval at evaluate (:370:30), <anonymous>:19578:22)\n    at eval (eval at evaluate (:370:30), <anonymous>:4:27)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+    "check": "axe-call-settings",
+    "violations": []
+  },
+  {
+    "check": "axe-network-blocked",
+    "violations": []
+  },
+  {
+    "check": "merged-transport-network-error",
+    "pass": true
+  },
+  {
+    "check": "axe-chromium-panel",
+    "violations": []
   },
   {
     "check": "chromium-native-sheet",
-    "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3105/__panel/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    "pass": true
+  },
+  {
+    "check": "axe-webkit-panel",
+    "violations": []
   },
   {
     "check": "webkit-native-sheet",
-    "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3105/__panel/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    "pass": true
   }
 ]
