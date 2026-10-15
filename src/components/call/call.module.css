@@ -409,8 +409,19 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #f6faf8;
-  color: #193b2e;
+  background: #16211f;
+  color: var(--ink);
+  --card: #1d2e29;
+  --card-foreground: #e7f0ee;
+  --muted-foreground: #b0c3bd;
+  --border: #3f5b51;
+  --input: #3f5b51;
+  --primary: #34d399;
+  --primary-foreground: #08251b;
+  --secondary: #263e35;
+  --secondary-foreground: #e7f0ee;
+  --destructive: #fda4af;
+  --ring: #6ee7b7;
 }
 .sidePanel:not([open]) {
   display: none;
@@ -420,7 +431,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 12px 10px 20px;
-  border-bottom: 1px solid #193b2e15;
+  border-bottom: 1px solid var(--border);
   font-size: 15px;
   font-weight: 600;
 }
@@ -610,4 +621,66 @@
   color: var(--ink);
   font-size: 14px;
   box-shadow: 0 4px 16px #0003;
+}
+
+/* Existing shared notes keep their behavior, inside the call's dark palette. */
+.panelBody :global([data-testid="notes-panel"]) {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--border);
+  backdrop-filter: none;
+}
+.panelBody :global([data-testid="notes-panel"])::before {
+  display: none;
+}
+.panelBody :global([data-testid="notes-editor"]) {
+  font-family: inherit;
+  font-size: 16px;
+  background: #13221c;
+}
+.networkStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.room:has(.panelTrigger) .networkStatus {
+  margin-right: 150px;
+}
+.networkDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9fb3ae;
+}
+.networkStatus[data-quality="good"] .networkDot {
+  background: #34d399;
+}
+.networkStatus[data-quality="fair"] .networkDot {
+  background: #fcd34d;
+}
+.networkStatus[data-quality="poor"] .networkDot {
+  background: #fda4af;
+}
+@media (max-width: 767px), (max-height: 500px) and (orientation: landscape) {
+  .networkStatus {
+    position: absolute;
+    top: 66px;
+    right: 16px;
+    z-index: 10;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #0e1716ed;
+  }
+  .room:has(.panelTrigger) .networkStatus {
+    margin-right: 0;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .networkStatus {
+    top: 56px;
+  }
 }

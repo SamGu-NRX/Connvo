@@ -25,6 +25,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 
 import styles from "@/components/call/call.module.css";
+import { useCallNetwork } from "@/hooks/useCallNetwork";
 import { ConversationPrompts } from "@/components/call/ConversationPrompts";
 import { CallRoom } from "@/components/call/CallRoom";
 import { MeetingNotesPanel } from "@/components/meeting-notes/MeetingNotesPanel";
@@ -87,6 +88,7 @@ export function RealCall() {
 /** A call signaled over Convex, for the signed-in user. */
 function ConvexCall({ meetingId }: { meetingId: string }) {
   const convex = useConvex();
+  const network = useCallNetwork();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const me = useQuery(
     api.users.queries.getCurrentUser,
@@ -96,13 +98,10 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
   // (behind NEXT_PUBLIC_CONNVO_AFTER_CALL; the server has its own flag).
   const [ended, setEnded] = useState(false);
   const [inCall, setInCall] = useState(false);
-  const onScreenChange = useCallback(
-    (screen: "lobby" | "call" | "ended") => {
-      setEnded(screen === "ended");
-      setInCall(screen === "call");
-    },
-    [],
-  );
+  const onScreenChange = useCallback((screen: "lobby" | "call" | "ended") => {
+    setEnded(screen === "ended");
+    setInCall(screen === "call");
+  }, []);
 
   const [path, setPath] = useState("unknown");
   const getRtcConfig = useMemo(
@@ -132,12 +131,13 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         createP2PTransport({
           getRtcConfig,
           onConnectionPath: setPath,
+          onPeerConnection: network.onPeerConnection,
           signaling: convexSignaling(convex as unknown as ConvexCallClient, {
             participantIdOf,
           }),
         }),
       ),
-    [convex, getRtcConfig],
+    [convex, getRtcConfig, network.onPeerConnection],
   );
   // The Convex client already carries the user's token.
   const identityToken = useCallback(async () => "", []);
@@ -176,6 +176,7 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         meetingId={meetingId}
         self={self}
         createTransport={createTransport}
+        network={network.peers}
         identityToken={identityToken}
         // Presence carries ids, not names; test users read as Guest A..O.
         nameFor={(id) =>
@@ -191,7 +192,9 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         endedActions={<OpenRecapLink meetingId={meetingId} />}
         sidePanel={
           <>
-            {ended ? <EndedRecap meetingId={meetingId} /> : (
+            {ended ? (
+              <EndedRecap meetingId={meetingId} />
+            ) : (
               <ConversationPrompts
                 meetingId={meetingId as Id<"meetings">}
                 inCall={inCall}
@@ -287,12 +290,16 @@ function BenchCall({
   name: string;
   signalUrl: string;
 }) {
+  const network = useCallNetwork();
   const createTransport = useCallback(
     () =>
       Promise.resolve(
-        createP2PTransport({ signaling: websocketSignaling(signalUrl) }),
+        createP2PTransport({
+          signaling: websocketSignaling(signalUrl),
+          onPeerConnection: network.onPeerConnection,
+        }),
       ),
-    [signalUrl],
+    [signalUrl, network.onPeerConnection],
   );
   const identityToken = useCallback(async () => {
     const res = await fetch(
@@ -315,6 +322,7 @@ function BenchCall({
         meetingId={meetingId}
         self={self}
         createTransport={createTransport}
+        network={network.peers}
         identityToken={identityToken}
         nameFor={(id) => `Guest ${id}`}
         inviteLink={() => {

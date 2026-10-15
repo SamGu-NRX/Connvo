@@ -60,6 +60,8 @@ import type {
 import { cn } from "@/lib/utils";
 
 import { SelfPreview } from "./SelfPreview";
+import { NetworkStatus } from "./NetworkStatus";
+import type { NetworkQualitySnapshot } from "@/lib/call/network-quality";
 import { CallSidePanel } from "./CallSidePanel";
 import {
   Tooltip,
@@ -83,6 +85,7 @@ export interface CallRoomProps {
   /** Single mounted slot shared by notes and conversation prompts. */
   sidePanel?: ReactNode;
   sidePanelTitle?: string;
+  network?: NetworkQualitySnapshot[];
   /** Told when the person moves between the lobby, the call and the end. */
   onScreenChange?: (screen: "lobby" | "call" | "ended") => void;
 }
@@ -109,6 +112,7 @@ export function CallRoom({
   endedActions,
   sidePanel,
   sidePanelTitle,
+  network,
   onScreenChange,
 }: CallRoomProps) {
   const media = useLocalMedia();
@@ -379,6 +383,9 @@ export function CallRoom({
               ? "Until next time"
               : "In conversation"}
         </span>
+        {screen === "call" && network ? (
+          <NetworkStatus peers={network} />
+        ) : null}
       </header>
       {/* Informational status stays out of the Tab order. The global toast
           returned focus to Leave repeatedly in the P-03 keyboard scenario. */}

@@ -219,8 +219,8 @@ const limits: Record<
 
 /**
  * The connection owner must call attach(pc) for each actual RTCPeerConnection,
- * and detach() when it closes. Use one controller per peer. This module cannot
- * discover connections through CallTransport, which deliberately hides them.
+ * and dispose() when it closes. Use one controller per peer, receiving peers
+ * through createP2PTransport's onPeerConnection callback.
  * subscribe/getSnapshot can be passed directly to useSyncExternalStore.
  */
 export class NetworkQualityMonitor {
@@ -260,7 +260,10 @@ export class NetworkQualityMonitor {
     >();
     const unsupported = new Set<NetworkQualitySender>();
     const active = () =>
-      this.generation === generation && this.peer === peer && !this.disposed;
+      this.generation === generation &&
+      this.peer === peer &&
+      peer.connectionState !== "closed" &&
+      !this.disposed;
     const enqueuePoll = () => {
       // getStats cannot be aborted. A reattachment waits for the old request
       // to settle rather than starting another request on the same connection.

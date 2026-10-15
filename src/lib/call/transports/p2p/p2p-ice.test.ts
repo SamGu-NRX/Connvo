@@ -5,7 +5,7 @@ import type {
   TransportContext,
   TransportEvents,
 } from "../../transport";
-import { createP2PTransport } from "./p2p-transport";
+import { createP2PTransport, type P2PTransportOptions } from "./p2p-transport";
 import type { SignalingAdapter, SignalingHandlers } from "./signaling";
 
 class FakeStream {
@@ -91,6 +91,7 @@ function setup(
   getRtcConfig: () => Promise<RTCConfiguration>,
   selfId = "B",
   onConnectionPath = vi.fn(),
+  onPeerConnection?: P2PTransportOptions["onPeerConnection"],
 ) {
   let handlers!: SignalingHandlers;
   const close = vi.fn();
@@ -117,6 +118,7 @@ function setup(
     signaling: { open },
     getRtcConfig,
     onConnectionPath,
+    onPeerConnection,
   });
   active.push(transport);
   return {
@@ -146,6 +148,70 @@ afterEach(async () => {
 });
 
 describe("P2P ICE configuration and recovery", () => {
+  it("announces each connection and releases it before close across replacement and leave", async () => {
+    const onPeerConnection =
+      vi.fn<NonNullable<P2PTransportOptions["onPeerConnection"]>>();
+    const test = setup(async () => firstConfig, "B", vi.fn(), onPeerConnection);
+    await test.transport.connect(test.context, test.events);
+    test.handlers.onWelcome(["A"]);
+    const first = FakePeer.instances[0];
+    expect(onPeerConnection.mock.calls).toEqual([["A", first]]);
+    const releasedWhileOpen: string[] = [];
+    onPeerConnection.mockImplementation((id, connection) => {
+      if (!connection)
+        releasedWhileOpen.push(
+          `${id}:${FakePeer.instances.at(-1)?.connectionState}`,
+        );
+    });
+    test.handlers.onPeerJoined("A");
+    const replacement = FakePeer.instances[1];
+    expect(onPeerConnection.mock.calls).toEqual([
+      ["A", first],
+      ["A", null],
+      ["A", replacement],
+    ]);
+    expect(first.connectionState).toBe("closed");
+    test.handlers.onPeerLeft("A", "left");
+    test.handlers.onPeerLeft("A", "left");
+    await test.transport.leave();
+    await test.transport.leave();
+    expect(onPeerConnection.mock.calls).toEqual([
+      ["A", first],
+      ["A", null],
+      ["A", replacement],
+      ["A", null],
+    ]);
+    expect(releasedWhileOpen).toEqual(["A:new", "A:new"]);
+  });
+
+  it("releases peer observers when signaling reconnects, a call fails, and the user leaves", async () => {
+    const onPeerConnection =
+      vi.fn<NonNullable<P2PTransportOptions["onPeerConnection"]>>();
+    const test = setup(async () => firstConfig, "B", vi.fn(), onPeerConnection);
+    await test.transport.connect(test.context, test.events);
+    test.handlers.onWelcome(["A"]);
+    const first = FakePeer.instances[0];
+    test.handlers.onClosed({ kind: "lost", message: "offline" });
+    await vi.advanceTimersByTimeAsync(500);
+    test.handlers.onWelcome(["A"]);
+    const second = FakePeer.instances[1];
+    test.handlers.onClosed({ kind: "rejected", message: "expired" });
+    expect(onPeerConnection.mock.calls).toEqual([
+      ["A", first],
+      ["A", null],
+      ["A", second],
+      ["A", null],
+    ]);
+    await test.transport.connect(test.context, test.events);
+    test.handlers.onWelcome(["A"]);
+    const third = FakePeer.instances[2];
+    await test.transport.leave();
+    expect(onPeerConnection.mock.calls.slice(-2)).toEqual([
+      ["A", third],
+      ["A", null],
+    ]);
+  });
+
   it("waits for credentials before opening signaling and constructing a peer", async () => {
     const pending = deferred<RTCConfiguration>();
     const test = setup(() => pending.promise);

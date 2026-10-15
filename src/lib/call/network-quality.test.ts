@@ -559,4 +559,41 @@ describe("connection monitoring", () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(peer.calls).toBe(3);
   });
+
+  it("does not write sender parameters or publish after a connection closes during stats", async () => {
+    const value = monitor();
+    const peer = new FakePeer();
+    value.attach(peer);
+    await vi.advanceTimersByTimeAsync(0);
+    await tick(peer, 100, 100, 0);
+    await tick(peer, 200, 180, 20);
+    peer.pending = deferred();
+    await vi.advanceTimersByTimeAsync(100);
+    const observed = vi.fn();
+    value.subscribe(observed);
+    peer.connectionState = "closed";
+    peer.pending.resolve(report(remote(300, 260, 40)));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(peer.senders[0].updates).toEqual([]);
+    expect(observed).not.toHaveBeenCalled();
+    expect(peer.calls).toBe(4);
+  });
+
+  it("does not publish or schedule another poll when closed during a sender write", async () => {
+    const value = monitor();
+    const peer = new FakePeer();
+    value.attach(peer);
+    await vi.advanceTimersByTimeAsync(0);
+    await tick(peer, 100, 100, 0);
+    await tick(peer, 200, 180, 20);
+    peer.senders[0].pending = deferred();
+    await tick(peer, 300, 260, 40);
+    const observed = vi.fn();
+    value.subscribe(observed);
+    peer.connectionState = "closed";
+    peer.senders[0].pending.resolve();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(observed).not.toHaveBeenCalled();
+    expect(peer.calls).toBe(4);
+  });
 });

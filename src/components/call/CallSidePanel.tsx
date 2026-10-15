@@ -71,7 +71,7 @@ export function CallSidePanel({
       <dialog
         ref={dialog}
         id={dialogId}
-        className={styles.sidePanel}
+        className={`dark ${styles.sidePanel}`}
         aria-labelledby={titleId}
         data-pointer-opened={pointerOpened}
         onCancel={(event) => {
