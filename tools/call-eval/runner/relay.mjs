@@ -24,11 +24,13 @@ import http from "node:http";
 
 const WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
+/** @param {string | string[]} key */
 function acceptKey(key) {
   return crypto.createHash("sha1").update(key + WS_GUID).digest("base64");
 }
 
 /** Parse one complete client frame (masked, small text payloads). */
+/** @param {Buffer} buf */
 function decodeFrame(buf) {
   if (buf.length < 2) return null;
   const fin = (buf[0] & 0x80) !== 0;
@@ -58,6 +60,7 @@ function decodeFrame(buf) {
   return { fin, opcode, payload, total: off + maskLen + len };
 }
 
+/** @param {number} opcode @param {Buffer} payload */
 function encodeFrame(opcode, payload) {
   const len = payload.length;
   let header;
@@ -77,30 +80,44 @@ function encodeFrame(opcode, payload) {
   return Buffer.concat([header, payload]);
 }
 
-/** Attach the relay to an existing HTTP server (shares the mock page's port). */
+/** @typedef {import('node:stream').Duplex} RelaySocket */
+/** @typedef {{ ws: RelaySocket | null, meeting: string, lastHeartbeat: number, name: string, disconnectedAt?: number }} Session */
+/** @typedef {{ participant: string, reason: string, at: number }} SessionEvent */
+/** @typedef {{ type: 'join', meeting: string, participant: string, name?: string } | { type: 'signal', to: string, from: string, payload: unknown } | { type: 'state', from: string, state: unknown } | { type: 'heartbeat' | 'leave' }} ClientMessage */
+/** Attach the relay to an existing HTTP server (shares the mock page's port).
+ * @param {import('node:http').Server} httpServer
+ * @param {{ participants?: string[], trace?: boolean }} [opts]
+ */
 export function attachRelay(httpServer, { participants = ["A", "B", "C"], trace = process.env.CALL_EVAL_RELAY_TRACE === "1" } = {}) {
+  /** @type {Map<string, Session>} */
   const sessions = new Map(); // participant -> { ws, meeting, lastHeartbeat, name }
+  /** @type {SessionEvent[]} */
   const sessionEvents = []; // { participant, reason, at } for H-11 evidence
+  /** @type {Set<RelaySocket>} */
   const sockets = new Set();
 
+  /** @param {...unknown} args */
   const log = (...args) => {
     if (trace) console.log("[relay]", ...args);
   };
 
+  /** @param {RelaySocket | null} ws @param {unknown} obj */
   function send(ws, obj) {
     try {
-      ws.write(encodeFrame(0x1, Buffer.from(JSON.stringify(obj))));
+      ws?.write(encodeFrame(0x1, Buffer.from(JSON.stringify(obj))));
     } catch {
       /* socket died mid-write; heartbeat sweep will clean up */
     }
   }
 
+  /** @param {unknown} obj @param {string | null} [exceptParticipant] */
   function broadcast(obj, exceptParticipant = null) {
     for (const [pid, sess] of sessions) {
       if (pid !== exceptParticipant) send(sess.ws, obj);
     }
   }
 
+  /** @param {string} participant @param {string} reason */
   function closeSession(participant, reason) {
     const sess = sessions.get(participant);
     if (!sess) return;
@@ -133,7 +150,7 @@ export function attachRelay(httpServer, { participants = ["A", "B", "C"], trace 
     let acc = Buffer.alloc(0);
 
     socket.on("data", (chunk) => {
-      acc = Buffer.concat([acc, chunk]);
+      acc = Buffer.concat([acc, typeof chunk === "string" ? Buffer.from(chunk) : chunk]);
       for (;;) {
         const frame = decodeFrame(acc);
         if (!frame) break;
@@ -148,6 +165,7 @@ export function attachRelay(httpServer, { participants = ["A", "B", "C"], trace 
           continue;
         }
         if (frame.opcode !== 0x1) continue;
+        /** @type {ClientMessage} */
         let msg;
         try {
           msg = JSON.parse(frame.payload.toString("utf8"));
@@ -157,7 +175,7 @@ export function attachRelay(httpServer, { participants = ["A", "B", "C"], trace 
         try {
           handle(msg, socket);
         } catch (err) {
-          log("handler error", err?.message);
+          log("handler error", err instanceof Error ? err.message : String(err));
         }
       }
     });
@@ -178,6 +196,7 @@ export function attachRelay(httpServer, { participants = ["A", "B", "C"], trace 
     socket.on("close", cleanup);
     socket.on("error", cleanup);
 
+    /** @param {ClientMessage} msg @param {RelaySocket} sock */
     function handle(msg, sock) {
       switch (msg.type) {
         case "join": {
@@ -230,6 +249,7 @@ export function attachRelay(httpServer, { participants = ["A", "B", "C"], trace 
 
   return {
     /** H-07: hard-close a peer's signaling socket without any presence update. */
+    /** @param {string} participant */
     killPeerSocket(participant) {
       const sess = sessions.get(participant);
       if (!sess?.ws) return false;

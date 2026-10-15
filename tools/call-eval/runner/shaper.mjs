@@ -16,6 +16,7 @@
 import dgram from "node:dgram";
 
 /** Deterministic 32-bit PRNG so a seed reproduces a run's exact loss pattern. */
+/** @param {number} seed */
 export function mulberry32(seed) {
   let a = seed >>> 0;
   return () => {
@@ -98,6 +99,7 @@ export function createShaper({ seed = 1 } = {}) {
 
   return {
     /** Bind the proxy port; UDP to it is forwarded to the TURN port. */
+    /** @param {{ listenPort: number, targetPort: number, targetHost?: string }} opts */
     start({ listenPort, targetPort, targetHost = "127.0.0.1" }) {
       target = { address: targetHost, port: targetPort };
       return new Promise((resolve, reject) => {
@@ -112,6 +114,7 @@ export function createShaper({ seed = 1 } = {}) {
       });
     },
     /** Apply a shaping profile; lossPct 0 + delayMs 0 = passthrough. */
+    /** @param {{ lossPct?: number, delayMs?: number }} next */
     applyProfile(next) {
       profile = { lossPct: next.lossPct ?? 0, delayMs: next.delayMs ?? 0 };
     },

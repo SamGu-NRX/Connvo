@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
+/** @param {string} source @param {string} name */
 function extractObject(source, name) {
   const start = source.indexOf(`export const ${name}`);
   if (start < 0) throw new Error(`scenario-contracts.ts: ${name} not found`);
@@ -17,6 +18,7 @@ function extractObject(source, name) {
   const close = source.indexOf("} as const;", open);
   if (open < 0 || close < 0) throw new Error(`scenario-contracts.ts: ${name} body not delimited`);
   const body = source.slice(open + 1, close);
+  /** @type {Record<string, string>} */
   const out = {};
   // "H-01": "..." (or across lines) — plain-object string entries only.
   const entryRe = /"([^"]+)":\s*\n?\s*"((?:[^"\\]|\\.)*)"/g;
@@ -30,6 +32,7 @@ function extractObject(source, name) {
   return out;
 }
 
+/** @param {string} source @param {string} name */
 function extractNumberArray(source, name) {
   const re = new RegExp(`export const ${name} = \\[([^\\]]+)\\]`);
   const m = source.match(re);
@@ -37,6 +40,8 @@ function extractNumberArray(source, name) {
   return m[1].split(",").map((n) => Number(n.trim()));
 }
 
+/** @typedef {{ H_PASS_CONDITIONS: Record<string, string>, P_PASS_CONDITIONS: Record<string, string>, H_IDS: string[], P_IDS: string[], TONES: Record<"A"|"B"|"C"|"D", number>, PEER_COLORS: Record<"A"|"B"|"C"|"D", number[]>, SECOND_CAMERA_COLOR: number[], COLOR_TOLERANCE: number }} Contracts */
+/** @type {Contracts | null} */
 let cached = null;
 
 export function loadContracts() {
@@ -47,7 +52,7 @@ export function loadContracts() {
   const H_IDS = Object.keys(H_PASS_CONDITIONS);
   const P_IDS = Object.keys(P_PASS_CONDITIONS);
 
-  const expectedH = Array.from({ length: 16 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
+  const expectedH = Array.from({ length: 17 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
   const expectedP = ["P-01", "P-02", "P-03", "P-04", "P-05"];
   for (const id of expectedH) {
     if (!H_PASS_CONDITIONS[id]) throw new Error(`scenario-contracts.ts: missing verbatim pass condition for ${id}`);

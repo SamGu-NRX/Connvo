@@ -11,12 +11,14 @@ import { fileURLToPath } from "node:url";
 import { RunContext } from "./context.mjs";
 import { loadContracts } from "./contracts.mjs";
 
+/** @typedef {{scenario: string, transport: string, seed: number, pass: boolean, passCondition: string | null, measurements: Record<string, unknown> | null, failure: {message: string, stack?: string} | null, ms: number}} Result */
+/** @typedef {(message: string) => void} Logger */
 const CONTRACTS = loadContracts();
 
 const RUNNER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(RUNNER_DIR, "..", "out");
 
-export const H_IDS = Array.from({ length: 16 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
+export const H_IDS = Array.from({ length: 17 }, (_, i) => `H-${String(i + 1).padStart(2, "0")}`);
 export const P_IDS = Array.from({ length: 5 }, (_, i) => `P-0${i + 1}`);
 export const ALL_SCENARIOS = [...H_IDS, ...P_IDS];
 
@@ -30,12 +32,17 @@ const UNWIRED_SCENARIOS = new Set(["H-14"]);
 
 /**
  * @param {string} [suite]
- * @param {{ signaling?: "reference" | "convex" }} [opts] over Convex the
+ * @param {{ signaling?: "reference" | "convex", page?: "bench" | "real" }} [opts] over Convex the
  *   backend is live, so H-14 is wired too
  */
-export function wiredScenarioIds(suite = "ALL", { signaling = "reference" } = {}) {
+export function wiredScenarioIds(suite = "ALL", { signaling = "reference", page = "bench" } = {}) {
   const ids = suite === "H" ? H_IDS : suite === "P" ? P_IDS : ALL_SCENARIOS;
-  return ids.filter((id) => signaling === "convex" || !UNWIRED_SCENARIOS.has(id));
+  // H-17 uses the product lobby to join without a camera. Bench pages have
+  // no camera-off lobby, so include it only when driving the real page.
+  return ids.filter((id) =>
+    (id !== "H-17" || page === "real") &&
+    (signaling === "convex" || !UNWIRED_SCENARIOS.has(id)),
+  );
 }
 
 const H_15_METHOD = {
@@ -50,6 +57,7 @@ const H_15_METHOD = {
   details: "See tools/call-eval/NOTES-h15-loss-method.md for the proof numbers and interactions.",
 };
 
+/** @param {number[]} values @param {number} p */
 function percentile(values, p) {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -57,6 +65,7 @@ function percentile(values, p) {
   return Math.round(sorted[idx]);
 }
 
+/** @param {RunContext} ctx @param {Logger} log */
 async function ensureFixtures(ctx, log) {
   const missing = ["A", "B", "C", "D"].filter((p) => !ctx.fixturesExist(p));
   if (!missing.length) return;
@@ -73,6 +82,7 @@ async function ensureFixtures(ctx, log) {
   }
 }
 
+/** @param {RunContext} ctx @param {string} scenarioId @param {number} seed @param {Logger} log @returns {Promise<Result>} */
 async function runOne(ctx, scenarioId, seed, log) {
   try {
     return await runOneInner(ctx, scenarioId, seed, log);
@@ -83,6 +93,7 @@ async function runOne(ctx, scenarioId, seed, log) {
   }
 }
 
+/** @param {RunContext} ctx @param {string} scenarioId @param {number} seed @param {Logger} log @returns {Promise<Result>} */
 async function runOneInner(ctx, scenarioId, seed, log) {
   const t0 = Date.now();
   ctx.setSeed(seed); // shapers re-derive from THIS run's seed (reviewed bug: the constructor seed served every run)
@@ -96,14 +107,15 @@ async function runOneInner(ctx, scenarioId, seed, log) {
       throw new Error(`scenario ${scenarioId} is not implemented in ${scenarioId.startsWith("H") ? "scenarios-h.mjs" : "scenarios-p.mjs"}`);
     }
     ctx.newMeeting(scenarioId);
-    const measurements = await fn(ctx, { seed, log });
+    const measurements = await (/** @type {(ctx: RunContext, options: {seed: number, log: Logger}) => Promise<Record<string, unknown>>} */ (fn))(ctx, { seed, log });
     const conds = scenarioId.startsWith("H") ? CONTRACTS.H_PASS_CONDITIONS : CONTRACTS.P_PASS_CONDITIONS;
-    const passCondition = (conds instanceof Map ? conds.get(scenarioId) : conds?.[scenarioId]) ?? null;
+    const passCondition = conds[scenarioId] ?? null;
     return { scenario: scenarioId, transport: ctx.transport, seed, pass: true, passCondition, measurements, failure: null, ms: Date.now() - t0 };
   } catch (err) {
-    log(`${scenarioId} seed ${seed} FAILED: ${err?.message}`);
+    const error = err instanceof Error ? err : new Error(String(err));
+    log(`${scenarioId} seed ${seed} FAILED: ${error.message}`);
     const conds = scenarioId.startsWith("H") ? CONTRACTS.H_PASS_CONDITIONS : CONTRACTS.P_PASS_CONDITIONS;
-    const passCondition = (conds instanceof Map ? conds.get(scenarioId) : conds?.[scenarioId]) ?? null;
+    const passCondition = conds[scenarioId] ?? null;
     return {
       scenario: scenarioId,
       transport: ctx.transport,
@@ -111,7 +123,7 @@ async function runOneInner(ctx, scenarioId, seed, log) {
       pass: false,
       passCondition,
       measurements: null,
-      failure: { message: err?.message ?? String(err), stack: err?.stack?.split("\n").slice(0, 4).join("\n") },
+      failure: { message: error.message, stack: error.stack?.split("\n").slice(0, 4).join("\n") },
       ms: Date.now() - t0,
     };
   }
@@ -164,11 +176,13 @@ async function environmentInfo() {
   };
 }
 
+/** @param {Result[]} results @param {number} wallMs @param {{outDir?: string}} [options] */
 export async function writeOutputs(results, wallMs, { outDir = OUT_DIR } = {}) {
   fs.mkdirSync(path.join(outDir, "screenshots"), { recursive: true });
   const resultsPath = path.join(outDir, "results.json");
   fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
 
+  /** @type {Map<string, {pass: number, total: number, failures: string[]}>} */
   const byScenario = new Map();
   for (const r of results) {
     const entry = byScenario.get(r.scenario) ?? { pass: 0, total: 0, failures: [] };
@@ -180,10 +194,10 @@ export async function writeOutputs(results, wallMs, { outDir = OUT_DIR } = {}) {
 
   const ttf = results
     .filter((r) => r.measurements?.timeToFirstRemoteFrameMs != null)
-    .map((r) => r.measurements.timeToFirstRemoteFrameMs);
+    .map((r) => Number(r.measurements?.timeToFirstRemoteFrameMs));
   const recovery10 = results
     .filter((r) => r.scenario === "H-07" && r.measurements?.recovery10sMs != null)
-    .map((r) => r.measurements.recovery10sMs);
+    .map((r) => Number(r.measurements?.recovery10sMs));
 
   const env = await environmentInfo();
   const lines = [

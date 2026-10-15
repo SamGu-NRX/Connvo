@@ -70,7 +70,7 @@ function fakeTrack() {
  * @param {{ rtcConfig?: object }} [opts]
  */
 function boot({ rtcConfig } = {}) {
-  /** @type {{ RTCPeerConnection: typeof FakePC, __probeRtcConfig?: object, __wrappedPcs?: FakePC[] }} */
+  /** @type {{ RTCPeerConnection: typeof FakePC, __probeRtcConfig?: object, __wrappedPcs?: FakePC[], __probeRestartIce?: () => boolean[] }} */
   const windowObj = { RTCPeerConnection: FakePC };
   if (rtcConfig) windowObj.__probeRtcConfig = rtcConfig;
   const track = fakeTrack();
@@ -123,6 +123,7 @@ describe("probe connection records", () => {
     windowObj.__wrappedPcs = []; // reset: boot() itself may have created none
     const pc1 = new windowObj.RTCPeerConnection();
     const pc2 = new windowObj.RTCPeerConnection();
+    if (!windowObj.__probeRestartIce) throw new Error("probe did not install __probeRestartIce");
     const result = windowObj.__probeRestartIce();
     expect(result).toEqual([true, true]);
     expect(pc1.__restarted).toBe(1);

@@ -24,11 +24,23 @@ export class ScenarioError extends Error {
 }
 
 /** Normalize a polling source: a string "(…) => x" is invoked at eval time. */
-function normalizedEval(page, source, arg) {
-  if (typeof source === "string") return page.evaluate(`(${source})()`, arg);
-  return page.evaluate(source, arg);
+/**
+ * @template T
+ * @param {import('@playwright/test').Page} page
+ * @param {string | (() => T | Promise<T>)} source
+ * @returns {Promise<T>}
+ */
+function normalizedEval(page, source) {
+  if (typeof source === "string") return page.evaluate(`(${source})()`);
+  return page.evaluate(source);
 }
 
+/**
+ * @template [T=unknown]
+ * @param {{ page: import('@playwright/test').Page, peerId: string }} peer
+ * @param {string | (() => T | Promise<T>)} source
+ * @param {{ timeoutMs?: number, describe?: string }} [opts]
+ */
 export async function waitFor(peer, source, { timeoutMs = 10000, describe = "condition" } = {}) {
   const deadline = Date.now() + timeoutMs;
   let last;
@@ -42,6 +54,13 @@ export async function waitFor(peer, source, { timeoutMs = 10000, describe = "con
   }
 }
 
+/**
+ * @template T
+ * @param {{ page: import('@playwright/test').Page, peerId: string }} peer
+ * @param {string | (() => T | Promise<T>)} source
+ * @param {(value: T) => unknown} predicate
+ * @param {{ timeoutMs?: number, describe?: string }} [opts]
+ */
 export async function waitForValue(peer, source, predicate, { timeoutMs = 10000, describe = "value" } = {}) {
   const deadline = Date.now() + timeoutMs;
   let last;
@@ -56,9 +75,11 @@ export async function waitForValue(peer, source, predicate, { timeoutMs = 10000,
 }
 
 /** `[data-call-phase]` on the call root. */
+/** @param {string} phase */
 export const phaseIs = (phase) =>
   `() => document.querySelector('[data-call-phase]')?.getAttribute('data-call-phase') === '${phase}'`;
 
+/** @param {{ page: import("@playwright/test").Page, peerId: string }} peer @param {string} participantId @param {string} attr @param {string} value @param {number} [timeoutMs] */
 export async function waitAttr(peer, participantId, attr, value, timeoutMs) {
   // The predicate compares the exact expected value: waitFor resolves on
   // truthiness, and getAttribute returns the string "false" — which IS
@@ -71,6 +92,7 @@ export async function waitAttr(peer, participantId, attr, value, timeoutMs) {
   return value;
 }
 
+/** @param {{ page: import("@playwright/test").Page }} peer @param {string} testId */
 export async function click(peer, testId) {
   await peer.page.click(`[data-testid="${testId}"]`);
 }
@@ -108,7 +130,7 @@ export async function leaveCall(peer) {
  */
 /**
  * @param {import('./context.mjs').RunContext} ctx
- * @param {{ a?: string, b?: string, paramsA?: object, paramsB?: object, rtcConfig?: object | null, timeoutMs?: number }} [opts]
+ * @param {{ a?: string, b?: string, paramsA?: Record<string, string>, paramsB?: Record<string, string>, rtcConfig?: RTCConfiguration | null, timeoutMs?: number }} [opts]
  */
 export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = {}, rtcConfig, timeoutMs = 30000 } = {}) {
   const t0 = Date.now();
@@ -138,13 +160,15 @@ export async function joinPair(ctx, { a = "A", b = "B", paramsA = {}, paramsB = 
  */
 export async function pageDiagnostics(peer) {
   return peer.page.evaluate(async () => {
-    const w = /** @type {any} */ (window);
+    const w = /** @type {import("./probe.mjs").HarnessWindow} */ (window);
     const pcs = /** @type {RTCPeerConnection[]} */ (w.__wrappedPcs || []);
     /** Candidate types and address kinds per live pc, from getStats. */
     const candidates = [];
     for (const pc of pcs) {
       if (pc.connectionState === "closed") continue;
+      /** @type {string[]} */
       const local = [];
+      /** @type {string[]} */
       const remote = [];
       const stats = await pc.getStats();
       stats.forEach((/** @type {any} */ r) => {
@@ -175,6 +199,7 @@ export async function pageDiagnostics(peer) {
       freshGather: await (async () => {
         try {
           const test = new RTCPeerConnection();
+          /** @type {Array<RTCIceCandidateType | "end" | null>} */
           const found = [];
           test.onicecandidate = (e) => found.push(e.candidate ? e.candidate.type : "end");
           test.createDataChannel("probe");
@@ -198,6 +223,7 @@ export async function pageDiagnostics(peer) {
  * H-01's time-to-first-remote-frame: ms from `since` until the first decoded
  * remote frame whose counter parses.
  */
+/** @param {{ page: import("@playwright/test").Page, peerId: string }} peer @param {string} participantId @param {number} since @param {number} [deadlineMs] */
 export async function timeToFirstRemoteFrame(peer, participantId, since, deadlineMs = 20000) {
   const deadline = Date.now() + deadlineMs;
   for (;;) {
@@ -212,8 +238,9 @@ export async function timeToFirstRemoteFrame(peer, participantId, since, deadlin
   }
 }
 
+/** @param {{ page: import("@playwright/test").Page, peerId: string }} peer */
 export async function assertProbePresent(peer) {
-  const has = await peer.page.evaluate(() => !!window.__callProbe);
+  const has = await peer.page.evaluate(() => !!(/** @type {import("./probe.mjs").HarnessWindow} */ (window)).__callProbe);
   if (!has) throw new ScenarioError(`${peer.peerId}: __callProbe missing — the init script did not run`, {});
 }
 

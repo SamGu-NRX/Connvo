@@ -98,7 +98,7 @@ function launchInTmux(session, file, env, command) {
 }
 
 const args = process.argv.slice(2);
-const flag = (name) => args.includes(`--${name}`);
+const flag = (/** @type {string} */ name) => args.includes(`--${name}`);
 // --after-call turns the after-call screens on for this run: the Convex env
 // CONNVO_AFTER_CALL and next's NEXT_PUBLIC_CONNVO_AFTER_CALL. Without it
 // both are written as "0", so a previous run's setting never lingers.
@@ -213,12 +213,14 @@ function supportedNodeBin() {
   return null;
 }
 
+/** @param {string} name */
 function tmuxRunning(name) {
   // "=name" forces exact matching; a bare -t would prefix-match other sessions.
   return command("tmux", ["has-session", "-t", `=${name}`], { capture: true, allowFail: true }).status === 0;
 }
 
 // ---------------------------------------------------------------- keys (D2/D3)
+/** @param {{fresh: boolean}} options */
 function ensureKeys({ fresh }) {
   const privPath = path.join(KEY_DIR, "private.jwk.json");
   const jwksPath = path.join(KEY_DIR, "jwks.json");
@@ -246,10 +248,12 @@ function ensureKeys({ fresh }) {
 }
 
 // --------------------------------------------------------------- tokens (D3)
+/** @param {string | Uint8Array} input */
 function b64url(input) {
   return Buffer.from(input).toString("base64url");
 }
 
+/** @param {import("node:crypto").JsonWebKey} privJwk @param {Record<string, unknown>} claims */
 function mintToken(privJwk, claims) {
   const privateKey = createPrivateKey({ key: privJwk, format: "jwk" });
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT", kid: "connvo-local-test-1" }));
@@ -364,6 +368,7 @@ await rebuildWithoutWatcher({
 // stage-4 wait — a fresh-marker slice that cannot see pre-env pushes.
 // Waiting for push markers here made a fresh checkout sit through the
 // watch's failing-push loop for the whole deadline.
+/** @type {string | null} */
 let convexUrl = null;
 let deploymentName = "";
 const deadline = Date.now() + 540_000; // first run may download the backend
@@ -621,6 +626,7 @@ const nextBaseUrl = `http://localhost:${nextPort}`;
 // ------------------------------------------------------- tokens + state.json
 console.log("[backend] 6/6 tokens + state.json");
 const nowS = Math.floor(Date.now() / 1000);
+/** @type {Record<string, {token: string, email: string, name: string, workosUserId: string, expiresAt: number}>} */
 const users = {};
 for (const u of SEED_USERS) {
   users[u.key] = {

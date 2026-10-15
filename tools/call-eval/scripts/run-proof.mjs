@@ -125,7 +125,7 @@ async function main() {
       const page = await ctx.newPage();
       /** @type {string[]} */
       const pageErrors = [];
-      page.on("pageerror", (e) => pageErrors.push(String(e).slice(0, 300)));
+      page.on("pageerror", (/** @type {Error} */ e) => pageErrors.push(String(e).slice(0, 300)));
       try {
         await page.goto(entry.url, { waitUntil: "domcontentloaded", timeout: 120_000 });
         await page.waitForSelector('[data-testid="auth-proof-result"]:not([data-proof="pending"])', { timeout: 120_000 });

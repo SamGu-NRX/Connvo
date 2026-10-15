@@ -49,7 +49,9 @@ async function request(sock, port, msg) {
   const reply = next(sock);
   sock.send(msg, port, "127.0.0.1");
   const raw = await reply;
-  return Object.assign(parseStun(raw) ?? {}, { raw });
+  const parsed = parseStun(raw);
+  if (!parsed) throw new Error("TURN reply is not a STUN message");
+  return { ...parsed, raw };
 }
 
 /** Chromium drops TURN success responses whose MESSAGE-INTEGRITY does not verify. */

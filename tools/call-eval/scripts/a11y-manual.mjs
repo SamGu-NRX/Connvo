@@ -20,26 +20,30 @@ import fs from "node:fs";
 /** @typedef {import('@playwright/test').Page} Page */
 
 /** WCAG relative luminance of an sRGB triple in 0..255. */
+/** @param {number[]} rgb */
 function luminance([r, g, b]) {
-  const lin = (c) => {
+  const lin = (/** @type {number} */ c) => {
     const s = c / 255;
     return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   };
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
+/** @param {number[]} a @param {number[]} b */
 export function contrast(a, b) {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
 
 /** Decode a PNG into RGBA bytes in a blank page, so no image library is needed. */
+/** @param {Page} scratch @param {Buffer} png */
 async function pixels(scratch, png) {
   return scratch.evaluate(async (b64) => {
     const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
     const bitmap = await createImageBitmap(blob);
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
     const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("2D canvas unavailable");
     ctx.drawImage(bitmap, 0, 0);
     return {
       width: bitmap.width,
@@ -52,9 +56,11 @@ async function pixels(scratch, png) {
 }
 
 /** A computed CSS colour (oklch, color(), rgba…) as sRGB bytes plus alpha, via a canvas. */
+/** @param {Page} scratch @param {string} css */
 async function srgb(scratch, css) {
   return scratch.evaluate((value) => {
     const ctx = new OffscreenCanvas(1, 1).getContext("2d");
+    if (!ctx) throw new Error("2D canvas unavailable");
     ctx.fillStyle = value;
     ctx.fillRect(0, 0, 1, 1);
     const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
@@ -62,6 +68,7 @@ async function srgb(scratch, css) {
   }, css);
 }
 
+/** @param {number[]} fg @param {number} alpha @param {number[]} bg */
 const over = (fg, alpha, bg) =>
   fg.map((c, i) => Math.round(c * alpha + bg[i] * (1 - alpha)));
 
@@ -169,6 +176,7 @@ export function assertShellMeasurements(rows) {
 }
 
 /** How the focused element is described in the walk record. */
+/** @param {Page} page */
 async function describeFocus(page) {
   return page.evaluate(() => {
     const el = document.activeElement;
@@ -206,6 +214,7 @@ async function describeFocus(page) {
  * pixels unfocused cover at least a 2px band around the element's
  * perimeter, the WCAG 2.4.13 minimum area.
  */
+/** @param {Page} page @param {Page} scratch @param {string | undefined} savePath */
 async function focusChange(page, scratch, savePath) {
   // Compare steady focus styles. The switch's transition-all can otherwise
   // leave the previous ring in the frame labelled unfocused.
@@ -217,6 +226,7 @@ async function focusChange(page, scratch, savePath) {
   );
   await page.waitForTimeout(150);
   const box = await page.evaluate(() => {
+    if (!document.activeElement) throw new Error("No focused element");
     const r = document.activeElement.getBoundingClientRect();
     return { x: r.x, y: r.y, width: r.width, height: r.height };
   });
@@ -240,13 +250,14 @@ async function focusChange(page, scratch, savePath) {
     height: box.height + pad * 2,
   };
   const viewport = page.viewportSize();
+  if (!viewport) throw new Error("Focus measurement requires a viewport");
   clip.width = Math.min(clip.width, viewport.width - clip.x);
   clip.height = Math.min(clip.height, viewport.height - clip.y);
   const focusedPng = await page.screenshot({ clip });
   if (savePath) fs.writeFileSync(savePath, focusedPng);
   const focused = await pixels(scratch, focusedPng);
   const handle = await page.evaluateHandle(() => document.activeElement);
-  await handle.evaluate((el) => el.blur());
+  await handle.evaluate((el) => { if (!(el instanceof HTMLElement)) throw new Error("Focused element is not HTML"); el.blur(); });
   await page.waitForTimeout(250);
   const plainPng = await page.screenshot({ clip });
   const plain = await pixels(scratch, plainPng);
@@ -256,7 +267,7 @@ async function focusChange(page, scratch, savePath) {
     shadow: getComputedStyle(el).boxShadow,
   }));
   // Programmatic focus after keyboard use keeps :focus-visible in Chromium.
-  await handle.evaluate((el) => el.focus());
+  await handle.evaluate((el) => { if (!(el instanceof HTMLElement)) throw new Error("Focused element is not HTML"); el.focus(); });
   await page.waitForTimeout(250);
   let strong = 0;
   let best = 1;
@@ -348,7 +359,7 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
       truncated = false;
       break;
     }
-    stop.indicator = await focusChange(
+    const indicator = await focusChange(
       page,
       scratch,
       shots
@@ -356,10 +367,10 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
         : undefined,
     );
     last = await page.evaluateHandle(() => document.activeElement);
-    forward.push(stop);
+    forward.push({ ...stop, indicator });
   }
   // Walk back from the last stop.
-  if (last) await last.evaluate((el) => el.focus());
+  if (last) await last.evaluate((el) => { if (!(el instanceof HTMLElement)) throw new Error("Focused element is not HTML"); el.focus(); });
   const backward = [];
   for (let i = 0; i < forward.length - 1; i++) {
     await page.keyboard.press("Shift+Tab");
@@ -368,7 +379,7 @@ export async function keyboardWalk(page, scratch, { max = 120, shots } = {}) {
     if (stop === null) break;
     backward.push({ tag: stop.tag, name: stop.name, testid: stop.testid });
   }
-  const key = (s) => `${s.tag}|${s.name}|${s.testid}`;
+  const key = (/** @type {{tag: string, name: string, testid: string | null}} */ s) => `${s.tag}|${s.name}|${s.testid}`;
   const expectedBack = forward.slice(0, -1).reverse().map(key);
   return {
     forward,

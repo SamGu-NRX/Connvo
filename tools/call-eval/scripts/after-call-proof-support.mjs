@@ -148,7 +148,7 @@ export function publishProof(repo, out, shots) {
   );
   fs.mkdirSync(destination, { recursive: true });
   fs.rmSync(path.join(destination, "focus"), { recursive: true, force: true });
-  for (const file of fs.readdirSync(destination, { recursive: true }))
+  for (const file of fs.readdirSync(destination, { recursive: true, encoding: "utf8" }))
     if (file.endsWith(".png") && !produced.has(file))
       fs.unlinkSync(path.join(destination, file));
   for (const { file, source } of sources) {

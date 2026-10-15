@@ -1,3 +1,7 @@
+/// <reference lib="dom" />
+/** @typedef {Pick<typeof import('../lib/decoders.mjs'), 'decodeBarcodeColor' | 'decodeFrameCounter' | 'computeFps' | 'decodeToneHz'>} Decoders */
+/** @typedef {{ connections: { live: number, opened: number }, tracks: { live: number, created: number }, getStatsCalls: number, pcs: Array<{ id: number, connectionState: RTCPeerConnectionState, iceConnectionState: RTCIceConnectionState, signalingState: RTCSignalingState, closed: boolean, everConnected: boolean }> }} ProbeState */
+/** @typedef {Window & typeof globalThis & { __probeRtcConfig?: RTCConfiguration, __wrappedPcs?: RTCPeerConnection[], __callProbe?: ProbeState, __connvoDecoders?: Decoders, __harnessAnalysers?: Map<string, { actx: AudioContext, analyser: AnalyserNode, buf: Float32Array<ArrayBuffer>, trackId: string }>, webkitAudioContext?: typeof AudioContext, __connvoCallLog?: unknown[] }} HarnessWindow */
 /**
  * RTCPeerConnection / getUserMedia probe, injected per browser context
  * (CONTRACT.md "Runner contract"). All receipt evidence comes from the DOM
@@ -132,10 +136,12 @@ export const probeInit = String.raw`
 `;
 
 /** Second init script: installs the relay-only RTCConfiguration override. */
+/** @param {RTCConfiguration} config */
 export const probeConfigInit = (config) => {
-  window.__probeRtcConfig = config;
+  const w = /** @type {HarnessWindow} */ (window);
+  w.__probeRtcConfig = config;
 };
 
 export function hasProbe() {
-  return typeof window !== 'undefined' && !!window.__callProbe;
+  return typeof window !== 'undefined' && !!(/** @type {HarnessWindow} */ (window)).__callProbe;
 }

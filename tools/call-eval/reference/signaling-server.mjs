@@ -54,6 +54,7 @@ const VARIANTS = [
   "outsider-allowed",
 ];
 
+/** @param {string} message @param {number} [code] @returns {never} */
 function fail(message, code = 1) {
   console.error(JSON.stringify({ ok: false, error: message }));
   process.exit(code);
@@ -61,7 +62,7 @@ function fail(message, code = 1) {
 
 // ---------------------------------------------------------------- args
 const args = process.argv.slice(2);
-const arg = (name) => {
+const arg = (/** @type {string} */ name) => {
   const hit = args.find((a) => a.startsWith(`--${name}=`));
   return hit ? hit.slice(name.length + 3) : undefined;
 };
@@ -71,7 +72,7 @@ const variant = arg("variant");
 if (!port || !Number.isInteger(port) || port < PORT_MIN || port > PORT_MAX) {
   fail(`--port must be an integer in [${PORT_MIN}..${PORT_MAX}]`);
 }
-if (!VARIANTS.includes(variant)) {
+if (!variant || !VARIANTS.includes(variant)) {
   fail(`--variant must be one of: ${VARIANTS.join(", ")}`);
 }
 
@@ -79,6 +80,7 @@ if (!VARIANTS.includes(variant)) {
 // identities itself, so no JWKS is loaded.
 const bench = arg("bench") === "1";
 const jwksPath = bench ? null : (arg("jwks-file") ?? process.env.CONNVO_LOCAL_TEST_JWKS_FILE);
+/** @type {import("node:crypto").KeyObject} */
 let publicKey;
 /** @type {import("node:crypto").KeyPairKeyObjectResult | null} */
 let benchKeys = null;
@@ -91,11 +93,11 @@ if (bench) {
   }
   try {
     const jwks = JSON.parse(readFileSync(jwksPath, "utf8"));
-    const jwk = jwks.keys.find((k) => k.kty === "RSA");
+    const jwk = jwks.keys.find((/** @type {import("node:crypto").JsonWebKey} */ k) => k.kty === "RSA");
     if (!jwk) fail("JWKS has no RSA key");
     publicKey = createPublicKey({ key: jwk, format: "jwk" });
   } catch (err) {
-    fail(`JWKS unreadable: ${err.message}`);
+    fail(`JWKS unreadable: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -116,13 +118,14 @@ if (bench) {
       fail("members-file must be {meetingId, members:[subject,...]}");
     }
   } catch (err) {
-    fail(`members-file unreadable: ${err.message}`);
+    fail(`members-file unreadable: ${err instanceof Error ? err.message : String(err)}`);
   }
 } else if (variant !== "outsider-allowed") {
   fail("fail closed: --members-file is required unless --variant=outsider-allowed");
 }
 
 // ---------------------------------------------------------------- token
+/** @param {unknown} token */
 function verifyToken(token) {
   const parts = String(token ?? "").split(".");
   if (parts.length !== 3) return { error: "malformed token" };
@@ -188,8 +191,9 @@ function recordDeparture(participant, reason) {
   if (sessionEvents.length > 500) sessionEvents.splice(0, sessionEvents.length - 500);
 }
 
+/** @param {Map<string, import("ws").WebSocket> | undefined} room @param {object} message @param {import("ws").WebSocket | null} [exceptSocket] */
 function broadcast(room, message, exceptSocket = null) {
-  for (const sock of room.values()) {
+  for (const sock of room?.values() ?? []) {
     if (sock !== exceptSocket && sock.readyState === sock.OPEN) {
       sock.send(JSON.stringify(message));
     }
@@ -278,15 +282,17 @@ const server = http.createServer((req, res) => {
 // A bind/port failure must exit with the pinned JSON error shape instead of
 // an unhandled exception, so the runner's spawn can parse the failure.
 server.on("error", (err) => {
-  fail(`signaling server failed to start: ${err.message}`);
+  fail(`signaling server failed to start: ${err instanceof Error ? err.message : String(err)}`);
 });
 
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (socket) => {
   /** Which subject this socket has authenticated as; null until hello. */
+  /** @type {string | null} */
   let self = null;
   /** The meetingId this socket joined; null until hello. */
+  /** @type {string | null} */
   let joinedMeeting = null;
 
   // A socket-level error (protocol violation, oversized frame, aborted
@@ -383,12 +389,12 @@ wss.on("connection", (socket) => {
     }
 
     // ---- authenticated: join (or replace) the room ----
-    if (!rooms.has(meetingId)) rooms.set(meetingId, new Map());
-    const room = rooms.get(meetingId);
+    const room = rooms.get(meetingId) ?? new Map();
+    rooms.set(meetingId, room);
     joinedMeeting = meetingId;
 
-    if (room.has(verdict.subject)) {
-      const old = room.get(verdict.subject);
+    const old = room.get(verdict.subject);
+    if (old) {
       if (old !== socket && old.readyState === old.OPEN) old.close(4007, "replaced by re-join");
       broadcast(room, { type: "peer-left", participantId: verdict.subject, reason: "rejoined" }, socket);
     }
@@ -421,5 +427,5 @@ wss.on("connection", (socket) => {
 
 server.listen(port, "127.0.0.1", () => {
   // Exactly one JSON line when ready (pinned).
-  console.log(JSON.stringify({ ok: true, port: server.address().port, variant, ...(bench ? { mint: true } : {}) }));
+  console.log(JSON.stringify({ ok: true, port: typeof server.address() === "object" && server.address() !== null ? port : null, variant, ...(bench ? { mint: true } : {}) }));
 });

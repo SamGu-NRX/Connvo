@@ -204,12 +204,18 @@ export function createP2PTransport({
     };
     peers.set(id, peer);
 
-    // addTrack, not addTransceiver: a remote offer can reuse an addTrack
-    // transceiver, so a glare rollback does not leave orphaned m-lines.
+    // Keep addTrack reuse for captured tracks. Reserve a sendrecv video slot
+    // for audio-only joins so a later camera track has a negotiated sender.
     const stream = currentStream();
     for (const kind of KINDS) {
       const track = stream?.getTracks().find((t) => t.kind === kind);
       if (track && stream) peer.senders[kind] = pc.addTrack(track, stream);
+      else if (kind === "video") {
+        peer.senders.video = pc.addTransceiver("video", {
+          direction: "sendrecv",
+          streams: stream ? [stream] : [],
+        }).sender;
+      }
     }
 
     pc.onicecandidate = ({ candidate }) => {
