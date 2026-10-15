@@ -37,7 +37,7 @@
     "violations": []
   },
   {
-    "check": "chromium-native-sheet",
+    "check": "chromium-native-sheet-prompts-and-notes",
     "pass": true
   },
   {
@@ -45,7 +45,7 @@
     "violations": []
   },
   {
-    "check": "webkit-native-sheet",
+    "check": "webkit-native-sheet-prompts-and-notes",
     "pass": true
   }
 ]

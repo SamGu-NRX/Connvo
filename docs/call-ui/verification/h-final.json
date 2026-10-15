@@ -7,16 +7,16 @@
       "pass": true,
       "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
       "measurements": {
-        "joinMs": 1319,
-        "timeToFirstRemoteFrameMs": 1333,
-        "timeToFirstRemoteFrameMsReverse": 1336,
-        "fpsAtoB": 26.5,
-        "fpsBtoA": 27.1,
-        "colourMsAseesB": 1340,
-        "colourMsBseesA": 1343
+        "joinMs": 1531,
+        "timeToFirstRemoteFrameMs": 1539,
+        "timeToFirstRemoteFrameMsReverse": 1541,
+        "fpsAtoB": 25.5,
+        "fpsBtoA": 24.5,
+        "colourMsAseesB": 1543,
+        "colourMsBseesA": 1545
       },
       "failure": null,
-      "ms": 11371
+      "ms": 11593
     },
     {
       "scenario": "H-01",
@@ -25,16 +25,16 @@
       "pass": true,
       "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
       "measurements": {
-        "joinMs": 1389,
-        "timeToFirstRemoteFrameMs": 1394,
-        "timeToFirstRemoteFrameMsReverse": 1396,
-        "fpsAtoB": 24.7,
-        "fpsBtoA": 24.7,
-        "colourMsAseesB": 1397,
-        "colourMsBseesA": 1399
+        "joinMs": 1565,
+        "timeToFirstRemoteFrameMs": 1572,
+        "timeToFirstRemoteFrameMsReverse": 1574,
+        "fpsAtoB": 26.1,
+        "fpsBtoA": 25.5,
+        "colourMsAseesB": 1576,
+        "colourMsBseesA": 1578
       },
       "failure": null,
-      "ms": 11433
+      "ms": 11613
     },
     {
       "scenario": "H-01",
@@ -43,16 +43,16 @@
       "pass": true,
       "passCondition": "each decodes the other's barcode color within 5 s; remote frames advance at >= 15 fps over 5 s",
       "measurements": {
-        "joinMs": 1604,
-        "timeToFirstRemoteFrameMs": 1613,
-        "timeToFirstRemoteFrameMsReverse": 1616,
-        "fpsAtoB": 24.5,
-        "fpsBtoA": 24.7,
-        "colourMsAseesB": 1618,
-        "colourMsBseesA": 1620
+        "joinMs": 1577,
+        "timeToFirstRemoteFrameMs": 1582,
+        "timeToFirstRemoteFrameMsReverse": 1584,
+        "fpsAtoB": 25.5,
+        "fpsBtoA": 27.9,
+        "colourMsAseesB": 1585,
+        "colourMsBseesA": 1586
       },
       "failure": null,
-      "ms": 11722
+      "ms": 11626
     },
     {
       "scenario": "H-02",
@@ -61,11 +61,11 @@
       "pass": true,
       "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
       "measurements": {
-        "aHearsB": 656.7,
-        "bHearsA": 439.3
+        "aHearsB": 657.6,
+        "bHearsA": 442.2
       },
       "failure": null,
-      "ms": 2515
+      "ms": 2951
     },
     {
       "scenario": "H-02",
@@ -74,11 +74,11 @@
       "pass": true,
       "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
       "measurements": {
-        "aHearsB": 662.9,
-        "bHearsA": 437.7
+        "aHearsB": 655.9,
+        "bHearsA": 437.6
       },
       "failure": null,
-      "ms": 2451
+      "ms": 2444
     },
     {
       "scenario": "H-02",
@@ -87,56 +87,56 @@
       "pass": true,
       "passCondition": "each receiver's analyser peak is the sender's tone +-10 Hz within 3 s",
       "measurements": {
-        "aHearsB": 655.8,
-        "bHearsA": 436.7
+        "aHearsB": 659,
+        "bHearsA": 439.1
       },
       "failure": null,
-      "ms": 3005
+      "ms": 2269
     },
     {
       "scenario": "H-03",
       "transport": "p2p",
       "seed": 1,
-      "pass": true,
-      "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
-      "measurements": {
-        "muteFlipMs": 41,
-        "silentAfterMs": 429,
-        "unmuteFlipMs": 48,
-        "restoredToneHz": 438.3
-      },
-      "failure": null,
-      "ms": 3322
-    },
-    {
-      "scenario": "H-03",
-      "transport": "p2p",
-      "seed": 2,
-      "pass": true,
-      "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
-      "measurements": {
-        "muteFlipMs": 36,
-        "silentAfterMs": 256,
-        "unmuteFlipMs": 44,
-        "restoredToneHz": 438.3
-      },
-      "failure": null,
-      "ms": 3107
-    },
-    {
-      "scenario": "H-03",
-      "transport": "p2p",
-      "seed": 3,
       "pass": true,
       "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
       "measurements": {
         "muteFlipMs": 39,
-        "silentAfterMs": 406,
-        "unmuteFlipMs": 31,
+        "silentAfterMs": 459,
+        "unmuteFlipMs": 45,
         "restoredToneHz": 438.3
       },
       "failure": null,
-      "ms": 3139
+      "ms": 3185
+    },
+    {
+      "scenario": "H-03",
+      "transport": "p2p",
+      "seed": 2,
+      "pass": true,
+      "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+      "measurements": {
+        "muteFlipMs": 39,
+        "silentAfterMs": 199,
+        "unmuteFlipMs": 41,
+        "restoredToneHz": 436.5
+      },
+      "failure": null,
+      "ms": 2918
+    },
+    {
+      "scenario": "H-03",
+      "transport": "p2p",
+      "seed": 3,
+      "pass": true,
+      "passCondition": "remote `data-audio-muted` flips within 1 s; received tone energy falls below threshold; unmute restores both",
+      "measurements": {
+        "muteFlipMs": 40,
+        "silentAfterMs": 414,
+        "unmuteFlipMs": 43,
+        "restoredToneHz": 438.3
+      },
+      "failure": null,
+      "ms": 3064
     },
     {
       "scenario": "H-04",
@@ -145,11 +145,11 @@
       "pass": true,
       "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
       "measurements": {
-        "offFlipMs": 49,
-        "resumedFps": 26.1
+        "offFlipMs": 47,
+        "resumedFps": 25.6
       },
       "failure": null,
-      "ms": 5668
+      "ms": 5631
     },
     {
       "scenario": "H-04",
@@ -158,11 +158,11 @@
       "pass": true,
       "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
       "measurements": {
-        "offFlipMs": 40,
-        "resumedFps": 23.8
+        "offFlipMs": 44,
+        "resumedFps": 27.9
       },
       "failure": null,
-      "ms": 5854
+      "ms": 5632
     },
     {
       "scenario": "H-04",
@@ -171,11 +171,11 @@
       "pass": true,
       "passCondition": "remote `data-video-off` within 1 s; the sender's capture track is `ended` (camera released); on resumes frames",
       "measurements": {
-        "offFlipMs": 40,
-        "resumedFps": 24.1
+        "offFlipMs": 45,
+        "resumedFps": 25.1
       },
       "failure": null,
-      "ms": 5805
+      "ms": 5589
     },
     {
       "scenario": "H-05",
@@ -184,14 +184,14 @@
       "pass": true,
       "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
       "measurements": {
-        "fpsBefore": 26.3,
-        "fpsDuring": 34.7,
-        "fpsAfter": 27.2,
+        "fpsBefore": 22.3,
+        "fpsDuring": 31,
+        "fpsAfter": 36.4,
         "phase": true,
         "colorDistance": 1
       },
       "failure": null,
-      "ms": 7518
+      "ms": 7625
     },
     {
       "scenario": "H-05",
@@ -201,13 +201,13 @@
       "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
       "measurements": {
         "fpsBefore": 24.3,
-        "fpsDuring": 32.6,
-        "fpsAfter": 27.7,
+        "fpsDuring": 31.1,
+        "fpsAfter": 31.9,
         "phase": true,
         "colorDistance": 1
       },
       "failure": null,
-      "ms": 7717
+      "ms": 7533
     },
     {
       "scenario": "H-05",
@@ -216,14 +216,14 @@
       "pass": true,
       "passCondition": "switching to the second fake camera keeps frames flowing without a failed phase",
       "measurements": {
-        "fpsBefore": 31.1,
-        "fpsDuring": 31.8,
-        "fpsAfter": 30.2,
+        "fpsBefore": 26.3,
+        "fpsDuring": 32.3,
+        "fpsAfter": 37.4,
         "phase": true,
         "colorDistance": 1
       },
       "failure": null,
-      "ms": 7512
+      "ms": 7671
     },
     {
       "scenario": "H-06",
@@ -235,10 +235,10 @@
         "errorText": "Your browser is blocking the camera and microphone for this site.",
         "phaseDenied": "idle",
         "joinedAfterRetry": true,
-        "fpsBseesA": 27
+        "fpsBseesA": 25.7
       },
       "failure": null,
-      "ms": 4546
+      "ms": 3102
     },
     {
       "scenario": "H-06",
@@ -250,10 +250,10 @@
         "errorText": "Your browser is blocking the camera and microphone for this site.",
         "phaseDenied": "idle",
         "joinedAfterRetry": true,
-        "fpsBseesA": 23.7
+        "fpsBseesA": 23
       },
       "failure": null,
-      "ms": 3157
+      "ms": 3134
     },
     {
       "scenario": "H-06",
@@ -265,11 +265,11 @@
         "errorText": "Your browser is blocking the camera and microphone for this site.",
         "phaseDenied": "idle",
         "joinedAfterRetry": true,
-        "fpsBseesA": 26.4
+        "fpsBseesA": 24.1
       },
       "failure": null,
-      "ms": 3171
+      "ms": 3285
     }
   ],
-  "wallMs": 105227
+  "wallMs": 103174
 }

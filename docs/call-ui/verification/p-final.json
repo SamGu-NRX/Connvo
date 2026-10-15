@@ -32,7 +32,7 @@
         ]
       },
       "failure": null,
-      "ms": 52902
+      "ms": 53193
     },
     {
       "scenario": "P-01",
@@ -66,7 +66,7 @@
         ]
       },
       "failure": null,
-      "ms": 52790
+      "ms": 52046
     },
     {
       "scenario": "P-01",
@@ -100,7 +100,7 @@
         ]
       },
       "failure": null,
-      "ms": 53220
+      "ms": 52796
     },
     {
       "scenario": "P-02",
@@ -160,7 +160,7 @@
         ]
       },
       "failure": null,
-      "ms": 54215
+      "ms": 53669
     },
     {
       "scenario": "P-02",
@@ -220,7 +220,7 @@
         ]
       },
       "failure": null,
-      "ms": 59245
+      "ms": 53239
     },
     {
       "scenario": "P-02",
@@ -280,7 +280,7 @@
         ]
       },
       "failure": null,
-      "ms": 53703
+      "ms": 53189
     },
     {
       "scenario": "P-03",
@@ -381,7 +381,7 @@
         ]
       },
       "failure": null,
-      "ms": 4328
+      "ms": 3615
     },
     {
       "scenario": "P-03",
@@ -482,7 +482,7 @@
         ]
       },
       "failure": null,
-      "ms": 3169
+      "ms": 3137
     },
     {
       "scenario": "P-03",
@@ -583,7 +583,7 @@
         ]
       },
       "failure": null,
-      "ms": 3103
+      "ms": 3112
     },
     {
       "scenario": "P-04",
@@ -595,15 +595,15 @@
         "mq": true,
         "animationCount": 0,
         "allAnimations": [
-          "background-color 86.3757822082981ms",
-          "background-color 16.89672227271262ms",
+          "opacity 200ms",
+          "background-color 86.25089742159909ms",
           "background-color 150ms"
         ],
         "maxDurationMs": 0,
         "transitions": []
       },
       "failure": null,
-      "ms": 1514
+      "ms": 1532
     },
     {
       "scenario": "P-04",
@@ -615,15 +615,15 @@
         "mq": true,
         "animationCount": 0,
         "allAnimations": [
-          "background-color 86.39539023523709ms",
-          "background-color 51.93193235184602ms",
+          "background-color 86.49870289689306ms",
+          "background-color 86.38469551069954ms",
           "background-color 150ms"
         ],
         "maxDurationMs": 0,
         "transitions": []
       },
       "failure": null,
-      "ms": 1530
+      "ms": 1515
     },
     {
       "scenario": "P-04",
@@ -635,17 +635,14 @@
         "mq": true,
         "animationCount": 0,
         "allAnimations": [
-          "opacity 220ms",
-          "opacity 220ms",
-          "background-color 86.37934764158383ms",
-          "background-color 16.900061418605876ms",
+          "background-color 86.40786570340093ms",
           "background-color 150ms"
         ],
         "maxDurationMs": 0,
         "transitions": []
       },
       "failure": null,
-      "ms": 1569
+      "ms": 1606
     },
     {
       "scenario": "P-05",
@@ -673,7 +670,7 @@
           },
           {
             "label": "slow-join",
-            "joinMs": 5323,
+            "joinMs": 5401,
             "during": {
               "scrollW": 390,
               "clientW": 390,
@@ -689,7 +686,7 @@
         "nameLength": 50
       },
       "failure": null,
-      "ms": 8334
+      "ms": 8645
     },
     {
       "scenario": "P-05",
@@ -717,7 +714,7 @@
           },
           {
             "label": "slow-join",
-            "joinMs": 5320,
+            "joinMs": 5347,
             "during": {
               "scrollW": 390,
               "clientW": 390,
@@ -733,7 +730,7 @@
         "nameLength": 50
       },
       "failure": null,
-      "ms": 8301
+      "ms": 8429
     },
     {
       "scenario": "P-05",
@@ -761,7 +758,7 @@
           },
           {
             "label": "slow-join",
-            "joinMs": 5326,
+            "joinMs": 5358,
             "during": {
               "scrollW": 390,
               "clientW": 390,
@@ -777,8 +774,8 @@
         "nameLength": 50
       },
       "failure": null,
-      "ms": 8290
+      "ms": 8441
     }
   ],
-  "wallMs": 367075
+  "wallMs": 359031
 }
