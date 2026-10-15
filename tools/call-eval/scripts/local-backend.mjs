@@ -29,6 +29,7 @@ import { fileURLToPath } from "node:url";
 // Pure decision logic + guard discipline, unit-tested in
 // local-backend-core.test.mjs. The script wires real I/O into these.
 import {
+  runNextRuntime,
   DUMMY_WORKOS_CLIENT_ID,
   EVAL_ENV_TEST_JWKS,
   EVAL_ENV_WORKOS_CLIENT_ID,
@@ -561,7 +562,7 @@ console.log("[backend] seed shape verified: A host, B and C participants, O no r
 const httpCode = () =>
   command("curl", ["-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "20", `http://localhost:${nextPort}/dev/auth-proof?as=A`], { capture: true, allowFail: true }).stdout.trim();
 const serving = (/** @type {string} */ code) => code.startsWith("2") || code.startsWith("3");
-{
+const nextStarted = await runNextRuntime(args, async () => {
   // src/proxy.ts (authkitMiddleware) runs in the edge runtime, which reads
   // only `.env*` files in next dev, so the eval env goes into a managed block
   // in .env.local, and also into the launcher's environment.
@@ -620,7 +621,7 @@ const serving = (/** @type {string} */ code) => code.startsWith("2") || code.sta
       process.exit(1);
     }
   }
-}
+});
 const nextBaseUrl = `http://localhost:${nextPort}`;
 
 // ------------------------------------------------------- tokens + state.json
@@ -657,4 +658,8 @@ mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(STATE_PATH, JSON.stringify(state, null, 2));
 console.log(`[backend] READY — state.json at ${STATE_PATH}`);
 console.log(`[backend]   convex: ${convexUrl}`);
-console.log(`[backend]   next:   ${nextBaseUrl}  (bench: ${nextBaseUrl}/dev/call-bench/reference)`);
+if (nextStarted) {
+  console.log(`[backend]   next:   ${nextBaseUrl}  (bench: ${nextBaseUrl}/dev/call-bench/reference)`);
+} else {
+  console.log("[backend]   next:   skipped (--no-next)");
+}

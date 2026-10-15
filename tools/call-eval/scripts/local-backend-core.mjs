@@ -461,3 +461,15 @@ export const PUSH_COMPLETE_MARKER = "Convex functions ready!";
 export function shellQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
+
+/**
+ * Dispatch the optional frontend stage after backend provisioning and seeding.
+ * @param {string[]} args
+ * @param {() => Promise<void>} startNext
+ * @returns {Promise<boolean>}
+ */
+export async function runNextRuntime(args, startNext) {
+  if (args.includes("--no-next")) return false;
+  await startNext();
+  return true;
+}

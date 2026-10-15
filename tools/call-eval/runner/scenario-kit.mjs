@@ -185,6 +185,13 @@ export async function pageDiagnostics(peer) {
       error: document.querySelector('[data-testid="call-error"]')?.textContent?.slice(0, 160) || null,
       tiles: [...document.querySelectorAll('[data-testid="remote-media"]')].map((t) => t.getAttribute("data-participant-id")),
       pcs: pcs.map((pc) => `${pc.signalingState}/${pc.iceConnectionState}/${pc.connectionState}`),
+      transceivers: pcs.map((pc) => pc.getTransceivers().map((transceiver) => ({
+        mid: transceiver.mid,
+        direction: transceiver.direction,
+        currentDirection: transceiver.currentDirection,
+        senderKind: transceiver.sender.track?.kind ?? null,
+        receiverKind: transceiver.receiver.track.kind,
+      }))),
       candidates,
       // What each live connection was built with: ICE servers (URLs only)
       // and transport policy, to tell "nothing to gather from" apart.

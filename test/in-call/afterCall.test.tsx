@@ -36,7 +36,7 @@ type Face = ReturnType<Env["withIdentity"]>;
 /** convex/react over convex-test, as one signed-in person (`face`). */
 class HistorySim {
   face!: Face;
-  private readonly entries = new Map<
+  readonly entries = new Map<
     string,
     {
       ref: unknown;
@@ -46,12 +46,12 @@ class HistorySim {
       listeners: Set<() => void>;
     }
   >();
-  private readonly mutations = new Map<
+  readonly mutations = new Map<
     unknown,
     (args: Record<string, unknown>) => Promise<unknown>
   >();
 
-  private async refresh(key: string) {
+  async refresh(key: string) {
     const entry = this.entries.get(key)!;
     try {
       entry.value = await this.face.query(
@@ -69,29 +69,7 @@ class HistorySim {
     for (const key of [...this.entries.keys()]) await this.refresh(key);
   }
 
-  useQuery(ref: unknown, args: Record<string, unknown> | "skip") {
-    const key = `${getFunctionName(ref as never)}|${JSON.stringify(args)}`;
-    if (args !== "skip" && !this.entries.has(key)) {
-      this.entries.set(key, {
-        ref,
-        args,
-        value: undefined,
-        error: null,
-        listeners: new Set(),
-      });
-    }
-    const entry = this.entries.get(key);
-    const [, bump] = useReducer((x: number) => x + 1, 0);
-    useEffect(() => {
-      if (!entry) return;
-      entry.listeners.add(bump);
-      void this.refresh(key);
-      return () => void entry.listeners.delete(bump);
-    }, [key]);
-    if (!entry) return undefined;
-    if (entry.error) throw entry.error;
-    return entry.value;
-  }
+  useQuery = useHistorySimQuery.bind(this);
 
   useMutation(ref: unknown) {
     if (!this.mutations.has(ref)) {
@@ -104,50 +82,7 @@ class HistorySim {
     return this.mutations.get(ref)!;
   }
 
-  usePaginatedQuery(
-    ref: unknown,
-    args: Record<string, unknown> | "skip",
-    opts: { initialNumItems: number },
-  ) {
-    const [state, setState] = useState<{
-      results: unknown[];
-      cursor: string | null;
-      status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
-      error: unknown;
-    }>({ results: [], cursor: null, status: "LoadingFirstPage", error: null });
-    const fetchPage = async (cursor: string | null, numItems: number) => {
-      try {
-        const page = (await this.face.query(
-          ref as never,
-          {
-            ...(args as Record<string, unknown>),
-            paginationOpts: { numItems, cursor },
-          } as never,
-        )) as { page: unknown[]; isDone: boolean; continueCursor: string };
-        setState((prev) => ({
-          results:
-            cursor === null ? page.page : [...prev.results, ...page.page],
-          cursor: page.continueCursor,
-          status: page.isDone ? "Exhausted" : "CanLoadMore",
-          error: null,
-        }));
-      } catch (error) {
-        setState((prev) => ({ ...prev, error }));
-      }
-    };
-    useEffect(() => {
-      if (args !== "skip") void fetchPage(null, opts.initialNumItems);
-    }, []);
-    if (state.error) throw state.error;
-    return {
-      results: state.results,
-      status: state.status,
-      loadMore: (n: number) => {
-        setState((prev) => ({ ...prev, status: "LoadingMore" }));
-        void fetchPage(state.cursor, n);
-      },
-    };
-  }
+  usePaginatedQuery = useHistorySimPaginatedQuery.bind(this);
 }
 
 const sim = vi.hoisted(() => ({
@@ -342,6 +277,29 @@ describe("with the client flag on", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
+  it("shows the elapsed call duration in the recap and history, including short calls", async () => {
+    await t.run(async (ctx) => {
+      const state = await ctx.db
+        .query("meetingState")
+        .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+        .unique();
+      if (!state) throw new Error("Missing seeded meeting state");
+      await ctx.db.patch(state._id, { endedAt: STARTED + 31000 });
+    });
+    render(
+      <>
+        <MeetingList />
+        <MeetingDetail meetingId={meetingId} />
+      </>,
+    );
+    expect(await screen.findByTestId("meeting-recap")).toHaveTextContent(
+      "31 seconds",
+    );
+    expect(await screen.findByTestId("meeting-list")).toHaveTextContent(
+      "31 seconds",
+    );
+  });
+
   it("refuses the recap to someone who was not in the meeting", async () => {
     sim.current.face = people.O;
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -414,27 +372,41 @@ describe("with the client flag on", () => {
 
   it("stay in touch ignores repeated presses while saving, then accepts the next choice", async () => {
     let release!: () => void;
-    const pending = new Promise<void>((resolve) => { release = resolve; });
-    const realMutation = people.A.mutation.bind(people.A);
-    const mutation = vi.spyOn(people.A, "mutation").mockImplementation(async (fn, args = {}) => {
-      await pending;
-      return realMutation(fn, args);
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
     });
+    const realMutation = people.A.mutation.bind(people.A);
+    const mutation = vi
+      .spyOn(people.A, "mutation")
+      .mockImplementation(async (fn, args = {}) => {
+        await pending;
+        return realMutation(fn, args);
+      });
     render(<MeetingDetail meetingId={meetingId} />);
     const toggle = await screen.findByTestId("stay-in-touch-switch");
     fireEvent.click(toggle);
     fireEvent.click(toggle);
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-disabled", "true");
-    expect(mutation.mock.calls.map(([, args]) => args)).toEqual([{ meetingId, enabled: true }]);
-    await act(async () => { release(); });
+    expect(mutation.mock.calls.map(([, args]) => args)).toEqual([
+      { meetingId, enabled: true },
+    ]);
+    await act(async () => {
+      release();
+    });
     await screen.findByText(/Nobody else has yet/);
     fireEvent.click(toggle);
-    await waitFor(() => expect(toggle).toHaveAttribute("aria-disabled", "false"));
+    await waitFor(() =>
+      expect(toggle).toHaveAttribute("aria-disabled", "false"),
+    );
     expect(mutation.mock.calls.map(([, args]) => args)).toEqual([
-      { meetingId, enabled: true }, { meetingId, enabled: false },
+      { meetingId, enabled: true },
+      { meetingId, enabled: false },
     ]);
-    const status = await people.A.query(api.history.queries.getStayInTouchStatus, { meetingId });
+    const status = await people.A.query(
+      api.history.queries.getStayInTouchStatus,
+      { meetingId },
+    );
     expect(status.enabled).toBe(false);
   });
 
@@ -453,3 +425,76 @@ describe("with the client flag on", () => {
     expect(recap).toHaveTextContent("Bob Brown");
   });
 });
+
+function useHistorySimQuery(
+  this: HistorySim,
+  ref: unknown,
+  args: Record<string, unknown> | "skip",
+) {
+  const key = `${getFunctionName(ref as never)}|${JSON.stringify(args)}`;
+  if (args !== "skip" && !this.entries.has(key)) {
+    this.entries.set(key, {
+      ref,
+      args,
+      value: undefined,
+      error: null,
+      listeners: new Set(),
+    });
+  }
+  const entry = this.entries.get(key);
+  const [, bump] = useReducer((x: number) => x + 1, 0);
+  useEffect(() => {
+    if (!entry) return;
+    entry.listeners.add(bump);
+    void this.refresh(key);
+    return () => void entry.listeners.delete(bump);
+  }, [key]);
+  if (!entry) return undefined;
+  if (entry.error) throw entry.error;
+  return entry.value;
+}
+
+function useHistorySimPaginatedQuery(
+  this: HistorySim,
+  ref: unknown,
+  args: Record<string, unknown> | "skip",
+  opts: { initialNumItems: number },
+) {
+  const [state, setState] = useState<{
+    results: unknown[];
+    cursor: string | null;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    error: unknown;
+  }>({ results: [], cursor: null, status: "LoadingFirstPage", error: null });
+  const fetchPage = async (cursor: string | null, numItems: number) => {
+    try {
+      const page = (await this.face.query(
+        ref as never,
+        {
+          ...(args as Record<string, unknown>),
+          paginationOpts: { numItems, cursor },
+        } as never,
+      )) as { page: unknown[]; isDone: boolean; continueCursor: string };
+      setState((prev) => ({
+        results: cursor === null ? page.page : [...prev.results, ...page.page],
+        cursor: page.continueCursor,
+        status: page.isDone ? "Exhausted" : "CanLoadMore",
+        error: null,
+      }));
+    } catch (error) {
+      setState((prev) => ({ ...prev, error }));
+    }
+  };
+  useEffect(() => {
+    if (args !== "skip") void fetchPage(null, opts.initialNumItems);
+  }, []);
+  if (state.error) throw state.error;
+  return {
+    results: state.results,
+    status: state.status,
+    loadMore: (n: number) => {
+      setState((prev) => ({ ...prev, status: "LoadingMore" }));
+      void fetchPage(state.cursor, n);
+    },
+  };
+}

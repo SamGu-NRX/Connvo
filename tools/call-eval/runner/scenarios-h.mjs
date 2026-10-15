@@ -737,7 +737,13 @@ export async function scenario_H_17(ctx, { seed }) {
   await installColorHook(receiver);
   await click(sender, "toggle-camera");
   await waitAttr(receiver, late, "data-video-off", "false", 5000);
-  const live = await waitForLiveMedia(receiver, late, { deadlineAt: Date.now() + 10000, label: late });
+  let live;
+  try {
+    live = await waitForLiveMedia(receiver, late, { deadlineAt: Date.now() + 10000, label: late });
+  } catch (error) {
+    const diagnostics = await Promise.all([pageDiagnostics(sender), pageDiagnostics(receiver)]);
+    throw new ScenarioError(`${error instanceof Error ? error.message : String(error)} | diagnostics ${JSON.stringify(diagnostics)}`);
+  }
   const fps = await measureFps(receiver, late, 2000);
   if (fps.fps <= 0) throw new ScenarioError("H-17 remote camera frames did not advance", fps);
   return { lateCameraParticipant: late, liveCaptureTracksBefore: captureBefore.tracks.live, audioHz: audio.peakHz, decoded: true, fps: fps.fps, liveAt: live.liveAt };

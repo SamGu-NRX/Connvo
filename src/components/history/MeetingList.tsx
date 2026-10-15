@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistoryBoundary } from "./HistoryBoundary";
+import { formatRecordedDuration } from "@/lib/history/duration";
 import { SIGNED_OUT_MESSAGE, useHistoryAuth } from "./useHistoryAuth";
 
 const PAGE = 20;
@@ -62,6 +63,9 @@ export function MeetingListRows({ items }: { items: Item[] }) {
               <span className="text-muted-foreground text-sm">
                 {formatMeetingTime(item.meeting.scheduledAt)}
                 {item.role === "host" ? " · You hosted" : ""}
+                {formatRecordedDuration(item.startedAt, item.endedAt)
+                  ? ` · ${formatRecordedDuration(item.startedAt, item.endedAt)}`
+                  : ""}
               </span>
             </span>
             <Badge variant="outline">{STATE_LABEL[item.meeting.state]}</Badge>

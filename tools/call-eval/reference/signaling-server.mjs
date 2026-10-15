@@ -69,7 +69,10 @@ const arg = (/** @type {string} */ name) => {
 
 const port = Number(arg("port"));
 const variant = arg("variant");
-if (!port || !Number.isInteger(port) || port < PORT_MIN || port > PORT_MAX) {
+// Protocol tests bind an OS-assigned port so parallel runner tests cannot
+// take their listener. The ordinary CLI still requires the reserved range.
+const testEphemeral = arg("test-ephemeral") === "1" && port === 0;
+if (!testEphemeral && (!port || !Number.isInteger(port) || port < PORT_MIN || port > PORT_MAX)) {
   fail(`--port must be an integer in [${PORT_MIN}..${PORT_MAX}]`);
 }
 if (!variant || !VARIANTS.includes(variant)) {
@@ -427,5 +430,7 @@ wss.on("connection", (socket) => {
 
 server.listen(port, "127.0.0.1", () => {
   // Exactly one JSON line when ready (pinned).
-  console.log(JSON.stringify({ ok: true, port: typeof server.address() === "object" && server.address() !== null ? port : null, variant, ...(bench ? { mint: true } : {}) }));
+  const address = server.address();
+  if (!address || typeof address === "string") fail("signaling server has no TCP address");
+  console.log(JSON.stringify({ ok: true, port: address.port, variant, ...(bench ? { mint: true } : {}) }));
 });
