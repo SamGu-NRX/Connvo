@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,20 +17,21 @@ import {
   Users,
 } from "lucide-react";
 import { LAST_MEETING_SUMMARY_KEY } from "@/constants/meeting";
+import { z } from "zod";
 
-type StoredMeetingSummary = {
-  meetingId: string;
-  partnerName: string;
-  queueType: "casual" | "professional";
-  durationSeconds: number;
-  participants: Array<{ name: string; role?: string }>;
-  messages: { total: number; you: number; partner: number };
-  notes: string;
-  notesLength: number;
-  endedAt: string;
-  promptsViewed: string[];
-  activePrompt: string;
-};
+const storedMeetingSummary = z.object({
+  meetingId: z.string(),
+  partnerName: z.string(),
+  queueType: z.enum(["casual", "professional"]),
+  durationSeconds: z.number(),
+  participants: z.array(z.object({ name: z.string(), role: z.string().optional() })),
+  messages: z.object({ total: z.number(), you: z.number(), partner: z.number() }),
+  notes: z.string(),
+  notesLength: z.number(),
+  endedAt: z.string(),
+  promptsViewed: z.array(z.string()),
+  activePrompt: z.string(),
+});
 
 const formatDuration = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -38,26 +39,33 @@ const formatDuration = (seconds: number) => {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
+const subscribeToSummary = (notify: () => void) => {
+  window.addEventListener("storage", notify);
+  return () => window.removeEventListener("storage", notify);
+};
+const summarySnapshot = () => {
+  try { return sessionStorage.getItem(LAST_MEETING_SUMMARY_KEY); }
+  catch { return null; }
+};
+const serverSummarySnapshot = () => undefined;
+
 export default function MeetingSummaryPage() {
   const router = useRouter();
-  const [summary, setSummary] = useState<StoredMeetingSummary | null>(null);
-  const [isCheckingSummary, setIsCheckingSummary] = useState(true);
+  const raw = useSyncExternalStore(subscribeToSummary, summarySnapshot, serverSummarySnapshot);
+  const isCheckingSummary = raw === undefined;
+  const { summary, error } = useMemo(() => {
+    try {
+      return { summary: raw ? storedMeetingSummary.parse(JSON.parse(raw)) : null, error: null };
+    } catch (error) {
+      return { summary: null, error };
+    }
+  }, [raw]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const raw = sessionStorage.getItem(LAST_MEETING_SUMMARY_KEY);
-      if (!raw) return;
-
-      setSummary(JSON.parse(raw));
-    } catch (error) {
-      console.warn("Failed to parse stored meeting summary", error);
-      sessionStorage.removeItem(LAST_MEETING_SUMMARY_KEY);
-    } finally {
-      setIsCheckingSummary(false);
-    }
-  }, []);
+    if (!error) return;
+    console.warn("Failed to parse stored meeting summary", error);
+    sessionStorage.removeItem(LAST_MEETING_SUMMARY_KEY);
+  }, [error]);
 
   const handleBackToApp = () => {
     router.push("/app");

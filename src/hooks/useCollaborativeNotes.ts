@@ -93,6 +93,8 @@ export function useCollaborativeNotes(
   const applyOperationMutation = useMutation(api.notes.mutations.applyNoteOperation);
   const batchApplyMutation = useMutation(api.notes.mutations.batchApplyNoteOperations);
 
+  const version = notes?.version ?? 0;
+
   // Apply single operation
   const applyOperation = useCallback(async (operation: NoteOperation) => {
     setIsSyncing(true);
@@ -106,7 +108,7 @@ export function useCollaborativeNotes(
           content: operation.text,
           length: operation.length,
         },
-        clientSequence: notes?.version ?? 0,
+        clientSequence: version,
       });
     } catch (err) {
       console.error("Failed to apply note operation:", err);
@@ -114,7 +116,7 @@ export function useCollaborativeNotes(
     } finally {
       setIsSyncing(false);
     }
-  }, [meetingId, applyOperationMutation, notes?.version]);
+  }, [meetingId, applyOperationMutation, version]);
 
   // Apply multiple operations in batch
   const applyOperations = useCallback(async (operations: NoteOperation[]) => {
@@ -130,7 +132,7 @@ export function useCollaborativeNotes(
             content: op.text,
             length: op.length,
           },
-          clientSequence: notes?.version ?? 0,
+          clientSequence: version,
         })),
       });
     } catch (err) {
@@ -139,7 +141,7 @@ export function useCollaborativeNotes(
     } finally {
       setIsSyncing(false);
     }
-  }, [meetingId, batchApplyMutation, notes?.version]);
+  }, [meetingId, batchApplyMutation, version]);
 
   return {
     notes,
