@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { ConvexClient } from "convex/browser";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { createEvalMeeting } from "./runner/convex-signaling.mjs";
 
 async function main() {
   const state = JSON.parse(
@@ -17,7 +18,13 @@ async function main() {
   assert.equal(url.protocol, "http:");
   assert.equal(url.hostname, "127.0.0.1");
   assert.equal(Number(url.port), config.ports.cloud);
-  const meetingId = state.meetingId as Id<"meetings">;
+  const meetingId = createEvalMeeting(
+    "Live prompt acceptance",
+  ) as Id<"meetings">;
+  writeFileSync(
+    "tools/call-eval/out/state.json",
+    JSON.stringify({ ...state, meetingId }, null, 2),
+  );
   const key = createPrivateKey({
     key: JSON.parse(
       readFileSync("tools/call-eval/.local/keys/private.jwk.json", "utf8"),
@@ -68,6 +75,19 @@ async function main() {
     );
     const latencyMs = Math.round(performance.now() - start);
     assert.equal(picked.filter((p) => p.status === "shown").length, 1);
+    const waitFor = async (ready: () => boolean) => {
+      const deadline = Date.now() + 5000;
+      while (!ready()) {
+        if (Date.now() > deadline)
+          throw new Error("Both subscriptions did not receive shared state");
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    };
+    await waitFor(() =>
+      ["A", "B"].every((peer) =>
+        observations.some((o) => o.peer === peer && o.content),
+      ),
+    );
     const view = await a.query(api.prompts.live.current, { meetingId });
     assert.ok(view.prompt);
     assert.deepEqual(
@@ -79,6 +99,11 @@ async function main() {
       promptId: view.prompt.id,
     });
     await a.mutation(api.prompts.live.pauseAuto, { meetingId, paused: true });
+    await waitFor(() =>
+      ["A", "B"].every((peer) =>
+        observations.some((o) => o.peer === peer && o.used && o.paused),
+      ),
+    );
     assert.equal(
       (await b.query(api.prompts.live.current, { meetingId })).autoPaused,
       true,
