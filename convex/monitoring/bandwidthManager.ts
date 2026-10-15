@@ -16,6 +16,7 @@ import {
   internalMutation,
 } from "@convex/_generated/server";
 import { Id } from "@convex/_generated/dataModel";
+import { logAudit } from "@convex/lib/audit";
 import { requireIdentity } from "@convex/auth/guards";
 import { PerformanceCircuitBreaker } from "@convex/lib/performance";
 
@@ -522,7 +523,6 @@ export const resetCircuitBreaker = mutation({
 
     if (success) {
       // Log the reset action
-      const { logAudit } = await import("@convex/lib/audit");
       await logAudit(ctx, {
         actorUserId: identity.userId as Id<"users">,
         resourceType: "circuit_breaker",

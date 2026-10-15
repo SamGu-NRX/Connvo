@@ -79,6 +79,12 @@ export async function launchPeer({
   page.on("pageerror", (err) => {
     console.error(`[pageerror ${participant}]`, err?.message?.slice(0, 300));
   });
+  page.on("console", (msg) => {
+    // All levels: Convex client auth/reconnect activity logs at info/debug,
+    // and the onboarding submit handler's catch logs the real failure at
+    // error. Without this the submit failure mode was invisible.
+    console.error(`[console ${participant}] ${msg.type()}:`, msg.text().slice(0, 240));
+  });
 
   return {
     peerId: participant,

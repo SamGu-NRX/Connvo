@@ -54,6 +54,12 @@ const TEST_AUTH_PROXY_PATHS = new Set([
   "/app/professional/collaboration",
   "/app/professional/mentorship",
   "/app/professional/investment",
+  // The full journey proof starts before the queue: the onboarding wizard and
+  // the app home (the product's own route into the queue) must be reachable
+  // with the same local identities, or a synthetic user can never onboard or
+  // navigate to matching through the shipped UI.
+  "/onboarding",
+  "/app",
 ]);
 
 export function testAuthProxyExempt(

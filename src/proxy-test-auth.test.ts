@@ -136,6 +136,11 @@ describe("proxy test-auth exemption (CALL-PLAN D3)", () => {
       "/api/test-auth/tokens",
       "/api/test-auth",
       "/dev",
+      // Near-misses for the journey's own surfaces: exemption is exact-match,
+      // so prefixes and siblings of /onboarding and /app stay behind WorkOS.
+      "/onboarding/extra",
+      "/app/extra",
+      "/application",
     ]) {
       handleAuthStub.mockClear();
       await run(path);

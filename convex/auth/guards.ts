@@ -11,6 +11,7 @@
 import { v } from "convex/values";
 import { QueryCtx, MutationCtx, ActionCtx } from "@convex/_generated/server";
 import { internal } from "@convex/_generated/api";
+import { logAudit } from "@convex/lib/audit";
 import { Id } from "@convex/_generated/dataModel";
 import { createError } from "@convex/lib/errors";
 
@@ -242,8 +243,7 @@ async function logAuditEvent(
   const dbAny = (ctx as any).db;
   if (dbAny && typeof dbAny.insert === "function") {
     try {
-      const { logAudit } = await import("@convex/lib/audit");
-      await logAudit(ctx as any, {
+      const auditResult = await logAudit(ctx as any, {
         actorUserId: event.actorUserId,
         resourceType: event.resourceType,
         resourceId: event.resourceId,
@@ -252,6 +252,7 @@ async function logAuditEvent(
         success: true,
         metadata: event.metadata || {},
       });
+      void auditResult;
     } catch (error) {
       // Log audit failures but don't block the main operation
       console.error("Failed to log audit event:", error);
