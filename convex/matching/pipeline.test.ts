@@ -25,6 +25,7 @@ function person(overrides: Partial<MatcherSnapshotPerson>): MatcherSnapshotPerso
     blocks: [{ weekday: 1, startMinute: 9 * 60, endMinute: 10 * 60 }],
     meetingsThisWeek: 0,
     waitingRuns: 0,
+    strikes: 0,
     metRecently: [],
     talkAgainBoth: [],
     ...overrides,

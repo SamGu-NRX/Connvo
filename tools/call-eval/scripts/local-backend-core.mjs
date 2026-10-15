@@ -181,6 +181,7 @@ export const HARNESS_INCLUDE_DIRS = [
   "devEval", // eval seed mutation (devEval/seed) invoked in step 4/6
   "history", // after-call history (#33), behind CONNVO_AFTER_CALL
   "network", // post-call feedback + mutual connections (cv6-connect-network)
+  "emails", // matcher emails: introductions, confirmations, reminders (cv6-proposal-ui); matching/run.ts schedules internal.emails.*
 ];
 
 export const HARNESS_EXTERNAL = ["@stream-io/video-react-sdk", "openai"];

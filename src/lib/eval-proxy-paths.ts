@@ -49,6 +49,9 @@ const TEST_AUTH_PROXY_PATHS = new Set([
   "/api/test-auth/token",
   // Queue-to-call proofs use the same local identities as the call harness.
   "/app/match-queue",
+  // The home page is the cv6-proposal-ui verification surface (proposal card,
+  // upcoming chat, calm matcher state); its data is guarded by Convex.
+  "/app",
   // The Your network page is an after-call surface reached with harness
   // identities (cv6-connect-network); its Convex auth is the test adapter.
   "/app/dashboard",

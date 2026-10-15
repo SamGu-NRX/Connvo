@@ -32,6 +32,7 @@ import {
 } from "./pipeline";
 import type { WeeklyBlock } from "./slots";
 import { candidatesKeyHash, rerankShortlist } from "./decisions";
+import { activeStrikes, STRIKE_WINDOW_MS } from "./strikes";
 
 /** Cache lifetime for Decisions answers (plan: "answers are cached for 7 days"). */
 const DECISIONS_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -150,6 +151,12 @@ async function snapshotPerson(
     if (row.state !== "confirmed") waitingRuns.add(row.runAt);
   }
 
+  // Active no-show strikes: two inside the window pause matching.
+  const strikeRows = await ctx.db
+    .query("matchingStrikes")
+    .withIndex("by_user", (q) => q.eq("userId", profile.userId))
+    .collect();
+
   return {
     userId: profile.userId,
     displayName: profile.displayName,
@@ -164,6 +171,7 @@ async function snapshotPerson(
     blocks,
     meetingsThisWeek,
     waitingRuns: waitingRuns.size,
+    strikes: activeStrikes(strikeRows, now).length,
     metRecently: [...metRecently],
     talkAgainBoth: [...talkAgainYes],
   };
@@ -292,6 +300,13 @@ export const writeProposals = internalMutation({
         updatedAt: args.runAt,
       });
       const proposalId = inserted;
+      // A new introduction goes out to both people (the console provider
+      // logs it unless RESEND_API_KEY is set on the deployment).
+      await ctx.scheduler.runAfter(
+        0,
+        internal.emails.deliver.proposalIntroduced,
+        { proposalId },
+      );
       // The proposal dies on its own at expiresAt: state flips to "expired"
       // unless a person has already acted. The accept mutation still guards
       // on expiresAt, so a late accept can never slip through.

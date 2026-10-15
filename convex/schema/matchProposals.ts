@@ -54,5 +54,6 @@ export const matchProposalsTable = {
     .index("by_user_a", ["userAId"])
     .index("by_user_b", ["userBId"])
     .index("by_state", ["state"])
-    .index("by_expires", ["expiresAt"]),
+    .index("by_expires", ["expiresAt"])
+    .index("by_meeting", ["meetingId"]),
 };
