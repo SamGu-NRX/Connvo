@@ -710,6 +710,19 @@ async function main() {
     },
   );
 
+  await check(
+    "J1c-queue-state-reset",
+    "harness clears prior-run queue entries and meeting history so repeat runs start clean",
+    () => {
+      const { entriesDeleted, participantsDeleted } = devEval(
+        "devEval/queueProof:resetQueueState",
+        { subjects: ["local-test-a", "local-test-b"] },
+        { envLocalPath, target },
+      );
+      return { entriesDeleted, participantsDeleted };
+    },
+  );
+
   const a = await person("A");
   const b = await person("B");
 
@@ -887,46 +900,86 @@ async function main() {
     },
   );
 
-  // 4. Lobby join and media both ways.
+  // The product's accept navigation drops the local-only `?as=` identity
+  // param, and a call page loaded without it defaults to identity A. Both
+  // peers then open the call mesh as the same user, and joinCall's
+  // one-session-per-user rule closes the first session as "replaced" —
+  // neither side ever sees the other. Re-assert each peer's identity on the
+  // call URL before joining: the same convention every other page load in
+  // this harness uses, standing in for each browser's own real session.
   stage = "connect";
+  await Promise.all(
+    [
+      { id: "A", peer: a },
+      { id: "B", peer: b },
+    ].map(({ id, peer }) => {
+      const url = new URL(peer.page.url());
+      url.searchParams.set("as", id);
+      return peer.page.goto(url.toString(), {
+        waitUntil: "domcontentloaded",
+      });
+    }),
+  );
+
   await check(
     "J9-media-exchange-both-ways",
     "each side joins, connects, decodes the other's fixture color and hears its tone",
     async () => {
-      await Promise.all(
-        [a, b].map((peer) =>
-          peer.page.getByTestId("join-call").click({ timeout: 60_000 }),
-        ),
-      );
-      await Promise.all([a, b].map(expectConnected));
-      const forA = await remoteId(a);
-      const forB = await remoteId(b);
-      await pollUntil(async () => (await decodePeerColor(a, forA)) === "B", {
-        timeoutMs: 45_000,
-        label: "A decoding B's fixture color",
-      });
-      await pollUntil(async () => (await decodePeerColor(b, forB)) === "A", {
-        timeoutMs: 45_000,
-        label: "B decoding A's fixture color",
-      });
-      const fpsA = await measureFps(a, forA, 5000);
-      const fpsB = await measureFps(b, forB, 5000);
-      assert.ok(
-        fpsA.fps >= 10,
-        `A sees ${fpsA.fps} fps (min 10 on a loaded host)`,
-      );
-      assert.ok(
-        fpsB.fps >= 10,
-        `B sees ${fpsB.fps} fps (min 10 on a loaded host)`,
-      );
-      const aHears = await expectTone(a, forA, 660);
-      const bHears = await expectTone(b, forB, 440);
-      return {
-        fpsA: fpsA.fps,
-        fpsB: fpsB.fps,
-        aHears: aHears.heard,
-        bHears: bHears.heard,
-      };
+      try {
+        await Promise.all(
+          [a, b].map((peer) =>
+            peer.page.getByTestId("join-call").click({ timeout: 60_000 }),
+          ),
+        );
+        await Promise.all([a, b].map(expectConnected));
+        const forA = await remoteId(a);
+        const forB = await remoteId(b);
+        await pollUntil(async () => (await decodePeerColor(a, forA)) === "B", {
+          timeoutMs: 45_000,
+          label: "A decoding B's fixture color",
+        });
+        await pollUntil(async () => (await decodePeerColor(b, forB)) === "A", {
+          timeoutMs: 45_000,
+          label: "B decoding A's fixture color",
+        });
+        const fpsA = await measureFps(a, forA, 5000);
+        const fpsB = await measureFps(b, forB, 5000);
+        assert.ok(
+          fpsA.fps >= 10,
+          `A sees ${fpsA.fps} fps (min 10 on a loaded host)`,
+        );
+        assert.ok(
+          fpsB.fps >= 10,
+          `B sees ${fpsB.fps} fps (min 10 on a loaded host)`,
+        );
+        const aHears = await expectTone(a, forA, 660);
+        const bHears = await expectTone(b, forB, 440);
+        return {
+          fpsA: fpsA.fps,
+          fpsB: fpsB.fps,
+          aHears: aHears.heard,
+          bHears: bHears.heard,
+        };
+      } catch (error) {
+        // The transport records its presence view in window.__connvoCallLog
+        // (NEXT_PUBLIC_CONNVO_CALL_BENCH is set by the boot). "welcome []"
+        // here is decisive: the peer's signaling saw no other participant.
+        for (const { label, peer } of [
+          { label: "A", peer: a },
+          { label: "B", peer: b },
+        ]) {
+          const traces = await peer.page
+            .evaluate(() => {
+              const w = /** @type {{ __connvoCallLog?: string[] }} */ (window);
+              return (w.__connvoCallLog ?? ["(no trace log)"])
+                .slice(-60)
+                .join(" | ");
+            })
+            .catch(() => "(page unavailable)");
+          log(`call trace ${label}: ${traces}`);
+        }
+        throw error;
+      }
     },
   );
 

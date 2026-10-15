@@ -1,6 +1,7 @@
 // Internal fixtures for the local queue-to-call browser proof. Never client-callable.
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { entryForUser, leaveQueue } from "../matching/callQueue";
@@ -201,12 +202,80 @@ export const entryState = internalQuery({
     if (!user) throw new Error(`Seeded user missing: ${subject}`);
     const entry = await entryForUser(ctx, user._id);
     if (!entry) return { state: "idle", noticeType: null, matchState: null };
-    const match = entry.matchId ? await ctx.db.get(entry.matchId) : null;
+    // A released entry (declined/expired) keeps no matchId reference; the
+    // released match's id survives in the release notice, so resolve the
+    // match through it to report what that match row now reads. The notice
+    // validator types id as a plain string; releaseMatch writes the match id.
+    const noticeId = entry.notice?.id;
+    const matchId =
+      entry.matchId ??
+      (noticeId ? (noticeId as Id<"callQueueMatches">) : undefined);
+    const match = matchId ? await ctx.db.get(matchId) : null;
     return {
       state: entry.state,
       noticeType: entry.notice?.type ?? null,
       matchState: match?.state ?? null,
     };
+  },
+});
+
+/** Return the harness identities' queue and call history to a pristine state
+ *  between journey runs. A prior run's decline stamps mutual blocks into
+ *  still-active queue entries and joinQueue reuses unexpired entries as-is,
+ *  which would prevent re-pairing for the rest of the 15-minute queue window;
+ *  concluded journey meetings would also inflate the participant count the
+ *  proof asserts. Deletes the identities' queue entries (releasing any pending
+ *  match as expired) and the meeting rows prior runs created.
+ */
+export const resetQueueState = internalMutation({
+  args: { subjects: v.array(v.string()) },
+  returns: v.object({
+    entriesDeleted: v.number(),
+    participantsDeleted: v.number(),
+    meetingsDeleted: v.number(),
+  }),
+  handler: async (ctx, { subjects }) => {
+    requireLocalTestBackend();
+    let entriesDeleted = 0;
+    let participantsDeleted = 0;
+    const meetingIds = new Set<Id<"meetings">>();
+    for (const subject of subjects) {
+      if (!HARNESS_SUBJECT_RE.test(subject))
+        throw new Error(`Only harness identities may be reset: ${subject}`);
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+        .unique();
+      if (!user) throw new Error(`Run devEval/seed first: ${subject} missing`);
+      const entries = await ctx.db
+        .query("callQueueEntries")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      for (const entry of entries) {
+        if (entry.matchId) {
+          const match = await ctx.db.get(entry.matchId);
+          if (match?.state === "pending")
+            await ctx.db.patch(match._id, { state: "expired" });
+        }
+        await ctx.db.delete(entry._id);
+        entriesDeleted += 1;
+      }
+      const rows = await ctx.db
+        .query("meetingParticipants")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      for (const row of rows) {
+        meetingIds.add(row.meetingId);
+        await ctx.db.delete(row._id);
+        participantsDeleted += 1;
+      }
+    }
+    let meetingsDeleted = 0;
+    for (const meetingId of meetingIds) {
+      await ctx.db.delete(meetingId);
+      meetingsDeleted += 1;
+    }
+    return { entriesDeleted, participantsDeleted, meetingsDeleted };
   },
 });
 
