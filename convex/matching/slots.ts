@@ -193,7 +193,13 @@ export function sharedSlots(
   );
   const slots: number[] = [];
   for (const overlap of intersectIntervals(a, b)) {
-    const first = Math.max(overlap.start, earliest);
+    // When the lead time cuts into an overlap, round up to the next slot step
+    // from the overlap's start; otherwise "now + 18h" leaks into the proposal
+    // as an odd minute like 8:13 PM.
+    const first =
+      overlap.start >= earliest
+        ? overlap.start
+        : overlap.start + Math.ceil((earliest - overlap.start) / slotMs) * slotMs;
     for (let s = first; s + slotMs <= overlap.end; s += slotMs) {
       slots.push(s);
       if (slots.length >= maxSlots) return slots;
