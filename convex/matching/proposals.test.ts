@@ -10,6 +10,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api, internal } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { createMeetingRecords } from "@convex/meetings/lifecycle";
 import { createTestEnvironment } from "../../test/convex/helpers";
 
 type TestServer = ReturnType<typeof createTestEnvironment>;
@@ -260,5 +261,39 @@ describe("matchProposals state machine", () => {
     // No proposal for the outsider.
     const mallory = authOf(t, "Mallory");
     expect(await mallory.query(api.matching.proposals.myProposal, {})).toBeNull();
+  });
+
+  it("refuses a time either person booked after the proposal was written", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedProposal(t);
+    // After the proposal was written, Alice books chats at the proposed time
+    // and at the first alternative with someone else.
+    await t.run(async (ctx) => {
+      for (const scheduledAt of [SLOT, SLOT + 30 * 60_000]) {
+        await createMeetingRecords(ctx, {
+          organizerId: fx.aliceId as Id<"users">,
+          title: "Another chat",
+          scheduledAt,
+          duration: 30 * 60_000,
+          webrtcEnabled: true,
+          recordingEnabled: false,
+          participantIds: [fx.outsiderId as Id<"users">],
+        });
+      }
+    });
+
+    await expect(
+      authOf(t, "Bob").mutation(api.matching.proposals.chooseAlternative, {
+        proposalId: fx.proposalId,
+        index: 0,
+      }),
+    ).rejects.toThrowError(/already has a chat/);
+    await expect(
+      authOf(t, "Bob").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId }),
+    ).rejects.toThrowError(/already has a chat/);
+
+    const row = await t.run((ctx) => ctx.db.get(fx.proposalId));
+    expect(row?.scheduledAt).toBe(SLOT);
+    expect(row?.aAccepted || row?.bAccepted).toBe(false);
   });
 });

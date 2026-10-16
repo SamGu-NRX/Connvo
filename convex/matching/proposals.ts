@@ -14,6 +14,7 @@
  */
 
 import { v } from "convex/values";
+import { clashesWithBooking } from "./run";
 import {
   internalMutation,
   mutation,
@@ -92,6 +93,19 @@ async function refuseExpired(
   }
 }
 
+/** Refuses a time that now overlaps a chat either person booked since the proposal was written. */
+async function refuseBookedTime(
+  ctx: MutationCtx,
+  row: { userAId: Id<"users">; userBId: Id<"users"> },
+  start: number,
+) {
+  if (await clashesWithBooking(ctx, [row.userAId, row.userBId], start)) {
+    throw createError.conflict(
+      "One of you already has a chat at that time. Pick another time or decline.",
+    );
+  }
+}
+
 /**
  * Scheduled expiry: written proposals schedule this at their expiresAt
  * (earlier of 48 hours out or 2 hours before the time). A no-op when the
@@ -132,6 +146,7 @@ export const accept = mutation({
       args.proposalId,
     );
     await refuseExpired(row);
+    await refuseBookedTime(ctx, row, row.scheduledAt);
 
     const now = Date.now();
     const isA = row.userAId === identity.userId;
@@ -201,6 +216,7 @@ export const chooseAlternative = mutation({
     }
 
     const chosen = row.alternatives[args.index];
+    await refuseBookedTime(ctx, row, chosen);
     const rest = row.alternatives.filter((_, i) => i !== args.index);
     const isA = row.userAId === identity.userId;
     await ctx.db.patch(row._id, {

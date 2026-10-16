@@ -68,6 +68,23 @@ async function bookedFor(ctx: QueryCtx, userId: Id<"users">, now: number): Promi
   return booked;
 }
 
+/**
+ * Whether a chat starting at `start` overlaps anything either person has
+ * booked right now. Proposal times are only checked when proposals are
+ * written, so accepting or switching a time rechecks with this.
+ */
+export async function clashesWithBooking(
+  ctx: QueryCtx,
+  userIds: Id<"users">[],
+  start: number,
+): Promise<boolean> {
+  const now = Date.now();
+  for (const userId of userIds) {
+    if (overlapsBooked(start, CHAT_MS, await bookedFor(ctx, userId, now))) return true;
+  }
+  return false;
+}
+
 /** Build one snapshot person from the profile plus related tables. */
 async function snapshotPerson(
   ctx: QueryCtx,
