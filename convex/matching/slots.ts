@@ -4,19 +4,24 @@
  * availabilityBlocks rows are wall-clock minutes in one person's own IANA
  * timezone. To find times two people share, each person's blocks are expanded
  * into absolute UTC intervals over a horizon, and the intersections are cut
- * into 30-minute meeting slots. Every conversion goes through Intl with the
- * IANA zone, so daylight-saving changes fall out of the offset arithmetic:
- * a block stays at the same wall-clock time and moves in UTC when the zone's
- * offset changes.
+ * into 30-minute meeting slots. Every conversion goes through the one
+ * wall-clock rule in src/lib/availability/zoneTime.ts — the same module the
+ * client editor imports — so the matcher and the editor cannot disagree about
+ * which instant a free hour falls on, and daylight-saving changes fall out of
+ * the offset arithmetic: a block stays at the same wall-clock time and moves
+ * in UTC when the zone's offset changes.
  */
 
-export interface WeeklyBlock {
-  /** 0-6, 0 = Sunday (JS getDay convention). */
-  weekday: number;
-  /** Minutes from local midnight; endMinute > startMinute; 30-minute steps. */
-  startMinute: number;
-  endMinute: number;
-}
+import {
+  occurrencesOnCivilDays,
+  wallParts,
+  wallToInstant,
+  type WeeklyBlock,
+} from "../../src/lib/availability/zoneTime";
+
+export type { WeeklyBlock } from "../../src/lib/availability/zoneTime";
+export type { WallParts } from "../../src/lib/availability/zoneTime";
+export { wallParts, tzOffsetMs } from "../../src/lib/availability/zoneTime";
 
 export interface Interval {
   /** UTC epoch ms. */
@@ -44,68 +49,10 @@ export interface SharedSlotOptions {
   booked?: Interval[];
 }
 
-const formatters = new Map<string, Intl.DateTimeFormat>();
-
-function formatterFor(timeZone: string): Intl.DateTimeFormat {
-  let f = formatters.get(timeZone);
-  if (!f) {
-    f = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hourCycle: "h23",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    formatters.set(timeZone, f);
-  }
-  return f;
-}
-
-export interface WallParts {
-  year: number;
-  /** 1-12. */
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  weekday: number;
-}
-
-/** The wall-clock parts of a UTC instant as seen in the zone. */
-export function wallParts(timeZone: string, epochMs: number): WallParts {
-  const parts = formatterFor(timeZone).formatToParts(new Date(epochMs));
-  const read = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(parts.find((p) => p.type === type)?.value);
-  const year = read("year");
-  const month = read("month");
-  const day = read("day");
-  // Weekday from the civil date itself, not from the UTC instant.
-  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return { year, month, day, hour: read("hour"), minute: read("minute"), weekday };
-}
-
-/** The zone's offset from UTC at the given instant (east of UTC: positive). */
-export function tzOffsetMs(timeZone: string, epochMs: number): number {
-  const p = wallParts(timeZone, epochMs);
-  const asUtc = Date.UTC(
-    p.year,
-    p.month - 1,
-    p.day,
-    p.hour,
-    p.minute,
-    0,
-    epochMs % 1000,
-  );
-  return asUtc - epochMs;
-}
-
 /**
  * A local wall-clock time (minute of day on a civil date) as a UTC instant.
- * Two passes converge on the right offset; for wall times a DST transition
- * skips or repeats, this deterministically resolves to one side.
+ * Ambiguous and nonexistent wall times resolve by the one rule documented in
+ * src/lib/availability/zoneTime.ts — the rule the client applies too.
  */
 export function wallTimeToEpoch(
   timeZone: string,
@@ -114,9 +61,7 @@ export function wallTimeToEpoch(
   day: number,
   minuteOfDay: number,
 ): number {
-  const guess = Date.UTC(year, month - 1, day) + minuteOfDay * 60_000;
-  const offset = tzOffsetMs(timeZone, tzOffsetMs(timeZone, guess) + guess);
-  return guess - offset;
+  return wallToInstant(timeZone, year, month, day, minuteOfDay);
 }
 
 /**
@@ -132,26 +77,13 @@ export function expandWeeklyBlocks(
 ): Interval[] {
   if (!timeZone || blocks.length === 0 || days <= 0) return [];
   const start = wallParts(timeZone, fromEpoch);
-  const intervals: Interval[] = [];
-  for (let i = 0; i < days; i++) {
-    // Walk civil dates on the UTC calendar; weekday comes from the date.
-    const dateUtc = new Date(Date.UTC(start.year, start.month - 1, start.day + i));
-    const year = dateUtc.getUTCFullYear();
-    const month = dateUtc.getUTCMonth() + 1;
-    const day = dateUtc.getUTCDate();
-    const weekday = dateUtc.getUTCDay();
-    for (const block of blocks) {
-      if (block.weekday !== weekday) continue;
-      if (block.endMinute <= block.startMinute) continue;
-      intervals.push({
-        start: wallTimeToEpoch(timeZone, year, month, day, block.startMinute),
-        end: wallTimeToEpoch(timeZone, year, month, day, block.endMinute),
-      });
-    }
-  }
-  return intervals
-    .filter((i) => i.end > i.start)
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+  // Walk civil dates on the UTC calendar; weekday comes from the date.
+  return occurrencesOnCivilDays(
+    blocks,
+    timeZone,
+    Date.UTC(start.year, start.month - 1, start.day),
+    Date.UTC(start.year, start.month - 1, start.day + days - 1),
+  );
 }
 
 /** Intersections of two sorted interval lists. */
