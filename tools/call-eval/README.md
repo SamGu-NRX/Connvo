@@ -45,6 +45,27 @@ pnpm call-eval -- --transport=reference --scenarios=H-07 --seeds=1..3 --base-url
 H-14 (outsider rejection) needs local Convex and belongs to the local-backend
 work (`pnpm call-eval:backend`); it runs only when named with `--scenarios=H-14`.
 
+## The full normal route: queue to call to cleanup (one command)
+
+```sh
+pnpm call-eval:call-route-proof            # [-- --port=3035] [--skip-backend]
+```
+
+`scripts/call-route-proof.mjs` boots (or reuses) the local backend, then drives
+two isolated Chromium contexts through the shipped queue page: both join, the
+match is accepted, both Joins navigate into the real call, and the proof
+exchanges the synthetic video barcode and audio tone both ways, mutes each
+mic and toggles the camera from both sides (remote tile attributes plus the
+received tone), rejects a signed-in non-participant by name, forces a tab
+reload and verifies recovery with no ghost tile, then leaves and verifies
+cleanup: capture tracks and peer connections ended on both sides, no open
+`webrtcSessions` rows in the meeting (eval-only
+`devEval/callMeeting:openSessions`), closed sessions recorded for both
+participants, and the meeting concluded. It writes
+`out/call-route-proof/results-<ts>.json` plus a stable `results.json` and
+exits non-zero if any check fails — including missing remote media or leaked
+room state.
+
 ## The real call page over Convex
 
 ```sh
