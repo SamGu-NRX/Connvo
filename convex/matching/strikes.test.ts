@@ -67,6 +67,7 @@ describe("matcher eligibility", () => {
     waitingRuns: 0,
     metRecently: [],
     talkAgainBoth: [],
+    booked: [],
     // All Thursday, all day: free for whatever `now` we pass.
     blocks: [{ weekday: 4, startMinute: 0, endMinute: 1440 }],
   };

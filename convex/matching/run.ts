@@ -30,7 +30,7 @@ import {
   type ProposalDraft,
   type RerankFn,
 } from "./pipeline";
-import type { WeeklyBlock } from "./slots";
+import type { Interval, WeeklyBlock } from "./slots";
 import { candidatesKeyHash, rerankShortlist } from "./decisions";
 import { activeStrikes, STRIKE_WINDOW_MS } from "./strikes";
 
@@ -39,6 +39,8 @@ const DECISIONS_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Proposals expire the earlier of 48 hours out or 2 hours before the time. */
 const PROPOSAL_TTL_MS = 48 * 60 * 60 * 1000;
 const PRE_MEETING_TTL_MS = 2 * 60 * 60 * 1000;
+/** Length assumed for a booked meeting with no duration: a matcher chat's 30 minutes. */
+const BOOKED_FALLBACK_MS = 30 * 60 * 1000;
 
 /** Build one snapshot person from the profile plus related tables. */
 async function snapshotPerson(
@@ -86,6 +88,7 @@ async function snapshotPerson(
   const metRecently = new Set<string>();
   const talkAgainYes = new Set<string>();
   let meetingsThisWeek = 0;
+  const booked: Interval[] = [];
   const participants = await ctx.db
     .query("meetingParticipants")
     .withIndex("by_user", (q) => q.eq("userId", profile.userId))
@@ -107,6 +110,10 @@ async function snapshotPerson(
     }
     if (scheduledAt >= weekStart && scheduledAt < weekStart + 7 * 86400_000) {
       meetingsThisWeek += 1;
+    }
+    const end = scheduledAt + (meeting.duration ?? BOOKED_FALLBACK_MS);
+    if (meeting.state !== "concluded" && end > now) {
+      booked.push({ start: scheduledAt, end });
     }
   }
 
@@ -174,6 +181,7 @@ async function snapshotPerson(
     strikes: activeStrikes(strikeRows, now).length,
     metRecently: [...metRecently],
     talkAgainBoth: [...talkAgainYes],
+    booked,
   };
 }
 

@@ -17,7 +17,7 @@ import {
   scoreMatcherPair,
   type MatcherPerson,
 } from "./scoring";
-import { sharedSlots, hasFreeBlockSoon, type WeeklyBlock } from "./slots";
+import { sharedSlots, hasFreeBlockSoon, type Interval, type WeeklyBlock } from "./slots";
 import { STRIKES_PAUSE_THRESHOLD } from "./strikes";
 import { buildReasons, pickFirstQuestion } from "./reasons";
 import type { DecisionsPerson } from "./decisions";
@@ -53,6 +53,8 @@ export interface MatcherSnapshotPerson extends MatcherPerson {
   metRecently: string[];
   /** People both sides said they would talk again with, for the waiver. */
   talkAgainBoth: string[];
+  /** Chats already on this person's calendar, so a new proposal can't overlap one. */
+  booked: Interval[];
 }
 
 export interface MatcherSnapshot {
@@ -152,6 +154,7 @@ export async function hardRuleAllowed(
     minLeadMs: MIN_LEAD_MS,
     maxSlots: 1,
     horizonDays: SLOT_HORIZON_DAYS,
+    booked: [...a.booked, ...b.booked],
   });
   return slots.length > 0;
 }
@@ -318,6 +321,7 @@ export async function assign(
       minLeadMs: MIN_LEAD_MS,
       maxSlots: 4,
       horizonDays: SLOT_HORIZON_DAYS,
+      booked: [...a.booked, ...b.booked],
     });
     if (slots.length === 0) continue;
     taken.add(pair.aId);

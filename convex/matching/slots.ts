@@ -35,6 +35,8 @@ export interface SharedSlotOptions {
   maxSlots?: number;
   /** How many local calendar days ahead to expand the weekly grid. */
   horizonDays?: number;
+  /** Times either person already has a chat; overlapping slots are skipped. */
+  booked?: Interval[];
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
@@ -179,6 +181,7 @@ export function sharedSlots(
     slotMs = 30 * 60 * 1000,
     maxSlots = 4,
     horizonDays = 10,
+    booked = [],
   } = options;
   const earliest = now + minLeadMs;
   // One extra week guarantees every recurring block has a future occurrence
@@ -195,6 +198,7 @@ export function sharedSlots(
   for (const overlap of intersectIntervals(a, b)) {
     const first = Math.max(overlap.start, earliest);
     for (let s = first; s + slotMs <= overlap.end; s += slotMs) {
+      if (booked.some((b) => s < b.end && s + slotMs > b.start)) continue;
       slots.push(s);
       if (slots.length >= maxSlots) return slots;
     }

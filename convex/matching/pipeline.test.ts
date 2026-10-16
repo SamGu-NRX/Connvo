@@ -28,6 +28,7 @@ function person(overrides: Partial<MatcherSnapshotPerson>): MatcherSnapshotPerso
     strikes: 0,
     metRecently: [],
     talkAgainBoth: [],
+    booked: [],
     ...overrides,
   };
 }
@@ -135,6 +136,19 @@ describe("buildProposals", () => {
       ],
     });
     expect(drafts).toHaveLength(1);
+  });
+
+  // A confirmed 8:13 PM chat and an 8:30 PM proposal landed on the same
+  // person in a local run: booked time must not be offered again.
+  it("skips slots that overlap a chat either person already has", async () => {
+    const booked = [{ start: monday(1, 9), end: monday(1, 9) + 30 * 60_000 }];
+    const drafts = await buildProposals({
+      now: NOW,
+      people: [person({ userId: "u_a", booked }), person({ userId: "u_b" })],
+    });
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].scheduledAt).toBe(monday(1, 9) + 30 * 60_000);
+    expect(drafts[0].alternatives).toEqual([]);
   });
 
   it("does not propose pairs without a shared language", async () => {
