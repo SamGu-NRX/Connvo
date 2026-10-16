@@ -31,11 +31,14 @@ import { internalAction } from "@convex/_generated/server";
 import type { ActionCtx } from "@convex/_generated/server";
 import { v } from "convex/values";
 import { internal } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import {
   selectEmailProvider,
+  RefusedSendError,
   TransientSendError,
   type EmailMessage,
 } from "@convex/lib/email";
+import { realEmailAppUrlRefusal } from "@convex/lib/appUrl";
 import { withActionIdempotency } from "@convex/lib/idempotency";
 
 /** Attempts per recipient: the initial send plus two scheduled retries. */
@@ -60,12 +63,69 @@ const EXECUTION_LEASE_MS = 31 * 60_000;
 
 const EMAIL_SCOPE = "email_send";
 
-async function send(message: EmailMessage): Promise<void> {
-  const provider = selectEmailProvider({
+/** What the outbox records alongside the message content. */
+interface SendMeta {
+  /** The meeting the message is about (confirmations and reminders). */
+  meetingId?: Id<"meetings">;
+  /** The readable per-message-and-recipient idempotency key. */
+  idempotencyKey?: string;
+}
+
+/** Every http(s) URL in the message, text before html, in first-seen order. */
+function linksIn(message: EmailMessage): string[] {
+  const seen = new Set<string>();
+  for (const body of [message.text, message.html]) {
+    for (const match of body.matchAll(/https?:\/\/[^\s"'<>]+/g)) {
+      seen.add(match[0]);
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * Send one fully built message through the provider selected from the
+ * Convex environment. Two guards live here so every send path shares them:
+ *
+ * - With RESEND_API_KEY set, a missing or loopback CONNVO_APP_URL refuses
+ *   the send (RefusedSendError — terminal, never retried): a deployment
+ *   missing the variable would otherwise mail http://localhost:3000 links
+ *   to real people.
+ * - With no RESEND_API_KEY, the console provider records what would have
+ *   been emailed in the emailOutbox table (convex/emails/outbox.ts), so a
+ *   tester or a test can read it back. A refused or failed send records
+ *   nothing.
+ */
+async function send(
+  ctx: ActionCtx,
+  message: EmailMessage,
+  meta: SendMeta = {},
+): Promise<void> {
+  const env = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
-  });
+    CONNVO_APP_URL: process.env.CONNVO_APP_URL,
+  };
+  const refusal = realEmailAppUrlRefusal(env);
+  if (refusal) {
+    throw new RefusedSendError(`[email:deliver] ${refusal}`);
+  }
+  const provider = selectEmailProvider(env);
   await provider.send(message);
+  if (provider.name === "console") {
+    await ctx.runMutation(internal.emails.outbox.record, {
+      to: message.to,
+      subject: message.subject,
+      text: message.text,
+      html: message.html,
+      links: linksIn(message),
+      attachmentNames: message.attachment ? [message.attachment.filename] : [],
+      ...(meta.meetingId !== undefined ? { meetingId: meta.meetingId } : {}),
+      ...(meta.idempotencyKey !== undefined
+        ? { idempotencyKey: meta.idempotencyKey }
+        : {}),
+      sentAt: Date.now(),
+    });
+  }
 }
 
 /**
@@ -102,6 +162,7 @@ async function sendOnce(
   kind: string,
   key: string,
   draft: EmailMessage,
+  meta: SendMeta,
 ): Promise<void> {
   await withActionIdempotency(
     ctx,
@@ -121,11 +182,16 @@ async function sendOnce(
     async () => {
       // The marker keeps the full readable key; Resend gets the bounded
       // digest, since a long address would push the raw key past its
-      // 256-character limit and turn every send into a 400.
-      await send({
-        ...draft,
-        idempotencyKey: await resendIdempotencyKey(kind, key),
-      });
+      // 256-character limit and turn every send into a 400. The outbox
+      // records the readable key and the meeting, when there is one.
+      await send(
+        ctx,
+        {
+          ...draft,
+          idempotencyKey: await resendIdempotencyKey(kind, key),
+        },
+        { ...meta, idempotencyKey: key },
+      );
       return "sent";
     },
   );
@@ -143,13 +209,15 @@ async function deliverDrafts(
   drafts: EmailMessage[],
   attempt: number,
   scheduleRetry: (nextAttempt: number) => Promise<unknown>,
+  meetingId: Id<"meetings"> | undefined,
 ): Promise<string> {
   const stuck: string[] = [];
   const dropped: string[] = [];
+  const refusals: string[] = [];
   for (const draft of drafts) {
     const key = `${kind}:${entityId}:${draft.to}`;
     try {
-      await sendOnce(ctx, kind, key, draft);
+      await sendOnce(ctx, kind, key, draft, { meetingId });
     } catch (error) {
       if (error instanceof TransientSendError) {
         stuck.push(draft.to);
@@ -157,6 +225,7 @@ async function deliverDrafts(
       }
       // Not classified as transient, so it is not retried.
       dropped.push(draft.to);
+      if (error instanceof RefusedSendError) refusals.push(error.message);
       console.error(
         `[email:deliver] ${kind} ${entityId} to ${draft.to} failed terminally:`,
         error,
@@ -181,9 +250,14 @@ async function deliverDrafts(
   if (stuck.length > 0) parts.push(`retrying:${stuck.join(",")}`);
   // A refusal fails the action, after every other recipient was tried and
   // any retry was scheduled, so it shows as a failed run in the dashboard
-  // rather than a successful one with a summary nobody reads.
+  // rather than a successful one with a summary nobody reads. The first
+  // refusal's own message rides along, so the failure names its cause —
+  // e.g. a missing CONNVO_APP_URL — without opening the logs.
   if (dropped.length > 0) {
-    throw new Error(`[email:deliver] ${kind} ${entityId}: ${parts.join(" ")}`);
+    const firstRefusal = refusals.length > 0 ? ` ${refusals[0]}` : "";
+    throw new Error(
+      `[email:deliver] ${kind} ${entityId}: ${parts.join(" ")}.${firstRefusal}`,
+    );
   }
   return parts.join(" ");
 }
@@ -198,8 +272,8 @@ export const deliverEmail = internalAction({
     attachmentFilename: v.optional(v.string()),
     attachmentBase64: v.optional(v.string()),
   },
-  handler: async (_ctx, args) => {
-    await send({
+  handler: async (ctx, args) => {
+    await send(ctx, {
       to: args.to,
       subject: args.subject,
       text: args.text,
@@ -240,6 +314,8 @@ export const proposalIntroduced = internalAction({
           internal.emails.deliver.proposalIntroduced,
           { proposalId, attempt: next },
         ),
+      // An introduction names a proposal, whose meeting may not exist yet.
+      undefined,
     );
   },
 });
@@ -271,6 +347,7 @@ export const meetingConfirmed = internalAction({
           internal.emails.deliver.meetingConfirmed,
           { meetingId, reminderKinds, attempt: next },
         ),
+      meetingId,
     );
   },
 });
@@ -305,6 +382,7 @@ export const sendReminder = internalAction({
           internal.emails.deliver.sendReminder,
           { meetingId, kind, attempt: next },
         ),
+      meetingId,
     );
   },
 });

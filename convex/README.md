@@ -119,6 +119,42 @@ npm run type-check
 
 ### Environment Variables
 
+#### Email links: `CONNVO_APP_URL`
+
+Every email link — the join page and the home screen — is built from one
+function (`configuredAppUrl` in `convex/lib/appUrl.ts`), which reads
+`CONNVO_APP_URL` and falls back to `http://localhost:3000`. Set it for a
+deployment so links point at the real app:
+
+```bash
+npx convex env set CONNVO_APP_URL https://app.example.com
+# Local runs against a dev server on another port, e.g.:
+npx convex env set CONNVO_APP_URL http://localhost:3000
+```
+
+When `RESEND_API_KEY` is set and `CONNVO_APP_URL` is missing or points at
+localhost or a loopback address, every send is refused with an error naming
+`CONNVO_APP_URL` (a refused, non-retried send — the recipient's idempotency
+marker settles as failed), instead of mailing localhost links to real
+people. With no `RESEND_API_KEY` the check does not apply: local email is
+supposed to point at localhost.
+
+#### Reading local email: the outbox
+
+With no `RESEND_API_KEY`, the console provider records each message it
+would have emailed (to, subject, text, html, links, attachment names,
+meeting id, idempotency key, time) in the `emailOutbox` table, so a tester
+or a test can read exactly what was sent. It holds only what would have
+been emailed — nothing leaves the deployment. Rows are capped: at most the
+500 most recent are kept and rows older than 7 days are pruned on each
+write. Read and clear it with `npx convex run` or the Convex dashboard:
+
+```bash
+npx convex run emails/outbox:listForAddress '{"to":"alice@example.com"}'
+npx convex run emails/outbox:clearForAddress '{"to":"alice@example.com"}'
+npx convex run emails/outbox:clearAll '{}'
+```
+
 Required environment variables:
 
 ```env

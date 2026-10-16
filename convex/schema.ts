@@ -22,6 +22,7 @@ import { offlineTables } from "./schema/offline";
 import { legacyTables } from "./schema/legacy";
 import { userSettings } from "./schema/userSettings";
 import { livePromptTables } from "./schema/livePrompts";
+import { emailOutbox } from "./schema/emailOutbox";
 import { historyTables } from "./schema/history";
 import { matchProposalsTable } from "./schema/matchProposals";
 import { decisionsCacheTable } from "./schema/decisionsCache";
@@ -57,4 +58,5 @@ export default defineSchema({
   blocks,
   reports,
   ...noShowTables,
+  emailOutbox,
 });
