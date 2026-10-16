@@ -14,6 +14,7 @@
 
 import {
   occurrencesOnCivilDays,
+  wallParts,
   wallToInstant,
   type WeeklyBlock,
 } from "../../src/lib/availability/zoneTime";
