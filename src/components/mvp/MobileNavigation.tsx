@@ -7,7 +7,7 @@ import { motion } from "motion/react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { navSections } from "./navigation.config";
 
-const MOBILE_ITEM_ORDER = ["Home", "Smart Match", "Match Queue", "Profile"];
+const MOBILE_ITEM_ORDER = ["Home", "Profile", "Settings"];
 
 export function MobileNavigation() {
   const pathname = usePathname();

@@ -186,10 +186,18 @@ export const proposalIntroduced = internalAction({
 
 /** "Confirmed" with the .ics invite: one send per meeting participant. */
 export const meetingConfirmed = internalAction({
-  args: { meetingId: v.id("meetings"), attempt: v.optional(v.number()) },
-  handler: async (ctx, { meetingId, attempt = 1 }): Promise<string> => {
+  args: {
+    meetingId: v.id("meetings"),
+    reminderKinds: v.array(v.union(v.literal("24h"), v.literal("10min"))),
+    attempt: v.optional(v.number()),
+  },
+  handler: async (
+    ctx,
+    { meetingId, reminderKinds, attempt = 1 },
+  ): Promise<string> => {
     const drafts = await ctx.runQuery(internal.emails.drafts.confirmedDrafts, {
       meetingId,
+      reminderKinds,
     });
     return await deliverDrafts(
       ctx,
@@ -201,7 +209,7 @@ export const meetingConfirmed = internalAction({
         ctx.scheduler.runAfter(
           RETRY_DELAYS_MS[attempt - 1] ?? RETRY_DELAYS_MS[0],
           internal.emails.deliver.meetingConfirmed,
-          { meetingId, attempt: next },
+          { meetingId, reminderKinds, attempt: next },
         ),
     );
   },
