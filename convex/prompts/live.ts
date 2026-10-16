@@ -172,10 +172,13 @@ export const reserve = internalMutation({
       status: "reserved",
       context: {
         participants: profiles,
-        elapsedSeconds: Math.max(
-          0,
-          (now - (state?.startedAt ?? meeting.createdAt)) / 1000,
-        ),
+        // The same start the recap counts from: when the live call started.
+        // Before the call has a recorded start, nothing has elapsed — the
+        // old fallback to the meeting's creation counted the pre-call wait
+        // into prompt timing.
+        elapsedSeconds: state?.startedAt
+          ? Math.max(0, (now - state.startedAt) / 1000)
+          : 0,
         durationSeconds:
           meeting.duration && meeting.duration > 0
             ? meeting.duration / 1000

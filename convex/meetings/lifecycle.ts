@@ -85,9 +85,11 @@ export async function createMeetingRecords(
   await ctx.db.insert("meetingState", {
     meetingId,
     active: args.startImmediately ?? false,
-    // An accepted WebRTC match is open before both call sessions arrive.
-    // Presence records its conversation start when the second session joins.
-    startedAt: args.startImmediately && !args.webrtcEnabled ? now : undefined,
+    // startedAt records when the live call started, not when the meeting was
+    // created: the mesh writes it when the second call session joins
+    // (presenceLifecycle.recordCallStart), the Stream call-session-started
+    // webhook for provider meetings. Writing it here would count every minute
+    // before anyone actually talked into the recap's duration.
     topics: [],
     recordingEnabled: args.recordingEnabled,
     updatedAt: now,
@@ -972,8 +974,9 @@ export const startMeeting = mutation({
     if (meetingState) {
       await ctx.db.patch(meetingState._id, {
         active: true,
-        // WebRTC starts when two call sessions are present, not when the host opens the room.
-        startedAt: meeting.webrtcEnabled ? undefined : now,
+        // Opening the room is not the call starting: startedAt is written by
+        // the call's own events (the second mesh session joining; the Stream
+        // call-session-started webhook), so the recap counts talk time only.
         updatedAt: now,
       });
     }
