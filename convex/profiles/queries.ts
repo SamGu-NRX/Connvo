@@ -15,41 +15,45 @@ import { Id } from "@convex/_generated/dataModel";
 import { chatsPerWeekV, intentsV } from "@convex/lib/availability";
 
 /**
+ * A stored profile as the queries below return it, system fields included:
+ * Convex rejects a returned field its validator does not list.
+ */
+export const storedProfileV = v.object({
+  _id: v.id("profiles"),
+  _creationTime: v.number(),
+  userId: v.id("users"),
+  displayName: v.string(),
+  bio: v.optional(v.string()),
+  goals: v.optional(v.string()),
+  languages: v.array(v.string()),
+  experience: v.optional(v.string()),
+  age: v.optional(v.number()),
+  gender: v.optional(
+    v.union(
+      v.literal("male"),
+      v.literal("female"),
+      v.literal("non-binary"),
+      v.literal("prefer-not-to-say"),
+    ),
+  ),
+  field: v.optional(v.string()),
+  jobTitle: v.optional(v.string()),
+  company: v.optional(v.string()),
+  linkedinUrl: v.optional(v.string()),
+  // Matching preferences (cv6-profile-availability)
+  intents: v.optional(intentsV),
+  timezone: v.optional(v.string()),
+  chatsPerWeek: v.optional(chatsPerWeekV),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
+
+/**
  * Gets profile by user ID (internal use)
  */
 export const getProfileByUserId = internalQuery({
   args: { userId: v.id("users") },
-  returns: v.union(
-    v.object({
-      _id: v.id("profiles"),
-      userId: v.id("users"),
-      displayName: v.string(),
-      bio: v.optional(v.string()),
-      goals: v.optional(v.string()),
-      languages: v.array(v.string()),
-      experience: v.optional(v.string()),
-      age: v.optional(v.number()),
-      gender: v.optional(
-        v.union(
-          v.literal("male"),
-          v.literal("female"),
-          v.literal("non-binary"),
-          v.literal("prefer-not-to-say"),
-        ),
-      ),
-      field: v.optional(v.string()),
-      jobTitle: v.optional(v.string()),
-      company: v.optional(v.string()),
-      linkedinUrl: v.optional(v.string()),
-      // Matching preferences (cv6-profile-availability)
-      intents: v.optional(intentsV),
-      timezone: v.optional(v.string()),
-      chatsPerWeek: v.optional(chatsPerWeekV),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    }),
-    v.null(),
-  ),
+  returns: v.union(storedProfileV, v.null()),
   handler: async (ctx, { userId }) => {
     return await ctx.db
       .query("profiles")
@@ -63,51 +67,21 @@ export const getProfileByUserId = internalQuery({
  */
 export const getCurrentUserProfile = query({
   args: {},
-  returns: v.union(
-    v.object({
-      _id: v.id("profiles"),
-      userId: v.id("users"),
-      displayName: v.string(),
-      bio: v.optional(v.string()),
-      goals: v.optional(v.string()),
-      languages: v.array(v.string()),
-      experience: v.optional(v.string()),
-      age: v.optional(v.number()),
-      gender: v.optional(
-        v.union(
-          v.literal("male"),
-          v.literal("female"),
-          v.literal("non-binary"),
-          v.literal("prefer-not-to-say"),
-        ),
-      ),
-      field: v.optional(v.string()),
-      jobTitle: v.optional(v.string()),
-      company: v.optional(v.string()),
-      linkedinUrl: v.optional(v.string()),
-      // Matching preferences (cv6-profile-availability)
-      intents: v.optional(intentsV),
-      timezone: v.optional(v.string()),
-      chatsPerWeek: v.optional(chatsPerWeekV),
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    }),
-    v.null(),
-  ),
+  returns: v.union(storedProfileV, v.null()),
   handler: async (ctx) => {
     // Return null instead of throwing when unauthenticated so clients can
     // safely subscribe without triggering errors during logged-out states.
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
-    
+
     const workosUserId: string = identity.subject;
-    
+
     // Get the user record to find their userId
     const user = await ctx.db
       .query("users")
       .withIndex("by_workos_id", (q) => q.eq("workosUserId", workosUserId))
       .unique();
-    
+
     if (!user) return null;
 
     return await ctx.db
