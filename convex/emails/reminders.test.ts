@@ -119,6 +119,13 @@ function reminder(
   });
 }
 
+function icsInstant(value: string): number {
+  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  if (!match) throw new Error(`Invalid ICS instant: ${value}`);
+  const [, year, month, day, hour, minute, second] = match;
+  return Date.UTC(+year, +month - 1, +day, +hour, +minute, +second);
+}
+
 describe("reminder guard", () => {
   it("sends nothing for a cancelled meeting", async () => {
     const t = createTestEnvironment();
@@ -166,5 +173,25 @@ describe("reminder guard", () => {
     expect(await reminder(t, fx.meetingId, "24h")).toBeNull();
     const late = await reminder(t, fx.meetingId, "10min");
     expect(late).toHaveLength(2);
+  });
+
+  it("attaches a 30-minute invite and names only scheduled reminders", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedConfirmedMeeting(t, { scheduledAt: NOW + 5 * 60 * 60_000 });
+    const drafts = await t.query(internal.emails.drafts.confirmedDrafts, {
+      meetingId: fx.meetingId,
+      reminderKinds: ["10min"],
+    });
+    expect(drafts).toHaveLength(2);
+    const attachment = drafts[0]?.attachment;
+    expect(attachment?.filename).toBe("connvo-chat.ics");
+    const ics = atob(attachment?.base64 ?? "");
+    const start = ics.match(/DTSTART:(\d{8}T\d{6}Z)/)?.[1];
+    const end = ics.match(/DTEND:(\d{8}T\d{6}Z)/)?.[1];
+    expect(start).toBeDefined();
+    expect(end).toBeDefined();
+    expect(icsInstant(end!) - icsInstant(start!)).toBe(30 * 60_000);
+    expect(drafts[0]?.text).toContain("10 minutes before");
+    expect(drafts[0]?.text).not.toContain("24 hours");
   });
 });

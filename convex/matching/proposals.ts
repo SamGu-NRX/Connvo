@@ -27,7 +27,7 @@ import { internal } from "@convex/_generated/api";
 import { createMeetingRecords } from "@convex/meetings/lifecycle";
 
 /** Matcher meetings are 30 minutes (convex/matching/slots.ts). */
-const MEETING_DURATION_MS = 30 * 60_000;
+export const MEETING_DURATION_MS = 30 * 60_000;
 /** Reminder lead times (docs/plan/MATCHING-PLAN.md, step 4). */
 const REMINDERS = [
   { kind: "24h", leadMs: 24 * 60 * 60_000 },
@@ -173,11 +173,15 @@ export const accept = mutation({
       patch.state = "confirmed";
       patch.meetingId = meetingId;
       state = "confirmed";
-      await ctx.scheduler.runAfter(0, internal.emails.deliver.meetingConfirmed, {
-        meetingId,
-      });
       // A reminder whose moment has passed would fire now and still say
       // "Tomorrow" or "in about 10 minutes", so it is not scheduled at all.
+      const scheduledReminderKinds = REMINDERS.filter(
+        ({ leadMs }) => row.scheduledAt - leadMs > now,
+      ).map(({ kind }) => kind);
+      await ctx.scheduler.runAfter(0, internal.emails.deliver.meetingConfirmed, {
+        meetingId,
+        reminderKinds: scheduledReminderKinds,
+      });
       for (const { kind, leadMs } of REMINDERS) {
         const sendAt = row.scheduledAt - leadMs;
         if (sendAt <= now) continue;
