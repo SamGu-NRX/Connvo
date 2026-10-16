@@ -21,6 +21,15 @@ export interface IdempotencyConfig {
   scope: string;
   ttlMs?: number; // Time to live in milliseconds
   allowRetry?: boolean; // Allow retry if operation failed
+  leaseMs?: number; // Actions only: must outlive the action runtime limit
+  /**
+   * Actions only. allowRetry lets a later call clear a failed marker, which
+   * is wrong for a failure that will fail the same way again (an email
+   * provider's 4xx refusal): the duplicate would repeat the external call.
+   * When this returns false for the thrown error, the marker is stored with
+   * retryable: false and claimActionKey keeps it until the TTL expires.
+   */
+  isRetryable?: (error: unknown) => boolean;
 }
 
 /**
@@ -196,56 +205,24 @@ export async function withActionIdempotency<T>(
 ): Promise<IdempotencyResult<T>> {
   const { key, scope, ttlMs = 3600000, allowRetry = true } = config; // Actions default to allow retry
 
-  // Use internal queries/mutations since actions can't access DB directly
-  const existingKey = await ctx.runQuery(internal.system.idempotency.getKey, {
-    key,
-    scope,
-  });
-
-  const now = Date.now();
-
-  let idToUse: any | null = null;
-  if (existingKey) {
-    if (existingKey.createdAt + ttlMs < now) {
-      // Key expired, delete it and allow re-execution
-      await ctx.runMutation(internal.system.idempotency.deleteKey, {
-        id: existingKey._id,
-      });
-    } else {
-      const metadata = (existingKey.metadata as any) || {};
-      if (metadata?.failed && allowRetry) {
-        await ctx.runMutation(internal.system.idempotency.deleteKey, {
-          id: existingKey._id,
-        });
-      } else if (metadata?.failed) {
-        return {
-          isFirstExecution: false,
-          previousError: metadata.error || "Previous execution failed",
-        };
-      } else if (metadata?.status === "executing") {
-        return {
-          isFirstExecution: false,
-          previousError: "Operation is currently executing",
-        };
-      } else {
-        return {
-          isFirstExecution: false,
-          result: metadata?.result,
-        };
-      }
-    }
-  }
-
-  // Create idempotency key before execution
-  const idempotencyId = await ctx.runMutation(
-    internal.system.idempotency.createKey,
+  const claim = await ctx.runMutation(
+    internal.system.idempotency.claimActionKey,
     {
       key,
       scope,
-      metadata: { status: "executing", startedAt: now },
-      createdAt: now,
+      ttlMs,
+      leaseMs: config.leaseMs ?? ttlMs,
+      allowRetry,
     },
   );
+  if (claim.id === null) {
+    return {
+      isFirstExecution: false,
+      previousError: claim.previousError,
+      result: claim.result as T | undefined,
+    };
+  }
+  const idempotencyId = claim.id;
 
   try {
     const result = await operation();
@@ -267,6 +244,9 @@ export async function withActionIdempotency<T>(
         failed: true,
         error: error instanceof Error ? error.message : "Unknown error",
         failedAt: Date.now(),
+        ...(config.isRetryable && !config.isRetryable(error)
+          ? { retryable: false }
+          : {}),
       },
     });
     throw error;

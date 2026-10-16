@@ -26,7 +26,28 @@ export interface EmailMessage {
   text: string;
   html: string;
   attachment?: EmailAttachment;
+  /**
+   * Stable key naming this logical message across retries, passed to Resend
+   * as its Idempotency-Key header (resend.com/docs: POST /emails, keys
+   * expire after 24 hours, duplicates return the original response), so a
+   * retry after an ambiguous failure — the send landed, the response was
+   * lost — cannot double-send.
+   */
+  idempotencyKey?: string;
 }
+
+/**
+ * A transient provider failure — 429, 5xx, or a network-level error — that a
+ * later attempt of the same logical message may survive.
+ */
+export class TransientSendError extends Error {}
+
+/**
+ * A refusal (4xx other than 429): the request itself was rejected, so a
+ * retry cannot succeed. It throws rather than returning so the caller's
+ * idempotency marker is recorded as failed, never as sent.
+ */
+export class RefusedSendError extends Error {}
 
 export interface EmailProvider {
   readonly name: "resend" | "console";
@@ -51,44 +72,56 @@ export function resendProvider(apiKey: string, from: string): EmailProvider {
   return {
     name: "resend",
     send: async (message) => {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          from,
-          to: [message.to],
-          subject: message.subject,
-          text: message.text,
-          html: message.html,
-          ...(message.attachment
-            ? {
-                attachments: [
-                  {
-                    filename: message.attachment.filename,
-                    content: message.attachment.base64,
-                  },
-                ],
-              }
-            : {}),
-        }),
-      });
-      // Transient failures throw so the scheduled action retries; a refused
-      // message (bad address, unverified sender, exhausted credits) is logged
-      // and dropped — retrying a 4xx would only spam the logs.
-      if (response.status === 429 || response.status >= 500) {
-        throw new Error(
-          `Resend returned ${response.status}; the send will be retried`,
+      let response: Response;
+      try {
+        response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${apiKey}`,
+            "content-type": "application/json",
+            ...(message.idempotencyKey
+              ? { "Idempotency-Key": message.idempotencyKey }
+              : {}),
+          },
+          body: JSON.stringify({
+            from,
+            to: [message.to],
+            subject: message.subject,
+            text: message.text,
+            html: message.html,
+            ...(message.attachment
+              ? {
+                  attachments: [
+                    {
+                      filename: message.attachment.filename,
+                      content: message.attachment.base64,
+                    },
+                  ],
+                }
+              : {}),
+          }),
+        });
+      } catch (error) {
+        // Network-level failure (DNS, refused connection, reset): the send
+        // may or may not have reached Resend, so it is transient by
+        // definition — retry later under the same idempotency key.
+        throw new TransientSendError(
+          `Resend request failed: ${error instanceof Error ? error.message : String(error)}`,
         );
+      }
+      // Transient failures (429, 5xx) throw TransientSendError so the deliver
+      // action's own scheduled retry picks them up — Convex does not retry
+      // actions on its own. A refused message (bad address, unverified
+      // sender, an invalid Idempotency-Key) throws RefusedSendError: it is
+      // not retried, but it must not settle as if the person got the email.
+      if (response.status === 429 || response.status >= 500) {
+        throw new TransientSendError(`Resend returned ${response.status}`);
       }
       if (!response.ok) {
         const body = await response.text().catch(() => "");
-        console.error(
-          `[email:resend] dropped message to ${message.to}: ${response.status} ${body}`,
+        throw new RefusedSendError(
+          `Resend returned ${response.status} for ${message.to}: ${body}`,
         );
-        return;
       }
     },
   };
