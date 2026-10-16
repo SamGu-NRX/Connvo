@@ -49,7 +49,7 @@ export const seed = internalMutation({
         email: u.email,
         displayName: u.name,
         isActive: true,
-        onboardingComplete: true,
+        onboardingComplete: u.onboardingComplete,
         lastSeenAt: now,
         createdAt: now,
         updatedAt: now,

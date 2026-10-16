@@ -72,6 +72,14 @@ function minuteLabel(slot: number): string | null {
   return `${String(h).padStart(2, "0")}:00`;
 }
 
+/** Every cell's clock time ("09:30"), so each cell can be named. */
+function slotTimeLabel(slot: number): string {
+  const minutes = slot * BLOCK_STEP;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function labelForZone(zone: string): string {
   const offset = zoneOffsetLabel(zone);
   return `${zone.replace(/_/g, " ")}${offset ? ` (UTC${offset})` : ""}`;
@@ -345,7 +353,7 @@ export function AvailabilityEditor({
                       key={slot}
                       type="button"
                       tabIndex={-1}
-                      aria-label={`${WEEKDAYS[weekday]} ${minuteLabel(slot) ?? ""}`}
+                      aria-label={`${WEEKDAYS[weekday]} ${slotTimeLabel(slot)}`}
                       disabled={disabled}
                       onPointerDown={(e) => {
                         e.preventDefault();

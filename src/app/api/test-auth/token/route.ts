@@ -23,12 +23,16 @@ const LOCAL_TEST_ISSUER = "https://connvo-local-test.invalid";
 const TOKEN_TTL_S = 600;
 
 // Must match convex/devEval/seed.ts (the identities seeded into the local
-// deployment) and tools/call-eval/scripts/local-backend.mjs.
+// deployment) and tools/call-eval/scripts/local-backend.mjs. N is seed-only:
+// the frozen harness never needs it, because N exists so a developer can walk
+// onboarding as a brand-new user — seed keeps N un-onboarded, while A/B/C/O
+// arrive onboarded. N's tokens are minted here, not by the harness.
 const SEED_USERS = {
   A: { subject: "local-test-a", email: "a@connvo-local.test", name: "Alice Anderson" },
   B: { subject: "local-test-b", email: "b@connvo-local.test", name: "Bob Brown" },
   C: { subject: "local-test-c", email: "c@connvo-local.test", name: "Carol Chen" },
   O: { subject: "local-test-o", email: "o@connvo-local.test", name: "Owen Outsider" },
+  N: { subject: "local-test-n", email: "n@connvo-local.test", name: "Nina New" },
 } as const;
 
 type SeedUserKey = keyof typeof SEED_USERS;
@@ -78,7 +82,7 @@ export async function GET(request: Request): Promise<Response> {
   const user = SEED_USERS[userParam as SeedUserKey];
   if (!user) {
     return new Response(
-      `[connvo test-auth] unknown user '${userParam}' (expected one of A, B, C, O)`,
+      `[connvo test-auth] unknown user '${userParam}' (expected one of A, B, C, O, N)`,
       { status: 400 },
     );
   }
