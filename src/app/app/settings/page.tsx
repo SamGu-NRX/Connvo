@@ -78,15 +78,6 @@ export default function SettingsPage() {
     });
   }
 
-  // The home nudge links to #matching, but the card mounts after auth and
-  // these queries resolve, too late for the browser's own hash scroll.
-  const editorReady = editor !== null;
-  useEffect(() => {
-    if (editorReady && window.location.hash === "#matching") {
-      document.getElementById("matching")?.scrollIntoView({ block: "start" });
-    }
-  }, [editorReady]);
-
   const handleSaveAvailability = async () => {
     if (!editor) return;
     setSavingAvailability(true);
@@ -154,6 +145,16 @@ export default function SettingsPage() {
     authLoading ||
     convexAuthState.isLoading ||
     (readyForSettingsQuery && settings === undefined);
+
+  // The home nudge links to #matching, but the card mounts only once auth,
+  // settings and the availability queries have all resolved, in any order,
+  // which is too late for the browser's own hash scroll.
+  const matchingCardReady = !loading && editor !== null;
+  useEffect(() => {
+    if (matchingCardReady && window.location.hash === "#matching") {
+      document.getElementById("matching")?.scrollIntoView({ block: "start" });
+    }
+  }, [matchingCardReady]);
 
   useEffect(() => {
     console.log("[SettingsPage] Query readiness", {
