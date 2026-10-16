@@ -17,7 +17,7 @@ import ProfileSummary from "@/components/onboarding/ProfileSummary";
 import BasicInfo from "@/components/onboarding/BasicInfo";
 import Congratulations from "@/components/onboarding/Congratulations";
 import AvailabilityStep from "@/components/onboarding/AvailabilityStep";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@convex/../convex/_generated/api";
 import { onboardingSchema, OnboardingFormData } from "@/schemas/onboarding";
 import {
@@ -56,7 +56,13 @@ export default function OnboardingPage() {
   const [showCongrats, setShowCongrats] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const saveOnboarding = useMutation(api.users.mutations.saveOnboarding);
-  const onboardingState = useQuery(api.users.queries.getOnboardingState, {});
+  // getOnboardingState throws without an identity, and a query sent before
+  // the session token reaches Convex fails into the error page.
+  const { isAuthenticated } = useConvexAuth();
+  const onboardingState = useQuery(
+    api.users.queries.getOnboardingState,
+    isAuthenticated ? {} : "skip",
+  );
 
   useEffect(() => {
     if (onboardingState?.onboardingComplete) {
