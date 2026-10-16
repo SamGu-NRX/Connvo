@@ -63,7 +63,8 @@ than first come, first served.
 1. **Who's eligible.** People with room left in this week's cadence, at least one free block in the next 7 days,
    and matching not paused.
 2. **Pairs that are never allowed:**
-   - they share no language;
+   - both listed their languages and the lists share none. An empty list means the person hasn't said yet,
+     not that they speak nothing, so it never rules a pair out;
    - they have no free time in common at least 18 hours from now;
    - either one blocked or reported the other;
    - they met in the last 90 days, unless both said they'd talk again;
