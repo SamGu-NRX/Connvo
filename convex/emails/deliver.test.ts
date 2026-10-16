@@ -169,10 +169,9 @@ describe("retry-safe multi-recipient delivery", () => {
     // Bob's first attempt fails transiently; his retry succeeds.
     const log = stubResend({ "bob@example.com": 1 });
 
-    await t.action(
-      internal.emails.deliver.meetingConfirmed,
-      { meetingId: fx.meetingId },
-    );
+    await t.action(internal.emails.deliver.meetingConfirmed, {
+      meetingId: fx.meetingId,
+    });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 
     expect([...log.delivered].sort()).toEqual([
@@ -187,10 +186,9 @@ describe("retry-safe multi-recipient delivery", () => {
     // Bob fails on every attempt; the retry chain must be bounded.
     const log = stubResend({ "bob@example.com": Number.POSITIVE_INFINITY });
 
-    await t.action(
-      internal.emails.deliver.meetingConfirmed,
-      { meetingId: fx.meetingId },
-    );
+    await t.action(internal.emails.deliver.meetingConfirmed, {
+      meetingId: fx.meetingId,
+    });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 
     // Alice is attempted, delivered, and never retried.
@@ -247,10 +245,9 @@ describe("retry-safe multi-recipient delivery", () => {
     const log = stubResend({ "bob@example.com": -1 });
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await t.action(
-      internal.emails.deliver.meetingConfirmed,
-      { meetingId: fx.meetingId },
-    );
+    await t.action(internal.emails.deliver.meetingConfirmed, {
+      meetingId: fx.meetingId,
+    });
     const attemptsAfterFirstPass = log.attempts.length;
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 

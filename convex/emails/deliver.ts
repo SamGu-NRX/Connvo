@@ -88,7 +88,7 @@ async function deliverDrafts(
   entityId: string,
   drafts: EmailMessage[],
   attempt: number,
-  scheduleRetry: (nextAttempt: number) => Promise<void>,
+  scheduleRetry: (nextAttempt: number) => Promise<unknown>,
 ): Promise<string> {
   const stuck: string[] = [];
   const dropped: string[] = [];
@@ -163,7 +163,7 @@ export const proposalIntroduced = internalAction({
     proposalId: v.id("matchProposals"),
     attempt: v.optional(v.number()),
   },
-  handler: async (ctx, { proposalId, attempt = 1 }) => {
+  handler: async (ctx, { proposalId, attempt = 1 }): Promise<string> => {
     const drafts = await ctx.runQuery(
       internal.emails.drafts.introductionDrafts,
       { proposalId },
@@ -187,7 +187,7 @@ export const proposalIntroduced = internalAction({
 /** "Confirmed" with the .ics invite: one send per meeting participant. */
 export const meetingConfirmed = internalAction({
   args: { meetingId: v.id("meetings"), attempt: v.optional(v.number()) },
-  handler: async (ctx, { meetingId, attempt = 1 }) => {
+  handler: async (ctx, { meetingId, attempt = 1 }): Promise<string> => {
     const drafts = await ctx.runQuery(internal.emails.drafts.confirmedDrafts, {
       meetingId,
     });
@@ -219,7 +219,7 @@ export const sendReminder = internalAction({
     kind: v.union(v.literal("24h"), v.literal("10min")),
     attempt: v.optional(v.number()),
   },
-  handler: async (ctx, { meetingId, kind, attempt = 1 }) => {
+  handler: async (ctx, { meetingId, kind, attempt = 1 }): Promise<string> => {
     const drafts = await ctx.runQuery(internal.emails.drafts.reminderDrafts, {
       meetingId,
       kind,
