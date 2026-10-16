@@ -343,6 +343,8 @@ try {
     afterBar?.screenSharing === "false",
     JSON.stringify(afterBar),
   );
+  await b.page.setViewportSize({ width: 1440, height: 900 });
+  await b.page.waitForTimeout(400);
   await shoot(b.page, "B-after-stop-1440x900");
   check(
     "browser stop bar ended the capture track",
