@@ -171,6 +171,7 @@ describe("retry-safe multi-recipient delivery", () => {
 
     await t.action(internal.emails.deliver.meetingConfirmed, {
       meetingId: fx.meetingId,
+      reminderKinds: ["24h", "10min"],
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 
@@ -188,6 +189,7 @@ describe("retry-safe multi-recipient delivery", () => {
 
     await t.action(internal.emails.deliver.meetingConfirmed, {
       meetingId: fx.meetingId,
+      reminderKinds: ["24h", "10min"],
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
 
@@ -247,6 +249,7 @@ describe("retry-safe multi-recipient delivery", () => {
 
     await t.action(internal.emails.deliver.meetingConfirmed, {
       meetingId: fx.meetingId,
+      reminderKinds: ["24h", "10min"],
     });
     const attemptsAfterFirstPass = log.attempts.length;
     await t.finishAllScheduledFunctions(vi.runAllTimers);
