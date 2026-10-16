@@ -24,6 +24,11 @@ export interface Interval {
   end: number;
 }
 
+/** Whether a slot starting at `start` overlaps any booked interval. */
+export function overlapsBooked(start: number, slotMs: number, booked: Interval[]): boolean {
+  return booked.some((b) => start < b.end && start + slotMs > b.start);
+}
+
 export interface SharedSlotOptions {
   /** Reference "now" (UTC epoch ms). */
   now: number;
@@ -204,7 +209,7 @@ export function sharedSlots(
         ? overlap.start
         : overlap.start + Math.ceil((earliest - overlap.start) / slotMs) * slotMs;
     for (let s = first; s + slotMs <= overlap.end; s += slotMs) {
-      if (booked.some((b) => s < b.end && s + slotMs > b.start)) continue;
+      if (overlapsBooked(s, slotMs, booked)) continue;
       slots.push(s);
       if (slots.length >= maxSlots) return slots;
     }
