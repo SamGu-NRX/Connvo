@@ -27,8 +27,12 @@ function runsWithoutBackend(pathname: string): boolean {
   );
 }
 
+/** /app's layout puts its own <main> around page content, inside its header and nav. */
+const APP_SHELL_ROUTE = /^\/app(\/|$)/;
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const Content = pathname && APP_SHELL_ROUTE.test(pathname) ? "div" : "main";
   const shell = (
     <ThemeProvider
       attribute="class"
@@ -36,9 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
     >
       <div className="bg-background min-h-screen">
-        <main>
-          {children}
-        </main>
+        <Content>{children}</Content>
       </div>
       <Toaster className="dark:hidden" />
       <Toaster theme="dark" className="hidden dark:block" />
