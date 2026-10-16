@@ -168,6 +168,7 @@ export const accept = mutation({
       patch.state = "confirmed";
       patch.meetingId = meetingId;
       state = "confirmed";
+      await scheduleMeetingEmails(ctx, meetingId, row.scheduledAt);
     }
 
     await ctx.db.patch(row._id, patch);

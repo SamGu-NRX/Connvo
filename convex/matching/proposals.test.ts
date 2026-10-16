@@ -152,6 +152,27 @@ describe("matchProposals state machine", () => {
     expect(row?.bAccepted).toBe(true);
   });
 
+  it("schedules the confirmation email and both reminders when both accept", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedProposal(t);
+    const scheduled = () =>
+      t.run(async (ctx) =>
+        (await ctx.db.system.query("_scheduled_functions").collect())
+          .filter((f) => f.name.startsWith("emails/deliver"))
+          .map((f) => [f.name, f.args[0]?.kind ?? null, f.scheduledTime]),
+      );
+
+    await authOf(t, "Alice").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId });
+    expect(await scheduled()).toEqual([]);
+
+    await authOf(t, "Bob").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId });
+    expect(await scheduled()).toEqual([
+      ["emails/deliver:meetingConfirmed", null, NOW],
+      ["emails/deliver:sendReminder", "24h", SLOT - 24 * 60 * 60_000],
+      ["emails/deliver:sendReminder", "10min", SLOT - 10 * 60_000],
+    ]);
+  });
+
   it("refuses an accept after expiry; the scheduled function does the flip", async () => {
     const t = createTestEnvironment();
     const fx = await seedProposal(t, { expiresAt: NOW - 1_000 });
