@@ -38,10 +38,16 @@ export interface EmailMessage {
 
 /**
  * A transient provider failure — 429, 5xx, or a network-level error — that a
- * later attempt of the same logical message may survive. Refusals (4xx) do
- * not throw: retrying a bad address or an unverified sender cannot succeed.
+ * later attempt of the same logical message may survive.
  */
 export class TransientSendError extends Error {}
+
+/**
+ * A refusal (4xx other than 429): the request itself was rejected, so a
+ * retry cannot succeed. It throws rather than returning so the caller's
+ * idempotency marker is recorded as failed, never as sent.
+ */
+export class RefusedSendError extends Error {}
 
 export interface EmailProvider {
   readonly name: "resend" | "console";
@@ -106,17 +112,16 @@ export function resendProvider(apiKey: string, from: string): EmailProvider {
       // Transient failures (429, 5xx) throw TransientSendError so the deliver
       // action's own scheduled retry picks them up — Convex does not retry
       // actions on its own. A refused message (bad address, unverified
-      // sender, exhausted credits) is logged and dropped — retrying a 4xx
-      // would only spam the logs.
+      // sender, an invalid Idempotency-Key) throws RefusedSendError: it is
+      // not retried, but it must not settle as if the person got the email.
       if (response.status === 429 || response.status >= 500) {
         throw new TransientSendError(`Resend returned ${response.status}`);
       }
       if (!response.ok) {
         const body = await response.text().catch(() => "");
-        console.error(
-          `[email:resend] dropped message to ${message.to}: ${response.status} ${body}`,
+        throw new RefusedSendError(
+          `Resend returned ${response.status} for ${message.to}: ${body}`,
         );
-        return;
       }
     },
   };

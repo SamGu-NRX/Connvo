@@ -15,7 +15,10 @@
  *   sent marker), and stays bounded when recipient two never recovers;
  * - a meeting cancelled between attempts sends nothing more (the reminder
  *   guard re-runs at retry time);
- * - refusals (4xx) stop without retrying.
+ * - refusals (4xx) are not retried, fail the action, and leave the
+ *   recipient's marker failed rather than sent;
+ * - a 300-character address still gets an Idempotency-Key within Resend's
+ *   256-character limit.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -129,6 +132,7 @@ interface SendLog {
  * Stub the global fetch that resendProvider uses. `failures` scripts each
  * address: n > 0 — the next n attempts return 500 (transient) and decrement;
  * -1 — every attempt returns 400 (a refusal); 0 or missing — success.
+ * A key longer than 256 characters returns 400, as Resend does.
  */
 function stubResend(failures: Record<string, number>): SendLog {
   const log: SendLog = { attempts: [], delivered: [], keys: [] };
@@ -142,7 +146,12 @@ function stubResend(failures: Record<string, number>): SendLog {
     const body = JSON.parse(init.body) as { to: string[] };
     const to = body.to[0]!;
     log.attempts.push(to);
-    log.keys.push(init.headers["Idempotency-Key"] ?? "");
+    const key = init.headers["Idempotency-Key"] ?? "";
+    log.keys.push(key);
+    // Resend rejects an Idempotency-Key over 256 characters.
+    if (key.length > 256) {
+      return { ok: false, status: 400, text: async () => "invalid key" };
+    }
     const remaining = failures[to] ?? 0;
     if (remaining > 0) {
       failures[to] = remaining - 1;
@@ -326,24 +335,57 @@ describe("retry-safe multi-recipient delivery", () => {
     expect(log.delivered).toEqual(["alice@example.com"]);
   });
 
-  it("stops without retrying a refused recipient", async () => {
+  it("fails loudly without recording a refused recipient as sent", async () => {
     const t = createTestEnvironment();
     const fx = await seedConfirmedMeeting(t);
-    // Bob's address is refused (4xx); the provider drops it without throwing.
+    // Bob's address is refused (4xx); the provider must throw before the
+    // idempotency marker can be completed.
     const log = stubResend({ "bob@example.com": -1 });
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await t.action(internal.emails.deliver.meetingConfirmed, {
-      meetingId: fx.meetingId,
-      reminderKinds: ["24h", "10min"],
-    });
-    const attemptsAfterFirstPass = log.attempts.length;
-    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await expect(
+      t.action(internal.emails.deliver.meetingConfirmed, {
+        meetingId: fx.meetingId,
+        reminderKinds: ["24h", "10min"],
+      }),
+    ).rejects.toThrow("dropped:bob@example.com");
 
     expect(attemptsFor(log, "alice@example.com")).toHaveLength(1);
     expect(attemptsFor(log, "bob@example.com")).toHaveLength(1);
-    // Nothing was scheduled: the refusal is terminal.
-    expect(log.attempts).toHaveLength(attemptsAfterFirstPass);
     expect(log.delivered).toEqual(["alice@example.com"]);
+    const bobMarker = await t.run((ctx) =>
+      ctx.db
+        .query("idempotencyKeys")
+        .withIndex("by_key_scope", (q) =>
+          q
+            .eq("key", `confirmed:${fx.meetingId}:bob@example.com`)
+            .eq("scope", "email_send"),
+        )
+        .unique(),
+    );
+    expect(bobMarker?.metadata?.status).toBe("failed");
+  });
+
+  it("bounds the Resend key for a 300-character address", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedConfirmedMeeting(t);
+    const longAddress = `${"a".repeat(288)}@example.com`;
+    await t.run(async (ctx) => {
+      await ctx.db.patch(fx.bobId, { email: longAddress });
+    });
+    const log = stubResend({});
+
+    await t.action(internal.emails.deliver.meetingConfirmed, {
+      meetingId: fx.meetingId,
+      reminderKinds: [],
+    });
+
+    const bobIndex = log.attempts.indexOf(longAddress);
+    expect(bobIndex).toBeGreaterThanOrEqual(0);
+    const bobKey = log.keys[bobIndex]!;
+    expect(longAddress).toHaveLength(300);
+    expect(bobKey).toMatch(/^confirmed:[0-9a-f]{64}$/);
+    expect(bobKey).toHaveLength("confirmed:".length + 64);
+    expect(log.delivered).toContain(longAddress);
   });
 });

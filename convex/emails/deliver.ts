@@ -18,10 +18,12 @@
  * re-runs the drafts query, so the reminder guard (null for a cancelled or
  * ended meeting) is checked again at retry time, and the per-recipient
  * markers make already-sent recipients skip instead of double-sending.
- * Refusals (4xx) are terminal: the provider drops them without throwing.
- * Resend receives the same key as its Idempotency-Key header, so even an
- * ambiguous failure — the send landed, the response was lost — cannot
- * double-send within Resend's 24-hour key window.
+ * Refusals (4xx) are not retried, but they leave the marker failed and the
+ * action itself throws once every recipient has been tried, so a refused
+ * person is never recorded as sent. Resend receives a SHA-256 digest of the
+ * same key as its Idempotency-Key header, so even an ambiguous failure —
+ * the send landed, the response was lost — cannot double-send within
+ * Resend's 24-hour key window.
  */
 
 import { internalAction } from "@convex/_generated/server";
@@ -66,12 +68,36 @@ async function send(message: EmailMessage): Promise<void> {
 }
 
 /**
+ * Resend rejects an Idempotency-Key longer than 256 characters with a 400,
+ * and the raw key embeds the recipient address, which has no such bound.
+ * A SHA-256 hex digest of the whole key is always 64 characters; the kind
+ * prefix keeps it readable in Resend's logs. Hashing uses Web Crypto
+ * (crypto.subtle), which the default Convex runtime provides, so this file
+ * needs no "use node".
+ */
+async function resendIdempotencyKey(
+  kind: string,
+  key: string,
+): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(key),
+  );
+  const hex = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  return `${kind}:${hex}`;
+}
+
+/**
  * Send one fully built message under its per-message-and-recipient key.
  * Settles silently when the marker says this exact message was already
- * sent; throws TransientSendError through when the provider says retry.
+ * sent; otherwise any provider error (TransientSendError for a retry,
+ * RefusedSendError for a refusal) propagates and leaves the marker failed.
  */
 async function sendOnce(
   ctx: ActionCtx,
+  kind: string,
   key: string,
   draft: EmailMessage,
 ): Promise<void> {
@@ -85,7 +111,13 @@ async function sendOnce(
       allowRetry: true,
     },
     async () => {
-      await send({ ...draft, idempotencyKey: key });
+      // The marker keeps the full readable key; Resend gets the bounded
+      // digest, since a long address would push the raw key past its
+      // 256-character limit and turn every send into a 400.
+      await send({
+        ...draft,
+        idempotencyKey: await resendIdempotencyKey(kind, key),
+      });
       return "sent";
     },
   );
@@ -109,7 +141,7 @@ async function deliverDrafts(
   for (const draft of drafts) {
     const key = `${kind}:${entityId}:${draft.to}`;
     try {
-      await sendOnce(ctx, key, draft);
+      await sendOnce(ctx, kind, key, draft);
     } catch (error) {
       if (error instanceof TransientSendError) {
         stuck.push(draft.to);
@@ -139,6 +171,12 @@ async function deliverDrafts(
   const parts = [`attempt ${attempt}/${MAX_ATTEMPTS}`, `sent:${sent}`];
   if (dropped.length > 0) parts.push(`dropped:${dropped.join(",")}`);
   if (stuck.length > 0) parts.push(`retrying:${stuck.join(",")}`);
+  // A refusal fails the action, after every other recipient was tried and
+  // any retry was scheduled, so it shows as a failed run in the dashboard
+  // rather than a successful one with a summary nobody reads.
+  if (dropped.length > 0) {
+    throw new Error(`[email:deliver] ${kind} ${entityId}: ${parts.join(" ")}`);
+  }
   return parts.join(" ");
 }
 
