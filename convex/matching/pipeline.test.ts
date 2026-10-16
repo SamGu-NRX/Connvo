@@ -162,6 +162,21 @@ describe("buildProposals", () => {
     expect(drafts).toEqual([]);
   });
 
+  // Profiles are created with languages: [] and nothing collects them yet;
+  // an unknown list must not block the pair, or nobody is ever matched.
+  it("proposes pairs where one or both people listed no languages", async () => {
+    for (const [la, lb] of [[[], []], [[], ["Português"]]] as const) {
+      const drafts = await buildProposals({
+        now: NOW,
+        people: [
+          person({ userId: "u_a", languages: [...la] }),
+          person({ userId: "u_b", languages: [...lb] }),
+        ],
+      });
+      expect(drafts).toHaveLength(1);
+    }
+  });
+
   it("gives one proposal per person and takes the best pairs first", async () => {
     // u_x complements both u_a and u_b on goals; u_a and u_b share nothing.
     const strongX = (userId: string): MatcherSnapshotPerson =>

@@ -84,6 +84,9 @@ export default function HomePage() {
   // Identity comes from Convex (works under WorkOS and the eval test adapter
   // alike); no direct WorkOS hook here — /app is a proxy-exempt eval path.
   const me = useQuery(api.users.queries.getCurrentUser);
+  const profile = useQuery(api.profiles.queries.getCurrentUserProfile);
+  // The name the person chose at onboarding, never their email address.
+  const name = profile?.displayName || me?.displayName;
   const { isAuthenticated } = useConvexAuth();
   const [talkNowOpen, setTalkNowOpen] = useState(true);
 
@@ -108,7 +111,7 @@ export default function HomePage() {
           className="mb-4 overflow-hidden text-left sm:text-center"
         >
           <h1 className="bg-linear-to-r from-emerald-400 via-emerald-500 to-teal-400 bg-clip-text pb-1 text-4xl font-semibold text-transparent md:text-5xl">
-            Welcome to Connvo, {me?.email || "Guest"}
+            {name ? `Welcome to Connvo, ${name}` : "Welcome to Connvo"}
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-emerald-900/70 dark:text-emerald-100/70">
             One good conversation at a time — proposed by the matcher, or live

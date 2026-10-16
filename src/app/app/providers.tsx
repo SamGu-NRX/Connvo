@@ -27,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <div className="bg-background min-h-screen">
-        <main>{children}</main>
+        {children}
       </div>
       <Toaster className="dark:hidden" />
       <Toaster theme="dark" className="hidden dark:block" />

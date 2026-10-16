@@ -18,11 +18,11 @@ import { v } from "convex/values";
 import type { Id } from "@convex/_generated/dataModel";
 import { internal } from "@convex/_generated/api";
 import { buildCalendarExport } from "../lib/ics";
-import { formatInZone } from "@convex/matching/proposals";
+import { formatInZone, MEETING_DURATION_MS } from "@convex/matching/proposals";
 import type { EmailMessage } from "@convex/lib/email";
 
-/** Matcher meetings are 30 minutes (convex/matching/slots.ts). */
-const MEETING_DURATION_MS = 30 * 60 * 60_000;
+export const reminderKinds = v.union(v.literal("24h"), v.literal("10min"));
+export type ReminderKind = "24h" | "10min";
 
 /** The deployment's URL; emails link the join page and the home screen. */
 function appUrl(): string {
@@ -154,8 +154,11 @@ export const introductionDrafts = internalQuery({
 
 /** Confirmation with the .ics invite, written when both people accept. */
 export const confirmedDrafts = internalQuery({
-  args: { meetingId: v.id("meetings") },
-  handler: async (ctx, { meetingId }): Promise<EmailMessage[]> => {
+  args: {
+    meetingId: v.id("meetings"),
+    reminderKinds: v.array(reminderKinds),
+  },
+  handler: async (ctx, { meetingId, reminderKinds: scheduledReminderKinds }): Promise<EmailMessage[]> => {
     const row = await ctx.db
       .query("matchProposals")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
@@ -174,6 +177,14 @@ export const confirmedDrafts = internalQuery({
         state: "scheduled",
         updatedAt: Date.now(),
       });
+      const reminderText =
+        scheduledReminderKinds.length === 2
+          ? "We'll remind you 24 hours and 10 minutes before."
+          : scheduledReminderKinds.includes("24h")
+            ? "We'll remind you 24 hours before."
+            : scheduledReminderKinds.includes("10min")
+              ? "We'll remind you 10 minutes before."
+              : "No reminders are scheduled.";
       const subject = `Confirmed: you and ${partnerName}, ${at}`;
       const text = [
         `You and ${partnerName} both said yes.`,
@@ -182,14 +193,14 @@ export const confirmedDrafts = internalQuery({
         `Where: ${joinUrl}`,
         `Suggested first question: ${row.firstQuestion}`,
         "",
-        "The calendar invite is attached. We'll remind you 24 hours and 10 minutes before.",
+        `The calendar invite is attached. ${reminderText}`,
       ].join("\n");
       const html = emailHtml(
         `You and ${partnerName} both said yes`,
         [
           `<strong>When</strong><br/>${at} (your timezone), for 30 minutes`,
           `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
-          "The calendar invite is attached. We'll remind you 24 hours and 10 minutes before.",
+          `The calendar invite is attached. ${reminderText}`,
         ],
         { label: "Open the lobby", href: joinUrl },
       );
@@ -205,9 +216,6 @@ export const confirmedDrafts = internalQuery({
     });
   },
 });
-
-export const reminderKinds = v.union(v.literal("24h"), v.literal("10min"));
-export type ReminderKind = "24h" | "10min";
 
 /**
  * Reminder drafts, or null when the reminder must not send: the meeting is
