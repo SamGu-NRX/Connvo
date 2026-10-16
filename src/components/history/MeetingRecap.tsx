@@ -112,6 +112,11 @@ export function MeetingRecapView({
                     Host
                   </Badge>
                 ) : null}
+                <ParticipantActions
+                  userId={p.userId}
+                  displayName={p.displayName}
+                  meetingId={history.meeting._id}
+                />
               </li>
             ))}
           </ul>

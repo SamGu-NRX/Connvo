@@ -5,6 +5,31 @@ import { useConvexAuth } from "convex/react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useEffect } from "react";
+import { useTestAuth } from "@/lib/test-auth";
+
+// CALL-PLAN.md D3: with NEXT_PUBLIC_CONNVO_TEST_AUTH=1 the Convex client already
+// authenticates through the test adapter (ConvexClientProvider), and the
+// proxy-exempt pages render without AuthKitProvider, so AuthKit's useAuth would
+// throw. The flag is a build-time constant, so each build calls one hook pair.
+const TEST_AUTH_ENABLED = process.env.NEXT_PUBLIC_CONNVO_TEST_AUTH === "1";
+
+function useAuthKitIdentity() {
+  const { user, loading: authLoading } = useAuth();
+  const { accessToken, loading: tokenLoading } = useAccessToken();
+  return { user, authLoading, accessToken, tokenLoading };
+}
+
+function useTestIdentity() {
+  const { user, isLoading } = useTestAuth();
+  return {
+    user: user ? { id: user.id, email: user.email, firstName: user.name } : null,
+    authLoading: isLoading,
+    accessToken: user ? "connvo-local-test" : undefined,
+    tokenLoading: isLoading,
+  };
+}
+
+const useIdentity = TEST_AUTH_ENABLED ? useTestIdentity : useAuthKitIdentity;
 
 export interface WorkOSUser {
   id: string;
@@ -17,8 +42,7 @@ export interface WorkOSUser {
 }
 
 export function useWorkOSAuth() {
-  const { user, loading: authLoading } = useAuth();
-  const { accessToken, loading: tokenLoading } = useAccessToken();
+  const { user, authLoading, accessToken, tokenLoading } = useIdentity();
   const { isLoading: convexLoading, isAuthenticated: convexAuthenticated } =
     useConvexAuth();
 
