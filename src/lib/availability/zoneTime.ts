@@ -45,7 +45,7 @@ const formatters = new Map<string, Intl.DateTimeFormat>();
 function formatter(key: string, timeZone: string, options: Intl.DateTimeFormatOptions) {
   let fmt = formatters.get(key);
   if (!fmt) {
-    fmt = new Intl.DateTimeFormat("en-US", options);
+    fmt = new Intl.DateTimeFormat("en-US", { ...options, timeZone });
     formatters.set(key, fmt);
   }
   return fmt;

@@ -54,9 +54,9 @@ describe("client and server agree on the same free hour", () => {
       Date.UTC(2025, 10, 10),
     );
     expect(client.map((o) => o.start)).toEqual([
-      Date.UTC(2025, 9, 26, 16, 30),
-      Date.UTC(2025, 10, 2, 17, 30),
-      Date.UTC(2025, 10, 9, 17, 30),
+      Date.UTC(2025, 9, 26, 17, 30),
+      Date.UTC(2025, 10, 2, 18, 30),
+      Date.UTC(2025, 10, 9, 18, 30),
     ]);
   });
 });
