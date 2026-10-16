@@ -39,7 +39,7 @@ beforeEach(() => {
   vi.stubEnv("VERCEL", "");
   vi.stubEnv("VERCEL_ENV", "");
 });
-it.each(["/", "/app/profile"])(
+it.each(["/", "/auth-test"])(
   "test auth retains AuthKit for useAuth on %s",
   async (pathname) => {
     route.pathname = pathname;
@@ -96,7 +96,7 @@ it("updates AuthKit routing at the surviving outer owner", async () => {
   );
   expect(screen.getByText("Call ready")).toBeVisible();
   expect(route.getAuth).not.toHaveBeenCalled();
-  route.pathname = "/app/profile";
+  route.pathname = "/auth-test";
   page.rerender(
     <ConvexClientProvider>
       <ConvexClientProvider>

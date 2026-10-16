@@ -55,6 +55,12 @@ const TEST_AUTH_PROXY_PATHS = new Set([
   // The Your network page is an after-call surface reached with harness
   // identities (cv6-connect-network); its Convex auth is the test adapter.
   "/app/dashboard",
+  // Onboarding (with its availability step), Settings (matching preferences
+  // and weekly availability) and Profile, so a local walk can reach the
+  // screens that write chat preferences; their data is guarded by Convex.
+  "/onboarding",
+  "/app/settings",
+  "/app/profile",
   "/app/smart-connection",
   "/app/professional/b2b",
   "/app/professional/collaboration",
