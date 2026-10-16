@@ -153,12 +153,13 @@ export const resetOnboarding = internalMutation({
     // Purge saveOnboarding's idempotency markers: its completed early-return
     // would otherwise hand back the cached result and skip the real work,
     // leaving onboardingComplete false while the client shows congratulations.
-    // The derived key embeds the user id inside JSON.stringify({userId, ...args}).
+    // The client derives the key from form data alone (no user id), so match
+    // markers by the completed metadata's userId instead.
     const markers = await ctx.db.query("idempotencyKeys").collect();
     for (const marker of markers) {
       if (
         marker.scope === "users.onboarding.saveOnboarding" &&
-        marker.key.includes(user._id)
+        String(marker.metadata?.["userId"] ?? "") === String(user._id)
       ) {
         await ctx.db.delete(marker._id);
       }
