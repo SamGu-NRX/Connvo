@@ -627,8 +627,9 @@ describe("screen share ownership", () => {
     async (how) => {
       const screen = screenTrack();
       const pending = deferred<MediaStream>();
-      (devices as typeof devices & { getDisplayMedia: unknown }).getDisplayMedia =
-        vi.fn(() => pending.promise);
+      (
+        devices as typeof devices & { getDisplayMedia: unknown }
+      ).getDisplayMedia = vi.fn(() => pending.promise);
       const { result, unmount } = renderHook(() => useLocalMedia());
       await act(async () => result.current.start());
       let sharing!: Promise<void>;
