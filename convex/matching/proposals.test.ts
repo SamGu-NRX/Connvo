@@ -103,6 +103,14 @@ function authOf(t: TestServer, name: string) {
   return t.withIdentity({ subject: name });
 }
 
+function scheduledEmails(t: TestServer) {
+  return t.run(async (ctx) =>
+    (await ctx.db.system.query("_scheduled_functions").collect())
+      .filter((f) => f.name.startsWith("emails/deliver"))
+      .map((f) => [f.name, f.args[0]?.kind ?? null, f.scheduledTime]),
+  );
+}
+
 describe("matchProposals state machine", () => {
   it("creates exactly one meeting when both sides accept", async () => {
     const t = createTestEnvironment();
@@ -136,6 +144,7 @@ describe("matchProposals state machine", () => {
     expect(meetings).toHaveLength(1);
     const meeting = meetings[0];
     expect(meeting.scheduledAt).toBe(SLOT);
+    expect(meeting.duration).toBe(30 * 60_000);
     const participants = await t.run(async (ctx) =>
       ctx.db
         .query("meetingParticipants")
@@ -154,21 +163,29 @@ describe("matchProposals state machine", () => {
 
   it("schedules the confirmation email and both reminders when both accept", async () => {
     const t = createTestEnvironment();
-    const fx = await seedProposal(t);
-    const scheduled = () =>
-      t.run(async (ctx) =>
-        (await ctx.db.system.query("_scheduled_functions").collect())
-          .filter((f) => f.name.startsWith("emails/deliver"))
-          .map((f) => [f.name, f.args[0]?.kind ?? null, f.scheduledTime]),
-      );
+    const slot = NOW + 30 * 60 * 60_000;
+    const fx = await seedProposal(t, { scheduledAt: slot });
 
     await authOf(t, "Alice").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId });
-    expect(await scheduled()).toEqual([]);
+    expect(await scheduledEmails(t)).toEqual([]);
 
     await authOf(t, "Bob").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId });
-    expect(await scheduled()).toEqual([
+    expect(await scheduledEmails(t)).toEqual([
       ["emails/deliver:meetingConfirmed", null, NOW],
-      ["emails/deliver:sendReminder", "24h", SLOT - 24 * 60 * 60_000],
+      ["emails/deliver:sendReminder", "24h", slot - 24 * 60 * 60_000],
+      ["emails/deliver:sendReminder", "10min", slot - 10 * 60_000],
+    ]);
+  });
+
+  it("skips the 24-hour reminder when the chat is less than a day out", async () => {
+    const t = createTestEnvironment();
+    // SLOT is 21 hours after NOW.
+    const fx = await seedProposal(t);
+
+    await authOf(t, "Alice").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId });
+    await authOf(t, "Bob").mutation(api.matching.proposals.accept, { proposalId: fx.proposalId });
+    expect(await scheduledEmails(t)).toEqual([
+      ["emails/deliver:meetingConfirmed", null, NOW],
       ["emails/deliver:sendReminder", "10min", SLOT - 10 * 60_000],
     ]);
   });
