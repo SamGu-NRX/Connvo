@@ -28,6 +28,18 @@ class TestPeerConnection {
       replaceTrack: (
         track: { kind: string; id: string } | null,
       ) => Promise<void>;
+      params: {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      };
+      getParameters: () => {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      };
+      setParameters: (params: {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      }) => Promise<void>;
     };
   }> = [];
 
@@ -40,6 +52,20 @@ class TestPeerConnection {
       track: null as { kind: string; id: string } | null,
       async replaceTrack(track: { kind: string; id: string } | null) {
         this.track = track;
+      },
+      // Camera-era defaults; publishScreenShare rewrites these per share.
+      params: {
+        degradationPreference: "balanced",
+        encodings: [{ scaleResolutionDownBy: 2 }],
+      },
+      getParameters() {
+        return this.params;
+      },
+      async setParameters(params: {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      }) {
+        this.params = params;
       },
     };
     const slot = {
@@ -304,5 +330,24 @@ describe("P2P screen share publication", () => {
     await transport.leave();
     expect(screen.stopped).toBe(false);
     expect(screen.readyState).toBe("live");
+  });
+
+  it("pins the screen era to full resolution and returns to balanced on restore", async () => {
+    const { transport, pc } = await connect([
+      { kind: "audio", id: "microphone" },
+      { kind: "video", id: "camera" },
+    ]);
+    const videoSender = pc.slots[1].sender;
+    expect(videoSender.params.degradationPreference).toBe("balanced");
+    expect(videoSender.params.encodings[0].scaleResolutionDownBy).toBe(2);
+    const screen = new FakeScreenTrack();
+    share(transport, screen as unknown as MediaStreamTrack);
+    // Screen content needs full resolution or text arrives illegible.
+    expect(videoSender.params.degradationPreference).toBe(
+      "maintain-resolution",
+    );
+    expect(videoSender.params.encodings[0].scaleResolutionDownBy).toBe(1);
+    screen.end();
+    expect(videoSender.params.degradationPreference).toBe("balanced");
   });
 });

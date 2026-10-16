@@ -621,4 +621,35 @@ describe("screen share ownership", () => {
       "This browser cannot share a screen.",
     );
   });
+
+  it.each(["toggle-off", "release", "unmount"] as const)(
+    "stops a screen track that resolves after %s and installs nothing",
+    async (how) => {
+      const screen = screenTrack();
+      const pending = deferred<MediaStream>();
+      (devices as typeof devices & { getDisplayMedia: unknown }).getDisplayMedia =
+        vi.fn(() => pending.promise);
+      const { result, unmount } = renderHook(() => useLocalMedia());
+      await act(async () => result.current.start());
+      let sharing!: Promise<void>;
+      act(() => {
+        sharing = result.current.setScreenSharing(true);
+      });
+      if (how === "toggle-off")
+        await act(async () => result.current.setScreenSharing(false));
+      else if (how === "release")
+        await act(async () => result.current.release());
+      else unmount();
+      await act(async () => {
+        pending.resolve(stream(screen));
+        await sharing;
+      });
+      expect(result.current.screenSharing).toBe(false);
+      expect(result.current.screenTrack).toBeNull();
+      expect(result.current.screenProblem).toBeNull();
+      // A late capture belongs to nobody: it must not keep capturing
+      // outside the call.
+      expect(screen.readyState).toBe("ended");
+    },
+  );
 });

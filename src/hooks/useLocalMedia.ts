@@ -136,6 +136,12 @@ export function useLocalMedia(): LocalMedia {
   const [facing, setFacing] = useState<CameraFacing>("user");
   const facingRef = useRef(facing);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
+  // Generation of the in-flight getDisplayMedia request. Every stop path
+  // bumps it, so a capture that resolves after the share ended, the
+  // component unmounted, or a newer request began is stale: it is stopped
+  // and never installed (a late track would keep capturing outside the
+  // call with no UI to end it).
+  const screenGenRef = useRef(0);
   // Render-visible mirror of screenTrackRef: refs are imperative, the
   // exposed track must re-render consumers (the remote tile, the transport
   // forwarding effect) when capture starts or ends.
@@ -575,6 +581,8 @@ export function useLocalMedia(): LocalMedia {
   }, [captureCamera, rememberDevice]);
 
   const stopScreenShare = useCallback(() => {
+    // Any picker still open now belongs to a dead request.
+    screenGenRef.current++;
     const track = screenTrackRef.current;
     screenTrackRef.current = null;
     setScreenTrack(null);
@@ -597,6 +605,7 @@ export function useLocalMedia(): LocalMedia {
         setScreenProblem("This browser cannot share a screen.");
         return;
       }
+      const generation = ++screenGenRef.current;
       let captured: MediaStream | null = null;
       try {
         captured = await mediaDevices.getDisplayMedia({
@@ -604,11 +613,19 @@ export function useLocalMedia(): LocalMedia {
           audio: false,
         });
       } catch (error) {
+        // Superseded: a newer request or cleanup owns the UI now.
+        if (generation !== screenGenRef.current) return;
         setScreenProblem(
           error instanceof DOMException && error.name === "NotAllowedError"
             ? "Screen sharing was cancelled."
             : "Screen sharing could not start.",
         );
+        return;
+      }
+      if (generation !== screenGenRef.current) {
+        // The share was toggled off, released, or unmounted while the
+        // picker was open: stop the late capture, install nothing.
+        captured.getTracks().forEach((entry) => entry.stop());
         return;
       }
       const track = captured.getVideoTracks()[0];
