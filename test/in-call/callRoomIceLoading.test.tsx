@@ -18,6 +18,11 @@ vi.mock("@/hooks/useLocalMedia", async () => {
         version: 0,
         micOn,
         cameraOn,
+        screenSharing: false,
+        screenTrack: null,
+        screenSupported: true,
+        screenProblem: null,
+        setScreenSharing: async () => {},
         audioOnly: false,
         devices: { audioinput: [], videoinput: [] },
         selected: { audioinput: null, videoinput: null },
@@ -70,6 +75,7 @@ test("joining publishes the current controls after a delayed credential request"
   expect(publishLocalState).toHaveBeenLastCalledWith({
     micOn: false,
     cameraOn: false,
+    screenSharing: false,
   });
   expect(document.querySelector("[data-call-phase]")).toHaveAttribute(
     "data-call-phase",

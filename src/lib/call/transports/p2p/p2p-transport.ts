@@ -189,7 +189,11 @@ export function createP2PTransport({
   /** The track the outgoing video slot should carry right now. */
   function outgoingVideoTrack(): MediaStreamTrack | null {
     if (screenTrack) return screenTrack;
-    return currentStream()?.getTracks().find((t) => t.kind === "video") ?? null;
+    return (
+      currentStream()
+        ?.getTracks()
+        .find((t) => t.kind === "video") ?? null
+    );
   }
 
   function detachScreenEnded(): void {
@@ -359,7 +363,11 @@ export function createP2PTransport({
       peer.politeOfferTimer = setTimeout(() => {
         peer.politeOfferTimer = null;
         if (peer.remoteOfferVersion !== offeredVersion) return;
-        if (!peer.makingOffer && pc.signalingState === "stable" && pc.connectionState !== "closed") {
+        if (
+          !peer.makingOffer &&
+          pc.signalingState === "stable" &&
+          pc.connectionState !== "closed"
+        ) {
           trace(`${id} no offer arrived; offering`);
           void makeOffer();
         }
@@ -459,8 +467,15 @@ export function createP2PTransport({
           send(peer.id, { description: pc.localDescription.toJSON() });
         // Incoming offers cannot associate addTransceiver reservations. A
         // polite audio-only join must offer its remaining video slot itself.
-        const video = pc.getTransceivers().find((slot) => slot.sender === peer.senders.video);
-        if (video && video.mid === null && pc.connectionState !== "closed" && peers.get(peer.id) === peer) {
+        const video = pc
+          .getTransceivers()
+          .find((slot) => slot.sender === peer.senders.video);
+        if (
+          video &&
+          video.mid === null &&
+          pc.connectionState !== "closed" &&
+          peers.get(peer.id) === peer
+        ) {
           if (peer.politeOfferTimer) clearTimeout(peer.politeOfferTimer);
           peer.politeOfferTimer = null;
           peer.requestOffer();
@@ -633,6 +648,19 @@ export function createP2PTransport({
       if (!sender) continue;
       if (sender.track !== video)
         void sender.replaceTrack(video).catch(() => {});
+      // The sender keeps the camera era's downscale and balanced preference;
+      // screen content needs full resolution or text arrives illegible.
+      try {
+        const params = sender.getParameters();
+        params.degradationPreference = track
+          ? "maintain-resolution"
+          : "balanced";
+        for (const encoding of params.encodings ?? [])
+          encoding.scaleResolutionDownBy = 1;
+        void sender.setParameters(params).catch(() => {});
+      } catch {
+        // Older senders refuse parameter writes; the share still works.
+      }
     }
   };
 

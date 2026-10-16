@@ -265,6 +265,7 @@ export function CallRoom({
       // The person can change capture while connect awaits signaling.
       const latest = mediaRef.current;
       transport.publishLocalStream(latest.stream);
+      transport.publishScreenShare?.(latest.screenTrack);
       transport.publishLocalState({
         micOn: latest.micOn,
         cameraOn: latest.cameraOn,
@@ -285,6 +286,11 @@ export function CallRoom({
   useEffect(() => {
     transportRef.current?.publishLocalStream(media.stream);
   }, [media.stream, media.version]);
+  useEffect(() => {
+    // The screen replaces the camera in the reserved video slot; clearing
+    // the track (button or the browser's own stop bar) restores the camera.
+    transportRef.current?.publishScreenShare?.(media.screenTrack);
+  }, [media.screenTrack]);
   useEffect(() => {
     transportRef.current?.publishLocalState({
       micOn: media.micOn,
@@ -357,9 +363,7 @@ export function CallRoom({
       }
       if (event.key.toLowerCase() === "s" && mediaRef.current.screenSupported) {
         event.preventDefault();
-        void mediaRef.current.setScreenSharing(
-          !mediaRef.current.screenSharing,
-        );
+        void mediaRef.current.setScreenSharing(!mediaRef.current.screenSharing);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -803,12 +807,12 @@ function StatusNotice({
       : screenProblem && phase === "connected"
         ? screenProblem
         : phase === "joining"
-        ? "Connecting to the call…"
-        : phase === "reconnecting"
-          ? "Reconnecting. The call continues when your connection comes back."
-          : alone && phase === "connected"
-            ? "You're the only one here. Others appear when they join."
-            : null;
+          ? "Connecting to the call…"
+          : phase === "reconnecting"
+            ? "Reconnecting. The call continues when your connection comes back."
+            : alone && phase === "connected"
+              ? "You're the only one here. Others appear when they join."
+              : null;
   return (
     <div role="status" aria-live="polite" className="min-h-0">
       {text ? (
@@ -942,8 +946,12 @@ function ScreenShareButton({ media }: { media: LocalMedia }) {
           type="button"
           data-testid="toggle-screen-share"
           aria-pressed={sharing}
-          aria-label={sharing ? "Stop sharing your screen" : "Share your screen"}
-          title={sharing ? "Stop sharing your screen (S)" : "Share your screen (S)"}
+          aria-label={
+            sharing ? "Stop sharing your screen" : "Share your screen"
+          }
+          title={
+            sharing ? "Stop sharing your screen (S)" : "Share your screen (S)"
+          }
           aria-keyshortcuts="S"
           onClick={() => void media.setScreenSharing(!sharing)}
           className={cn(

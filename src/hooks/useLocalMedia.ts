@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   createBlurPipeline,
   type BlurPipeline,
@@ -11,6 +17,9 @@ import {
   type CameraFacing,
   type CameraQuality,
 } from "@/lib/call/camera-quality";
+
+/** Nothing to subscribe to: the environment's media capability is stable. */
+const subscribeNoop = () => () => {};
 
 export type LocalMediaStatus =
   | "idle"
@@ -43,6 +52,8 @@ export interface LocalMedia {
   screenSupported: boolean;
   /** True while a screen share is live. */
   screenSharing: boolean;
+  /** The live capture track while sharing, null otherwise. */
+  screenTrack: MediaStreamTrack | null;
   /** The last screen-share problem, shown on the call screen. */
   screenProblem: string | null;
   setScreenSharing: (on: boolean) => Promise<void>;
@@ -125,7 +136,17 @@ export function useLocalMedia(): LocalMedia {
   const [facing, setFacing] = useState<CameraFacing>("user");
   const facingRef = useRef(facing);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
-  const [screenSupported, setScreenSupported] = useState(false);
+  // Whether the browser offers getDisplayMedia. The environment never gains
+  // or loses it mid-session, so an external-store read replaces state: the
+  // server snapshot is false and the client switches after hydration, with
+  // no setState inside an effect.
+  const screenSupported = useSyncExternalStore(
+    subscribeNoop,
+    () =>
+      typeof navigator !== "undefined" &&
+      !!navigator.mediaDevices?.getDisplayMedia,
+    () => false,
+  );
   const [screenSharing, setScreenSharingState] = useState(false);
   const [screenProblem, setScreenProblem] = useState<string | null>(null);
   const sessionRef = useRef(0);
@@ -628,7 +649,6 @@ export function useLocalMedia(): LocalMedia {
   useEffect(() => {
     mountedRef.current = true;
     const mediaDevices = navigator.mediaDevices;
-    setScreenSupported(!!mediaDevices?.getDisplayMedia);
     const onChange = () => void refreshDevices();
     mediaDevices?.addEventListener?.("devicechange", onChange);
     void refreshDevices();
@@ -656,6 +676,7 @@ export function useLocalMedia(): LocalMedia {
     facing,
     screenSupported,
     screenSharing,
+    screenTrack: screenTrackRef.current,
     screenProblem,
     start,
     setMicOn,

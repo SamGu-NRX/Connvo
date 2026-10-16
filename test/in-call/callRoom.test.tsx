@@ -52,6 +52,11 @@ beforeEach(() => {
     version: 0,
     micOn: true,
     cameraOn: true,
+    screenSharing: false,
+    screenTrack: null,
+    screenSupported: true,
+    screenProblem: null,
+    setScreenSharing: vi.fn(),
     audioOnly: false,
     devices: { audioinput: [], videoinput: [] },
     selected: { audioinput: null, videoinput: null },
@@ -148,6 +153,7 @@ describe("call room", () => {
     expect(t.publishLocalState).toHaveBeenLastCalledWith({
       micOn: false,
       cameraOn: false,
+      screenSharing: false,
     });
   });
   it("disposes a transport created after the person has already left", async () => {

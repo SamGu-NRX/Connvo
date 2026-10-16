@@ -556,3 +556,69 @@ describe("camera and blur ownership", () => {
     );
   });
 });
+
+describe("screen share ownership", () => {
+  const screenTrack = () => {
+    const entry = track("video") as MediaStreamTrack & {
+      onended: (() => void) | null;
+    };
+    return entry;
+  };
+
+  it("shares the picked screen and stops its track on toggle-off", async () => {
+    const screen = screenTrack();
+    const getDisplayMedia = vi.fn(async () => stream(screen));
+    (devices as typeof devices & { getDisplayMedia: unknown }).getDisplayMedia =
+      getDisplayMedia;
+    const hook = renderHook(() => useLocalMedia());
+    await act(async () => hook.result.current.start());
+    expect(hook.result.current.screenSupported).toBe(true);
+    expect(hook.result.current.screenSharing).toBe(false);
+    await act(async () => hook.result.current.setScreenSharing(true));
+    expect(getDisplayMedia).toHaveBeenCalledWith({ video: true, audio: false });
+    expect(hook.result.current.screenSharing).toBe(true);
+    expect(hook.result.current.screenProblem).toBeNull();
+    await act(async () => hook.result.current.setScreenSharing(false));
+    expect(hook.result.current.screenSharing).toBe(false);
+    expect(screen.readyState).toBe("ended");
+    expect(screen.onended).toBeNull();
+  });
+
+  it("reports a cancelled picker instead of sharing", async () => {
+    (devices as typeof devices & { getDisplayMedia: unknown }).getDisplayMedia =
+      vi.fn(async () => {
+        throw new DOMException("No permission", "NotAllowedError");
+      });
+    const hook = renderHook(() => useLocalMedia());
+    await act(async () => hook.result.current.start());
+    await act(async () => hook.result.current.setScreenSharing(true));
+    expect(hook.result.current.screenSharing).toBe(false);
+    expect(hook.result.current.screenProblem).toBe(
+      "Screen sharing was cancelled.",
+    );
+  });
+
+  it("follows the browser's own stop bar so the button stays honest", async () => {
+    const screen = screenTrack();
+    (devices as typeof devices & { getDisplayMedia: unknown }).getDisplayMedia =
+      vi.fn(async () => stream(screen));
+    const hook = renderHook(() => useLocalMedia());
+    await act(async () => hook.result.current.start());
+    await act(async () => hook.result.current.setScreenSharing(true));
+    expect(hook.result.current.screenSharing).toBe(true);
+    await act(async () => screen.onended?.());
+    expect(hook.result.current.screenSharing).toBe(false);
+    expect(hook.result.current.screenProblem).toBeNull();
+  });
+
+  it("says the browser cannot share when getDisplayMedia is missing", async () => {
+    const hook = renderHook(() => useLocalMedia());
+    await act(async () => hook.result.current.start());
+    expect(hook.result.current.screenSupported).toBe(false);
+    await act(async () => hook.result.current.setScreenSharing(true));
+    expect(hook.result.current.screenSharing).toBe(false);
+    expect(hook.result.current.screenProblem).toBe(
+      "This browser cannot share a screen.",
+    );
+  });
+});

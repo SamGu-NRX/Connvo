@@ -484,13 +484,10 @@ export const setMediaState = mutation({
     screenSharing: v.optional(v.boolean()),
   },
   returns: v.null(),
-  handler: async (ctx, {
-    meetingId,
-    sessionId,
-    micOn,
-    cameraOn,
-    screenSharing,
-  }) => {
+  handler: async (
+    ctx,
+    { meetingId, sessionId, micOn, cameraOn, screenSharing },
+  ) => {
     const participant = await assertMeetingAccess(ctx, meetingId);
     const session = await ownSession(
       ctx,
