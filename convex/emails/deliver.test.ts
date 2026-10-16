@@ -37,11 +37,15 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
   process.env.RESEND_API_KEY = "re_test_key";
+  // Real email is on, so the links guard applies: point it somewhere
+  // deliverable so these tests exercise delivery, not the refusal.
+  process.env.CONNVO_APP_URL = "https://app.example.com";
 });
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
   delete process.env.RESEND_API_KEY;
+  delete process.env.CONNVO_APP_URL;
   vi.restoreAllMocks();
 });
 

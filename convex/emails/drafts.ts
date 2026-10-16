@@ -20,14 +20,10 @@ import { internal } from "@convex/_generated/api";
 import { buildCalendarExport } from "../lib/ics";
 import { formatInZone, MEETING_DURATION_MS } from "@convex/matching/proposals";
 import type { EmailMessage } from "@convex/lib/email";
+import { configuredAppUrl as appUrl } from "../lib/appUrl";
 
 export const reminderKinds = v.union(v.literal("24h"), v.literal("10min"));
 export type ReminderKind = "24h" | "10min";
-
-/** The deployment's URL; emails link the join page and the home screen. */
-function appUrl(): string {
-  return process.env.CONNVO_APP_URL ?? "http://localhost:3000";
-}
 
 /** UTF-8-safe base64 (Resend attachments want base64; ics text may be unicode). */
 function utf8Base64(text: string): string {
@@ -40,13 +36,20 @@ function utf8Base64(text: string): string {
   return btoa(binary);
 }
 
+/** Emails link the join page and the home screen, from the one app URL. */
 function joinUrlFor(meetingId: Id<"meetings">): string {
   return `${appUrl()}/app/call/${meetingId}`;
 }
 
 /** Minimal, calm HTML wrapper: one heading, a few paragraphs, one button. */
-function emailHtml(title: string, paragraphs: string[], cta?: { label: string; href: string }): string {
-  const body = paragraphs.map((p) => `<p style="margin:0 0 12px">${p}</p>`).join("");
+function emailHtml(
+  title: string,
+  paragraphs: string[],
+  cta?: { label: string; href: string },
+): string {
+  const body = paragraphs
+    .map((p) => `<p style="margin:0 0 12px">${p}</p>`)
+    .join("");
   const button = cta
     ? `<a href="${cta.href}" style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:6px">${cta.label}</a>`
     : "";
@@ -69,7 +72,12 @@ async function draftsFor(
     myName: string;
     partnerName: string;
     timeZone: string;
-  }) => { subject: string; text: string; html: string; attachment?: EmailMessage["attachment"] },
+  }) => {
+    subject: string;
+    text: string;
+    html: string;
+    attachment?: EmailMessage["attachment"];
+  },
 ): Promise<EmailMessage[]> {
   const drafts: EmailMessage[] = [];
   for (const userId of participantIds) {
@@ -97,10 +105,45 @@ async function draftsFor(
   return drafts;
 }
 
+/** The calendar day of `at` in `timeZone`, as YYYY-MM-DD (UTC on a bad zone). */
+function dayInZone(at: number, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(at);
+  } catch {
+    return new Date(at).toISOString().slice(0, 10);
+  }
+}
+
+/**
+ * The reminder's subject word, from the chat time in the recipient's own
+ * timezone — never from the reminder kind, so a 24-hour reminder that fires
+ * at once for a chat later the same day says "Today", not "Tomorrow".
+ * Within two hours it is "Starting soon"; otherwise the recipient's
+ * calendar day decides Today vs Tomorrow.
+ */
+function reminderLead(start: number, now: number, timeZone: string): string {
+  if (start - now <= 2 * 60 * 60_000) return "Starting soon";
+  if (dayInZone(start, timeZone) === dayInZone(now, timeZone)) return "Today";
+  return "Tomorrow";
+}
+
+/** The reminder body's opening sentence, aligned with the subject word. */
+function leadPhrase(lead: string): string {
+  if (lead === "Today") return "is later today.";
+  if (lead === "Starting soon") return "is starting soon.";
+  return "is tomorrow.";
+}
+
 /** The two people of a proposal, from its stored pair. */
-function proposalParticipants(
-  row: { userAId: Id<"users">; userBId: Id<"users"> },
-): Id<"users">[] {
+function proposalParticipants(row: {
+  userAId: Id<"users">;
+  userBId: Id<"users">;
+}): Id<"users">[] {
   return [row.userAId, row.userBId];
 }
 
@@ -123,32 +166,38 @@ export const introductionDrafts = internalQuery({
   handler: async (ctx, { proposalId }): Promise<EmailMessage[]> => {
     const row = await ctx.db.get(proposalId);
     if (!row) return [];
-    return await draftsFor(ctx, proposalParticipants(row), ({ to, partnerName, timeZone }) => {
-      const at = formatInZone(row.scheduledAt, timeZone);
-      const reasonLines = row.reasons.map((reason) => `· ${reason}`).join("\n");
-      const subject = `New introduction: ${partnerName}`;
-      const text = [
-        `Connvo found someone for you: ${partnerName}.`,
-        "",
-        `Why you two:`,
-        reasonLines,
-        "",
-        `Suggested first question: ${row.firstQuestion}`,
-        `Proposed time: ${at} (your timezone)`,
-        "",
-        `Accept, pick another time, or pass — from your home screen: ${appUrl()}/app`,
-      ].join("\n");
-      const html = emailHtml(
-        `Connvo found someone for you: ${partnerName}`,
-        [
-          `<strong>Why you two</strong><br/>${row.reasons.map((r) => `· ${r}`).join("<br/>")}`,
-          `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
-          `<strong>Proposed time</strong><br/>${at} (your timezone)`,
-        ],
-        { label: "See your introduction", href: `${appUrl()}/app` },
-      );
-      return { to, subject, text, html };
-    });
+    return await draftsFor(
+      ctx,
+      proposalParticipants(row),
+      ({ to, partnerName, timeZone }) => {
+        const at = formatInZone(row.scheduledAt, timeZone);
+        const reasonLines = row.reasons
+          .map((reason) => `· ${reason}`)
+          .join("\n");
+        const subject = `New introduction: ${partnerName}`;
+        const text = [
+          `Connvo found someone for you: ${partnerName}.`,
+          "",
+          `Why you two:`,
+          reasonLines,
+          "",
+          `Suggested first question: ${row.firstQuestion}`,
+          `Proposed time: ${at} (your timezone)`,
+          "",
+          `Accept, pick another time, or pass — from your home screen: ${appUrl()}/app`,
+        ].join("\n");
+        const html = emailHtml(
+          `Connvo found someone for you: ${partnerName}`,
+          [
+            `<strong>Why you two</strong><br/>${row.reasons.map((r) => `· ${r}`).join("<br/>")}`,
+            `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
+            `<strong>Proposed time</strong><br/>${at} (your timezone)`,
+          ],
+          { label: "See your introduction", href: `${appUrl()}/app` },
+        );
+        return { to, subject, text, html };
+      },
+    );
   },
 });
 
@@ -158,62 +207,69 @@ export const confirmedDrafts = internalQuery({
     meetingId: v.id("meetings"),
     reminderKinds: v.array(reminderKinds),
   },
-  handler: async (ctx, { meetingId, reminderKinds: scheduledReminderKinds }): Promise<EmailMessage[]> => {
+  handler: async (
+    ctx,
+    { meetingId, reminderKinds: scheduledReminderKinds },
+  ): Promise<EmailMessage[]> => {
     const row = await ctx.db
       .query("matchProposals")
       .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
       .unique();
     if (!row || row.state !== "confirmed") return [];
     const participants = await meetingParticipants(ctx, meetingId);
-    return await draftsFor(ctx, participants, ({ to, myName, partnerName, timeZone }) => {
-      const at = formatInZone(row.scheduledAt, timeZone);
-      const joinUrl = joinUrlFor(meetingId);
-      const ics = buildCalendarExport({
-        meetingId,
-        title: `Connvo: ${myName} & ${partnerName}`,
-        description: `Suggested first question: ${row.firstQuestion}\nJoin: ${joinUrl}`,
-        scheduledAt: row.scheduledAt,
-        durationMs: MEETING_DURATION_MS,
-        state: "scheduled",
-        updatedAt: Date.now(),
-      });
-      const reminderText =
-        scheduledReminderKinds.length === 2
-          ? "We'll remind you 24 hours and 10 minutes before."
-          : scheduledReminderKinds.includes("24h")
-            ? "We'll remind you 24 hours before."
-            : scheduledReminderKinds.includes("10min")
-              ? "We'll remind you 10 minutes before."
-              : "No reminders are scheduled.";
-      const subject = `Confirmed: you and ${partnerName}, ${at}`;
-      const text = [
-        `You and ${partnerName} both said yes.`,
-        "",
-        `When: ${at} (your timezone), for 30 minutes`,
-        `Where: ${joinUrl}`,
-        `Suggested first question: ${row.firstQuestion}`,
-        "",
-        `The calendar invite is attached. ${reminderText}`,
-      ].join("\n");
-      const html = emailHtml(
-        `You and ${partnerName} both said yes`,
-        [
-          `<strong>When</strong><br/>${at} (your timezone), for 30 minutes`,
-          `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
+    return await draftsFor(
+      ctx,
+      participants,
+      ({ to, myName, partnerName, timeZone }) => {
+        const at = formatInZone(row.scheduledAt, timeZone);
+        const joinUrl = joinUrlFor(meetingId);
+        const ics = buildCalendarExport({
+          meetingId,
+          title: `Connvo: ${myName} & ${partnerName}`,
+          description: `Suggested first question: ${row.firstQuestion}\nJoin: ${joinUrl}`,
+          scheduledAt: row.scheduledAt,
+          durationMs: MEETING_DURATION_MS,
+          state: "scheduled",
+          updatedAt: Date.now(),
+        });
+        const reminderText =
+          scheduledReminderKinds.length === 2
+            ? "We'll remind you 24 hours and 10 minutes before."
+            : scheduledReminderKinds.includes("24h")
+              ? "We'll remind you 24 hours before."
+              : scheduledReminderKinds.includes("10min")
+                ? "We'll remind you 10 minutes before."
+                : "No reminders are scheduled.";
+        const subject = `Confirmed: you and ${partnerName}, ${at}`;
+        const text = [
+          `You and ${partnerName} both said yes.`,
+          "",
+          `When: ${at} (your timezone), for 30 minutes`,
+          `Where: ${joinUrl}`,
+          `Suggested first question: ${row.firstQuestion}`,
+          "",
           `The calendar invite is attached. ${reminderText}`,
-        ],
-        { label: "Open the lobby", href: joinUrl },
-      );
-      return {
-        to,
-        subject,
-        text,
-        html,
-        attachment: ics
-          ? { filename: "connvo-chat.ics", base64: utf8Base64(ics) }
-          : undefined,
-      };
-    });
+        ].join("\n");
+        const html = emailHtml(
+          `You and ${partnerName} both said yes`,
+          [
+            `<strong>When</strong><br/>${at} (your timezone), for 30 minutes`,
+            `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
+            `The calendar invite is attached. ${reminderText}`,
+          ],
+          { label: "Open the lobby", href: joinUrl },
+        );
+        return {
+          to,
+          subject,
+          text,
+          html,
+          attachment: ics
+            ? { filename: "connvo-chat.ics", base64: utf8Base64(ics) }
+            : undefined,
+        };
+      },
+    );
   },
 });
 
@@ -244,29 +300,33 @@ export const reminderDrafts = internalQuery({
     if (!row || row.state !== "confirmed") return null;
 
     const participants = await meetingParticipants(ctx, meetingId);
-    return await draftsFor(ctx, participants, ({ to, partnerName, timeZone }) => {
-      const at = formatInZone(start, timeZone);
-      const joinUrl = joinUrlFor(meetingId);
-      const lead = kind === "24h" ? "Tomorrow" : "Starting soon";
-      const subject = `${lead}: you and ${partnerName}, ${at}`;
-      const text = [
-        kind === "24h"
-          ? `Your Connvo chat with ${partnerName} is in about 24 hours.`
-          : `Your Connvo chat with ${partnerName} starts in about 10 minutes.`,
-        "",
-        `When: ${at} (your timezone)`,
-        `Where: ${joinUrl}`,
-        `Suggested first question: ${row.firstQuestion}`,
-      ].join("\n");
-      const html = emailHtml(
-        `${lead}: your chat with ${partnerName}`,
-        [
-          `<strong>When</strong><br/>${at} (your timezone)`,
-          `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
-        ],
-        { label: "Open the lobby", href: joinUrl },
-      );
-      return { to, subject, text, html };
-    });
+    return await draftsFor(
+      ctx,
+      participants,
+      ({ to, partnerName, timeZone }) => {
+        const at = formatInZone(start, timeZone);
+        const joinUrl = joinUrlFor(meetingId);
+        const lead = reminderLead(start, Date.now(), timeZone);
+        const subject = `${lead}: you and ${partnerName}, ${at}`;
+        const text = [
+          kind === "24h"
+            ? `Your Connvo chat with ${partnerName} ${leadPhrase(lead)}`
+            : `Your Connvo chat with ${partnerName} starts in about 10 minutes.`,
+          "",
+          `When: ${at} (your timezone)`,
+          `Where: ${joinUrl}`,
+          `Suggested first question: ${row.firstQuestion}`,
+        ].join("\n");
+        const html = emailHtml(
+          `${lead}: your chat with ${partnerName}`,
+          [
+            `<strong>When</strong><br/>${at} (your timezone)`,
+            `<strong>Suggested first question</strong><br/>${row.firstQuestion}`,
+          ],
+          { label: "Open the lobby", href: joinUrl },
+        );
+        return { to, subject, text, html };
+      },
+    );
   },
 });
