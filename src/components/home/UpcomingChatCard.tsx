@@ -122,8 +122,7 @@ export function UpcomingChatCard({
             </Link>
           ) : (
             <span aria-disabled="true">
-              Joining opens {formatCountdown(upcoming.joinOpensAt - now)} before
-              the start
+              Joining opens in {formatCountdown(upcoming.joinOpensAt - now)}
             </span>
           )}
         </Button>

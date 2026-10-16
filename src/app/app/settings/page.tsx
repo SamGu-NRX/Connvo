@@ -78,6 +78,15 @@ export default function SettingsPage() {
     });
   }
 
+  // The home nudge links to #matching, but the card mounts after auth and
+  // these queries resolve, too late for the browser's own hash scroll.
+  const editorReady = editor !== null;
+  useEffect(() => {
+    if (editorReady && window.location.hash === "#matching") {
+      document.getElementById("matching")?.scrollIntoView({ block: "start" });
+    }
+  }, [editorReady]);
+
   const handleSaveAvailability = async () => {
     if (!editor) return;
     setSavingAvailability(true);
@@ -320,7 +329,7 @@ export default function SettingsPage() {
           transition={{ duration: 0.5, delay: 0.25 }}
           className="md:col-span-2"
         >
-          <Card data-testid="matching-settings">
+          <Card id="matching" data-testid="matching-settings" className="scroll-mt-6">
             <CardHeader>
               <CardTitle>Matching &amp; availability</CardTitle>
               <CardDescription>

@@ -39,11 +39,11 @@ export function HomeStates({ view }: { view: NonNullable<HomeView> }) {
             start proposing people at its next run.
           </p>
           <Link
-            href="/app/profile"
+            href="/app/settings#matching"
             className="mt-3 inline-flex items-center gap-1.5 rounded-sm bg-emerald-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-emerald-600"
           >
             <Sparkles aria-hidden="true" />
-            Finish your profile
+            Set your free times
           </Link>
         </>
       ) : (
