@@ -8,6 +8,7 @@
 // the deployment — the harness sets it only on the local backend. It is an
 // internalMutation, so no client can call it on any deployment; only the CLI
 // (`npx convex run devEval/seed`) and other server functions can.
+import { v } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import { internalMutation } from "../_generated/server";
 
@@ -115,3 +116,40 @@ export const seed = internalMutation({
 // Default export so `npx convex run devEval/seed` (the orchestrator's
 // invocation) resolves; `devEval/seed:seed` also works via the named export.
 export default seed;
+
+// Dev-only reset used to walk onboarding more than once: clears every
+// onboarding artifact for one seeded identity so /onboarding shows the form
+// again, exactly as it would for a brand-new sign-up. Guarded exactly like
+// the seed (internalMutation + the local-backend env check), so no client
+// can call it on any deployment; only the CLI can.
+export const resetOnboarding = internalMutation({
+  args: { subject: v.string() },
+  handler: async (ctx, { subject }) => {
+    if (!process.env.CONNVO_LOCAL_TEST_JWKS) {
+      throw new Error(
+        "devEval/seed:resetOnboarding refuses to run: CONNVO_LOCAL_TEST_JWKS is not set on this deployment; " +
+          "eval seeding is restricted to the local anonymous backend",
+      );
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+      .first();
+    if (!user) {
+      throw new Error(`devEval/seed:resetOnboarding: no user with subject ${subject}`);
+    }
+    for (const table of ["profiles", "userInterests", "availabilityBlocks"] as const) {
+      const rows = await ctx.db
+        .query(table)
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      for (const row of rows) await ctx.db.delete(row._id);
+    }
+    await ctx.db.patch(user._id, {
+      onboardingComplete: false,
+      onboardingCompletedAt: undefined,
+      updatedAt: Date.now(),
+    });
+    return { userId: user._id, subject };
+  },
+});
