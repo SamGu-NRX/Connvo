@@ -112,7 +112,7 @@ export async function createMeetingRecords(
  *     "title": "Quarterly Planning Meeting",
  *     "description": "Planning the roadmap for next quarter objectives.",
  *     "scheduledAt": 1704067200000,
- *     "duration": 3600,
+ *     "duration": 3600000,
  *     "participantEmails": [
  *       "host@example.com",
  *       "participant@example.com"
@@ -177,6 +177,15 @@ export const createMeeting = mutation({
   }),
   handler: async (ctx, args) => {
     const startTime = Date.now();
+    // Stored durations are milliseconds everywhere (the matcher, the queue,
+    // calendar exports); a seconds value like 1800 would book 1.8 seconds.
+    // Checked before the try below, whose failure tracking turns a validation
+    // error into an unrelated "Expected ID" error.
+    if (args.duration !== undefined && args.duration < 60_000) {
+      throw createError.validation(
+        `Meeting duration is in milliseconds; ${args.duration} is under a minute`,
+      );
+    }
     const rawIdentity = await ctx.auth.getUserIdentity();
     const identity = rawIdentity ? await requireIdentity(ctx) : null;
     let organizer: User | null = null;

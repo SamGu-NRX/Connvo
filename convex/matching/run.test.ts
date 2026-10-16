@@ -1,11 +1,12 @@
 /**
  * Booked time in a matcher run (convex/matching/run.ts) on a real in-memory
  * Convex runtime. A chat can be confirmed between the snapshot and the
- * write, so the write must recheck live bookings.
+ * write, so the write must recheck live bookings, and a booking is only as
+ * long as its stored duration, which must be milliseconds.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { internal } from "@convex/_generated/api";
+import { api, internal } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { createMeetingRecords } from "@convex/meetings/lifecycle";
 import { createTestEnvironment } from "../../test/convex/helpers";
@@ -77,5 +78,15 @@ describe("writeProposals", () => {
     expect(rows.map((r) => [r.scheduledAt, r.alternatives])).toEqual([
       [SLOT + HALF_HOUR, [SLOT + 2 * HALF_HOUR]],
     ]);
+  });
+});
+
+describe("createMeeting", () => {
+  // Bookings are built from stored durations in milliseconds.
+  it("refuses a duration given in seconds", async () => {
+    const t = createTestEnvironment();
+    await expect(
+      t.mutation(api.meetings.lifecycle.createMeeting, { title: "Chat", duration: 1800 }),
+    ).rejects.toThrow(/milliseconds/);
   });
 });
