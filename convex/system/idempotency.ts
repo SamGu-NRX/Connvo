@@ -46,6 +46,59 @@ export const createKey = internalMutation({
   },
 });
 
+/** Claim or replace an action marker in one transaction, including stale takeover. */
+export const claimActionKey = internalMutation({
+  args: {
+    key: v.string(),
+    scope: v.string(),
+    ttlMs: v.number(),
+    leaseMs: v.number(),
+    allowRetry: v.boolean(),
+  },
+  returns: v.object({
+    id: v.union(v.id("idempotencyKeys"), v.null()),
+    previousError: v.optional(v.string()),
+    result: v.optional(v.union(v.string(), v.number(), v.boolean())),
+  }),
+  handler: async (ctx, { key, scope, ttlMs, leaseMs, allowRetry }) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("idempotencyKeys")
+      .withIndex("by_key_scope", (q) => q.eq("key", key).eq("scope", scope))
+      .unique();
+    if (existing) {
+      const meta = existing.metadata ?? {};
+      const startedAt =
+        typeof meta.startedAt === "number"
+          ? meta.startedAt
+          : existing.createdAt;
+      // A live lease takes precedence even if the completed-marker TTL expired.
+      if (meta.status === "executing" && startedAt + leaseMs >= now) {
+        return { id: null, previousError: "Operation is currently executing" };
+      }
+      const expired = existing.createdAt + ttlMs < now;
+      const stale = meta.status === "executing" && startedAt + leaseMs < now;
+      if (!expired && !stale && !(meta.failed && allowRetry)) {
+        return meta.failed
+          ? {
+              id: null,
+              previousError: String(meta.error ?? "Previous execution failed"),
+            }
+          : { id: null, result: meta.result };
+      }
+      // Delete and insert atomically so competing attempts cannot both acquire.
+      await ctx.db.delete(existing._id);
+    }
+    const id = await ctx.db.insert("idempotencyKeys", {
+      key,
+      scope,
+      createdAt: now,
+      metadata: { status: "executing", startedAt: now },
+    });
+    return { id };
+  },
+});
+
 export const patchKey = internalMutation({
   args: {
     id: v.id("idempotencyKeys"),

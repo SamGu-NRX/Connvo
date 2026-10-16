@@ -163,6 +163,92 @@ function attemptsFor(log: SendLog, to: string): string[] {
 }
 
 describe("retry-safe multi-recipient delivery", () => {
+  it.each([
+    { ageMs: 31 * 60_000 + 1, expectedSends: 1, label: "stale" },
+    {
+      ageMs: 31 * 60_000,
+      expectedSends: 0,
+      label: "live at the lease boundary",
+    },
+    { ageMs: 1_000, expectedSends: 0, label: "fresh" },
+  ])("handles a $label executing marker", async ({ ageMs, expectedSends }) => {
+    const t = createTestEnvironment();
+    const fx = await seedConfirmedMeeting(t);
+    const log = stubResend({});
+    const key = `confirmed:${fx.meetingId}:alice@example.com`;
+    await t.run(async (ctx) => {
+      await ctx.db.insert("idempotencyKeys", {
+        key,
+        scope: "email_send",
+        createdAt: NOW - ageMs,
+        metadata: { status: "executing", startedAt: NOW - ageMs },
+      });
+    });
+
+    // Competing duplicates must not both take over the same stale marker.
+    await Promise.all(
+      [1, 2].map(() =>
+        t.action(internal.emails.deliver.meetingConfirmed, {
+          meetingId: fx.meetingId,
+          reminderKinds: [],
+        }),
+      ),
+    );
+    expect(attemptsFor(log, "alice@example.com")).toHaveLength(expectedSends);
+    expect(attemptsFor(log, "bob@example.com")).toHaveLength(1);
+    await t.action(internal.emails.deliver.meetingConfirmed, {
+      meetingId: fx.meetingId,
+      reminderKinds: [],
+    });
+    expect(attemptsFor(log, "alice@example.com")).toHaveLength(expectedSends);
+    const marker = await t.query(internal.system.idempotency.getKey, {
+      key,
+      scope: "email_send",
+    });
+    expect(marker?.metadata?.status).toBe(
+      expectedSends ? "completed" : "executing",
+    );
+  });
+
+  it("skips a duplicate while the original provider call is still in flight", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedConfirmedMeeting(t);
+    let entered!: () => void;
+    let release!: () => void;
+    const inFlight = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    const response = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const attempts: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init: { body: string }) => {
+        const { to } = JSON.parse(init.body) as { to: string[] };
+        attempts.push(to[0]!);
+        if (to[0] === "alice@example.com") {
+          entered();
+          await response;
+        }
+        return { ok: true, status: 200 };
+      }),
+    );
+    const args = { meetingId: fx.meetingId, reminderKinds: [] };
+    const original = t.action(internal.emails.deliver.meetingConfirmed, args);
+    await inFlight;
+    try {
+      await t.action(internal.emails.deliver.meetingConfirmed, args);
+      expect(attempts.filter((to) => to === "alice@example.com")).toHaveLength(
+        1,
+      );
+    } finally {
+      release();
+      await original;
+    }
+    expect(attempts.sort()).toEqual(["alice@example.com", "bob@example.com"]);
+  });
+
   it("still delivers to both after a transient failure on recipient two", async () => {
     const t = createTestEnvironment();
     const fx = await seedConfirmedMeeting(t);

@@ -47,6 +47,14 @@ const RETRY_DELAYS_MS = [60_000, 5 * 60_000] as const;
  */
 const MARKER_TTL_MS = 24 * 60 * 60_000;
 
+/**
+ * No provider timeout is configured. Convex runtime actions can run for 30
+ * minutes, so 31 minutes prevents takeover while the original action is live.
+ * A later attempt can recover a terminated action without waiting for the TTL.
+ * Runtime limit: https://docs.convex.dev/production/state/limits
+ */
+const EXECUTION_LEASE_MS = 31 * 60_000;
+
 const EMAIL_SCOPE = "email_send";
 
 async function send(message: EmailMessage): Promise<void> {
@@ -69,7 +77,13 @@ async function sendOnce(
 ): Promise<void> {
   await withActionIdempotency(
     ctx,
-    { key, scope: EMAIL_SCOPE, ttlMs: MARKER_TTL_MS, allowRetry: true },
+    {
+      key,
+      scope: EMAIL_SCOPE,
+      ttlMs: MARKER_TTL_MS,
+      leaseMs: EXECUTION_LEASE_MS,
+      allowRetry: true,
+    },
     async () => {
       await send({ ...draft, idempotencyKey: key });
       return "sent";
