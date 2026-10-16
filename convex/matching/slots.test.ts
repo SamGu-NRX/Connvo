@@ -104,6 +104,20 @@ describe("sharedSlots", () => {
     expect(slots.length).toBeGreaterThan(0);
   });
 
+  it("rounds a slot cut by the lead time up to the block's 30-minute grid", () => {
+    // Free 19:00-22:00; the lead time ends at 20:13, mid-block.
+    const a = noDst(19 * 60, 22 * 60);
+    const b = noDst(19 * 60, 22 * 60);
+    const at = Date.UTC(2026, 0, 5, 20, 13);
+    const slots = sharedSlots(a, "UTC", b, "UTC", {
+      now: at,
+      minLeadMs: 0,
+      maxSlots: 2,
+      horizonDays: 1,
+    });
+    expect(slots).toEqual([Date.UTC(2026, 0, 5, 20, 30), Date.UTC(2026, 0, 5, 21, 0)]);
+  });
+
   it("still finds slots across the spring DST change", () => {
     // Friday Feb 27 2026 12:00 UTC; the change is Sunday Mar 8, so an 11-day
     // horizon brackets it with one EST Monday and one EDT Monday.
