@@ -45,7 +45,7 @@ export default function ProfileSummary({
   const data = watch();
 
   return (
-    <div className="space-y-6">
+    <div className="relative z-10 space-y-6">
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold">Profile Summary</h2>
         <p className="text-muted-foreground">

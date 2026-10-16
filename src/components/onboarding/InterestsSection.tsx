@@ -167,7 +167,7 @@ export default function InterestsSection({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative z-10 space-y-6">
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold">Your Interests</h2>
         <p className="text-muted-foreground">
