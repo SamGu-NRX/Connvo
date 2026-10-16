@@ -33,7 +33,6 @@ export const SHORTLIST_SIZE = 8;
 /** Bonus per run a person has waited without a match, capped. */
 export const WAITING_BONUS = 0.05;
 export const WAITING_BONUS_RUNS_CAP = 4;
-/** Fallback when no language list exists; profiles collect languages at onboarding. */
 const SHARED_MEETING_STATES = new Set(["scheduled", "active", "concluded"]);
 
 export interface MatcherSnapshotPerson extends MatcherPerson {
@@ -104,7 +103,14 @@ export function selectEligible(snapshot: MatcherSnapshot): MatcherSnapshotPerson
   );
 }
 
+/**
+ * An empty list means the person hasn't said, not that they speak nothing:
+ * every profile starts with `languages: []` and no screen collects them yet,
+ * so treating empty as a mismatch would block every pair. Only two known,
+ * disjoint lists rule a pair out.
+ */
 function sharesLanguage(a: MatcherSnapshotPerson, b: MatcherSnapshotPerson): boolean {
+  if (a.languages.length === 0 || b.languages.length === 0) return true;
   const langsA = a.languages.map((l) => l.toLowerCase());
   const langsB = new Set(b.languages.map((l) => l.toLowerCase()));
   return langsA.some((l) => langsB.has(l));
