@@ -19,7 +19,7 @@ import {
   internalMutation,
   internalQuery,
 } from "@convex/_generated/server";
-import type { Id } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { internal } from "@convex/_generated/api";
 import {
   assign,
@@ -30,7 +30,7 @@ import {
   type ProposalDraft,
   type RerankFn,
 } from "./pipeline";
-import type { WeeklyBlock } from "./slots";
+import { overlapsBooked, type Interval, type WeeklyBlock } from "./slots";
 import { candidatesKeyHash, rerankShortlist } from "./decisions";
 import { activeStrikes, STRIKE_WINDOW_MS } from "./strikes";
 
@@ -39,6 +39,51 @@ const DECISIONS_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Proposals expire the earlier of 48 hours out or 2 hours before the time. */
 const PROPOSAL_TTL_MS = 48 * 60 * 60 * 1000;
 const PRE_MEETING_TTL_MS = 2 * 60 * 60 * 1000;
+/** A matcher chat's length, also assumed for a booked meeting with no duration. */
+const CHAT_MS = 30 * 60 * 1000;
+
+/**
+ * The time a meeting holds on its participants' calendars, or null once it is
+ * cancelled, concluded or over. Stored durations are milliseconds.
+ */
+function bookedInterval(meeting: Doc<"meetings">, now: number): Interval | null {
+  if (meeting.state === "cancelled" || meeting.state === "concluded") return null;
+  if (!meeting.scheduledAt) return null;
+  const end = meeting.scheduledAt + (meeting.duration ?? CHAT_MS);
+  return end > now ? { start: meeting.scheduledAt, end } : null;
+}
+
+/** Every booked interval for one person, read live. */
+async function bookedFor(ctx: QueryCtx, userId: Id<"users">, now: number): Promise<Interval[]> {
+  const participants = await ctx.db
+    .query("meetingParticipants")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .collect();
+  const booked: Interval[] = [];
+  for (const participant of participants) {
+    const meeting = await ctx.db.get(participant.meetingId);
+    const interval = meeting && bookedInterval(meeting, now);
+    if (interval) booked.push(interval);
+  }
+  return booked;
+}
+
+/**
+ * Whether a chat starting at `start` overlaps anything either person has
+ * booked right now. Proposal times are only checked when proposals are
+ * written, so accepting or switching a time rechecks with this.
+ */
+export async function clashesWithBooking(
+  ctx: QueryCtx,
+  userIds: Id<"users">[],
+  start: number,
+): Promise<boolean> {
+  const now = Date.now();
+  for (const userId of userIds) {
+    if (overlapsBooked(start, CHAT_MS, await bookedFor(ctx, userId, now))) return true;
+  }
+  return false;
+}
 
 /** Build one snapshot person from the profile plus related tables. */
 async function snapshotPerson(
@@ -86,6 +131,7 @@ async function snapshotPerson(
   const metRecently = new Set<string>();
   const talkAgainYes = new Set<string>();
   let meetingsThisWeek = 0;
+  const booked: Interval[] = [];
   const participants = await ctx.db
     .query("meetingParticipants")
     .withIndex("by_user", (q) => q.eq("userId", profile.userId))
@@ -108,6 +154,8 @@ async function snapshotPerson(
     if (scheduledAt >= weekStart && scheduledAt < weekStart + 7 * 86400_000) {
       meetingsThisWeek += 1;
     }
+    const interval = bookedInterval(meeting, now);
+    if (interval) booked.push(interval);
   }
 
   // Talk-again feedback: pairs from this window where BOTH sides said yes.
@@ -174,6 +222,7 @@ async function snapshotPerson(
     strikes: activeStrikes(strikeRows, now).length,
     metRecently: [...metRecently],
     talkAgainBoth: [...talkAgainYes],
+    booked,
   };
 }
 
@@ -241,7 +290,12 @@ export const storeDecisionsCache = internalMutation({
   },
 });
 
-/** Write proposal drafts, skipping pairs that already have a live proposal. */
+/**
+ * Write proposal drafts, skipping pairs that already have a live proposal.
+ * Bookings are rechecked here because a chat confirmed after the snapshot
+ * would otherwise still get an overlapping proposal: a draft whose time now
+ * overlaps one is skipped, and overlapping alternatives are dropped.
+ */
 export const writeProposals = internalMutation({
   args: {
     drafts: v.array(
@@ -277,6 +331,18 @@ export const writeProposals = internalMutation({
         skipped += 1;
         continue;
       }
+      const now = Date.now();
+      const booked = [
+        ...(await bookedFor(ctx, userAId, now)),
+        ...(await bookedFor(ctx, userBId, now)),
+      ];
+      if (overlapsBooked(draft.scheduledAt, CHAT_MS, booked)) {
+        skipped += 1;
+        continue;
+      }
+      const alternatives = draft.alternatives.filter(
+        (start) => !overlapsBooked(start, CHAT_MS, booked),
+      );
       const expiresAt = Math.min(
         args.runAt + PROPOSAL_TTL_MS,
         draft.scheduledAt - PRE_MEETING_TTL_MS,
@@ -288,7 +354,7 @@ export const writeProposals = internalMutation({
         aAccepted: false,
         bAccepted: false,
         scheduledAt: draft.scheduledAt,
-        alternatives: draft.alternatives,
+        alternatives,
         reasons: draft.reasons,
         firstQuestion: draft.firstQuestion,
         score: draft.score,

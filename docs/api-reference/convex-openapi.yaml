@@ -45,7 +45,7 @@ paths:
                 title: Quarterly Planning Meeting
                 description: Planning the roadmap for next quarter objectives.
                 scheduledAt: 1704067200000
-                duration: 3600
+                duration: 3600000
                 participantEmails:
                   - host@example.com
                   - participant@example.com
@@ -611,7 +611,7 @@ paths:
                   title: Quarterly Planning Meeting
                   description: Planning the roadmap for next quarter objectives.
                   scheduledAt: 1704067200000
-                  duration: 3600
+                  duration: 3600000
                   state: scheduled
                   participantCount: 3
                   averageRating: 4.6
@@ -670,7 +670,7 @@ paths:
                     title: Quarterly Planning Meeting
                     description: Planning the roadmap for next quarter objectives.
                     scheduledAt: 1704067200000
-                    duration: 3600
+                    duration: 3600000
                     state: active
                     participantCount: 3
                     createdAt: 1704063600000
@@ -681,7 +681,7 @@ paths:
                     organizerId: user_789example
                     title: Product Demo
                     scheduledAt: 1704070800000
-                    duration: 1800
+                    duration: 1800000
                     state: active
                     participantCount: 2
                     createdAt: 1704060000000
