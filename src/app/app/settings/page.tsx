@@ -146,6 +146,16 @@ export default function SettingsPage() {
     convexAuthState.isLoading ||
     (readyForSettingsQuery && settings === undefined);
 
+  // The home nudge links to #matching, but the card mounts only once auth,
+  // settings and the availability queries have all resolved, in any order,
+  // which is too late for the browser's own hash scroll.
+  const matchingCardReady = !loading && editor !== null;
+  useEffect(() => {
+    if (matchingCardReady && window.location.hash === "#matching") {
+      document.getElementById("matching")?.scrollIntoView({ block: "start" });
+    }
+  }, [matchingCardReady]);
+
   useEffect(() => {
     console.log("[SettingsPage] Query readiness", {
       readyForSettingsQuery,
@@ -320,7 +330,7 @@ export default function SettingsPage() {
           transition={{ duration: 0.5, delay: 0.25 }}
           className="md:col-span-2"
         >
-          <Card data-testid="matching-settings">
+          <Card id="matching" data-testid="matching-settings" className="scroll-mt-6">
             <CardHeader>
               <CardTitle>Matching &amp; availability</CardTitle>
               <CardDescription>
