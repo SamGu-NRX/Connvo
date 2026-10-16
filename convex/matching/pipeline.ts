@@ -138,9 +138,10 @@ export interface MatcherDeps {
 }
 
 /**
- * Pairs that are never allowed: either person blocked the other, no shared
- * language, no free time in common at least 18 hours from now, or a shared
- * meeting in the last 90 days unless both said they would talk again.
+ * Pairs that are never allowed: either person blocked the other, two listed
+ * languages with none in common (an empty list is unknown and never blocks),
+ * no free time in common at least 18 hours from now, or a shared meeting in
+ * the last 90 days unless both said they would talk again.
  */
 export async function hardRuleAllowed(
   a: MatcherSnapshotPerson,
