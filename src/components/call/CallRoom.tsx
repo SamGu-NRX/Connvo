@@ -77,6 +77,8 @@ export interface CallRoomProps {
   createTransport: () => Promise<CallTransport>;
   identityToken: () => Promise<string>;
   nameFor: (participantId: string) => string;
+  /** Who the call is with, for the lobby line; unknown until names load. */
+  partnerName?: string;
   exitHref: string;
   /** The link to share so someone else can join this call. */
   inviteLink: () => string;
@@ -107,6 +109,7 @@ export function CallRoom({
   createTransport,
   identityToken,
   nameFor,
+  partnerName,
   exitHref,
   inviteLink,
   endedActions,
@@ -400,7 +403,7 @@ export function CallRoom({
             <Lobby
               media={media}
               selfName={self.name}
-              meetingId={meetingId}
+              partnerName={partnerName}
               onJoin={join}
             />
           ) : screen === "ended" ? (
@@ -470,12 +473,12 @@ export function CallRoom({
 function Lobby({
   media,
   selfName,
-  meetingId,
+  partnerName,
   onJoin,
 }: {
   media: LocalMedia;
   selfName: string;
-  meetingId: string;
+  partnerName: string | undefined;
   onJoin: () => void;
 }) {
   const blocked =
@@ -565,11 +568,8 @@ function Lobby({
               No camera found. You can join with your microphone only.
             </p>
           ) : null}
-          <p
-            className="truncate text-xs text-[var(--ink-muted)]"
-            title={meetingId}
-          >
-            Meeting {meetingId}
+          <p className="truncate text-xs text-[var(--ink-muted)]">
+            With {partnerName ?? "the other person"}
           </p>
         </div>
       </div>
