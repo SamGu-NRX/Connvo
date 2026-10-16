@@ -19,7 +19,6 @@ import type * as devEval_seed from "../devEval/seed.js";
 import type * as devEval_shape from "../devEval/shape.js";
 import type * as emails_deliver from "../emails/deliver.js";
 import type * as emails_drafts from "../emails/drafts.js";
-import type * as emails_schedule from "../emails/schedule.js";
 import type * as environments_local from "../environments/local.js";
 import type * as environments_production from "../environments/production.js";
 import type * as environments_staging from "../environments/staging.js";
@@ -205,7 +204,6 @@ declare const fullApi: ApiFromModules<{
   "devEval/shape": typeof devEval_shape;
   "emails/deliver": typeof emails_deliver;
   "emails/drafts": typeof emails_drafts;
-  "emails/schedule": typeof emails_schedule;
   "environments/local": typeof environments_local;
   "environments/production": typeof environments_production;
   "environments/staging": typeof environments_staging;

@@ -70,10 +70,14 @@ export const proposalIntroduced = internalAction({
 
 /** "Confirmed" with the .ics invite: one send per meeting participant. */
 export const meetingConfirmed = internalAction({
-  args: { meetingId: v.id("meetings") },
-  handler: async (ctx, { meetingId }) => {
+  args: {
+    meetingId: v.id("meetings"),
+    reminderKinds: v.array(v.union(v.literal("24h"), v.literal("10min"))),
+  },
+  handler: async (ctx, { meetingId, reminderKinds }) => {
     const drafts = await ctx.runQuery(internal.emails.drafts.confirmedDrafts, {
       meetingId,
+      reminderKinds,
     });
     for (const draft of drafts) {
       await send(draft);
