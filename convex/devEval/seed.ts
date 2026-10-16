@@ -1,18 +1,23 @@
 // Eval-only seed for the local anonymous backend used by
 // tools/call-eval (CONTRACT.md): users A/B/C + outsider O (WorkOS subjects
 // local-test-a/b/c/o) and one active meeting with A–C as participants (A
-// host). Env-gated: refuses to run unless CONNVO_LOCAL_TEST_JWKS is set on
+// host). N (local-test-n, "Nina New") is also seeded but deliberately stays
+// un-onboarded: she is the brand-new user a developer walks through
+// onboarding with (token route ?user=N -> /onboarding?as=N). Env-gated:
+// refuses to run unless CONNVO_LOCAL_TEST_JWKS is set on
 // the deployment — the harness sets it only on the local backend. It is an
 // internalMutation, so no client can call it on any deployment; only the CLI
 // (`npx convex run devEval/seed`) and other server functions can.
+import { v } from "convex/values";
 import type { Id } from "../_generated/dataModel";
 import { internalMutation } from "../_generated/server";
 
 const SEED_USERS = [
-  { subject: "local-test-a", email: "a@connvo-local.test", name: "Alice Anderson" },
-  { subject: "local-test-b", email: "b@connvo-local.test", name: "Bob Brown" },
-  { subject: "local-test-c", email: "c@connvo-local.test", name: "Carol Chen" },
-  { subject: "local-test-o", email: "o@connvo-local.test", name: "Owen Outsider" },
+  { subject: "local-test-a", email: "a@connvo-local.test", name: "Alice Anderson", onboardingComplete: true },
+  { subject: "local-test-b", email: "b@connvo-local.test", name: "Bob Brown", onboardingComplete: true },
+  { subject: "local-test-c", email: "c@connvo-local.test", name: "Carol Chen", onboardingComplete: true },
+  { subject: "local-test-o", email: "o@connvo-local.test", name: "Owen Outsider", onboardingComplete: true },
+  { subject: "local-test-n", email: "n@connvo-local.test", name: "Nina New", onboardingComplete: false },
 ];
 
 const MEETING_TITLE = "Eval harness smoke meeting";
@@ -49,7 +54,7 @@ export const seed = internalMutation({
         email: u.email,
         displayName: u.name,
         isActive: true,
-        onboardingComplete: true,
+        onboardingComplete: u.onboardingComplete,
         lastSeenAt: now,
         createdAt: now,
         updatedAt: now,
@@ -111,3 +116,54 @@ export const seed = internalMutation({
 // Default export so `npx convex run devEval/seed` (the orchestrator's
 // invocation) resolves; `devEval/seed:seed` also works via the named export.
 export default seed;
+
+// Dev-only reset used to walk onboarding more than once: clears every
+// onboarding artifact for one seeded identity so /onboarding shows the form
+// again, exactly as it would for a brand-new sign-up. Guarded exactly like
+// the seed (internalMutation + the local-backend env check), so no client
+// can call it on any deployment; only the CLI can.
+export const resetOnboarding = internalMutation({
+  args: { subject: v.string() },
+  handler: async (ctx, { subject }) => {
+    if (!process.env.CONNVO_LOCAL_TEST_JWKS) {
+      throw new Error(
+        "devEval/seed:resetOnboarding refuses to run: CONNVO_LOCAL_TEST_JWKS is not set on this deployment; " +
+          "eval seeding is restricted to the local anonymous backend",
+      );
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_workos_id", (q) => q.eq("workosUserId", subject))
+      .first();
+    if (!user) {
+      throw new Error(`devEval/seed:resetOnboarding: no user with subject ${subject}`);
+    }
+    for (const table of ["profiles", "userInterests", "availabilityBlocks"] as const) {
+      const rows = await ctx.db
+        .query(table)
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      for (const row of rows) await ctx.db.delete(row._id);
+    }
+    await ctx.db.patch(user._id, {
+      onboardingComplete: false,
+      onboardingCompletedAt: undefined,
+      updatedAt: Date.now(),
+    });
+    // Purge saveOnboarding's idempotency markers: its completed early-return
+    // would otherwise hand back the cached result and skip the real work,
+    // leaving onboardingComplete false while the client shows congratulations.
+    // The client derives the key from form data alone (no user id), so match
+    // markers by the completed metadata's userId instead.
+    const markers = await ctx.db.query("idempotencyKeys").collect();
+    for (const marker of markers) {
+      if (
+        marker.scope === "users.onboarding.saveOnboarding" &&
+        String(marker.metadata?.["userId"] ?? "") === String(user._id)
+      ) {
+        await ctx.db.delete(marker._id);
+      }
+    }
+    return { userId: user._id, subject };
+  },
+});

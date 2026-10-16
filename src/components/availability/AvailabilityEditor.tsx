@@ -72,6 +72,14 @@ function minuteLabel(slot: number): string | null {
   return `${String(h).padStart(2, "0")}:00`;
 }
 
+/** Every cell's clock time ("09:30"), so each cell can be named. */
+function slotTimeLabel(slot: number): string {
+  const minutes = slot * BLOCK_STEP;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function labelForZone(zone: string): string {
   const offset = zoneOffsetLabel(zone);
   return `${zone.replace(/_/g, " ")}${offset ? ` (UTC${offset})` : ""}`;
@@ -310,7 +318,11 @@ export function AvailabilityEditor({
           <div className="min-w-[680px] select-none">
             <div className="flex">
               <div className="w-10 shrink-0" />
-              <div className="flex flex-1">
+              {/* Same gap-[2px] as the day rows below: without it each label
+                  drifted 2px per half-hour cell and sat ~2h off by day's end.
+                  Hidden from the accessibility tree — the cells carry the
+                  names ("Mon 09:30"); these are visual hints only. */}
+              <div className="flex flex-1 gap-[2px]" aria-hidden="true">
                 {Array.from({ length: SLOTS_PER_DAY }, (_, slot) => (
                   <div
                     key={slot}
@@ -345,7 +357,7 @@ export function AvailabilityEditor({
                       key={slot}
                       type="button"
                       tabIndex={-1}
-                      aria-label={`${WEEKDAYS[weekday]} ${minuteLabel(slot) ?? ""}`}
+                      aria-label={`${WEEKDAYS[weekday]} ${slotTimeLabel(slot)}`}
                       disabled={disabled}
                       onPointerDown={(e) => {
                         e.preventDefault();

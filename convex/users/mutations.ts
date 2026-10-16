@@ -9,6 +9,7 @@
  */
 
 import { mutation, internalMutation } from "@convex/_generated/server";
+import { internal } from "@convex/_generated/api";
 import { v } from "convex/values";
 import {
   requireIdentity,
@@ -711,7 +712,6 @@ export const saveOnboarding = mutation({
       metadata?: unknown;
     } | null;
 
-    const { internal } = await import("@convex/_generated/api");
     const existingKey: IdempotencyKeyReturn = await ctx.runQuery(
       internal.system.idempotency.getKey,
       {

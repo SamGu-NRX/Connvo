@@ -64,7 +64,7 @@ export default function AvailabilityStep({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col gap-6"
+      className="relative z-10 flex flex-col gap-6"
     >
       <div>
         <h2 className="text-xl font-semibold">When can we find you?</h2>

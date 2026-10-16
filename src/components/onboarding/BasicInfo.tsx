@@ -39,7 +39,7 @@ export default function BasicInfo({ onNext }: BasicInfoProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="relative z-10 space-y-8">
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold">Tell us about yourself</h2>
         <p className="text-muted-foreground">

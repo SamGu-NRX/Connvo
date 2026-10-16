@@ -181,7 +181,8 @@ export const HARNESS_INCLUDE_DIRS = [
   "devEval", // eval seed mutation (devEval/seed) invoked in step 4/6
   "history", // after-call history (#33), behind CONNVO_AFTER_CALL
   "network", // post-call feedback + mutual connections (cv6-connect-network)
-  "emails", // matcher emails: introductions, confirmations, reminders (cv6-proposal-ui); matching/run.ts schedules internal.emails.*
+  "emails", // matcher emails: introductions, confirmations, reminders (cv6-proposal-ui);
+  "audit", // onboarding save writes an audit trail (burst14-webapps-connvo-new-user-onboarding); matching/run.ts schedules internal.emails.*
   "profiles", // chat preferences, weekly availability, block and report: onboarding, Settings and the recap call these
 ];
 

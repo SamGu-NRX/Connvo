@@ -60,7 +60,7 @@ export default function Congratulations({ onComplete }: CongratulationsProps) {
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex min-h-screen items-center justify-center p-4"
+      className="relative z-10 flex min-h-screen items-center justify-center p-4"
     >
       <div className="space-y-8 text-center">
         <motion.div
