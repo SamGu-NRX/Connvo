@@ -47,6 +47,7 @@ interface PresenceEntry {
   participantId: string;
   micOn: boolean;
   cameraOn: boolean;
+  screenSharing?: boolean;
 }
 
 type WireSignal =
@@ -204,6 +205,7 @@ export function convexSignaling(
               participantId: id,
               micOn: e.micOn,
               cameraOn: e.cameraOn,
+              screenSharing: e.screenSharing,
             });
           return;
         }
@@ -223,16 +225,19 @@ export function convexSignaling(
               participantId: id,
               micOn: e.micOn,
               cameraOn: e.cameraOn,
+              screenSharing: e.screenSharing,
             });
           } else if (
             before.micOn !== e.micOn ||
-            before.cameraOn !== e.cameraOn
+            before.cameraOn !== e.cameraOn ||
+            before.screenSharing !== e.screenSharing
           ) {
             peers.set(id, e);
             handlers.onRemoteState({
               participantId: id,
               micOn: e.micOn,
               cameraOn: e.cameraOn,
+              screenSharing: e.screenSharing,
             });
           }
         }
@@ -398,6 +403,7 @@ export function convexSignaling(
               sessionId,
               micOn: state.micOn,
               cameraOn: state.cameraOn,
+              screenSharing: state.screenSharing ?? false,
             })
             .catch(() => {});
         },

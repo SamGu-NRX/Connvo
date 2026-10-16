@@ -26,7 +26,13 @@ type Down =
   | { type: "peer-joined"; participantId: string }
   | { type: "peer-left"; participantId: string; reason: string }
   | { type: "signal"; from: string; data: P2PSignal }
-  | { type: "remote-state"; from: string; micOn: boolean; cameraOn: boolean }
+  | {
+      type: "remote-state";
+      from: string;
+      micOn: boolean;
+      cameraOn: boolean;
+      screenSharing?: boolean;
+    }
   | { type: "pong" }
   | { type: "error"; code: string; message: string };
 
@@ -116,6 +122,7 @@ export function websocketSignaling(url: string): SignalingAdapter {
                 participantId: message.from,
                 micOn: message.micOn,
                 cameraOn: message.cameraOn,
+                screenSharing: message.screenSharing,
               });
               break;
             case "error":
@@ -154,7 +161,12 @@ export function websocketSignaling(url: string): SignalingAdapter {
       return {
         send: (to, signal) => send({ type: "signal", to, data: signal }),
         publishState: (state) =>
-          send({ type: "state", micOn: state.micOn, cameraOn: state.cameraOn }),
+          send({
+            type: "state",
+            micOn: state.micOn,
+            cameraOn: state.cameraOn,
+            screenSharing: state.screenSharing ?? false,
+          }),
         close: () => {
           closedByUs = true;
           send({ type: "bye" });

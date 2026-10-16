@@ -39,6 +39,13 @@ export interface LocalMedia {
   blurProblem: string | null;
   quality: CameraQuality;
   facing: CameraFacing;
+  /** True where getDisplayMedia exists (desktop browsers; most phones lack it). */
+  screenSupported: boolean;
+  /** True while a screen share is live. */
+  screenSharing: boolean;
+  /** The last screen-share problem, shown on the call screen. */
+  screenProblem: string | null;
+  setScreenSharing: (on: boolean) => Promise<void>;
   start: () => Promise<void>;
   setMicOn: (on: boolean) => void;
   setCameraOn: (on: boolean) => Promise<void>;
@@ -117,6 +124,10 @@ export function useLocalMedia(): LocalMedia {
   const qualityRef = useRef(quality);
   const [facing, setFacing] = useState<CameraFacing>("user");
   const facingRef = useRef(facing);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);
+  const [screenSupported, setScreenSupported] = useState(false);
+  const [screenSharing, setScreenSharingState] = useState(false);
+  const [screenProblem, setScreenProblem] = useState<string | null>(null);
   const sessionRef = useRef(0);
   const videoGenRef = useRef(0);
   const audioGenRef = useRef(0);
@@ -538,14 +549,72 @@ export function useLocalMedia(): LocalMedia {
     await captureCamera({ deviceId: null, facing: next, flip: true });
   }, [captureCamera, rememberDevice]);
 
+  const stopScreenShare = useCallback(() => {
+    const track = screenTrackRef.current;
+    screenTrackRef.current = null;
+    if (track) {
+      track.onended = null;
+      if (track.readyState === "live") track.stop();
+    }
+    setScreenSharingState(false);
+  }, []);
+
+  const setScreenSharing = useCallback(
+    async (on: boolean) => {
+      if (!on) {
+        stopScreenShare();
+        return;
+      }
+      if (screenTrackRef.current) return;
+      const mediaDevices = navigator.mediaDevices;
+      if (!mediaDevices?.getDisplayMedia) {
+        setScreenProblem("This browser cannot share a screen.");
+        return;
+      }
+      let captured: MediaStream | null = null;
+      try {
+        captured = await mediaDevices.getDisplayMedia({
+          video: true,
+          audio: false,
+        });
+      } catch (error) {
+        setScreenProblem(
+          error instanceof DOMException && error.name === "NotAllowedError"
+            ? "Screen sharing was cancelled."
+            : "Screen sharing could not start.",
+        );
+        return;
+      }
+      const track = captured.getVideoTracks()[0];
+      if (!track) {
+        captured.getTracks().forEach((entry) => entry.stop());
+        setScreenProblem("That screen did not provide a video track.");
+        return;
+      }
+      screenTrackRef.current = track;
+      // The browser's own "Stop sharing" bar ends the track with no UI
+      // event; the transport listens too, so the camera returns on the
+      // wire at once and the button only follows.
+      track.onended = () => {
+        if (screenTrackRef.current !== track) return;
+        screenTrackRef.current = null;
+        setScreenSharingState(false);
+      };
+      setScreenProblem(null);
+      setScreenSharingState(true);
+    },
+    [stopScreenShare],
+  );
+
   const disposeCapture = useCallback(() => {
     sessionRef.current++;
     videoGenRef.current++;
     audioGenRef.current++;
+    stopScreenShare();
     dropVideo();
     stopAll(streamRef.current);
     streamRef.current = null;
-  }, [dropVideo]);
+  }, [dropVideo, stopScreenShare]);
 
   const release = useCallback(() => {
     disposeCapture();
@@ -559,6 +628,7 @@ export function useLocalMedia(): LocalMedia {
   useEffect(() => {
     mountedRef.current = true;
     const mediaDevices = navigator.mediaDevices;
+    setScreenSupported(!!mediaDevices?.getDisplayMedia);
     const onChange = () => void refreshDevices();
     mediaDevices?.addEventListener?.("devicechange", onChange);
     void refreshDevices();
@@ -584,9 +654,13 @@ export function useLocalMedia(): LocalMedia {
     blurProblem,
     quality,
     facing,
+    screenSupported,
+    screenSharing,
+    screenProblem,
     start,
     setMicOn,
     setCameraOn,
+    setScreenSharing,
     setBlurEnabled,
     setQuality,
     switchCamera,

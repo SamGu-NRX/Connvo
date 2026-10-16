@@ -9,7 +9,9 @@
  *   every connection it opened (D5).
  * - Local stream changes (initial capture, mute-release, device switch) are
  *   published via `publishLocalStream`; the transport forwards them to
- *   remote peers (replaceTrack or renegotiation, its choice).
+ *   remote peers (replaceTrack or renegotiation, its choice). Screen share
+ *   (a caller-owned `getDisplayMedia` track) goes through
+ *   `publishScreenShare` instead, so the camera stream stays untouched.
  * - Remote mute/camera state shown by the DOM contract (`data-audio-muted`,
  *   `data-video-off`) arrives through `TransportEvents.onRemoteState`
  *   signaling; media analysis is a separate ground-truth check, not the
@@ -27,12 +29,19 @@ export type CallPhase =
 export interface LocalCallState {
   micOn: boolean;
   cameraOn: boolean;
+  /**
+   * True while this participant shares their screen. Optional: peers and
+   * transports that predate screen share simply omit it (falsy).
+   */
+  screenSharing?: boolean;
 }
 
 export interface RemoteParticipantState {
   participantId: string;
   micOn: boolean;
   cameraOn: boolean;
+  /** Same flag as `LocalCallState.screenSharing`, seen from the far end. */
+  screenSharing?: boolean;
 }
 
 export interface TransportContext {
@@ -73,6 +82,14 @@ export interface CallTransport {
   connect(ctx: TransportContext, events: TransportEvents): Promise<void>;
   publishLocalStream(stream: MediaStream | null): void;
   publishLocalState(state: LocalCallState): void;
+  /**
+   * Shows `track` (a `getDisplayMedia` screen track, owned by the caller)
+   * to the remote peers in place of the outgoing camera, and restores the
+   * camera on `null` or when the track ends by itself — the browser's own
+   * "Stop sharing" bar. Optional: transports without a video slot ignore it.
+   * Never stops the track it was given (D5 — the caller owns it).
+   */
+  publishScreenShare?(track: MediaStreamTrack | null): void;
   /**
    * Leaves the call and closes every connection this transport opened.
    * Must not stop tracks it did not create (D5).

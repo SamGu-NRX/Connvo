@@ -116,7 +116,14 @@ export function createP2PTransport({
   let phase: CallPhase = "idle";
   let leaving = false;
   let localStream: MediaStream | null = null;
-  let localState: LocalCallState = { micOn: true, cameraOn: true };
+  let localState: LocalCallState = {
+    micOn: true,
+    cameraOn: true,
+    screenSharing: false,
+  };
+  /** The caller-owned screen track, or null while the camera shows. */
+  let screenTrack: MediaStreamTrack | null = null;
+  let screenEnded: (() => void) | null = null;
   let reconnectAttempt = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let giveUpTimer: ReturnType<typeof setTimeout> | null = null;
@@ -177,6 +184,18 @@ export function createP2PTransport({
 
   function currentStream(): MediaStream | null {
     return localStream ?? ctx?.getLocalStream() ?? null;
+  }
+
+  /** The track the outgoing video slot should carry right now. */
+  function outgoingVideoTrack(): MediaStreamTrack | null {
+    if (screenTrack) return screenTrack;
+    return currentStream()?.getTracks().find((t) => t.kind === "video") ?? null;
+  }
+
+  function detachScreenEnded(): void {
+    if (screenEnded && screenTrack)
+      screenTrack.removeEventListener?.("ended", screenEnded);
+    screenEnded = null;
   }
 
   function send(to: string, signal: P2PSignal): void {
@@ -260,8 +279,14 @@ export function createP2PTransport({
     // for audio-only joins so a later camera track has a negotiated sender.
     const stream = currentStream();
     for (const kind of KINDS) {
-      const track = stream?.getTracks().find((t) => t.kind === kind);
+      // A screen share owns the video slot from the first negotiation, so a
+      // peer joining mid-share sees the screen, not the camera.
+      const track =
+        kind === "video"
+          ? outgoingVideoTrack()
+          : (stream?.getTracks().find((t) => t.kind === kind) ?? null);
       if (track && stream) peer.senders[kind] = pc.addTrack(track, stream);
+      else if (track) peer.senders[kind] = pc.addTrack(track);
       else if (kind === "video") {
         peer.senders.video = pc.addTransceiver("video", {
           direction: "sendrecv",
@@ -590,6 +615,27 @@ export function createP2PTransport({
     );
   }
 
+  const publishScreenShare = (track: MediaStreamTrack | null): void => {
+    if (screenTrack === track) return;
+    detachScreenEnded();
+    screenTrack = track;
+    if (track) {
+      // The browser's own "Stop sharing" bar ends the track with no UI
+      // involvement; restoring here keeps the far side on the camera even
+      // when the shared tab or window disappears outright.
+      screenEnded = () => publishScreenShare(null);
+      track.addEventListener?.("ended", screenEnded);
+    }
+    const video = outgoingVideoTrack();
+    trace(`screen share ${track ? "on" : "off"} (${peers.size} peers)`);
+    for (const peer of peers.values()) {
+      const sender = peer.senders.video;
+      if (!sender) continue;
+      if (sender.track !== video)
+        void sender.replaceTrack(video).catch(() => {});
+    }
+  };
+
   return {
     name: "p2p",
 
@@ -634,8 +680,12 @@ export function createP2PTransport({
       localStream = stream;
       for (const peer of peers.values()) {
         for (const kind of KINDS) {
+          // While a share is active the video slot keeps the screen: capture
+          // changes (device switch, blur, camera on/off) must not end it.
           const track =
-            stream?.getTracks().find((t) => t.kind === kind) ?? null;
+            kind === "video"
+              ? outgoingVideoTrack()
+              : (stream?.getTracks().find((t) => t.kind === kind) ?? null);
           const sender = peer.senders[kind];
           if (sender) {
             if (sender.track !== track)
@@ -652,12 +702,16 @@ export function createP2PTransport({
       conn?.publishState(state);
     },
 
+    publishScreenShare,
+
     async leave(): Promise<void> {
       leaving = true;
       if (giveUpTimer) clearTimeout(giveUpTimer);
       giveUpTimer = null;
       closeSignaling();
       teardownAll(false);
+      detachScreenEnded();
+      screenTrack = null;
       localStream = null;
       setPhase("left");
     },

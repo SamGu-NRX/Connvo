@@ -7,8 +7,9 @@
  *
  * DOM contract (docs/plan/CALL-PLAN.md): `[data-call-phase]` on the root,
  * `[data-testid="remote-media"]` tiles with data-participant-id,
- * data-audio-muted and data-video-off, and buttons toggle-mic,
- * toggle-camera, leave-call and retry-media. Leaving asks for confirmation:
+ * data-audio-muted and data-video-off, data-screen-sharing while that
+ * person shares, and buttons toggle-mic, toggle-camera, toggle-screen-share,
+ * leave-call and retry-media. Leaving asks for confirmation:
  * leave-call opens the dialog and leave-call-confirm leaves.
  */
 import Link from "next/link";
@@ -28,6 +29,8 @@ import {
   Mic,
   MicOff,
   PhoneOff,
+  ScreenShare,
+  ScreenShareOff,
   Settings2,
   Video,
   VideoOff,
@@ -95,6 +98,7 @@ interface Remote {
   version: number;
   micOn: boolean;
   cameraOn: boolean;
+  screenSharing?: boolean;
 }
 
 type Screen = "lobby" | "call" | "ended";
@@ -196,8 +200,13 @@ export function CallRoom({
           stream,
           version: r.version + 1,
         })),
-      onRemoteState: ({ participantId, micOn, cameraOn }) =>
-        updateRemote(participantId, (r) => ({ ...r, micOn, cameraOn })),
+      onRemoteState: ({ participantId, micOn, cameraOn, screenSharing }) =>
+        updateRemote(participantId, (r) => ({
+          ...r,
+          micOn,
+          cameraOn,
+          screenSharing,
+        })),
       onError: (e) =>
         setCallError({ message: e.message, retryable: e.retryable }),
     }),
@@ -259,6 +268,7 @@ export function CallRoom({
       transport.publishLocalState({
         micOn: latest.micOn,
         cameraOn: latest.cameraOn,
+        screenSharing: !!latest.screenSharing,
       });
     } catch (err) {
       if (!current()) return;
@@ -279,8 +289,9 @@ export function CallRoom({
     transportRef.current?.publishLocalState({
       micOn: media.micOn,
       cameraOn: media.cameraOn,
+      screenSharing: !!media.screenSharing,
     });
-  }, [media.micOn, media.cameraOn]);
+  }, [media.micOn, media.cameraOn, media.screenSharing]);
 
   const leave = useCallback(async () => {
     attemptRef.current++;
@@ -343,6 +354,12 @@ export function CallRoom({
       if (event.key.toLowerCase() === "v") {
         event.preventDefault();
         void mediaRef.current.setCameraOn(!mediaRef.current.cameraOn);
+      }
+      if (event.key.toLowerCase() === "s" && mediaRef.current.screenSupported) {
+        event.preventDefault();
+        void mediaRef.current.setScreenSharing(
+          !mediaRef.current.screenSharing,
+        );
       }
     };
     window.addEventListener("keydown", onKey);
@@ -704,6 +721,7 @@ function InCall({
           alone={alone}
           inviteLink={inviteLink}
           problem={media.problem}
+          screenProblem={media.screenProblem}
         />
       </div>
 
@@ -738,6 +756,7 @@ function InCall({
                   version={r.version}
                   micOn={r.micOn}
                   cameraOn={r.cameraOn}
+                  screenSharing={!!r.screenSharing}
                   dim={dim}
                   contract={{ participantId: id }}
                   className="min-h-0"
@@ -770,16 +789,20 @@ function StatusNotice({
   alone,
   inviteLink,
   problem,
+  screenProblem,
 }: {
   phase: CallPhase;
   alone: boolean;
   inviteLink: () => string;
   problem: string | null;
+  screenProblem: string | null;
 }) {
   const text =
     problem && phase === "connected"
       ? problem
-      : phase === "joining"
+      : screenProblem && phase === "connected"
+        ? screenProblem
+        : phase === "joining"
         ? "Connecting to the call…"
         : phase === "reconnecting"
           ? "Reconnecting. The call continues when your connection comes back."
@@ -796,7 +819,7 @@ function StatusNotice({
             "pointer-events-auto flex items-center gap-2 rounded-md bg-black/60 px-3 py-2 text-sm backdrop-blur-md",
             phase === "reconnecting"
               ? "text-[var(--warn)]"
-              : problem && phase === "connected"
+              : (problem || screenProblem) && phase === "connected"
                 ? "text-rose-300"
                 : "text-[var(--ink)]",
           )}
@@ -910,6 +933,49 @@ function CameraButton({ media }: { media: LocalMedia }) {
   );
 }
 
+function ScreenShareButton({ media }: { media: LocalMedia }) {
+  const sharing = !!media.screenSharing;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          data-testid="toggle-screen-share"
+          aria-pressed={sharing}
+          aria-label={sharing ? "Stop sharing your screen" : "Share your screen"}
+          title={sharing ? "Stop sharing your screen (S)" : "Share your screen (S)"}
+          aria-keyshortcuts="S"
+          onClick={() => void media.setScreenSharing(!sharing)}
+          className={cn(
+            styles.press,
+            controlClass,
+            sharing
+              ? "bg-emerald-400/90 text-emerald-950 hover:bg-emerald-300"
+              : "bg-white/10 text-[var(--ink)] hover:bg-white/15",
+          )}
+        >
+          {sharing ? (
+            <ScreenShareOff aria-hidden className="size-5" />
+          ) : (
+            <ScreenShare aria-hidden className="size-5" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="animate-none" side="top">
+        {sharing ? (
+          <>
+            Stop sharing <kbd>S</kbd>
+          </>
+        ) : (
+          <>
+            Screen share <kbd>S</kbd>
+          </>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function ControlBar({
   media,
   onLeave,
@@ -923,6 +989,7 @@ function ControlBar({
     <div className={styles.controls} role="group" aria-label="Call controls">
       <MicButton media={media} />
       <CameraButton media={media} />
+      {media.screenSupported ? <ScreenShareButton media={media} /> : null}
       <Popover>
         <PopoverTrigger asChild>
           <button

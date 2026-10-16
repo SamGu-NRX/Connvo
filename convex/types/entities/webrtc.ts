@@ -36,6 +36,7 @@ export interface WebRTCSession {
   lastHeartbeatAt?: number;
   micOn?: boolean;
   cameraOn?: boolean;
+  screenSharing?: boolean;
   closedReason?: "left" | "replaced" | "expired" | "ended";
   createdAt: number;
   updatedAt: number;
