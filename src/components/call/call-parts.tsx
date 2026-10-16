@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useId } from "react";
-import { MicOff, VideoOff } from "lucide-react";
+import { MicOff, ScreenShare, VideoOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import styles from "./call.module.css";
@@ -127,6 +127,7 @@ export function StreamVideo({
   mirrored,
   hidden,
   testId,
+  fit = "cover",
 }: {
   stream: MediaStream | null;
   version: number;
@@ -134,6 +135,8 @@ export function StreamVideo({
   mirrored?: boolean;
   hidden?: boolean;
   testId?: string;
+  /** Screens are shown contained (never cropped); cameras cover the tile. */
+  fit?: "cover" | "contain";
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [blocked, setBlocked] = useState(false);
@@ -175,7 +178,8 @@ export function StreamVideo({
         playsInline
         muted={muted}
         className={cn(
-          "absolute inset-0 h-full w-full object-cover",
+          "absolute inset-0 h-full w-full",
+          fit === "contain" ? "object-contain" : "object-cover",
           mirrored && "-scale-x-100",
           hidden && "invisible",
         )}
@@ -204,6 +208,8 @@ export interface TileProps {
   version: number;
   micOn: boolean;
   cameraOn: boolean;
+  /** True while this participant shares their screen. */
+  screenSharing?: boolean;
   self?: boolean;
   dim?: boolean;
   className?: string;
@@ -217,6 +223,7 @@ export function Tile({
   version,
   micOn,
   cameraOn,
+  screenSharing,
   self,
   dim,
   className,
@@ -238,6 +245,7 @@ export function Tile({
             "data-participant-id": contract.participantId,
             "data-audio-muted": String(!micOn),
             "data-video-off": String(!cameraOn),
+            "data-screen-sharing": String(!!screenSharing),
           }
         : {})}
     >
@@ -248,6 +256,7 @@ export function Tile({
         mirrored={self}
         hidden={!hasVideo}
         testId={self ? "local-video" : undefined}
+        fit={screenSharing ? "contain" : "cover"}
       />
       {!hasVideo ? (
         <div className="absolute inset-0 grid place-items-center">
@@ -267,6 +276,12 @@ export function Tile({
           <VideoOff
             aria-label="Camera off"
             className="size-3.5 shrink-0 text-[var(--ink-muted)]"
+          />
+        ) : null}
+        {screenSharing ? (
+          <ScreenShare
+            aria-label="Sharing a screen"
+            className="size-3.5 shrink-0 text-emerald-300"
           />
         ) : null}
         <span className="truncate">{self ? `${name} (you)` : name}</span>

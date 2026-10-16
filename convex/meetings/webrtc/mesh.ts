@@ -479,9 +479,15 @@ export const setMediaState = mutation({
     sessionId: sessionIdV,
     micOn: v.boolean(),
     cameraOn: v.boolean(),
+    // Optional so older clients (and the eval bench) keep working; a client
+    // that shares always sends the field explicitly.
+    screenSharing: v.optional(v.boolean()),
   },
   returns: v.null(),
-  handler: async (ctx, { meetingId, sessionId, micOn, cameraOn }) => {
+  handler: async (
+    ctx,
+    { meetingId, sessionId, micOn, cameraOn, screenSharing },
+  ) => {
     const participant = await assertMeetingAccess(ctx, meetingId);
     const session = await ownSession(
       ctx,
@@ -493,6 +499,7 @@ export const setMediaState = mutation({
       await ctx.db.patch(session._id, {
         micOn,
         cameraOn,
+        screenSharing: screenSharing ?? false,
         updatedAt: Date.now(),
       });
     return null;
@@ -592,6 +599,7 @@ export const callPresence = query({
       participantId: v.string(),
       micOn: v.boolean(),
       cameraOn: v.boolean(),
+      screenSharing: v.boolean(),
     }),
   ),
   handler: async (ctx, { meetingId }) => {
@@ -605,6 +613,7 @@ export const callPresence = query({
         participantId: user.workosUserId,
         micOn: session.micOn ?? true,
         cameraOn: session.cameraOn ?? true,
+        screenSharing: session.screenSharing ?? false,
       });
     }
     return out;

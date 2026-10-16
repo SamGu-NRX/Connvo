@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   createBlurPipeline,
   type BlurPipeline,
@@ -11,6 +17,9 @@ import {
   type CameraFacing,
   type CameraQuality,
 } from "@/lib/call/camera-quality";
+
+/** Nothing to subscribe to: the environment's media capability is stable. */
+const subscribeNoop = () => () => {};
 
 export type LocalMediaStatus =
   | "idle"
@@ -39,6 +48,15 @@ export interface LocalMedia {
   blurProblem: string | null;
   quality: CameraQuality;
   facing: CameraFacing;
+  /** True where getDisplayMedia exists (desktop browsers; most phones lack it). */
+  screenSupported: boolean;
+  /** True while a screen share is live. */
+  screenSharing: boolean;
+  /** The live capture track while sharing, null otherwise. */
+  screenTrack: MediaStreamTrack | null;
+  /** The last screen-share problem, shown on the call screen. */
+  screenProblem: string | null;
+  setScreenSharing: (on: boolean) => Promise<void>;
   start: () => Promise<void>;
   setMicOn: (on: boolean) => void;
   setCameraOn: (on: boolean) => Promise<void>;
@@ -117,6 +135,30 @@ export function useLocalMedia(): LocalMedia {
   const qualityRef = useRef(quality);
   const [facing, setFacing] = useState<CameraFacing>("user");
   const facingRef = useRef(facing);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);
+  // Generation of the in-flight getDisplayMedia request. Every stop path
+  // bumps it, so a capture that resolves after the share ended, the
+  // component unmounted, or a newer request began is stale: it is stopped
+  // and never installed (a late track would keep capturing outside the
+  // call with no UI to end it).
+  const screenGenRef = useRef(0);
+  // Render-visible mirror of screenTrackRef: refs are imperative, the
+  // exposed track must re-render consumers (the remote tile, the transport
+  // forwarding effect) when capture starts or ends.
+  const [screenTrack, setScreenTrack] = useState<MediaStreamTrack | null>(null);
+  // Whether the browser offers getDisplayMedia. The environment never gains
+  // or loses it mid-session, so an external-store read replaces state: the
+  // server snapshot is false and the client switches after hydration, with
+  // no setState inside an effect.
+  const screenSupported = useSyncExternalStore(
+    subscribeNoop,
+    () =>
+      typeof navigator !== "undefined" &&
+      !!navigator.mediaDevices?.getDisplayMedia,
+    () => false,
+  );
+  const [screenSharing, setScreenSharingState] = useState(false);
+  const [screenProblem, setScreenProblem] = useState<string | null>(null);
   const sessionRef = useRef(0);
   const videoGenRef = useRef(0);
   const audioGenRef = useRef(0);
@@ -538,14 +580,86 @@ export function useLocalMedia(): LocalMedia {
     await captureCamera({ deviceId: null, facing: next, flip: true });
   }, [captureCamera, rememberDevice]);
 
+  const stopScreenShare = useCallback(() => {
+    // Any picker still open now belongs to a dead request.
+    screenGenRef.current++;
+    const track = screenTrackRef.current;
+    screenTrackRef.current = null;
+    setScreenTrack(null);
+    if (track) {
+      track.onended = null;
+      if (track.readyState === "live") track.stop();
+    }
+    setScreenSharingState(false);
+  }, []);
+
+  const setScreenSharing = useCallback(
+    async (on: boolean) => {
+      if (!on) {
+        stopScreenShare();
+        return;
+      }
+      if (screenTrackRef.current) return;
+      const mediaDevices = navigator.mediaDevices;
+      if (!mediaDevices?.getDisplayMedia) {
+        setScreenProblem("This browser cannot share a screen.");
+        return;
+      }
+      const generation = ++screenGenRef.current;
+      let captured: MediaStream | null = null;
+      try {
+        captured = await mediaDevices.getDisplayMedia({
+          video: true,
+          audio: false,
+        });
+      } catch (error) {
+        // Superseded: a newer request or cleanup owns the UI now.
+        if (generation !== screenGenRef.current) return;
+        setScreenProblem(
+          error instanceof DOMException && error.name === "NotAllowedError"
+            ? "Screen sharing was cancelled."
+            : "Screen sharing could not start.",
+        );
+        return;
+      }
+      if (generation !== screenGenRef.current) {
+        // The share was toggled off, released, or unmounted while the
+        // picker was open: stop the late capture, install nothing.
+        captured.getTracks().forEach((entry) => entry.stop());
+        return;
+      }
+      const track = captured.getVideoTracks()[0];
+      if (!track) {
+        captured.getTracks().forEach((entry) => entry.stop());
+        setScreenProblem("That screen did not provide a video track.");
+        return;
+      }
+      screenTrackRef.current = track;
+      setScreenTrack(track);
+      // The browser's own "Stop sharing" bar ends the track with no UI
+      // event; the transport listens too, so the camera returns on the
+      // wire at once and the button only follows.
+      track.onended = () => {
+        if (screenTrackRef.current !== track) return;
+        screenTrackRef.current = null;
+        setScreenTrack(null);
+        setScreenSharingState(false);
+      };
+      setScreenProblem(null);
+      setScreenSharingState(true);
+    },
+    [stopScreenShare],
+  );
+
   const disposeCapture = useCallback(() => {
     sessionRef.current++;
     videoGenRef.current++;
     audioGenRef.current++;
+    stopScreenShare();
     dropVideo();
     stopAll(streamRef.current);
     streamRef.current = null;
-  }, [dropVideo]);
+  }, [dropVideo, stopScreenShare]);
 
   const release = useCallback(() => {
     disposeCapture();
@@ -584,9 +698,14 @@ export function useLocalMedia(): LocalMedia {
     blurProblem,
     quality,
     facing,
+    screenSupported,
+    screenSharing,
+    screenTrack,
+    screenProblem,
     start,
     setMicOn,
     setCameraOn,
+    setScreenSharing,
     setBlurEnabled,
     setQuality,
     switchCamera,

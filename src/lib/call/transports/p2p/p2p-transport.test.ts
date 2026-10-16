@@ -28,6 +28,18 @@ class TestPeerConnection {
       replaceTrack: (
         track: { kind: string; id: string } | null,
       ) => Promise<void>;
+      params: {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      };
+      getParameters: () => {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      };
+      setParameters: (params: {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      }) => Promise<void>;
     };
   }> = [];
 
@@ -40,6 +52,20 @@ class TestPeerConnection {
       track: null as { kind: string; id: string } | null,
       async replaceTrack(track: { kind: string; id: string } | null) {
         this.track = track;
+      },
+      // Camera-era defaults; publishScreenShare rewrites these per share.
+      params: {
+        degradationPreference: "balanced",
+        encodings: [{ scaleResolutionDownBy: 2 }],
+      },
+      getParameters() {
+        return this.params;
+      },
+      async setParameters(params: {
+        degradationPreference: string;
+        encodings: Array<{ scaleResolutionDownBy: number }>;
+      }) {
+        this.params = params;
       },
     };
     const slot = {
@@ -156,9 +182,13 @@ describe("P2P camera publication", () => {
       { description: { type: "offer", sdp: "test-sdp" } },
     ]);
     expect(pc.slots.map((slot) => slot.mid)).toEqual(["0", "1"]);
-    handlers.onSignal("B", { description: { type: "answer", sdp: "remote-answer" } });
+    handlers.onSignal("B", {
+      description: { type: "answer", sdp: "remote-answer" },
+    });
     await vi.advanceTimersByTimeAsync(0);
-    handlers.onSignal("B", { description: { type: "offer", sdp: "remote-restart" } });
+    handlers.onSignal("B", {
+      description: { type: "offer", sdp: "remote-restart" },
+    });
     await vi.advanceTimersByTimeAsync(2000);
     expect(sent).toEqual([
       { description: { type: "answer", sdp: "test-sdp" } },
@@ -215,5 +245,109 @@ describe("P2P camera publication", () => {
       { kind: "audio", track: "microphone" },
       { kind: "video", track: "camera" },
     ]);
+  });
+});
+
+class FakeScreenTrack {
+  kind = "video" as const;
+  id = "screen-1";
+  readyState: MediaStreamTrackState = "live";
+  stopped = false;
+  private listeners = new Map<string, Set<() => void>>();
+  addEventListener(type: string, listener: () => void) {
+    const set = this.listeners.get(type) ?? new Set();
+    set.add(listener);
+    this.listeners.set(type, set);
+  }
+  removeEventListener(type: string, listener: () => void) {
+    this.listeners.get(type)?.delete(listener);
+  }
+  end() {
+    this.readyState = "ended";
+    for (const listener of [...(this.listeners.get("ended") ?? [])]) listener();
+  }
+  stop() {
+    this.stopped = true;
+    this.readyState = "ended";
+  }
+}
+
+describe("P2P screen share publication", () => {
+  /** The interface keeps the method optional so transports may lack it. */
+  const share = (transport: CallTransport, track: MediaStreamTrack | null) => {
+    const publish = transport.publishScreenShare;
+    if (!publish) throw new Error("transport lacks publishScreenShare");
+    publish(track);
+  };
+
+  it("replaces the reserved camera slot with the screen and restores the camera when the track ends", async () => {
+    const { transport, pc } = await connect([
+      { kind: "audio", id: "microphone" },
+      { kind: "video", id: "camera" },
+    ]);
+    const screen = new FakeScreenTrack();
+    share(transport, screen as unknown as MediaStreamTrack);
+    expect(pc.slots[1].sender.track?.id).toBe("screen-1");
+    screen.end();
+    expect(pc.slots[1].sender.track?.id).toBe("camera");
+  });
+
+  it("hands a peer that joins mid-share the screen from its first negotiation", async () => {
+    const { transport, handlers } = await connect([
+      { kind: "audio", id: "microphone" },
+    ]);
+    const screen = new FakeScreenTrack();
+    share(transport, screen as unknown as MediaStreamTrack);
+    handlers.onWelcome(["C"]);
+    const latecomer = TestPeerConnection.instances[1];
+    expect(
+      latecomer.slots.map((slot) => slot.sender.track?.id ?? null),
+    ).toEqual(["microphone", "screen-1"]);
+  });
+
+  it("keeps the screen while the camera is switched and restores it only when the share ends", async () => {
+    const { transport, pc } = await connect([
+      { kind: "audio", id: "microphone" },
+      { kind: "video", id: "camera" },
+    ]);
+    const screen = new FakeScreenTrack();
+    share(transport, screen as unknown as MediaStreamTrack);
+    transport.publishLocalStream(
+      new CaptureStream([
+        { kind: "audio", id: "microphone" },
+        { kind: "video", id: "camera-two" },
+      ]) as unknown as MediaStream,
+    );
+    expect(pc.slots[1].sender.track?.id).toBe("screen-1");
+    share(transport, null);
+    expect(pc.slots[1].sender.track?.id).toBe("camera-two");
+  });
+
+  it("never stops the caller-owned screen track on leave", async () => {
+    const { transport } = await connect([{ kind: "audio", id: "microphone" }]);
+    const screen = new FakeScreenTrack();
+    share(transport, screen as unknown as MediaStreamTrack);
+    await transport.leave();
+    expect(screen.stopped).toBe(false);
+    expect(screen.readyState).toBe("live");
+  });
+
+  it("pins the screen era to full resolution and returns to balanced on restore", async () => {
+    const { transport, pc } = await connect([
+      { kind: "audio", id: "microphone" },
+      { kind: "video", id: "camera" },
+    ]);
+    const videoSender = pc.slots[1].sender;
+    expect(videoSender.params.degradationPreference).toBe("balanced");
+    expect(videoSender.params.encodings[0].scaleResolutionDownBy).toBe(2);
+    const screen = new FakeScreenTrack();
+    share(transport, screen as unknown as MediaStreamTrack);
+    // Screen content needs full resolution or text arrives illegible.
+    expect(videoSender.params.degradationPreference).toBe(
+      "maintain-resolution",
+    );
+    expect(videoSender.params.encodings[0].scaleResolutionDownBy).toBe(1);
+    screen.end();
+    expect(videoSender.params.degradationPreference).toBe("balanced");
   });
 });

@@ -21,6 +21,7 @@ export const webrtcTables = {
     lastHeartbeatAt: v.optional(v.number()),
     micOn: v.optional(v.boolean()),
     cameraOn: v.optional(v.boolean()),
+    screenSharing: v.optional(v.boolean()),
     closedReason: v.optional(
       v.union(
         v.literal("left"),

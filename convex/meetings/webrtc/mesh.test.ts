@@ -411,12 +411,14 @@ describe("presence and media state", () => {
           participantId: "mesh-a",
           micOn: true,
           cameraOn: true,
+          screenSharing: false,
         },
         {
           sessionId: "session-b-1",
           participantId: "mesh-b",
           micOn: false,
           cameraOn: true,
+          screenSharing: false,
         },
       ]),
     );

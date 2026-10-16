@@ -14,6 +14,7 @@ import type * as auth_guards from "../auth/guards.js";
 import type * as auth_permissions from "../auth/permissions.js";
 import type * as crons from "../crons.js";
 import type * as devEval_callMeeting from "../devEval/callMeeting.js";
+import type * as devEval_proposal from "../devEval/proposal.js";
 import type * as devEval_queueProof from "../devEval/queueProof.js";
 import type * as devEval_seed from "../devEval/seed.js";
 import type * as devEval_shape from "../devEval/shape.js";
@@ -199,6 +200,7 @@ declare const fullApi: ApiFromModules<{
   "auth/permissions": typeof auth_permissions;
   crons: typeof crons;
   "devEval/callMeeting": typeof devEval_callMeeting;
+  "devEval/proposal": typeof devEval_proposal;
   "devEval/queueProof": typeof devEval_queueProof;
   "devEval/seed": typeof devEval_seed;
   "devEval/shape": typeof devEval_shape;
