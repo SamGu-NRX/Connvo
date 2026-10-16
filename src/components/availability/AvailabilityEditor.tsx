@@ -318,7 +318,11 @@ export function AvailabilityEditor({
           <div className="min-w-[680px] select-none">
             <div className="flex">
               <div className="w-10 shrink-0" />
-              <div className="flex flex-1">
+              {/* Same gap-[2px] as the day rows below: without it each label
+                  drifted 2px per half-hour cell and sat ~2h off by day's end.
+                  Hidden from the accessibility tree — the cells carry the
+                  names ("Mon 09:30"); these are visual hints only. */}
+              <div className="flex flex-1 gap-[2px]" aria-hidden="true">
                 {Array.from({ length: SLOTS_PER_DAY }, (_, slot) => (
                   <div
                     key={slot}

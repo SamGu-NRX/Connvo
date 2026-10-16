@@ -1,7 +1,10 @@
 // Eval-only seed for the local anonymous backend used by
 // tools/call-eval (CONTRACT.md): users A/B/C + outsider O (WorkOS subjects
 // local-test-a/b/c/o) and one active meeting with A–C as participants (A
-// host). Env-gated: refuses to run unless CONNVO_LOCAL_TEST_JWKS is set on
+// host). N (local-test-n, "Nina New") is also seeded but deliberately stays
+// un-onboarded: she is the brand-new user a developer walks through
+// onboarding with (token route ?user=N -> /onboarding?as=N). Env-gated:
+// refuses to run unless CONNVO_LOCAL_TEST_JWKS is set on
 // the deployment — the harness sets it only on the local backend. It is an
 // internalMutation, so no client can call it on any deployment; only the CLI
 // (`npx convex run devEval/seed`) and other server functions can.
@@ -9,10 +12,11 @@ import type { Id } from "../_generated/dataModel";
 import { internalMutation } from "../_generated/server";
 
 const SEED_USERS = [
-  { subject: "local-test-a", email: "a@connvo-local.test", name: "Alice Anderson" },
-  { subject: "local-test-b", email: "b@connvo-local.test", name: "Bob Brown" },
-  { subject: "local-test-c", email: "c@connvo-local.test", name: "Carol Chen" },
-  { subject: "local-test-o", email: "o@connvo-local.test", name: "Owen Outsider" },
+  { subject: "local-test-a", email: "a@connvo-local.test", name: "Alice Anderson", onboardingComplete: true },
+  { subject: "local-test-b", email: "b@connvo-local.test", name: "Bob Brown", onboardingComplete: true },
+  { subject: "local-test-c", email: "c@connvo-local.test", name: "Carol Chen", onboardingComplete: true },
+  { subject: "local-test-o", email: "o@connvo-local.test", name: "Owen Outsider", onboardingComplete: true },
+  { subject: "local-test-n", email: "n@connvo-local.test", name: "Nina New", onboardingComplete: false },
 ];
 
 const MEETING_TITLE = "Eval harness smoke meeting";
