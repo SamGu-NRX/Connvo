@@ -201,14 +201,19 @@ try {
   // B's video element reports the previous frame's size until the first
   // screen frame decodes; wait for the bigger picture to arrive.
   await b.page.waitForFunction(
-    (prevW) =>
-      (document.querySelector(
-        '[data-testid="remote-media"][data-participant-id="A"] video',
-      )?.videoWidth ?? 0) !== prevW,
+    (prevW) => {
+      const video = /** @type {HTMLVideoElement | null} */ (
+        document.querySelector(
+          '[data-testid="remote-media"][data-participant-id="A"] video',
+        )
+      );
+      return (video?.videoWidth ?? 0) !== prevW;
+    },
     before.width,
     { timeout: 20000 },
   );
   during = await remoteView(b.page, "A");
+  if (!during) throw new Error("A's remote tile vanished from B");
   check(
     "B receives the screen instead of the camera",
     during.width > 0 &&
@@ -238,10 +243,14 @@ try {
   // B's video element reports the previous frame's size until the first
   // screen frame decodes; wait for the bigger picture to arrive.
   await b.page.waitForFunction(
-    () =>
-      (document.querySelector(
-        '[data-testid="remote-media"][data-participant-id="A"] video',
-      )?.videoWidth ?? 0) > 320,
+    () => {
+      const video = /** @type {HTMLVideoElement | null} */ (
+        document.querySelector(
+          '[data-testid="remote-media"][data-participant-id="A"] video',
+        )
+      );
+      return (video?.videoWidth ?? 0) > 320;
+    },
     undefined,
     { timeout: 20000 },
   );
@@ -292,7 +301,10 @@ try {
           window
         );
       const track = win.__screenShareTrack;
-      if (typeof track?.onended === "function") track.onended();
+      const handler = /** @type {(() => void) | null} */ (
+        track?.onended ?? null
+      );
+      handler?.();
     });
     await a.page.waitForTimeout(2000);
     const pressedAfterDirect = await a.page.evaluate(

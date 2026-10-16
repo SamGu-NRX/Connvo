@@ -136,6 +136,10 @@ export function useLocalMedia(): LocalMedia {
   const [facing, setFacing] = useState<CameraFacing>("user");
   const facingRef = useRef(facing);
   const screenTrackRef = useRef<MediaStreamTrack | null>(null);
+  // Render-visible mirror of screenTrackRef: refs are imperative, the
+  // exposed track must re-render consumers (the remote tile, the transport
+  // forwarding effect) when capture starts or ends.
+  const [screenTrack, setScreenTrack] = useState<MediaStreamTrack | null>(null);
   // Whether the browser offers getDisplayMedia. The environment never gains
   // or loses it mid-session, so an external-store read replaces state: the
   // server snapshot is false and the client switches after hydration, with
@@ -573,6 +577,7 @@ export function useLocalMedia(): LocalMedia {
   const stopScreenShare = useCallback(() => {
     const track = screenTrackRef.current;
     screenTrackRef.current = null;
+    setScreenTrack(null);
     if (track) {
       track.onended = null;
       if (track.readyState === "live") track.stop();
@@ -613,12 +618,14 @@ export function useLocalMedia(): LocalMedia {
         return;
       }
       screenTrackRef.current = track;
+      setScreenTrack(track);
       // The browser's own "Stop sharing" bar ends the track with no UI
       // event; the transport listens too, so the camera returns on the
       // wire at once and the button only follows.
       track.onended = () => {
         if (screenTrackRef.current !== track) return;
         screenTrackRef.current = null;
+        setScreenTrack(null);
         setScreenSharingState(false);
       };
       setScreenProblem(null);
@@ -676,7 +683,7 @@ export function useLocalMedia(): LocalMedia {
     facing,
     screenSupported,
     screenSharing,
-    screenTrack: screenTrackRef.current,
+    screenTrack,
     screenProblem,
     start,
     setMicOn,
