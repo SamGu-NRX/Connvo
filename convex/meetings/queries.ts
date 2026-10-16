@@ -439,6 +439,58 @@ export const listMeetingParticipants = query({
 });
 
 /**
+ * Lists the meeting's participants as the ids the call's presence carries
+ * (the WorkOS subject) with a display name, and nothing else.
+ *
+ * The call tiles and lobby read names here, from behind assertMeetingAccess,
+ * instead of trusting what presence or signaling carry: a name carried on
+ * the wire would be whatever the sender claims. The query returns no email,
+ * avatar, org, role or presence field — only who is in the call.
+ *
+ * @summary Lists a meeting's participants as call ids with display names
+ * @example request
+ * ```json
+ * { "meetingId": "meeting_123example" }
+ * ```
+ * @example response
+ * ```json
+ * [
+ *   { "id": "org_user_123", "displayName": "Alice Johnson" },
+ *   { "id": "org_user_456", "displayName": "Bob Smith" }
+ * ]
+ * ```
+ */
+export const listMeetingParticipantNames = query({
+  args: { meetingId: v.id("meetings") },
+  returns: v.array(
+    v.object({
+      id: v.string(),
+      displayName: v.optional(v.string()),
+    }),
+  ),
+  handler: async (
+    ctx,
+    { meetingId },
+  ): Promise<{ id: string; displayName?: string }[]> => {
+    await assertMeetingAccess(ctx, meetingId);
+
+    const participants = await ctx.db
+      .query("meetingParticipants")
+      .withIndex("by_meeting", (q) => q.eq("meetingId", meetingId))
+      .collect();
+
+    const names: { id: string; displayName?: string }[] = [];
+    for (const participant of participants) {
+      const user = await ctx.db.get(participant.userId);
+      if (user) {
+        names.push({ id: user.workosUserId, displayName: user.displayName });
+      }
+    }
+    return names;
+  },
+});
+
+/**
  * Gets meeting state with WebRTC connection info
  *
  * @summary Gets meeting runtime state with metrics

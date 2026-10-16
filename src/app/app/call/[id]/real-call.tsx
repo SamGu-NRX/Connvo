@@ -181,6 +181,37 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         : null,
     [me],
   );
+  // Names come from the server's participant list behind assertMeetingAccess
+  // once the meeting is reachable. Presence carries ids, not names, and a
+  // name carried in presence or signaling would be whatever the sender
+  // claims. "Participant" covers the load and an id that is not a
+  // participant.
+  const participantNames = useQuery(
+    api.meetings.queries.listMeetingParticipantNames,
+    callStatus === "active"
+      ? { meetingId: meetingId as Id<"meetings"> }
+      : "skip",
+  );
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const participant of participantNames ?? []) {
+      if (participant.displayName)
+        map.set(participantIdOf(participant.id), participant.displayName);
+    }
+    return map;
+  }, [participantNames]);
+  // The lobby names the one other person in the one-on-one call.
+  const partnerName = useMemo(() => {
+    if (!self) return undefined;
+    for (const participant of participantNames ?? []) {
+      const displayName =
+        participantIdOf(participant.id) !== self.id
+          ? participant.displayName
+          : undefined;
+      if (displayName) return displayName;
+    }
+    return undefined;
+  }, [participantNames, self]);
 
   if (isLoading || (isAuthenticated && me === undefined)) {
     return (
@@ -252,10 +283,10 @@ function ConvexCall({ meetingId }: { meetingId: string }) {
         createTransport={createTransport}
         network={network.peers}
         identityToken={identityToken}
-        // Presence carries ids, not names; test users read as Guest A..O.
-        nameFor={(id) =>
-          TEST_AUTH && /^[A-Z]$/.test(id) ? `Guest ${id}` : "Participant"
-        }
+        // Names come from the participant list query above; the transport
+        // and presence carry only ids.
+        nameFor={(id) => nameById.get(id) ?? "Participant"}
+        partnerName={partnerName}
         inviteLink={() => {
           const url = new URL(window.location.href);
           url.search = "";
