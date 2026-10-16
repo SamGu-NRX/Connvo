@@ -35,7 +35,7 @@ export default function BioSection({ onNext, onBack }: BioSectionProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative z-10 space-y-6">
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold">About You</h2>
         <p className="text-muted-foreground">
