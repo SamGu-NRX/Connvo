@@ -1,3 +1,11 @@
+> **Removed client modules (burst11 cleanup):** `src/lib/getstream-client.ts`,
+> `src/lib/getstream/`, `src/providers/StreamClientProvider.tsx` and
+> `src/actions/stream.actions.ts` no longer exist. Nothing in `src/`,
+> `convex/` or `test/` imported them, the call room runs on the P2P WebRTC
+> transport, and no page consumed the provider's `StreamVideo` context. This
+> document describes the retired paid-tier client design. The server-side
+> Stream integration (`convex/lib/getstreamServer.ts`) is unchanged.
+
 # GetStream Video Integration Guide
 
 This document provides a comprehensive guide for the GetStream Video integration in Connvo, covering setup, usage, and best practices for paid tier video calling features.
