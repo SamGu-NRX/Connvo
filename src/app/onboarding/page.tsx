@@ -65,10 +65,13 @@ export default function OnboardingPage() {
   );
 
   useEffect(() => {
-    if (onboardingState?.onboardingComplete) {
+    // Yield to the Congratulations screen: the moment saveOnboarding persists,
+    // this query flips and would otherwise replace the route before the
+    // success screen ever renders. Only completed arrivals redirect.
+    if (onboardingState?.onboardingComplete && !showCongrats) {
       router.replace("/app");
     }
-  }, [onboardingState?.onboardingComplete, router]);
+  }, [onboardingState?.onboardingComplete, showCongrats, router]);
 
   const methods = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
