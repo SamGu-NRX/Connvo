@@ -78,7 +78,10 @@ export const claimActionKey = internalMutation({
       }
       const expired = existing.createdAt + ttlMs < now;
       const stale = meta.status === "executing" && startedAt + leaseMs < now;
-      if (!expired && !stale && !(meta.failed && allowRetry)) {
+      // retryable: false marks a terminal failure (see isRetryable in
+      // convex/lib/idempotency.ts); allowRetry does not clear it.
+      const retryable = meta.failed && allowRetry && meta.retryable !== false;
+      if (!expired && !stale && !retryable) {
         return meta.failed
           ? {
               id: null,

@@ -18,9 +18,10 @@
  * re-runs the drafts query, so the reminder guard (null for a cancelled or
  * ended meeting) is checked again at retry time, and the per-recipient
  * markers make already-sent recipients skip instead of double-sending.
- * Refusals (4xx) are not retried, but they leave the marker failed and the
- * action itself throws once every recipient has been tried, so a refused
- * person is never recorded as sent. Resend receives a SHA-256 digest of the
+ * Refusals (4xx) are not retried: they leave the marker failed and
+ * non-retryable, so a duplicate invocation skips that recipient rather than
+ * sending again, and the action itself throws once every recipient has been
+ * tried, so a refused person is never recorded as sent. Resend receives a SHA-256 digest of the
  * same key as its Idempotency-Key header, so even an ambiguous failure —
  * the send landed, the response was lost — cannot double-send within
  * Resend's 24-hour key window.
@@ -92,8 +93,9 @@ async function resendIdempotencyKey(
 /**
  * Send one fully built message under its per-message-and-recipient key.
  * Settles silently when the marker says this exact message was already
- * sent; otherwise any provider error (TransientSendError for a retry,
- * RefusedSendError for a refusal) propagates and leaves the marker failed.
+ * sent or terminally refused; otherwise any provider error
+ * (TransientSendError for a retry, RefusedSendError for a refusal)
+ * propagates and leaves the marker failed.
  */
 async function sendOnce(
   ctx: ActionCtx,
@@ -109,6 +111,12 @@ async function sendOnce(
       ttlMs: MARKER_TTL_MS,
       leaseMs: EXECUTION_LEASE_MS,
       allowRetry: true,
+      // Only a transient failure may be re-sent by a later invocation. A
+      // refusal (or anything unclassified, which deliverDrafts also treats
+      // as terminal) keeps its failed marker, so a duplicate scheduling of
+      // the same message skips the recipient instead of calling the
+      // provider again.
+      isRetryable: (error) => error instanceof TransientSendError,
     },
     async () => {
       // The marker keeps the full readable key; Resend gets the bounded

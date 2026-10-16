@@ -22,6 +22,14 @@ export interface IdempotencyConfig {
   ttlMs?: number; // Time to live in milliseconds
   allowRetry?: boolean; // Allow retry if operation failed
   leaseMs?: number; // Actions only: must outlive the action runtime limit
+  /**
+   * Actions only. allowRetry lets a later call clear a failed marker, which
+   * is wrong for a failure that will fail the same way again (an email
+   * provider's 4xx refusal): the duplicate would repeat the external call.
+   * When this returns false for the thrown error, the marker is stored with
+   * retryable: false and claimActionKey keeps it until the TTL expires.
+   */
+  isRetryable?: (error: unknown) => boolean;
 }
 
 /**
@@ -236,6 +244,9 @@ export async function withActionIdempotency<T>(
         failed: true,
         error: error instanceof Error ? error.message : "Unknown error",
         failedAt: Date.now(),
+        ...(config.isRetryable && !config.isRetryable(error)
+          ? { retryable: false }
+          : {}),
       },
     });
     throw error;

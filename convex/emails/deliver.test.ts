@@ -366,6 +366,44 @@ describe("retry-safe multi-recipient delivery", () => {
     expect(bobMarker?.metadata?.status).toBe("failed");
   });
 
+  it("does not resend to a refused recipient on a duplicate invocation", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedConfirmedMeeting(t);
+    const log = stubResend({ "bob@example.com": -1 });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const args = { meetingId: fx.meetingId, reminderKinds: [] };
+
+    await expect(
+      t.action(internal.emails.deliver.meetingConfirmed, args),
+    ).rejects.toThrow("dropped:bob@example.com");
+    // A duplicate scheduling of the same message within the marker TTL.
+    await t
+      .action(internal.emails.deliver.meetingConfirmed, args)
+      .catch(() => {});
+
+    expect(attemptsFor(log, "bob@example.com")).toHaveLength(1);
+    expect(attemptsFor(log, "alice@example.com")).toHaveLength(1);
+  });
+
+  it("still retries a transient failure on a duplicate invocation", async () => {
+    const t = createTestEnvironment();
+    const fx = await seedConfirmedMeeting(t);
+    const log = stubResend({ "bob@example.com": 1 });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const args = { meetingId: fx.meetingId, reminderKinds: [] };
+
+    // Two invocations without running the scheduled retry: the duplicate
+    // alone must pick Bob up again.
+    await t.action(internal.emails.deliver.meetingConfirmed, args);
+    await t.action(internal.emails.deliver.meetingConfirmed, args);
+
+    expect(attemptsFor(log, "bob@example.com")).toHaveLength(2);
+    expect(log.delivered.sort()).toEqual([
+      "alice@example.com",
+      "bob@example.com",
+    ]);
+  });
+
   it("bounds the Resend key for a 300-character address", async () => {
     const t = createTestEnvironment();
     const fx = await seedConfirmedMeeting(t);
