@@ -10,14 +10,13 @@
 
 import { convexTest } from "convex-test";
 import { Id } from "@convex/_generated/dataModel";
-import schema from "../schema";
-import { modules } from "./setup";
+import schema from "../../convex/schema.js";
 
 /**
  * Creates a standardized test environment with proper module resolution
  */
 export function createTestEnvironment() {
-  return convexTest(schema, modules);
+  return convexTest(schema);
 }
 
 /**

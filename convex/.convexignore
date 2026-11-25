@@ -1,0 +1,25 @@
+# Test files and directories
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+test/
+__tests__/
+
+# Development and build files
+*.md
+*.txt
+.DS_Store
+node_modules/
+
+# Vitest configuration
+vitest.config.ts
+vitest.config.js
+
+# Other development files
+*.log
+.env*
+
+# Specific problematic files
+test/helpers.js
+test/helpers.ts
